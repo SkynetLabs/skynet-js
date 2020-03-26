@@ -1,0 +1,50 @@
+{
+  "name": "skynet-js",
+  "version": "0.0.1",
+  "description": "Sia Skynet Javascript Client",
+  "browser": "src/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NebulousLabs/skynet-js.git"
+  },
+  "keywords": [
+    "sia"
+  ],
+  "author": "Karol Wypchlo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NebulousLabs/skynet-js/issues"
+  },
+  "homepage": "https://nebulouslabs.github.io/skynet-js/",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "url-parse": "^1.4.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "babel-jest": "^25.2.1",
+    "eslint": "^6.8.0",
+    "husky": "^4.2.3",
+    "jest": "^25.2.1",
+    "lint-staged": "^10.0.9",
+    "prettier": "^2.0.2"
+  }
+}
