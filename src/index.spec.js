@@ -1,5 +1,5 @@
 import axios from "axios";
-import SkynetClient, { getUrl, download, open, upload, uploadDirectory } from "./index";
+import SkynetClient, { getUrl, download, open, upload, uploadDirectory, parseSkylink } from "./index";
 
 jest.mock("axios");
 
@@ -14,6 +14,7 @@ describe("SkynetClient", () => {
     expect(skynetClient).toHaveProperty("download");
     expect(skynetClient).toHaveProperty("open");
     expect(skynetClient).toHaveProperty("getUrl");
+    expect(skynetClient).toHaveProperty("parseSkylink");
   });
 });
 
@@ -116,5 +117,22 @@ describe("uploadDirectory", () => {
     const data = await uploadDirectory(portalUrl, directory, filename);
 
     expect(data).toEqual({ skylink });
+  });
+});
+
+describe("parseSkylink", () => {
+  it("should correctly parse skylink out of different strings", () => {
+    expect(parseSkylink(skylink)).toEqual(skylink);
+    expect(parseSkylink(`sia:${skylink}`)).toEqual(skylink);
+    expect(parseSkylink(`sia://${skylink}`)).toEqual(skylink);
+    expect(parseSkylink(`${portalUrl}/${skylink}`)).toEqual(skylink);
+    expect(parseSkylink(`${portalUrl}/${skylink}/foo/bar`)).toEqual(skylink);
+    expect(parseSkylink(`${portalUrl}/${skylink}?foo=bar`)).toEqual(skylink);
+  });
+
+  it("should throw on invalid skylink", () => {
+    expect(() => parseSkylink()).toThrowError("Could not extract skylink from ''");
+    expect(() => parseSkylink(123)).toThrowError("Skylink has to be a string, number provided");
+    expect(() => parseSkylink("123")).toThrowError("Could not extract skylink from '123'");
   });
 });

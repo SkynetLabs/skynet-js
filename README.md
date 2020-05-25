@@ -152,6 +152,25 @@ Use the `portalUrl` to generate direct `skylink` url.
 
 `options.download` (boolean) - Option to include download directive in the url that will force a download when used. Defaults to `false`.
 
+### parseSkylink(skylink)
+
+```javascript
+import { parseSkylink } from "skynet-js";
+```
+
+Use the `parseSkylink` to extract skylink from a string.
+
+Currently supported string types are:
+
+- direct skylink string, example "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
+- sia: prefixed string, example "sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
+- sia:// prefixed string, example "sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
+- skylink from url, example "https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
+
+`skylink` (string) - String containing 46 character skylink.
+
+Returns extracted skylink string or throws error.
+
 ## Docs: using SkynetClient
 
 ```javascript
