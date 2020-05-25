@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Sia Skynet Javascript Client",
   "browser": "src/index.js",
   "scripts": {
