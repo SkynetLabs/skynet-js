@@ -3,7 +3,7 @@ import axios from "axios";
 
 export default function SkynetClient(portalUrl) {
   this.upload = upload.bind(null, portalUrl);
-  this.uploadDirectory = upload.bind(null, portalUrl);
+  this.uploadDirectory = uploadDirectory.bind(null, portalUrl);
   this.download = download.bind(null, portalUrl);
   this.open = open.bind(null, portalUrl);
   this.getUrl = getUrl.bind(null, portalUrl);
