@@ -2,9 +2,15 @@
   "name": "skynet-js",
   "version": "0.0.4",
   "description": "Sia Skynet Javascript Client",
-  "browser": "src/index.js",
+  "main": "dist/index.js",
+  "module": "src/index.js",
+  "files": [
+    "dist/index.js", 
+    "src/index.js"
+  ],
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepublishOnly": "babel src/index.js --out-dir dist"
   },
   "husky": {
     "hooks": {
@@ -38,6 +44,7 @@
     "url-parse": "^1.4.7"
   },
   "devDependencies": {
+    "@babel/cli": "^7.10.1",
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.0",
     "babel-jest": "^26.0.1",
