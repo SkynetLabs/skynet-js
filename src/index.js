@@ -62,13 +62,13 @@ export async function uploadDirectory(portalUrl, directory, filename, options = 
 }
 
 export function download(portalUrl, skylink) {
-  const url = getUrl(portalUrl, skylink, { download: true });
+  const url = getUrl(portalUrl, parseSkylink(skylink), { download: true });
 
   window.open(url, "_blank");
 }
 
 export function open(portalUrl, skylink) {
-  const url = getUrl(portalUrl, skylink);
+  const url = getUrl(portalUrl, parseSkylink(skylink));
 
   window.open(url, "_blank");
 }
@@ -76,7 +76,7 @@ export function open(portalUrl, skylink) {
 export function getUrl(portalUrl, skylink, options = {}) {
   const parsed = parse(portalUrl);
 
-  parsed.set("pathname", skylink);
+  parsed.set("pathname", parseSkylink(skylink));
 
   if (options.download) {
     parsed.set("query", { attachment: true });

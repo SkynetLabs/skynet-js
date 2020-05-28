@@ -5,6 +5,14 @@ jest.mock("axios");
 
 const portalUrl = "https://siasky.net";
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const validSkylinkVariations = [
+  skylink,
+  `sia:${skylink}`,
+  `sia://${skylink}`,
+  `${portalUrl}/${skylink}`,
+  `${portalUrl}/${skylink}/foo/bar`,
+  `${portalUrl}/${skylink}?foo=bar`,
+];
 
 describe("SkynetClient", () => {
   it("should contain all api methods", () => {
@@ -20,9 +28,9 @@ describe("SkynetClient", () => {
 
 describe("getUrl", () => {
   it("should return correctly formed url", () => {
-    const url = getUrl(portalUrl, skylink);
-
-    expect(url).toEqual(`${portalUrl}/${skylink}`);
+    validSkylinkVariations.forEach((input) => {
+      expect(getUrl(portalUrl, input)).toEqual(`${portalUrl}/${skylink}`);
+    });
   });
 
   it("should return correctly formed url with forced download", () => {
@@ -36,9 +44,14 @@ describe("download", () => {
   it("should call window.open with a download url", () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
-    download(portalUrl, skylink);
+    validSkylinkVariations.forEach((input) => {
+      windowOpen.mockReset();
 
-    expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}?attachment=true`, "_blank");
+      download(portalUrl, input);
+
+      expect(windowOpen).toHaveBeenCalledTimes(1);
+      expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}?attachment=true`, "_blank");
+    });
   });
 });
 
@@ -46,9 +59,14 @@ describe("open", () => {
   it("should call window.open with a download url", () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
-    open(portalUrl, skylink);
+    validSkylinkVariations.forEach((input) => {
+      windowOpen.mockReset();
 
-    expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
+      open(portalUrl, input);
+
+      expect(windowOpen).toHaveBeenCalledTimes(1);
+      expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
+    });
   });
 });
 
@@ -122,12 +140,9 @@ describe("uploadDirectory", () => {
 
 describe("parseSkylink", () => {
   it("should correctly parse skylink out of different strings", () => {
-    expect(parseSkylink(skylink)).toEqual(skylink);
-    expect(parseSkylink(`sia:${skylink}`)).toEqual(skylink);
-    expect(parseSkylink(`sia://${skylink}`)).toEqual(skylink);
-    expect(parseSkylink(`${portalUrl}/${skylink}`)).toEqual(skylink);
-    expect(parseSkylink(`${portalUrl}/${skylink}/foo/bar`)).toEqual(skylink);
-    expect(parseSkylink(`${portalUrl}/${skylink}?foo=bar`)).toEqual(skylink);
+    validSkylinkVariations.forEach((input) => {
+      expect(parseSkylink(input)).toEqual(skylink);
+    });
   });
 
   it("should throw on invalid skylink", () => {
