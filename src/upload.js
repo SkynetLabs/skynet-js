@@ -53,12 +53,12 @@ export async function uploadDirectory(portalUrl, directory, filename, options = 
 }
 
 /**
- * Sometimes file object might have had the type property defined menually with Object.defineProperty
+ * Sometimes file object might have had the type property defined manually with Object.defineProperty
  * and some browsers (namely firefox) can have problems reading it after the file has been appended
  * to form data. To overcome this, we recreate the file object using native File constructor with
  * a type defined as a constructor argument.
  * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
  */
-export function ensureFileObjectConsistency(file) {
+function ensureFileObjectConsistency(file) {
   return new File([file], file.name, { type: file.type });
 }
