@@ -5,12 +5,12 @@
   "main": "dist/index.js",
   "module": "src/index.js",
   "files": [
-    "dist/index.js",
-    "src/index.js"
+    "dist/*",
+    "src/*"
   ],
   "scripts": {
     "test": "jest",
-    "prepublishOnly": "babel src/index.js --out-dir dist"
+    "prepublishOnly": "babel src --out-dir dist"
   },
   "husky": {
     "hooks": {
