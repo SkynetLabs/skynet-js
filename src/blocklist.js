@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
 
-export function getBlacklist(portalUrl) {
+export function getBlocklist(portalUrl) {
   throw new Error("Unimplemented");
 }
 
-export function updateBlacklist(portalUrl, additions, removals) {
+export function updateBlocklist(portalUrl, additions, removals) {
   throw new Error("Unimplemented");
 }

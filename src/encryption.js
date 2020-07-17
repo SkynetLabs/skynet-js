@@ -16,6 +16,6 @@ export function getSkykeyByName(portalUrl, skykeyName) {
   throw new Error("Unimplemented");
 }
 
-export function listSkykeys(portalUrl) {
+export function getSkykeys(portalUrl) {
   throw new Error("Unimplemented");
 }
