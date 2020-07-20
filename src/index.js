@@ -1,18 +1,18 @@
 export { getBlocklist, updateBlocklist } from "./blocklist.js";
 export { getPortals, updatePortals } from "./portals.js";
-export { download } from "./download.js";
+export { defaultDownloadOptions, download, getDownloadUrl, open } from "./download.js";
 export { addSkykey, createSkykey, getSkykeyById, getSkykeyByName, getSkykeys } from "./encryption.js";
 export { getStats } from "./stats.js";
-export { upload, uploadDirectory } from "./upload.js";
-export { defaultPortalUrl, open, getUrl, parseSkylink } from "./utils.js";
+export { defaultUploadOptions, upload, uploadDirectory } from "./upload.js";
+export { defaultPortalUrl, getUrl, parseSkylink } from "./utils.js";
 
 import { getBlocklist, updateBlocklist } from "./blocklist.js";
 import { getPortals, updatePortals } from "./portals.js";
-import { download } from "./download.js";
+import { download, getDownloadUrl, open } from "./download.js";
 import { addSkykey, createSkykey, getSkykeyById, getSkykeyByName, getSkykeys } from "./encryption.js";
 import { getStats } from "./stats.js";
 import { upload, uploadDirectory } from "./upload.js";
-import { defaultPortalUrl, open, getUrl, parseSkylink } from "./utils.js";
+import { defaultPortalUrl, parseSkylink } from "./utils.js";
 
 export default function SkynetClient(portalUrl = defaultPortalUrl) {
   this.getBlocklist = getBlocklist.bind(null, portalUrl);
@@ -22,6 +22,8 @@ export default function SkynetClient(portalUrl = defaultPortalUrl) {
   this.updatePortals = updatePortals.bind(null, portalUrl);
 
   this.download = download.bind(null, portalUrl);
+  this.getDownloadUrl = getDownloadUrl.bind(null, portalUrl);
+  this.open = open.bind(null, portalUrl);
 
   this.addSkykey = addSkykey.bind(null, portalUrl);
   this.createSkykey = createSkykey.bind(null, portalUrl);
@@ -35,6 +37,5 @@ export default function SkynetClient(portalUrl = defaultPortalUrl) {
   this.uploadDirectory = uploadDirectory.bind(null, portalUrl);
 
   this.open = open.bind(null, portalUrl);
-  this.getUrl = getUrl.bind(null, portalUrl);
   this.parseSkylink = parseSkylink;
 }

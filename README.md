@@ -138,10 +138,10 @@ Use the `portalUrl` to open `skylink` in a new browser tab. Browsers support ope
 
 Returns nothing.
 
-### getUrl(portalUrl, skylink, [options])
+### getDownloadUrl(portalUrl, skylink, [options])
 
 ```javascript
-import { getUrl } from "skynet-js";
+import { getDownloadUrl } from "skynet-js";
 ```
 
 Use the `portalUrl` to generate direct `skylink` url.
@@ -165,7 +165,7 @@ Currently supported string types are:
 - direct skylink string, example "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
 - sia: prefixed string, example "sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
 - sia:// prefixed string, example "sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
-- skylink from url, example "https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
+- skylink from url, for example `https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg`
 
 `skylink` (string) - String containing 46 character skylink.
 

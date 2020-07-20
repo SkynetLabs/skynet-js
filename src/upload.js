@@ -1,23 +1,32 @@
 import axios from "axios";
-import parse from "url-parse";
 
-export async function upload(portalUrl, file, options = {}) {
+import { makeUrl, options } from "./utils.js";
+
+export const defaultUploadOptions = {
+  ...options,
+  portalEndpointPath: "/skynet/skyfile",
+  portalFileFieldname: "file",
+  portalDirectoryFileFieldname: "files[]",
+  // TODO:
+  // customFilename: "",
+};
+
+export async function upload(portalUrl, file, customOptions = {}) {
+  const opts = { ...defaultUploadOptions, ...customOptions };
+
   const formData = new FormData();
+  formData.append(opts.portalFileFieldname, ensureFileObjectConsistency(file));
 
-  formData.append("file", ensureFileObjectConsistency(file));
-
-  const parsed = parse(portalUrl);
-
-  parsed.set("pathname", "/skynet/skyfile");
+  const url = makeUrl(portalUrl, opts.portalEndpointPath);
 
   const { data } = await axios.post(
-    parsed.toString(),
+    url,
     formData,
-    options.onUploadProgress && {
+    opts.onUploadProgress && {
       onUploadProgress: ({ loaded, total }) => {
         const progress = loaded / total;
 
-        options.onUploadProgress(progress, { loaded, total });
+        opts.onUploadProgress(progress, { loaded, total });
       },
     }
   );
@@ -25,26 +34,24 @@ export async function upload(portalUrl, file, options = {}) {
   return data;
 }
 
-export async function uploadDirectory(portalUrl, directory, filename, options = {}) {
-  const formData = new FormData();
+export async function uploadDirectory(portalUrl, directory, filename, customOptions = {}) {
+  const opts = { ...defaultUploadOptions, ...customOptions };
 
+  const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {
-    formData.append("files[]", ensureFileObjectConsistency(file), path);
+    formData.append(opts.portalDirectoryFileFieldname, ensureFileObjectConsistency(file), path);
   });
 
-  const parsed = parse(portalUrl);
-
-  parsed.set("pathname", "/skynet/skyfile");
-  parsed.set("query", { filename });
+  const url = makeUrl(portalUrl, opts.portalEndpointPath, { filename });
 
   const { data } = await axios.post(
-    parsed.toString(),
+    url,
     formData,
-    options.onUploadProgress && {
+    opts.onUploadProgress && {
       onUploadProgress: ({ loaded, total }) => {
         const progress = loaded / total;
 
-        options.onUploadProgress(progress, { loaded, total });
+        opts.onUploadProgress(progress, { loaded, total });
       },
     }
   );
@@ -53,10 +60,11 @@ export async function uploadDirectory(portalUrl, directory, filename, options = 
 }
 
 /**
- * Sometimes file object might have had the type property defined manually with Object.defineProperty
- * and some browsers (namely firefox) can have problems reading it after the file has been appended
- * to form data. To overcome this, we recreate the file object using native File constructor with
- * a type defined as a constructor argument.
+ * Sometimes file object might have had the type property defined manually with
+ * Object.defineProperty and some browsers (namely firefox) can have problems
+ * reading it after the file has been appended to form data. To overcome this,
+ * we recreate the file object using native File constructor with a type defined
+ * as a constructor argument.
  * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
  */
 function ensureFileObjectConsistency(file) {

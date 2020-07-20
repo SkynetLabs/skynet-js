@@ -1,5 +1,5 @@
 import axios from "axios";
-import { upload, uploadDirectory } from "../src/index";
+import { defaultUploadOptions, upload, uploadDirectory } from "../src/index";
 
 jest.mock("axios");
 
@@ -16,7 +16,7 @@ describe("upload", () => {
   });
 
   it("should send post request with FormData", () => {
-    upload(portalUrl, file);
+    upload(portalUrl, file, defaultUploadOptions);
 
     expect(axios.post).toHaveBeenCalledWith(`${portalUrl}/skynet/skyfile`, expect.any(FormData), undefined);
   });
@@ -50,7 +50,7 @@ describe("uploadDirectory", () => {
   });
 
   it("should send post request with FormData", () => {
-    uploadDirectory(portalUrl, directory, filename);
+    uploadDirectory(portalUrl, directory, filename, defaultUploadOptions);
 
     expect(axios.post).toHaveBeenCalledWith(
       `${portalUrl}/skynet/skyfile?filename=${filename}`,

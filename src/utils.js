@@ -2,22 +2,27 @@ import parse from "url-parse";
 
 export const defaultPortalUrl = "https://siasky.net";
 
-export function open(portalUrl, skylink) {
-  const url = getUrl(portalUrl, parseSkylink(skylink));
+export const options = {
+  portalEndpointPath: "",
+  // TODO:
+  // customUserAgent: "",
+};
 
-  window.open(url, "_blank");
+export function makeUrl(portalUrl, endpointPath, query = {}) {
+  const parsed = parse(portalUrl);
+  parsed.set("pathname", endpointPath);
+  parsed.set("query", query);
+  return parsed.toString();
 }
 
-export function getUrl(portalUrl, skylink, options = {}) {
-  const parsed = parse(portalUrl);
-
-  parsed.set("pathname", parseSkylink(skylink));
-
-  if (options.download) {
-    parsed.set("query", { attachment: true });
-  }
-
-  return parsed.toString();
+export function makeUrlWithSkylink(portalUrl, endpointPath, skylink, query = {}) {
+  skylink = parseSkylink(skylink);
+  // Right-trim any forward slashes from endpoint path.
+  endpointPath = endpointPath.replace(/\/+$/g, "");
+  // Left-trim any forward slashes from skylink.
+  skylink = skylink.replace(/^\/+/g, "");
+  endpointPath = `${endpointPath}/${skylink}`;
+  return makeUrl(portalUrl, endpointPath, query);
 }
 
 const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";

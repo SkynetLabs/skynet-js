@@ -25,5 +25,5 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: yarn
       - run: yarn prettier --check .
-      - run: yarn eslint src
+      - run: yarn eslint src tests
       - run: yarn test
