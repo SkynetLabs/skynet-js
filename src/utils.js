@@ -1,5 +1,7 @@
 import parse from "url-parse";
 
+export const defaultPortalUrl = "https://siasky.net";
+
 export function open(portalUrl, skylink) {
   const url = getUrl(portalUrl, parseSkylink(skylink));
 
