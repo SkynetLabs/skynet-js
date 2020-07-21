@@ -4,7 +4,7 @@ export { defaultDownloadOptions, download, getDownloadUrl, open } from "./downlo
 export { addSkykey, createSkykey, getSkykeyById, getSkykeyByName, getSkykeys } from "./encryption.js";
 export { getStats } from "./stats.js";
 export { defaultUploadOptions, upload, uploadDirectory } from "./upload.js";
-export { defaultPortalUrl, getUrl, parseSkylink } from "./utils.js";
+export { defaultPortalUrl, getRelativeFilePath, parseSkylink } from "./utils.js";
 
 import { getBlocklist, updateBlocklist } from "./blocklist.js";
 import { getPortals, updatePortals } from "./portals.js";

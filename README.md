@@ -48,7 +48,7 @@ const onUploadProgress = (progress, { loaded, total }) => {
 try {
   const { skylink } = await upload(portalUrl, file, { onUploadProgress });
 } catch (error) {
-  // handle error
+  console.log(error);
 }
 ```
 
@@ -73,38 +73,20 @@ Returns a promise that resolves with a `{ skylink }` or throws `error` on failur
 #### Browser example
 
 ```javascript
-import path from "path-browserify";
-
-const getFilePath = (file) => file.webkitRelativePath || file.path || file.name;
-
-const getRelativeFilePath = (file) => {
-  const filePath = getFilePath(file);
-  const { root, dir, base } = path.parse(filePath);
-  const relative = path.normalize(dir).slice(root.length).split(path.sep).slice(1);
-
-  return path.join(...relative, base);
-};
-
-const getRootDirectory = (file) => {
-  const filePath = getFilePath(file);
-  const { root, dir } = path.parse(filePath);
-
-  return path.normalize(dir).slice(root.length).split(path.sep)[0];
-};
+import { getRelativeFilePath } from "skynet-js";
 
 const onUploadProgress = (progress, { loaded, total }) => {
   console.info(`Progress ${Math.round(progress * 100)}%`);
 };
 
 try {
-  const filename = getRootDirectory(files[0]);
   const directory = files.reduce((acc, file) => {
     const path = getRelativeFilePath(file);
 
     return { ...acc, [path]: file };
   }, {});
 
-  const { skylink } = await uploadDirectory(portalUrl, directory, filename, { onUploadProgress });
+  const { skylink } = await uploadDirectory(portalUrl, directory, { onUploadProgress });
 } catch (error) {
   // handle error
 }

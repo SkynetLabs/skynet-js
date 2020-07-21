@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { makeUrl, options } from "./utils.js";
+import { getRootDirectory, makeUrl, options } from "./utils.js";
 
 export const defaultUploadOptions = {
   ...options,
@@ -9,6 +9,7 @@ export const defaultUploadOptions = {
   portalDirectoryFileFieldname: "files[]",
   // TODO:
   // customFilename: "",
+  customDirname: "",
 };
 
 export async function upload(portalUrl, file, customOptions = {}) {
@@ -34,13 +35,22 @@ export async function upload(portalUrl, file, customOptions = {}) {
   return data;
 }
 
-export async function uploadDirectory(portalUrl, directory, filename, customOptions = {}) {
+export async function uploadDirectory(portalUrl, directory, customOptions = {}) {
   const opts = { ...defaultUploadOptions, ...customOptions };
 
   const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {
     formData.append(opts.portalDirectoryFileFieldname, ensureFileObjectConsistency(file), path);
   });
+
+  var filename;
+  if (opts.customDirname != "") {
+    filename = opts.customDirname;
+  }
+  else {
+    var file; for (file in directory) break;
+    filename = getRootDirectory(directory[file]);
+  }
 
   const url = makeUrl(portalUrl, opts.portalEndpointPath, { filename });
 

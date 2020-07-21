@@ -1,3 +1,4 @@
+import path from "path-browserify";
 import parse from "url-parse";
 
 export const defaultPortalUrl = "https://siasky.net";
@@ -7,6 +8,25 @@ export const options = {
   // TODO:
   // customUserAgent: "",
 };
+
+function getFilePath(file) {
+  return file.webkitRelativePath || file.path || file.name;
+}
+
+export function getRelativeFilePath(file) {
+  const filePath = getFilePath(file);
+  const { root, dir, base } = path.parse(filePath);
+  const relative = path.normalize(dir).slice(root.length).split(path.sep).slice(1);
+
+  return path.join(...relative, base);
+}
+
+export function getRootDirectory(file) {
+  const filePath = getFilePath(file);
+  const { root, dir } = path.parse(filePath);
+
+  return path.normalize(dir).slice(root.length).split(path.sep)[0];
+}
 
 export function makeUrl(portalUrl, endpointPath, query = {}) {
   const parsed = parse(portalUrl);
