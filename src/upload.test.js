@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { defaultUploadOptions, getRelativeFilePath, getRootDirectory, upload, uploadDirectory } from "../src/index";
+import { defaultUploadOptions, upload, uploadDirectory } from "./index";
 
 jest.mock("axios");
 

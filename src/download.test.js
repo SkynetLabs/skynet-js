@@ -1,4 +1,4 @@
-import { defaultDownloadOptions, defaultPortalUrl, download, getDownloadUrl, open } from "../src/index";
+import { defaultDownloadOptions, defaultPortalUrl, download, getDownloadUrl, open } from "./index";
 
 const portalUrl = defaultPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
