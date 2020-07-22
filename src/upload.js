@@ -1,15 +1,14 @@
 import axios from "axios";
 
-import { getRootDirectory, makeUrl, options } from "./utils.js";
+import { makeUrl, defaultOptions } from "./utils.js";
 
 export const defaultUploadOptions = {
-  ...options,
-  portalEndpointPath: "/skynet/skyfile",
+  ...defaultOptions,
+  endpointPath: "/skynet/skyfile",
   portalFileFieldname: "file",
   portalDirectoryFileFieldname: "files[]",
   // TODO:
   // customFilename: "",
-  customDirname: "",
 };
 
 export async function upload(portalUrl, file, customOptions = {}) {
@@ -18,7 +17,7 @@ export async function upload(portalUrl, file, customOptions = {}) {
   const formData = new FormData();
   formData.append(opts.portalFileFieldname, ensureFileObjectConsistency(file));
 
-  const url = makeUrl(portalUrl, opts.portalEndpointPath);
+  const url = makeUrl(portalUrl, opts.endpointPath);
 
   const { data } = await axios.post(
     url,
@@ -35,7 +34,16 @@ export async function upload(portalUrl, file, customOptions = {}) {
   return data;
 }
 
-export async function uploadDirectory(portalUrl, directory, customOptions = {}) {
+/**
+ * Uploads a local directory to Skynet.
+ * @param {string} portalUrl - The URL of the portal to use.
+ * @param {Object} directory - File objects to upload, indexed by their path strings.
+ * @param {string} filename - The name of the directory.
+ * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param {string} [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
+ * @param {string} [customOptions.portalDirectoryfilefieldname="files[]"] - The fieldName for directory files on the portal.
+ */
+export async function uploadDirectory(portalUrl, directory, filename, customOptions = {}) {
   const opts = { ...defaultUploadOptions, ...customOptions };
 
   const formData = new FormData();
@@ -43,16 +51,7 @@ export async function uploadDirectory(portalUrl, directory, customOptions = {}) 
     formData.append(opts.portalDirectoryFileFieldname, ensureFileObjectConsistency(file), path);
   });
 
-  var filename;
-  if (opts.customDirname != "") {
-    filename = opts.customDirname;
-  }
-  else {
-    var file; for (file in directory) break;
-    filename = getRootDirectory(directory[file]);
-  }
-
-  const url = makeUrl(portalUrl, opts.portalEndpointPath, { filename });
+  const url = makeUrl(portalUrl, opts.endpointPath, { filename });
 
   const { data } = await axios.post(
     url,

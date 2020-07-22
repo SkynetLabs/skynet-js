@@ -73,11 +73,15 @@ Returns a promise that resolves with a `{ skylink }` or throws `error` on failur
 #### Browser example
 
 ```javascript
-import { getRelativeFilePath } from "skynet-js";
+import { getRelativeFilePath, getRootDirectory, uploadDirectory } from "skynet-js";
 
-const onUploadProgress = (progress, { loaded, total }) => {
-  console.info(`Progress ${Math.round(progress * 100)}%`);
-};
+// Assume we have a list of files from an input form.
+const filename = getRootDirectory(files[0]);
+const directory = files.reduce((acc, file) => {
+  const path = getRelativeFilePath(file);
+
+  return { ...acc, [path]: file };
+}, {});
 
 try {
   const directory = files.reduce((acc, file) => {
@@ -86,9 +90,9 @@ try {
     return { ...acc, [path]: file };
   }, {});
 
-  const { skylink } = await uploadDirectory(portalUrl, directory, { onUploadProgress });
+  const { skylink } = await uploadDirectory(portalUrl, directory, filename);
 } catch (error) {
-  // handle error
+  console.log(error);
 }
 ```
 
@@ -144,10 +148,10 @@ Use the `parseSkylink` to extract skylink from a string.
 
 Currently supported string types are:
 
-- direct skylink string, example "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
-- sia: prefixed string, example "sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
-- sia:// prefixed string, example "sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
-- skylink from url, for example `https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg`
+- direct skylink string, for example `"XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
+- `sia:` prefixed string, for example `"sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
+- `sia://` prefixed string, for example `"sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
+- skylink from url, for example `"https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
 
 `skylink` (string) - String containing 46 character skylink.
 

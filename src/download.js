@@ -1,14 +1,12 @@
-import { makeUrlWithSkylink, options } from "./utils.js";
+import { makeUrlWithSkylink, defaultOptions } from "./utils.js";
 
 export const defaultDownloadOptions = {
-  ...options,
-  portalEndpointPath: "/",
+  ...defaultOptions,
+  endpointPath: "/",
 };
 
 export function download(portalUrl, skylink, customOptions = {}) {
-  const opts = { ...defaultDownloadOptions, ...customOptions };
-  opts.download = true;
-
+  const opts = { ...defaultDownloadOptions, ...customOptions, download: true };
   const url = getDownloadUrl(portalUrl, skylink, opts);
 
   window.open(url, "_blank");
@@ -16,20 +14,14 @@ export function download(portalUrl, skylink, customOptions = {}) {
 
 export function getDownloadUrl(portalUrl, skylink, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...customOptions };
+  const query = opts.download ? { attachment: true } : {};
 
-  let query = {};
-  if (customOptions.download) {
-    query = { attachment: true };
-  }
-  const url = makeUrlWithSkylink(portalUrl, opts.portalEndpointPath, skylink, query);
-
-  return url;
+  return makeUrlWithSkylink(portalUrl, opts.endpointPath, skylink, query);
 }
 
 export function open(portalUrl, skylink, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...customOptions };
-
-  const url = makeUrlWithSkylink(portalUrl, opts.portalEndpointPath, skylink);
+  const url = makeUrlWithSkylink(portalUrl, opts.endpointPath, skylink);
 
   window.open(url, "_blank");
 }
