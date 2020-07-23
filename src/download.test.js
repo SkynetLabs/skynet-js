@@ -1,6 +1,6 @@
-import { getUrl, open, parseSkylink } from "../src/index";
+import { defaultDownloadOptions, defaultPortalUrl, download, getDownloadUrl, open } from "./index";
 
-const portalUrl = "https://siasky.net";
+const portalUrl = defaultPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const validSkylinkVariations = [
   skylink,
@@ -11,15 +11,30 @@ const validSkylinkVariations = [
   `${portalUrl}/${skylink}?foo=bar`,
 ];
 
-describe("getUrl", () => {
-  it("should return correctly formed url", () => {
+describe("download", () => {
+  it("should call window.open with a download url with attachment set", () => {
+    const windowOpen = jest.spyOn(window, "open").mockImplementation();
+
     validSkylinkVariations.forEach((input) => {
-      expect(getUrl(portalUrl, input)).toEqual(`${portalUrl}/${skylink}`);
+      windowOpen.mockReset();
+
+      download(portalUrl, input, defaultDownloadOptions);
+
+      expect(windowOpen).toHaveBeenCalledTimes(1);
+      expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}?attachment=true`, "_blank");
+    });
+  });
+});
+
+describe("getDownloadUrl", () => {
+  it("should return correctly formed download URL", () => {
+    validSkylinkVariations.forEach((input) => {
+      expect(getDownloadUrl(portalUrl, input)).toEqual(`${portalUrl}/${skylink}`);
     });
   });
 
   it("should return correctly formed url with forced download", () => {
-    const url = getUrl(portalUrl, skylink, { download: true });
+    const url = getDownloadUrl(portalUrl, skylink, { download: true });
 
     expect(url).toEqual(`${portalUrl}/${skylink}?attachment=true`);
   });
@@ -37,19 +52,5 @@ describe("open", () => {
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
     });
-  });
-});
-
-describe("parseSkylink", () => {
-  it("should correctly parse skylink out of different strings", () => {
-    validSkylinkVariations.forEach((input) => {
-      expect(parseSkylink(input)).toEqual(skylink);
-    });
-  });
-
-  it("should throw on invalid skylink", () => {
-    expect(() => parseSkylink()).toThrowError("Could not extract skylink from ''");
-    expect(() => parseSkylink(123)).toThrowError("Skylink has to be a string, number provided");
-    expect(() => parseSkylink("123")).toThrowError("Could not extract skylink from '123'");
   });
 });

@@ -1,50 +1,32 @@
 import axios from "axios";
-import parse from "url-parse";
 
-export async function upload(portalUrl, file, options = {}) {
+import { makeUrl, defaultOptions } from "./utils.js";
+
+export const defaultUploadOptions = {
+  ...defaultOptions,
+  endpointPath: "/skynet/skyfile",
+  portalFileFieldname: "file",
+  portalDirectoryFileFieldname: "files[]",
+  // TODO:
+  // customFilename: "",
+};
+
+export async function upload(portalUrl, file, customOptions = {}) {
+  const opts = { ...defaultUploadOptions, ...customOptions };
+
   const formData = new FormData();
+  formData.append(opts.portalFileFieldname, ensureFileObjectConsistency(file));
 
-  formData.append("file", ensureFileObjectConsistency(file));
-
-  const parsed = parse(portalUrl);
-
-  parsed.set("pathname", "/skynet/skyfile");
+  const url = makeUrl(portalUrl, opts.endpointPath);
 
   const { data } = await axios.post(
-    parsed.toString(),
+    url,
     formData,
-    options.onUploadProgress && {
+    opts.onUploadProgress && {
       onUploadProgress: ({ loaded, total }) => {
         const progress = loaded / total;
 
-        options.onUploadProgress(progress, { loaded, total });
-      },
-    }
-  );
-
-  return data;
-}
-
-export async function uploadDirectory(portalUrl, directory, filename, options = {}) {
-  const formData = new FormData();
-
-  Object.entries(directory).forEach(([path, file]) => {
-    formData.append("files[]", ensureFileObjectConsistency(file), path);
-  });
-
-  const parsed = parse(portalUrl);
-
-  parsed.set("pathname", "/skynet/skyfile");
-  parsed.set("query", { filename });
-
-  const { data } = await axios.post(
-    parsed.toString(),
-    formData,
-    options.onUploadProgress && {
-      onUploadProgress: ({ loaded, total }) => {
-        const progress = loaded / total;
-
-        options.onUploadProgress(progress, { loaded, total });
+        opts.onUploadProgress(progress, { loaded, total });
       },
     }
   );
@@ -53,10 +35,45 @@ export async function uploadDirectory(portalUrl, directory, filename, options = 
 }
 
 /**
- * Sometimes file object might have had the type property defined manually with Object.defineProperty
- * and some browsers (namely firefox) can have problems reading it after the file has been appended
- * to form data. To overcome this, we recreate the file object using native File constructor with
- * a type defined as a constructor argument.
+ * Uploads a local directory to Skynet.
+ * @param {string} portalUrl - The URL of the portal to use.
+ * @param {Object} directory - File objects to upload, indexed by their path strings.
+ * @param {string} filename - The name of the directory.
+ * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param {string} [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
+ * @param {string} [customOptions.portalDirectoryfilefieldname="files[]"] - The fieldName for directory files on the portal.
+ */
+export async function uploadDirectory(portalUrl, directory, filename, customOptions = {}) {
+  const opts = { ...defaultUploadOptions, ...customOptions };
+
+  const formData = new FormData();
+  Object.entries(directory).forEach(([path, file]) => {
+    formData.append(opts.portalDirectoryFileFieldname, ensureFileObjectConsistency(file), path);
+  });
+
+  const url = makeUrl(portalUrl, opts.endpointPath, { filename });
+
+  const { data } = await axios.post(
+    url,
+    formData,
+    opts.onUploadProgress && {
+      onUploadProgress: ({ loaded, total }) => {
+        const progress = loaded / total;
+
+        opts.onUploadProgress(progress, { loaded, total });
+      },
+    }
+  );
+
+  return data;
+}
+
+/**
+ * Sometimes file object might have had the type property defined manually with
+ * Object.defineProperty and some browsers (namely firefox) can have problems
+ * reading it after the file has been appended to form data. To overcome this,
+ * we recreate the file object using native File constructor with a type defined
+ * as a constructor argument.
  * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
  */
 function ensureFileObjectConsistency(file) {

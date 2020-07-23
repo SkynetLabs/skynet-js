@@ -1,23 +1,45 @@
+import path from "path-browserify";
 import parse from "url-parse";
 
 export const defaultPortalUrl = "https://siasky.net";
 
-export function open(portalUrl, skylink) {
-  const url = getUrl(portalUrl, parseSkylink(skylink));
+export const defaultOptions = {
+  endpointPath: "",
+  // TODO:
+  // customUserAgent: "",
+};
 
-  window.open(url, "_blank");
+function getFilePath(file) {
+  return file.webkitRelativePath || file.path || file.name;
 }
 
-export function getUrl(portalUrl, skylink, options = {}) {
+export function getRelativeFilePath(file) {
+  const filePath = getFilePath(file);
+  const { root, dir, base } = path.parse(filePath);
+  const relative = path.normalize(dir).slice(root.length).split(path.sep).slice(1);
+
+  return path.join(...relative, base);
+}
+
+export function getRootDirectory(file) {
+  const filePath = getFilePath(file);
+  const { root, dir } = path.parse(filePath);
+
+  return path.normalize(dir).slice(root.length).split(path.sep)[0];
+}
+
+export function makeUrl(portalUrl, pathname, query = {}) {
   const parsed = parse(portalUrl);
 
-  parsed.set("pathname", parseSkylink(skylink));
-
-  if (options.download) {
-    parsed.set("query", { attachment: true });
-  }
-
+  parsed.set("pathname", pathname);
+  parsed.set("query", query);
   return parsed.toString();
+}
+
+export function makeUrlWithSkylink(portalUrl, endpointPath, skylink, query = {}) {
+  const parsedSkylink = parseSkylink(skylink);
+
+  return makeUrl(portalUrl, path.posix.join(endpointPath, parsedSkylink), query);
 }
 
 const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";

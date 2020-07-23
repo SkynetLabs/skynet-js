@@ -48,7 +48,7 @@ const onUploadProgress = (progress, { loaded, total }) => {
 try {
   const { skylink } = await upload(portalUrl, file, { onUploadProgress });
 } catch (error) {
-  // handle error
+  console.log(error);
 }
 ```
 
@@ -73,40 +73,26 @@ Returns a promise that resolves with a `{ skylink }` or throws `error` on failur
 #### Browser example
 
 ```javascript
-import path from "path-browserify";
+import { getRelativeFilePath, getRootDirectory, uploadDirectory } from "skynet-js";
 
-const getFilePath = (file) => file.webkitRelativePath || file.path || file.name;
+// Assume we have a list of files from an input form.
+const filename = getRootDirectory(files[0]);
+const directory = files.reduce((acc, file) => {
+  const path = getRelativeFilePath(file);
 
-const getRelativeFilePath = (file) => {
-  const filePath = getFilePath(file);
-  const { root, dir, base } = path.parse(filePath);
-  const relative = path.normalize(dir).slice(root.length).split(path.sep).slice(1);
-
-  return path.join(...relative, base);
-};
-
-const getRootDirectory = (file) => {
-  const filePath = getFilePath(file);
-  const { root, dir } = path.parse(filePath);
-
-  return path.normalize(dir).slice(root.length).split(path.sep)[0];
-};
-
-const onUploadProgress = (progress, { loaded, total }) => {
-  console.info(`Progress ${Math.round(progress * 100)}%`);
-};
+  return { ...acc, [path]: file };
+}, {});
 
 try {
-  const filename = getRootDirectory(files[0]);
   const directory = files.reduce((acc, file) => {
     const path = getRelativeFilePath(file);
 
     return { ...acc, [path]: file };
   }, {});
 
-  const { skylink } = await uploadDirectory(portalUrl, directory, filename, { onUploadProgress });
+  const { skylink } = await uploadDirectory(portalUrl, directory, filename);
 } catch (error) {
-  // handle error
+  console.log(error);
 }
 ```
 
@@ -138,10 +124,10 @@ Use the `portalUrl` to open `skylink` in a new browser tab. Browsers support ope
 
 Returns nothing.
 
-### getUrl(portalUrl, skylink, [options])
+### getDownloadUrl(portalUrl, skylink, [options])
 
 ```javascript
-import { getUrl } from "skynet-js";
+import { getDownloadUrl } from "skynet-js";
 ```
 
 Use the `portalUrl` to generate direct `skylink` url.
@@ -162,10 +148,10 @@ Use the `parseSkylink` to extract skylink from a string.
 
 Currently supported string types are:
 
-- direct skylink string, example "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
-- sia: prefixed string, example "sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
-- sia:// prefixed string, example "sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
-- skylink from url, example "https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"
+- direct skylink string, for example `"XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
+- `sia:` prefixed string, for example `"sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
+- `sia://` prefixed string, for example `"sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
+- skylink from url, for example `"https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg"`
 
 `skylink` (string) - String containing 46 character skylink.
 
