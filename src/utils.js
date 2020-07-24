@@ -1,3 +1,4 @@
+// import axios from "axios";
 import path from "path-browserify";
 import parse from "url-parse";
 
@@ -6,8 +7,28 @@ export const defaultPortalUrl = "https://siasky.net";
 export const defaultOptions = {
   endpointPath: "",
   // TODO:
+  // APIKey: "",
   // customUserAgent: "",
 };
+
+// TODO: Use this to simplify creating requests. Needs to be tested.
+// export function executeRequest(portalUrl, method, opts, query, data = {}) {
+//   const url = makeUrl(portalUrl, opts.endpointPath, query);
+
+//   return axios({
+//     method: method,
+//     url: url,
+//     data: data,
+//     auth: opts.APIKey && {username: "", password: opts.APIKey },
+//     onUploadProgress: opts.onUploadProgress && {
+//       onUploadProgress: ({ loaded, total }) => {
+//         const progress = loaded / total;
+
+//         opts.onUploadProgress(progress, { loaded, total });
+//       },
+//     }
+//   });
+// }
 
 function getFilePath(file) {
   return file.webkitRelativePath || file.path || file.name;

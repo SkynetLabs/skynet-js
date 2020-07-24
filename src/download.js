@@ -1,6 +1,6 @@
 import { makeUrlWithSkylink, defaultOptions } from "./utils.js";
 
-export const defaultDownloadOptions = {
+const defaultDownloadOptions = {
   ...defaultOptions,
   endpointPath: "/",
 };
