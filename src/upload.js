@@ -2,8 +2,7 @@ import axios from "axios";
 import { defaultOptions, makeUrl } from "./utils.js";
 
 const defaultUploadOptions = {
-  ...defaultOptions,
-  endpointPath: "/skynet/skyfile",
+  ...defaultOptions("/skynet/skyfile"),
   portalFileFieldname: "file",
   portalDirectoryFileFieldname: "files[]",
   // TODO:

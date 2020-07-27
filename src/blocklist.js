@@ -3,11 +3,11 @@
 import { defaultOptions } from "./utils.js";
 
 const defaultGetBlocklistOptions = {
-  ...defaultOptions,
+  ...defaultOptions("/skynet/blocklist"),
 };
 
 const defaultUpdateBlocklistOptions = {
-  ...defaultOptions,
+  ...defaultOptions("/skynet/blocklist"),
 };
 
 export function getBlocklist(portalUrl, customOptions = {}) {

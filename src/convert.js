@@ -3,7 +3,7 @@
 import { defaultOptions } from "./utils.js";
 
 const defaultConvertOptions = {
-  ...defaultOptions,
+  ...defaultOptions("/skynet/skyfile"),
 };
 
 export function convert(portalUrl, srcSiaPath, destSiaPath, customOptions = {}) {

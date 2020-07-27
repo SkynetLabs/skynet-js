@@ -3,11 +3,11 @@
 import { defaultOptions } from "./utils.js";
 
 const defaultGetPortalsOptions = {
-  ...defaultOptions,
+  ...defaultOptions("/skynet/portals"),
 };
 
 const defaultUpdatePortalsOptions = {
-  ...defaultOptions,
+  ...defaultOptions("/skynet/portals"),
 };
 
 export function getPortals(portalUrl, customOptions = {}) {

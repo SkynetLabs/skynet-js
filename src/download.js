@@ -3,8 +3,7 @@
 import { makeUrlWithSkylink, defaultOptions } from "./utils.js";
 
 const defaultDownloadOptions = {
-  ...defaultOptions,
-  endpointPath: "/",
+  ...defaultOptions("/"),
 };
 
 export function download(portalUrl, skylink, customOptions = {}) {

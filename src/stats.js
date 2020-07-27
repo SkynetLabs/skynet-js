@@ -3,7 +3,7 @@
 import { defaultOptions } from "./utils.js";
 
 const defaultGetStatsOptions = {
-  ...defaultOptions,
+  ...defaultOptions("/skynet/stats"),
 };
 
 export function getStats(portalUrl, customOptions = {}) {

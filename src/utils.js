@@ -4,12 +4,14 @@ import parse from "url-parse";
 
 export const defaultPortalUrl = "https://siasky.net";
 
-export const defaultOptions = {
-  endpointPath: "",
-  // TODO:
-  // APIKey: "",
-  // customUserAgent: "",
-};
+export function defaultOptions(endpointPath) {
+  return {
+    endpointPath: endpointPath,
+    // TODO:
+    // APIKey: "",
+    // customUserAgent: "",
+  };
+}
 
 // TODO: Use this to simplify creating requests. Needs to be tested.
 // export function executeRequest(portalUrl, method, opts, query, data = {}) {

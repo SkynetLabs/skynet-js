@@ -3,11 +3,13 @@
 import { defaultOptions } from "./utils.js";
 
 const defaultPinOptions = {
-  ...defaultOptions,
+  ...defaultOptions("/skynet/pin"),
 };
 
 const defaultUnpinOptions = {
-  ...defaultOptions,
+  ...defaultOptions(""),
+  endpointPathUnpinDir: "/renter/dir",
+  endpointPathUnpinFile: "/renter/delete",
 };
 
 export function pin(portalUrl, skylink, destSiaPath, customOptions = {}) {

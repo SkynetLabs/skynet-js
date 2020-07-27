@@ -3,7 +3,9 @@
 import { defaultOptions } from "./utils.js";
 
 const defaultLsOptions = {
-  ...defaultOptions,
+  ...defaultOptions(""),
+  endpointPathLsDir: "/renter/dir",
+  endpointPathLsFile: "/renter/file",
 };
 
 export function ls(portalUrl, customOptions = {}) {
