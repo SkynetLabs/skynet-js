@@ -16,7 +16,7 @@ export function pin(portalUrl, skylink, destSiaPath, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export function unpin(portalUrl, skylink, destSiaPath, customOptions = {}) {
+export function unpin(portalUrl, siaPath, customOptions = {}) {
   const opts = { ...defaultUnpinOptions, ...customOptions };
 
   throw new Error("Unimplemented");
