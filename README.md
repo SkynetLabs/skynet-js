@@ -100,6 +100,14 @@ try {
 
 ```javascript
 import { download } from "skynet-js";
+
+// Assume we have a skylink e.g. from a previous upload.
+
+try {
+  download(portalUrl, skylink);
+} catch (error) {
+  console.log(error);
+}
 ```
 
 Use the `portalUrl` to download `skylink` contents.

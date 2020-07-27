@@ -1,33 +1,52 @@
 import axios from "axios";
 
-import { defaultUploadOptions, upload, uploadDirectory } from "./index";
+import { upload, uploadDirectory } from "./index";
 
 jest.mock("axios");
 
 const portalUrl = "https://siasky.net";
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 
-describe("upload", () => {
-  const filename = "image.jpeg";
-  const blob = new Blob([], { type: "image/jpeg" });
-  const file = new File([blob], filename);
+describe("uploadFile", () => {
+  const filename = "bar.txt";
+  const file = new File(["foo"], filename, {
+    type: "text/plain",
+  });
 
   beforeEach(() => {
     axios.post.mockResolvedValue({ data: { skylink } });
   });
 
   it("should send post request with FormData", () => {
-    upload(portalUrl, file, defaultUploadOptions);
+    upload(portalUrl, file, {});
 
-    expect(axios.post).toHaveBeenCalledWith(`${portalUrl}/skynet/skyfile`, expect.any(FormData), undefined);
+    expect(axios.post).toHaveBeenCalledWith(
+      `${portalUrl}/skynet/skyfile`,
+      expect.any(FormData), // TODO: Inspect data contents.
+      undefined
+    );
   });
 
   it("should send register onUploadProgress callback if defined", () => {
     upload(portalUrl, file, { onUploadProgress: jest.fn() });
 
-    expect(axios.post).toHaveBeenCalledWith(`${portalUrl}/skynet/skyfile`, expect.any(FormData), {
-      onUploadProgress: expect.any(Function),
-    });
+    expect(axios.post).toHaveBeenCalledWith(
+      `${portalUrl}/skynet/skyfile`,
+      expect.any(FormData), // TODO: Inspect data contents.
+      {
+        onUploadProgress: expect.any(Function),
+      }
+    );
+  });
+
+  it("should send base-64 authentication password if provided", () => {
+    upload(portalUrl, file, { APIKey: "foobar" });
+
+    expect(axios.post).toHaveBeenCalledWith(
+      `${portalUrl}/skynet/skyfile`,
+      expect.any(FormData), // TODO: Inspect data contents.
+      undefined
+    );
   });
 
   it("should return skylink on success", async () => {
@@ -51,11 +70,11 @@ describe("uploadDirectory", () => {
   });
 
   it("should send post request with FormData", () => {
-    uploadDirectory(portalUrl, directory, filename, defaultUploadOptions);
+    uploadDirectory(portalUrl, directory, filename, {});
 
     expect(axios.post).toHaveBeenCalledWith(
       `${portalUrl}/skynet/skyfile?filename=${filename}`,
-      expect.any(FormData),
+      expect.any(FormData), // TODO: Inspect data contents.
       undefined
     );
   });

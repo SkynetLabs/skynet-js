@@ -1,8 +1,9 @@
+/* eslint-disable no-unused-vars */
+
 import { makeUrlWithSkylink, defaultOptions } from "./utils.js";
 
-export const defaultDownloadOptions = {
-  ...defaultOptions,
-  endpointPath: "/",
+const defaultDownloadOptions = {
+  ...defaultOptions("/"),
 };
 
 export function download(portalUrl, skylink, customOptions = {}) {
@@ -17,6 +18,12 @@ export function getDownloadUrl(portalUrl, skylink, customOptions = {}) {
   const query = opts.download ? { attachment: true } : {};
 
   return makeUrlWithSkylink(portalUrl, opts.endpointPath, skylink, query);
+}
+
+export function metadata(portalUrl, skylink, customOptions = {}) {
+  const opts = { ...defaultDownloadOptions, ...customOptions };
+
+  throw new Error("Unimplemented");
 }
 
 export function open(portalUrl, skylink, customOptions = {}) {
