@@ -10,13 +10,13 @@ const defaultUpdatePortalsOptions = {
   ...defaultOptions("/skynet/portals"),
 };
 
-export function getPortals(portalUrl, customOptions = {}) {
+export async function getPortals(portalUrl, customOptions = {}) {
   const opts = { ...defaultGetPortalsOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 }
 
-export function updatePortals(portalUrl, additions, removals, customOptions = {}) {
+export async function updatePortals(portalUrl, additions, removals, customOptions = {}) {
   const opts = { ...defaultUpdatePortalsOptions, ...customOptions };
 
   throw new Error("Unimplemented");

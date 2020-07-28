@@ -18,22 +18,22 @@ const defaultGetSkykeysOptions = {
   ...defaultOptions("/skynet/skykeys"),
 };
 
-export function addSkykey(portalUrl, skykey, customOptions = {}) {
+export async function addSkykey(portalUrl, skykey, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export function createSkykey(portalUrl, skykeyName, skykeyType, customOptions = {}) {
+export async function createSkykey(portalUrl, skykeyName, skykeyType, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export function getSkykeyById(portalUrl, skykeyId, customOptions = {}) {
+export async function getSkykeyById(portalUrl, skykeyId, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export function getSkykeyByName(portalUrl, skykeyName, customOptions = {}) {
+export async function getSkykeyByName(portalUrl, skykeyName, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export function getSkykeys(portalUrl, customOptions = {}) {
+export async function getSkykeys(portalUrl, customOptions = {}) {
   throw new Error("Unimplemented");
 }

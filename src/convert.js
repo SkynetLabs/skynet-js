@@ -6,7 +6,7 @@ const defaultConvertOptions = {
   ...defaultOptions("/skynet/skyfile"),
 };
 
-export function convert(portalUrl, srcSiaPath, destSiaPath, customOptions = {}) {
+export async function convert(portalUrl, srcSiaPath, destSiaPath, customOptions = {}) {
   const opts = { ...defaultConvertOptions, ...customOptions };
 
   throw new Error("Unimplemented");

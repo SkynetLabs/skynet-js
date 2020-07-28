@@ -6,7 +6,7 @@ const defaultGetStatsOptions = {
   ...defaultOptions("/skynet/stats"),
 };
 
-export function getStats(portalUrl, customOptions = {}) {
+export async function getStats(portalUrl, customOptions = {}) {
   const opts = { ...defaultGetStatsOptions, ...customOptions };
 
   throw new Error("Unimplemented");
