@@ -10,13 +10,13 @@ const defaultUpdateBlocklistOptions = {
   ...defaultOptions("/skynet/blocklist"),
 };
 
-export function getBlocklist(portalUrl, customOptions = {}) {
+export async function getBlocklist(portalUrl, customOptions = {}) {
   const opts = { ...defaultGetBlocklistOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 }
 
-export function updateBlocklist(portalUrl, additions, removals, customOptions = {}) {
+export async function updateBlocklist(portalUrl, additions, removals, customOptions = {}) {
   const opts = { ...defaultUpdateBlocklistOptions, ...customOptions };
 
   throw new Error("Unimplemented");

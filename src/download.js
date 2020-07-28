@@ -20,7 +20,7 @@ export function getDownloadUrl(portalUrl, skylink, customOptions = {}) {
   return makeUrlWithSkylink(portalUrl, opts.endpointPath, skylink, query);
 }
 
-export function metadata(portalUrl, skylink, customOptions = {}) {
+export async function metadata(portalUrl, skylink, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...customOptions };
 
   throw new Error("Unimplemented");

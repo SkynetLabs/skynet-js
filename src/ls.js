@@ -8,7 +8,7 @@ const defaultLsOptions = {
   endpointPathLsFile: "/renter/file",
 };
 
-export function ls(portalUrl, customOptions = {}) {
+export async function ls(portalUrl, customOptions = {}) {
   const opts = { ...defaultLsOptions, ...customOptions };
 
   throw new Error("Unimplemented");

@@ -12,13 +12,13 @@ const defaultUnpinOptions = {
   endpointPathUnpinFile: "/renter/delete",
 };
 
-export function pin(portalUrl, skylink, destSiaPath, customOptions = {}) {
+export async function pin(portalUrl, skylink, destSiaPath, customOptions = {}) {
   const opts = { ...defaultPinOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 }
 
-export function unpin(portalUrl, siaPath, customOptions = {}) {
+export async function unpin(portalUrl, siaPath, customOptions = {}) {
   const opts = { ...defaultUnpinOptions, ...customOptions };
 
   throw new Error("Unimplemented");
