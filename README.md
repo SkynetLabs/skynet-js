@@ -76,14 +76,9 @@ Returns a promise that resolves with a `{ skylink }` or throws `error` on failur
 import { getRelativeFilePath, getRootDirectory, uploadDirectory } from "skynet-js";
 
 // Assume we have a list of files from an input form.
-const filename = getRootDirectory(files[0]);
-const directory = files.reduce((acc, file) => {
-  const path = getRelativeFilePath(file);
-
-  return { ...acc, [path]: file };
-}, {});
 
 try {
+  const filename = getRootDirectory(files[0]);
   const directory = files.reduce((acc, file) => {
     const path = getRelativeFilePath(file);
 
