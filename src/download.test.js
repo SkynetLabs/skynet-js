@@ -1,6 +1,7 @@
-import { defaultDownloadOptions, defaultPortalUrl, download, getDownloadUrl, open } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 
-const portalUrl = defaultPortalUrl;
+const portalUrl = defaultSkynetPortalUrl;
+const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const validSkylinkVariations = [
   skylink,
@@ -18,7 +19,7 @@ describe("download", () => {
     validSkylinkVariations.forEach((input) => {
       windowOpen.mockReset();
 
-      download(portalUrl, input, defaultDownloadOptions);
+      client.download(input);
 
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}?attachment=true`, "_blank");
@@ -29,12 +30,12 @@ describe("download", () => {
 describe("getDownloadUrl", () => {
   it("should return correctly formed download URL", () => {
     validSkylinkVariations.forEach((input) => {
-      expect(getDownloadUrl(portalUrl, input)).toEqual(`${portalUrl}/${skylink}`);
+      expect(client.getDownloadUrl(input)).toEqual(`${portalUrl}/${skylink}`);
     });
   });
 
   it("should return correctly formed url with forced download", () => {
-    const url = getDownloadUrl(portalUrl, skylink, { download: true });
+    const url = client.getDownloadUrl(skylink, { download: true });
 
     expect(url).toEqual(`${portalUrl}/${skylink}?attachment=true`);
   });
@@ -47,7 +48,7 @@ describe("open", () => {
     validSkylinkVariations.forEach((input) => {
       windowOpen.mockReset();
 
-      open(portalUrl, input);
+      client.open(input);
 
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");

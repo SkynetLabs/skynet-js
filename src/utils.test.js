@@ -1,6 +1,6 @@
-import { defaultPortalUrl, makeUrl, makeUrlWithSkylink, parseSkylink } from "./utils";
+import { makeUrl, makeUrlWithSkylink, parseSkylink, defaultSkynetPortalUrl } from "./utils";
 
-const portalUrl = defaultPortalUrl;
+const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const validSkylinkVariations = [
   skylink,

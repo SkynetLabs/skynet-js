@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { defaultOptions } from "./utils.js";
+import { defaultOptions, SkynetClient } from "./utils.js";
 
 const defaultGetPortalsOptions = {
   ...defaultOptions("/skynet/portals"),
@@ -10,14 +10,14 @@ const defaultUpdatePortalsOptions = {
   ...defaultOptions("/skynet/portals"),
 };
 
-export async function getPortals(portalUrl, customOptions = {}) {
+SkynetClient.prototype.getPortal = async function (customOptions = {}) {
   const opts = { ...defaultGetPortalsOptions, ...customOptions };
 
   throw new Error("Unimplemented");
-}
+};
 
-export async function updatePortals(portalUrl, additions, removals, customOptions = {}) {
+SkynetClient.prototype.updatePortals = async function (additions, removals, customOptions = {}) {
   const opts = { ...defaultUpdatePortalsOptions, ...customOptions };
 
   throw new Error("Unimplemented");
-}
+};

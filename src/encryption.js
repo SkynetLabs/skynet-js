@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { defaultOptions } from "./utils.js";
+import { defaultOptions, SkynetClient } from "./utils.js";
 
 const defaultAddSkykeyOptions = {
   ...defaultOptions("/skynet/addskykey"),
@@ -18,22 +18,22 @@ const defaultGetSkykeysOptions = {
   ...defaultOptions("/skynet/skykeys"),
 };
 
-export async function addSkykey(portalUrl, skykey, customOptions = {}) {
+SkynetClient.prototype.addSkykey = async function (skykey, customOptions = {}) {
   throw new Error("Unimplemented");
-}
+};
 
-export async function createSkykey(portalUrl, skykeyName, skykeyType, customOptions = {}) {
+SkynetClient.prototype.createSkykey = async function (skykeyName, skykeyType, customOptions = {}) {
   throw new Error("Unimplemented");
-}
+};
 
-export async function getSkykeyById(portalUrl, skykeyId, customOptions = {}) {
+SkynetClient.prototype.getSkykeyById = async function (skykeyId, customOptions = {}) {
   throw new Error("Unimplemented");
-}
+};
 
-export async function getSkykeyByName(portalUrl, skykeyName, customOptions = {}) {
+SkynetClient.prototype.getSkykeyByName = async function (skykeyName, customOptions = {}) {
   throw new Error("Unimplemented");
-}
+};
 
-export async function getSkykeys(portalUrl, customOptions = {}) {
+SkynetClient.prototype.getSkykeys = async function getSkykeys(customOptions = {}) {
   throw new Error("Unimplemented");
-}
+};

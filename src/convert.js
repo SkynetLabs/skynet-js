@@ -1,13 +1,13 @@
 /* eslint-disable no-unused-vars */
 
-import { defaultOptions } from "./utils.js";
+import { defaultOptions, SkynetClient } from "./utils.js";
 
 const defaultConvertOptions = {
   ...defaultOptions("/skynet/skyfile"),
 };
 
-export async function convert(portalUrl, srcSiaPath, destSiaPath, customOptions = {}) {
+SkynetClient.prototype.convert = async function (srcSiaPath, destSiaPath, customOptions = {}) {
   const opts = { ...defaultConvertOptions, ...customOptions };
 
   throw new Error("Unimplemented");
-}
+};
