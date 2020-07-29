@@ -2,7 +2,12 @@
 import path from "path-browserify";
 import parse from "url-parse";
 
-export const defaultPortalUrl = "https://siasky.net";
+export const defaultSkynetPortalUrl = "https://siasky.net";
+
+export function defaultPortalUrl() {
+  var url = new URL(window.location.href);
+  return url.href.substring(0, url.href.indexOf(url.pathname));
+}
 
 export function defaultOptions(endpointPath) {
   return {

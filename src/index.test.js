@@ -1,16 +1,16 @@
-import SkynetClient from "./index";
+import { SkynetClient } from "./index";
 
 describe("SkynetClient", () => {
   it("should contain all api methods", () => {
-    const skynetClient = new SkynetClient();
+    const client = new SkynetClient();
 
-    expect(skynetClient).toHaveProperty("download");
-    expect(skynetClient).toHaveProperty("getDownloadUrl");
-    expect(skynetClient).toHaveProperty("open");
+    // Download
+    expect(client).toHaveProperty("download");
+    expect(client).toHaveProperty("getDownloadUrl");
+    expect(client).toHaveProperty("open");
 
-    expect(skynetClient).toHaveProperty("upload");
-    expect(skynetClient).toHaveProperty("uploadDirectory");
-
-    expect(skynetClient).toHaveProperty("parseSkylink");
+    // Upload
+    expect(client).toHaveProperty("upload");
+    expect(client).toHaveProperty("uploadDirectory");
   });
 });

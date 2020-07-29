@@ -1,10 +1,11 @@
 import axios from "axios";
 
-import { upload, uploadDirectory } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 
 jest.mock("axios");
 
-const portalUrl = "https://siasky.net";
+const portalUrl = defaultSkynetPortalUrl;
+const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 
 describe("uploadFile", () => {
@@ -18,7 +19,7 @@ describe("uploadFile", () => {
   });
 
   it("should send post request with FormData", () => {
-    upload(portalUrl, file, {});
+    client.upload(file, {});
 
     expect(axios.post).toHaveBeenCalledWith(
       `${portalUrl}/skynet/skyfile`,
@@ -28,10 +29,12 @@ describe("uploadFile", () => {
   });
 
   it("should send register onUploadProgress callback if defined", () => {
-    upload(portalUrl, file, { onUploadProgress: jest.fn() });
+    const newPortal = "https://my-portal.net";
+    const client = new SkynetClient(newPortal);
+    client.upload(file, { onUploadProgress: jest.fn() });
 
     expect(axios.post).toHaveBeenCalledWith(
-      `${portalUrl}/skynet/skyfile`,
+      `${newPortal}/skynet/skyfile`,
       expect.any(FormData), // TODO: Inspect data contents.
       {
         onUploadProgress: expect.any(Function),
@@ -40,7 +43,7 @@ describe("uploadFile", () => {
   });
 
   it("should send base-64 authentication password if provided", () => {
-    upload(portalUrl, file, { APIKey: "foobar" });
+    client.upload(file, { APIKey: "foobar" });
 
     expect(axios.post).toHaveBeenCalledWith(
       `${portalUrl}/skynet/skyfile`,
@@ -50,7 +53,7 @@ describe("uploadFile", () => {
   });
 
   it("should return skylink on success", async () => {
-    const data = await upload(portalUrl, file);
+    const data = await client.upload(file);
 
     expect(data).toEqual({ skylink });
   });
@@ -70,7 +73,7 @@ describe("uploadDirectory", () => {
   });
 
   it("should send post request with FormData", () => {
-    uploadDirectory(portalUrl, directory, filename, {});
+    client.uploadDirectory(directory, filename);
 
     expect(axios.post).toHaveBeenCalledWith(
       `${portalUrl}/skynet/skyfile?filename=${filename}`,
@@ -80,7 +83,7 @@ describe("uploadDirectory", () => {
   });
 
   it("should send register onUploadProgress callback if defined", () => {
-    uploadDirectory(portalUrl, directory, filename, { onUploadProgress: jest.fn() });
+    client.uploadDirectory(directory, filename, { onUploadProgress: jest.fn() });
 
     expect(axios.post).toHaveBeenCalledWith(`${portalUrl}/skynet/skyfile?filename=${filename}`, expect.any(FormData), {
       onUploadProgress: expect.any(Function),
@@ -88,7 +91,7 @@ describe("uploadDirectory", () => {
   });
 
   it("should return single skylink on success", async () => {
-    const data = await uploadDirectory(portalUrl, directory, filename);
+    const data = await client.uploadDirectory(directory, filename);
 
     expect(data).toEqual({ skylink });
   });

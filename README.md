@@ -22,45 +22,69 @@ yarn add skynet-js
 - Run `yarn`
 - Run `yarn test` to run the tests
 
-## Docs: using standalone function
+## Docs
 
-### async upload(portalUrl, file, [options])
+### Using SkynetClient
+
+Client implements all the standalone functions as methods with bound `portalUrl` so you don't need to repeat it every time.
+
+`portalUrl` (string) - Optional portal url. If not specified, will try to use the current portal that the sky app is running inside of.
 
 ```javascript
-import { upload } from "skynet-js";
+import { SkynetClient } from "skynet-js";
+
+const client = new SkynetClient("https://siasky.net");
 ```
 
-Use the `portalUrl` to upload `file` contents.
+Calling `SkynetClient` without parameters will use the URL of the current portal that is running the skapp (sky app).
 
-`portalUrl` (string) - The string portal url.
+### async upload(file, [options])
+
+Use the client to upload `file` contents.
 
 `file` (File) - The file to upload.
+
+`options.APIKey` (string) - Optional API key password for authentication.
 
 `options.onUploadProgress` (function) - Optional callback to track progress.
 
 Returns a promise that resolves with a `{ skylink }` or throws `error` on failure.
 
 ```javascript
+import { SkynetClient } from "skynet-js";
+
 const onUploadProgress = (progress, { loaded, total }) => {
   console.info(`Progress ${Math.round(progress * 100)}%`);
 };
 
-try {
-  const { skylink } = await upload(portalUrl, file, { onUploadProgress });
-} catch (error) {
-  console.log(error);
+async function uploadExample() {
+  try {
+    const client = new SkynetClient();
+    const { skylink } = await client.upload(file, { onUploadProgress });
+  } catch (error) {
+    console.log(error);
+  }
 }
 ```
 
-### async uploadDirectory(portalUrl, directory, filename, [options])
+With authentication:
 
 ```javascript
-import { uploadDirectory } from "skynet-js";
+import { SkynetClient } from "skynet-js";
+
+async function authenticationExample() {
+  try {
+    const client = new SkynetClient("https://my-portal.net");
+    const { skylink } = await client.upload(file, { APIKey: "foobar" });
+  } catch (error) {
+    console.log(error);
+  }
+}
 ```
 
-Use the `portalUrl` to upload `directory` contents as a `filename`.
+### async uploadDirectory(directory, filename, [options])
 
-`portalUrl` (string) - The string portal url.
+Use the client to upload `directory` contents as a `filename`.
 
 `directory` (Object) - Directory map `{ "file1.jpeg": <File>, "subdirectory/file2.jpeg": <File> }`
 
@@ -73,69 +97,73 @@ Returns a promise that resolves with a `{ skylink }` or throws `error` on failur
 #### Browser example
 
 ```javascript
-import { getRelativeFilePath, getRootDirectory, uploadDirectory } from "skynet-js";
+import { getRelativeFilePath, getRootDirectory, SkynetClient } from "skynet-js";
 
 // Assume we have a list of files from an input form.
 
-try {
-  const filename = getRootDirectory(files[0]);
-  const directory = files.reduce((acc, file) => {
-    const path = getRelativeFilePath(file);
+async function uploadDirectoryExample() {
+  try {
+    // Get the directory name from the list of files.
+    // Can also be named manually, i.e. if you build the files yourself
+    // instead of getting them from an input form.
+    const filename = getRootDirectory(files[0]);
 
-    return { ...acc, [path]: file };
-  }, {});
+    // Use reduce to build the map of files indexed by filepaths
+    // (relative from the directory).
+    const directory = files.reduce((accumulator, file) => {
+      const path = getRelativeFilePath(file);
 
-  const { skylink } = await uploadDirectory(portalUrl, directory, filename);
-} catch (error) {
-  console.log(error);
+      return { ...accumulator, [path]: file };
+    }, {});
+
+    const client = new SkynetClient();
+    const { skylink } = await client.uploadDirectory(directory, filename);
+  } catch (error) {
+    console.log(error);
+  }
 }
 ```
 
-### download(portalUrl, skylink)
+### download(skylink)
 
 ```javascript
-import { download } from "skynet-js";
+import { SkynetClient } from "skynet-js";
 
 // Assume we have a skylink e.g. from a previous upload.
 
 try {
-  download(portalUrl, skylink);
+  const client = new SkynetClient();
+  client.download(skylink);
 } catch (error) {
   console.log(error);
 }
 ```
 
-Use the `portalUrl` to download `skylink` contents.
-
-`portalUrl` (string) - The string portal url.
+Use the client to download `skylink` contents.
 
 `skylink` (string) - 46 character skylink.
 
 Returns nothing.
 
-### open(portalUrl, skylink)
+### open(skylink)
 
 ```javascript
-import { open } from "skynet-js";
+import { SkynetClient } from "skynet-js";
 ```
 
-Use the `portalUrl` to open `skylink` in a new browser tab. Browsers support opening natively only limited file extensions like .html or .jpg and will fallback to downloading the file.
-
-`portalUrl` (string) - The string portal url.
+Use the client to open `skylink` in a new browser tab. Browsers support opening natively only limited file extensions like .html or .jpg and will fallback to downloading the file.
 
 `skylink` (string) - 46 character skylink.
 
 Returns nothing.
 
-### getDownloadUrl(portalUrl, skylink, [options])
+### getDownloadUrl(skylink, [options])
 
 ```javascript
-import { getDownloadUrl } from "skynet-js";
+import { SkynetClient } from "skynet-js";
 ```
 
-Use the `portalUrl` to generate direct `skylink` url.
-
-`portalUrl` (string) - The string portal url.
+Use the client to generate direct `skylink` url.
 
 `skylink` (string) - 46 character skylink.
 
@@ -159,13 +187,3 @@ Currently supported string types are:
 `skylink` (string) - String containing 46 character skylink.
 
 Returns extracted skylink string or throws error.
-
-## Docs: using SkynetClient
-
-```javascript
-import SkynetClient from "skynet-js";
-
-const client = new SkynetClient("https://siasky.net");
-```
-
-Client implements all the standalone functions as methods with bound `portalUrl` so you don't need to repeat it every time.
