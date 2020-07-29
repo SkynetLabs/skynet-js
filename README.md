@@ -70,11 +70,12 @@ async function uploadExample() {
 With authentication:
 
 ```javascript
-import { upload } from "skynet-js";
+import { SkynetClient } from "skynet-js";
 
 async function authenticationExample() {
   try {
-    const { skylink } = await upload("https://my-portal.net", file, { APIKey: "foobar" });
+    const client = new SkynetClient("https://my-portal.net");
+    const { skylink } = await client.upload(file, { APIKey: "foobar" });
   } catch (error) {
     console.log(error);
   }
@@ -132,7 +133,7 @@ import { SkynetClient } from "skynet-js";
 
 try {
   const client = new SkynetClient();
-  download(skylink);
+  client.download(skylink);
 } catch (error) {
   console.log(error);
 }
