@@ -26,8 +26,6 @@ yarn add skynet-js
 
 ### Using SkynetClient
 
-Client implements all the standalone functions as methods with bound `portalUrl` so you don't need to repeat it every time.
-
 `portalUrl` (string) - Optional portal url. If not specified, will try to use the current portal that the sky app is running inside of.
 
 ```javascript
@@ -53,13 +51,13 @@ Returns a promise that resolves with a `{ skylink }` or throws `error` on failur
 ```javascript
 import { SkynetClient } from "skynet-js";
 
+const client = new SkynetClient("https://siasky.net");
 const onUploadProgress = (progress, { loaded, total }) => {
   console.info(`Progress ${Math.round(progress * 100)}%`);
 };
 
 async function uploadExample() {
   try {
-    const client = new SkynetClient();
     const { skylink } = await client.upload(file, { onUploadProgress });
   } catch (error) {
     console.log(error);
@@ -72,9 +70,10 @@ With authentication:
 ```javascript
 import { SkynetClient } from "skynet-js";
 
+const client = new SkynetClient("https://siasky.net");
+
 async function authenticationExample() {
   try {
-    const client = new SkynetClient("https://my-portal.net");
     const { skylink } = await client.upload(file, { APIKey: "foobar" });
   } catch (error) {
     console.log(error);
@@ -99,6 +98,8 @@ Returns a promise that resolves with a `{ skylink }` or throws `error` on failur
 ```javascript
 import { getRelativeFilePath, getRootDirectory, SkynetClient } from "skynet-js";
 
+const client = new SkynetClient("https://siasky.net");
+
 // Assume we have a list of files from an input form.
 
 async function uploadDirectoryExample() {
@@ -116,7 +117,6 @@ async function uploadDirectoryExample() {
       return { ...accumulator, [path]: file };
     }, {});
 
-    const client = new SkynetClient();
     const { skylink } = await client.uploadDirectory(directory, filename);
   } catch (error) {
     console.log(error);
@@ -129,10 +129,11 @@ async function uploadDirectoryExample() {
 ```javascript
 import { SkynetClient } from "skynet-js";
 
+const client = new SkynetClient("https://siasky.net");
+
 // Assume we have a skylink e.g. from a previous upload.
 
 try {
-  const client = new SkynetClient();
   client.download(skylink);
 } catch (error) {
   console.log(error);
