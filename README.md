@@ -26,8 +26,6 @@ yarn add skynet-js
 
 ### Using SkynetClient
 
-Client implements all the standalone functions as methods with bound `portalUrl` so you don't need to repeat it every time.
-
 `portalUrl` (string) - Optional portal url. If not specified, will try to use the current portal that the sky app is running inside of.
 
 ```javascript
