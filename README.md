@@ -44,6 +44,8 @@ Use the client to upload `file` contents.
 
 `file` (File) - The file to upload.
 
+`options.APIKey` (string) - Optional API key password for authentication.
+
 `options.onUploadProgress` (function) - Optional callback to track progress.
 
 Returns a promise that resolves with a `{ skylink }` or throws `error` on failure.
@@ -59,6 +61,20 @@ async function uploadExample() {
   try {
     const client = new SkynetClient();
     const { skylink } = await client.upload(file, { onUploadProgress });
+  } catch (error) {
+    console.log(error);
+  }
+}
+```
+
+With authentication:
+
+```javascript
+import { upload } from "skynet-js";
+
+async function authenticationExample() {
+  try {
+    const { skylink } = await upload("https://my-portal.net", file, { APIKey: "foobar" });
   } catch (error) {
     console.log(error);
   }

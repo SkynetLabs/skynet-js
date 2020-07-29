@@ -73,7 +73,7 @@ describe("uploadDirectory", () => {
   });
 
   it("should send post request with FormData", () => {
-    client.uploadDirectory(directory, filename, {});
+    client.uploadDirectory(directory, filename);
 
     expect(axios.post).toHaveBeenCalledWith(
       `${portalUrl}/skynet/skyfile?filename=${filename}`,
