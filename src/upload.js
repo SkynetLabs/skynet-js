@@ -1,7 +1,7 @@
 import axios from "axios";
 
 import { SkynetClient } from "./client.js";
-import { defaultOptions, makeUrl } from "./utils.js";
+import { addUrlQuery, defaultOptions, makeUrl } from "./utils.js";
 
 const defaultUploadOptions = {
   ...defaultOptions("/skynet/skyfile"),
@@ -50,7 +50,8 @@ SkynetClient.prototype.uploadDirectory = async function (directory, filename, cu
     formData.append(opts.portalDirectoryFileFieldname, ensureFileObjectConsistency(file), path);
   });
 
-  const url = makeUrl(this.portalUrl, opts.endpointPath, { filename });
+  let url = makeUrl(this.portalUrl, opts.endpointPath);
+  url = addUrlQuery(url, { filename });
 
   const { data } = await axios.post(
     url,

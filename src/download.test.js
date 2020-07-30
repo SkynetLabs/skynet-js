@@ -1,6 +1,11 @@
+import axios from "axios";
+
 import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 
+jest.mock("axios");
+
 const portalUrl = defaultSkynetPortalUrl;
+const hnsLink = "doesn";
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const validSkylinkVariations = [
@@ -11,6 +16,7 @@ const validSkylinkVariations = [
   `${portalUrl}/${skylink}/foo/bar`,
   `${portalUrl}/${skylink}?foo=bar`,
 ];
+const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 
 describe("download", () => {
   it("should call window.open with a download url with attachment set", () => {
@@ -53,5 +59,29 @@ describe("open", () => {
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
     });
+  });
+});
+
+describe("openHns", () => {
+  beforeEach(() => {
+    const body = { skylink: skylink };
+    axios.get.mockResolvedValue({ data: body });
+  });
+
+  it("should call axios.get with the portal and hns link", async () => {
+    const windowOpen = jest.spyOn(window, "open").mockImplementation();
+
+    let i = 1;
+    for (const input of validHnsLinkVariations) {
+      await client.openHns(input);
+
+      expect(axios.get).toHaveBeenCalledTimes(i);
+      expect(axios.get).toHaveBeenCalledWith(`${portalUrl}/hns/${hnsLink}`);
+
+      expect(windowOpen).toHaveBeenCalledTimes(i);
+      expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
+
+      i++;
+    }
   });
 });

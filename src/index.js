@@ -10,4 +10,7 @@ export {
   getRelativeFilePath,
   getRootDirectory,
   parseSkylink,
+  uriHandshakePrefix,
+  uriHandshakeResolverPrefix,
+  uriSkynetPrefix,
 } from "./utils.js";
