@@ -72,8 +72,7 @@ SkynetClient.prototype.openHns = async function (domain, customOptions = {}) {
   domain = trimUriPrefix(domain, uriHandshakePrefix);
 
   // Get the skylink from the hns domain on the portal.
-  const url = makeUrl(this.portalUrl, opts.endpointPath, domain);
-  const response = await axios.get(url);
+  const response = await this.executeRequest({ ...opts, method: "get", extraPath: domain });
   const skylink = response.data.skylink;
 
   this.open(skylink, customOptions);

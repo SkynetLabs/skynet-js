@@ -13,14 +13,14 @@ export async function compareFormData(formData, entries) {
 
     // Read the file asynchronously.
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       // Check that the file contents equal expected entry.
       expect(e.target.result).toEqual(entries[i][1]);
     };
     reader.readAsText(file);
     while (reader.readyState != "2") {
       // Sleep for 10ms.
-      await new Promise(r => setTimeout(r, 10)); // eslint-disable-line
+      await new Promise((r) => setTimeout(r, 10)); // eslint-disable-line
     }
 
     i++;

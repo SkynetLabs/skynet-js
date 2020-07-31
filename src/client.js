@@ -16,23 +16,24 @@ export class SkynetClient {
    * @param {string} config.method - HTTP method to use.
    * @param {Object} [config.data=null] - Data to send in a POST.
    * @param {Object} [config.query={}] - Query parameters to include in the URl.
-   * @param {Object} [config.customOpts={}] - Additional settings that can optionally be set.
-   * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+   * @param {string} [config.extraPath=""] - Extra path element to append to the URL.
+   * @param {string} [config.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
    */
   executeRequest(config) {
-    const opts = config.customOpts;
-    let url = makeUrl(this.portalUrl, opts.endpointPath, config.path ?? "");
+    let url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
     url = addUrlQuery(url, config.query);
 
     return axios({
       url: url,
       method: config.method,
       data: config.data,
-      auth: opts.APIKey && { username: "", password: opts.APIKey },
-      onUploadProgress: opts.onUploadProgress && function ({ loaded, total }) {
+      auth: config.APIKey && { username: "", password: config.APIKey },
+      onUploadProgress:
+        config.onUploadProgress &&
+        function ({ loaded, total }) {
           const progress = loaded / total;
 
-          opts.onUploadProgress(progress, { loaded, total });
+          config.onUploadProgress(progress, { loaded, total });
         },
     });
   }

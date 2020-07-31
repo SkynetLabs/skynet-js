@@ -1,8 +1,9 @@
 import axios from "axios";
+import MockAdapter from "axios-mock-adapter";
 
 import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 
-jest.mock("axios");
+const mock = new MockAdapter(axios);
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "doesn";
@@ -63,9 +64,10 @@ describe("open", () => {
 });
 
 describe("openHns", () => {
+  const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
+
   beforeEach(() => {
-    const body = { skylink: skylink };
-    axios.get.mockResolvedValue({ data: body });
+    mock.onGet(hnsUrl).reply(200, { skylink: skylink });
   });
 
   it("should call axios.get with the portal and hns link", async () => {
@@ -75,13 +77,14 @@ describe("openHns", () => {
     for (const input of validHnsLinkVariations) {
       await client.openHns(input);
 
-      expect(axios.get).toHaveBeenCalledTimes(i);
-      expect(axios.get).toHaveBeenCalledWith(`${portalUrl}/hns/${hnsLink}`);
+      expect(mock.history.get.length).toBe(i);
 
       expect(windowOpen).toHaveBeenCalledTimes(i);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
 
       i++;
     }
+
+    mock.resetHistory();
   });
 });
