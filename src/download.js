@@ -25,11 +25,11 @@ SkynetClient.prototype.download = function (skylink, customOptions = {}) {
   window.open(url, "_blank");
 };
 
-SkynetClient.prototype.downloadHns = async function (hns, customOptions = {}) {
+SkynetClient.prototype.downloadHns = async function (domain, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...customOptions };
 };
 
-SkynetClient.prototype.downloadHnsres = async function (hnsres, customOptions = {}) {
+SkynetClient.prototype.downloadHnsres = async function (domain, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...customOptions };
 };
 
@@ -37,9 +37,8 @@ SkynetClient.prototype.getDownloadUrl = function (skylink, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
-  let url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink));
-  url = addUrlQuery(url, query);
-  return url;
+  const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink));
+  return addUrlQuery(url, query);
 };
 
 SkynetClient.prototype.metadata = async function (skylink, customOptions = {}) {
@@ -61,19 +60,19 @@ SkynetClient.prototype.open = function (skylink, customOptions = {}) {
   window.open(url, "_blank");
 };
 
-SkynetClient.prototype.openHns = async function (hns, customOptions = {}) {
+SkynetClient.prototype.openHns = async function (domain, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...customOptions };
 
-  hns = trimUriPrefix(hns, uriHandshakePrefix);
+  domain = trimUriPrefix(domain, uriHandshakePrefix);
 
   // Get the skylink from the hns domain on the portal.
-  const url = makeUrl(this.portalUrl, opts.endpointPath, hns);
+  const url = makeUrl(this.portalUrl, opts.endpointPath, domain);
   const response = await axios.get(url);
   const skylink = response.data.skylink;
 
   this.open(skylink, customOptions);
 };
 
-SkynetClient.prototype.openHnsres = async function (hnsres, customOptions = {}) {
+SkynetClient.prototype.openHnsres = async function (domain, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...customOptions };
 };

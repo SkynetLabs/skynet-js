@@ -106,11 +106,11 @@ export function parseSkylink(skylink) {
 
 export function trimUriPrefix(str, prefix) {
   const longPrefix = `${prefix}//`;
-  if (str.indexOf(longPrefix) == 0) {
+  if (str.startsWith(longPrefix)) {
     // longPrefix is exactly at the beginning
     return str.slice(longPrefix.length);
   }
-  if (str.indexOf(prefix) == 0) {
+  if (str.startsWith(prefix)) {
     // else prefix is exactly at the beginning
     return str.slice(prefix.length);
   }
