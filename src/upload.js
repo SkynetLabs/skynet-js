@@ -15,21 +15,14 @@ SkynetClient.prototype.upload = async function (file, customOptions = {}) {
   const opts = { ...defaultUploadOptions, ...customOptions };
 
   const formData = new FormData();
-  formData.append(opts.portalFileFieldname, ensureFileObjectConsistency(file));
+  file = ensureFileObjectConsistency(file);
+  formData.append(opts.portalFileFieldname, file);
 
-  const url = makeUrl(this.portalUrl, opts.endpointPath);
-
-  const { data } = await axios.post(
-    url,
-    formData,
-    opts.onUploadProgress && {
-      onUploadProgress: ({ loaded, total }) => {
-        const progress = loaded / total;
-
-        opts.onUploadProgress(progress, { loaded, total });
-      },
-    }
-  );
+  const { data } = await this.executeRequest({
+    method: "post",
+    data: formData,
+    customOpts: opts,
+  });
 
   return data;
 };

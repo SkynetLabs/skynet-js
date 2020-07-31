@@ -60,6 +60,12 @@ SkynetClient.prototype.open = function (skylink, customOptions = {}) {
   window.open(url, "_blank");
 };
 
+/**
+ * Opens the content at the skylink from the given Handshake domain within the browser.
+ * @param {string} hns - Handshake domain.
+ * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ */
 SkynetClient.prototype.openHns = async function (domain, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...customOptions };
 
