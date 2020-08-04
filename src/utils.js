@@ -23,9 +23,9 @@ export function defaultPortalUrl() {
 export function defaultOptions(endpointPath) {
   return {
     endpointPath: endpointPath,
-    // TODO:
-    // APIKey: "",
-    // customUserAgent: "",
+
+    APIKey: "",
+    customUserAgent: "",
   };
 }
 

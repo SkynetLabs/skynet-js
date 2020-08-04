@@ -5,8 +5,7 @@ const defaultUploadOptions = {
   ...defaultOptions("/skynet/skyfile"),
   portalFileFieldname: "file",
   portalDirectoryFileFieldname: "files[]",
-  // TODO:
-  // customFilename: "",
+  customFilename: "",
 };
 
 SkynetClient.prototype.upload = async function (file, customOptions = {}) {
@@ -14,7 +13,8 @@ SkynetClient.prototype.upload = async function (file, customOptions = {}) {
 
   const formData = new FormData();
   file = ensureFileObjectConsistency(file);
-  formData.append(opts.portalFileFieldname, file);
+  const options = opts.customFilename ? { filename: opts.customFilename } : {};
+  formData.append(opts.portalFileFieldname, file, options);
 
   const { data } = await this.executeRequest({
     ...opts,

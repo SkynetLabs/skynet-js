@@ -70,10 +70,9 @@ With authentication:
 ```javascript
 import { SkynetClient } from "skynet-js";
 
-const client = new SkynetClient("https://siasky.net");
-
 async function authenticationExample() {
   try {
+    const client = new SkynetClient("https://siasky.net");
     const { skylink } = await client.upload(file, { APIKey: "foobar" });
   } catch (error) {
     console.log(error);

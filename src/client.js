@@ -27,6 +27,7 @@ export class SkynetClient {
       url: url,
       method: config.method,
       data: config.data,
+      headers: config.customUserAgent && { "User-Agent": config.customUserAgent },
       auth: config.APIKey && { username: "", password: config.APIKey },
       onUploadProgress:
         config.onUploadProgress &&

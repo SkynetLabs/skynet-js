@@ -65,10 +65,24 @@ describe("uploadFile", () => {
 
     expect(data).toEqual({ skylink });
   });
+
+  it("should send custom user agent if defined", async () => {
+    const data = await client.upload(file, { customUserAgent: "Sia-Agent" });
+
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+    mock.resetHistory();
+
+    expect(request.headers["User-Agent"]).toEqual("Sia-Agent");
+    // Check that other headers weren't altered.
+    expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
+    await compareFormData(request.data, [["file", "foo"]]);
+
+    expect(data).toEqual({ skylink });
+  });
 });
 
 describe("uploadDirectory", () => {
-  // const blob = new Blob([], { type: "image/jpeg" });
   const filename = "i-am-root";
   const directory = {
     "i-am-not/file1.jpeg": new File(["foo1"], "i-am-not/file1.jpeg"),
