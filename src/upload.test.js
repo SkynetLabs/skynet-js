@@ -28,7 +28,7 @@ describe("uploadFile", () => {
     const request = mock.history.post[0];
     mock.resetHistory();
 
-    await compareFormData(request.data, [["file", "foo"]]);
+    await compareFormData(request.data, [["file", "foo", filename]]);
 
     expect(data).toEqual({ skylink });
   });
@@ -48,7 +48,19 @@ describe("uploadFile", () => {
     mock.resetHistory();
 
     expect(request.onUploadProgress).toEqual(expect.any(Function));
-    await compareFormData(request.data, [["file", "foo"]]);
+    await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual({ skylink });
+  });
+
+  it("should use custom filename if provided", async () => {
+    const data = await client.upload(file, { customFilename: "testname" });
+
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+    mock.resetHistory();
+
+    await compareFormData(request.data, [["file", "foo", "testname"]]);
 
     expect(data).toEqual({ skylink });
   });
@@ -61,7 +73,7 @@ describe("uploadFile", () => {
     mock.resetHistory();
 
     expect(request.auth).toEqual({ username: "", password: "foobar" });
-    await compareFormData(request.data, [["file", "foo"]]);
+    await compareFormData(request.data, [["file", "foo", filename]]);
 
     expect(data).toEqual({ skylink });
   });
@@ -76,7 +88,7 @@ describe("uploadFile", () => {
     expect(request.headers["User-Agent"]).toEqual("Sia-Agent");
     // Check that other headers weren't altered.
     expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
-    await compareFormData(request.data, [["file", "foo"]]);
+    await compareFormData(request.data, [["file", "foo", filename]]);
 
     expect(data).toEqual({ skylink });
   });
@@ -103,9 +115,9 @@ describe("uploadDirectory", () => {
     mock.resetHistory();
 
     await compareFormData(request.data, [
-      ["files[]", "foo1"],
-      ["files[]", "foo2"],
-      ["files[]", "foo3"],
+      ["files[]", "foo1", "i-am-not/file1.jpeg"],
+      ["files[]", "foo2", "i-am-not/file2.jpeg"],
+      ["files[]", "foo3", "i-am-not/me-neither/file3.jpeg"],
     ]);
 
     expect(data).toEqual({ skylink });

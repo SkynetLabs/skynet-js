@@ -5,26 +5,31 @@
  */
 export async function compareFormData(formData, entries) {
   let i = 0;
-  for (const pair of formData.entries()) {
-    const fieldName = pair[0];
-    const file = pair[1];
+  for (const [fieldName, file] of formData.entries()) {
+    const entry = entries[i];
+    const expectedFieldName = entry[0];
+    const expectedData = entry[1];
+    const expectedFilename = entry[2];
 
-    expect(fieldName).toEqual(entries[i][0]);
+    expect(fieldName).toEqual(expectedFieldName);
+    // Some systems use ":" as the path delimiter.
+    expect(file.name == expectedFilename || file.name.replace(":", "/") == expectedFilename);
 
     // Read the file asynchronously.
     const reader = new FileReader();
     reader.onload = function (e) {
       // Check that the file contents equal expected entry.
-      expect(e.target.result).toEqual(entries[i][1]);
+      expect(e.target.result).toEqual(expectedData);
     };
     reader.readAsText(file);
     while (reader.readyState != "2") {
-      // Sleep for 10ms.
+      // Sleep for 10ms while we wait for the readyState to be DONE.
       await new Promise((r) => setTimeout(r, 10)); // eslint-disable-line
     }
 
     i++;
   }
 
+  // Check that the formData contains the expected number of entries.
   expect(i).toEqual(entries.length);
 }

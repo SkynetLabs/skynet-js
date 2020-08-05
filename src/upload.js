@@ -13,8 +13,8 @@ SkynetClient.prototype.upload = async function (file, customOptions = {}) {
 
   const formData = new FormData();
   file = ensureFileObjectConsistency(file);
-  const options = opts.customFilename ? { filename: opts.customFilename } : {};
-  formData.append(opts.portalFileFieldname, file, options);
+  const filename = opts.customFilename ? opts.customFilename : "";
+  formData.append(opts.portalFileFieldname, file, filename);
 
   const { data } = await this.executeRequest({
     ...opts,
@@ -38,7 +38,8 @@ SkynetClient.prototype.uploadDirectory = async function (directory, filename, cu
 
   const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {
-    formData.append(opts.portalDirectoryFileFieldname, ensureFileObjectConsistency(file), path);
+    file = ensureFileObjectConsistency(file);
+    formData.append(opts.portalDirectoryFileFieldname, file, path);
   });
 
   const { data } = await this.executeRequest({
