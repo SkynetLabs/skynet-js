@@ -22,131 +22,15 @@ yarn add skynet-js
 - Run `yarn`
 - Run `yarn test` to run the tests
 
-## Docs
+## Documentation
 
-### Using SkynetClient
+For documentation complete with examples, please see [the Skynet SDK docs](https://nebulouslabs.github.io/skynet-docs/?javascript--browser#introduction).
 
-`portalUrl` (string) - Optional portal url. If not specified, will try to use the current portal that the sky app is running inside of.
+### Browser Utility Functions
 
-```javascript
-import { SkynetClient } from "skynet-js";
+The following are functions provided by `skynet-js` that only make sense in the browser, and are not covered in the more general SDK docs linked above.
 
-const client = new SkynetClient("https://siasky.net");
-```
-
-Calling `SkynetClient` without parameters will use the URL of the current portal that is running the skapp (sky app).
-
-### async upload(file, [options])
-
-Use the client to upload `file` contents.
-
-`file` (File) - The file to upload.
-
-`options.APIKey` (string) - Optional API key password for authentication.
-
-`options.onUploadProgress` (function) - Optional callback to track progress.
-
-Returns a promise that resolves with a `{ skylink }` or throws `error` on failure.
-
-```javascript
-import { SkynetClient } from "skynet-js";
-
-const client = new SkynetClient("https://siasky.net");
-const onUploadProgress = (progress, { loaded, total }) => {
-  console.info(`Progress ${Math.round(progress * 100)}%`);
-};
-
-async function uploadExample() {
-  try {
-    const { skylink } = await client.upload(file, { onUploadProgress });
-  } catch (error) {
-    console.log(error);
-  }
-}
-```
-
-With authentication:
-
-```javascript
-import { SkynetClient } from "skynet-js";
-
-const client = new SkynetClient("https://siasky.net");
-
-async function authenticationExample() {
-  try {
-    const { skylink } = await client.upload(file, { APIKey: "foobar" });
-  } catch (error) {
-    console.log(error);
-  }
-}
-```
-
-### async uploadDirectory(directory, filename, [options])
-
-Use the client to upload `directory` contents as a `filename`.
-
-`directory` (Object) - Directory map `{ "file1.jpeg": <File>, "subdirectory/file2.jpeg": <File> }`
-
-`filename` (string) - Output file name (directory name).
-
-`options.onUploadProgress` (function) - Optional callback to track progress.
-
-Returns a promise that resolves with a `{ skylink }` or throws `error` on failure.
-
-#### Browser example
-
-```javascript
-import { getRelativeFilePath, getRootDirectory, SkynetClient } from "skynet-js";
-
-const client = new SkynetClient("https://siasky.net");
-
-// Assume we have a list of files from an input form.
-
-async function uploadDirectoryExample() {
-  try {
-    // Get the directory name from the list of files.
-    // Can also be named manually, i.e. if you build the files yourself
-    // instead of getting them from an input form.
-    const filename = getRootDirectory(files[0]);
-
-    // Use reduce to build the map of files indexed by filepaths
-    // (relative from the directory).
-    const directory = files.reduce((accumulator, file) => {
-      const path = getRelativeFilePath(file);
-
-      return { ...accumulator, [path]: file };
-    }, {});
-
-    const { skylink } = await client.uploadDirectory(directory, filename);
-  } catch (error) {
-    console.log(error);
-  }
-}
-```
-
-### download(skylink)
-
-```javascript
-import { SkynetClient } from "skynet-js";
-
-const client = new SkynetClient("https://siasky.net");
-
-// Assume we have a skylink e.g. from a previous upload.
-
-try {
-  client.download(skylink);
-} catch (error) {
-  console.log(error);
-}
-```
-
-Use the client to download `skylink` contents.
-
-`skylink` (string) - 46 character skylink.
-
-Returns nothing.
-
-### open(skylink)
+#### open(skylink)
 
 ```javascript
 import { SkynetClient } from "skynet-js";
@@ -158,7 +42,7 @@ Use the client to open `skylink` in a new browser tab. Browsers support opening 
 
 Returns nothing.
 
-### getDownloadUrl(skylink, [options])
+#### getDownloadUrl(skylink, [options])
 
 ```javascript
 import { SkynetClient } from "skynet-js";
@@ -170,7 +54,7 @@ Use the client to generate direct `skylink` url.
 
 `options.download` (boolean) - Option to include download directive in the url that will force a download when used. Defaults to `false`.
 
-### parseSkylink(skylink)
+#### parseSkylink(skylink)
 
 ```javascript
 import { parseSkylink } from "skynet-js";
