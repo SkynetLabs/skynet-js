@@ -51,6 +51,7 @@ export function getRootDirectory(file) {
 /**
  * Properly joins paths together to create a URL. Takes a variable number of
  * arguments.
+ * @returns {string} url - The URL.
  */
 export function makeUrl() {
   let args = Array.from(arguments);

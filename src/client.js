@@ -3,6 +3,11 @@ import axios from "axios";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils.js";
 
 export class SkynetClient {
+  /**
+   * The Skynet Client which can be used to access Skynet.
+   * @constructor
+   * @param {string} [portalUrl=null] - The portal URL to use to access Skynet, if specified.
+   */
   constructor(portalUrl = null) {
     if (portalUrl === null) {
       portalUrl = defaultPortalUrl();
@@ -19,8 +24,8 @@ export class SkynetClient {
    * @param {Object} [config.data=null] - Data to send in a POST.
    * @param {string} [config.endpointPath=""] - The relative URL path of the portal endpoint to contact.
    * @param {string} [config.extraPath=""] - Extra path element to append to the URL.
-   * @param {Object} [config.query={}] - Query parameters to include in the URl.
    * @param {Function} [config.onUploadProgress] - Optional callback to track progress.
+   * @param {Object} [config.query={}] - Query parameters to include in the URl.
    */
   executeRequest(config) {
     let url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
