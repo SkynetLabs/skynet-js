@@ -7,7 +7,7 @@ const defaultGetStatsOptions = {
 };
 
 SkynetClient.prototype.getStats = async function (customOptions = {}) {
-  const opts = { ...defaultGetStatsOptions, ...customOptions };
+  const opts = { ...defaultGetStatsOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };

@@ -11,13 +11,13 @@ const defaultUpdatePortalsOptions = {
 };
 
 SkynetClient.prototype.getPortal = async function (customOptions = {}) {
-  const opts = { ...defaultGetPortalsOptions, ...customOptions };
+  const opts = { ...defaultGetPortalsOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };
 
 SkynetClient.prototype.updatePortals = async function (additions, removals, customOptions = {}) {
-  const opts = { ...defaultUpdatePortalsOptions, ...customOptions };
+  const opts = { ...defaultUpdatePortalsOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };

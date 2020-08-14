@@ -6,10 +6,10 @@ export class SkynetClient {
   /**
    * The Skynet Client which can be used to access Skynet.
    * @constructor
-   * @param {string} [portalUrl=null] - The portal URL to use to access Skynet, if specified.
+   * @param {string} [portalUrl="https://siasky.net"] - The portal URL to use to access Skynet, if specified.
    */
-  constructor(portalUrl = null) {
-    if (portalUrl === null) {
+  constructor(portalUrl = "") {
+    if (portalUrl === "") {
       portalUrl = defaultPortalUrl();
     }
     this.portalUrl = portalUrl;
@@ -45,5 +45,13 @@ export class SkynetClient {
           config.onUploadProgress(progress, { loaded, total });
         },
     });
+  }
+
+  /**
+   * Sets the custom options for this client.
+   * @param {Object} customOptions - Configuration for the client. See docs for executeRequest for the full list of options.
+   */
+  setCustomOptions(customOptions) {
+    this.customOptions = customOptions;
   }
 }

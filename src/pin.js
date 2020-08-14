@@ -13,13 +13,13 @@ const defaultUnpinOptions = {
 };
 
 SkynetClient.prototype.pin = async function (skylink, destSiaPath, customOptions = {}) {
-  const opts = { ...defaultPinOptions, ...customOptions };
+  const opts = { ...defaultPinOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };
 
 SkynetClient.prototype.unpin = async function (siaPath, customOptions = {}) {
-  const opts = { ...defaultUnpinOptions, ...customOptions };
+  const opts = { ...defaultUnpinOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };

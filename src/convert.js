@@ -7,7 +7,7 @@ const defaultConvertOptions = {
 };
 
 SkynetClient.prototype.convert = async function (srcSiaPath, destSiaPath, customOptions = {}) {
-  const opts = { ...defaultConvertOptions, ...customOptions };
+  const opts = { ...defaultConvertOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };

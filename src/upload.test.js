@@ -79,13 +79,33 @@ describe("uploadFile", () => {
   });
 
   it("should send custom user agent if defined", async () => {
-    const data = await client.upload(file, { customUserAgent: "Sia-Agent" });
+    const client2 = new SkynetClient(portalUrl);
+    client2.setCustomOptions({ customUserAgent: "Sia-Agent" });
+
+    // Should use client's user agent.
+
+    let data = await client2.upload(file);
 
     expect(mock.history.post.length).toBe(1);
-    const request = mock.history.post[0];
+    let request = mock.history.post[0];
     mock.resetHistory();
 
     expect(request.headers["User-Agent"]).toEqual("Sia-Agent");
+    // Check that other headers weren't altered.
+    expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
+    await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual({ skylink });
+
+    // Should use user agent set in options to function.
+
+    data = await client2.upload(file, { customUserAgent: "Sia-Agent-2" });
+
+    expect(mock.history.post.length).toBe(1);
+    request = mock.history.post[0];
+    mock.resetHistory();
+
+    expect(request.headers["User-Agent"]).toEqual("Sia-Agent-2");
     // Check that other headers weren't altered.
     expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);

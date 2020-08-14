@@ -11,13 +11,13 @@ const defaultUpdateBlocklistOptions = {
 };
 
 SkynetClient.prototype.getBlocklist = async function (customOptions = {}) {
-  const opts = { ...defaultGetBlocklistOptions, ...customOptions };
+  const opts = { ...defaultGetBlocklistOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };
 
 SkynetClient.prototype.updateBlocklist = async function (additions, removals, customOptions = {}) {
-  const opts = { ...defaultUpdateBlocklistOptions, ...customOptions };
+  const opts = { ...defaultUpdateBlocklistOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };

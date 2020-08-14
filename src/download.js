@@ -19,22 +19,22 @@ const defaultDownloadHnsOptions = {
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  */
 SkynetClient.prototype.download = function (skylink, customOptions = {}) {
-  const opts = { ...defaultDownloadOptions, ...customOptions, download: true };
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getDownloadUrl(skylink, opts);
 
   window.open(url, "_blank");
 };
 
 SkynetClient.prototype.downloadHns = async function (domain, customOptions = {}) {
-  const opts = { ...defaultDownloadHnsOptions, ...customOptions };
+  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 };
 
 SkynetClient.prototype.downloadHnsres = async function (domain, customOptions = {}) {
-  const opts = { ...defaultDownloadHnsOptions, ...customOptions };
+  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 };
 
 SkynetClient.prototype.getDownloadUrl = function (skylink, customOptions = {}) {
-  const opts = { ...defaultDownloadOptions, ...customOptions };
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
   const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink));
@@ -42,7 +42,7 @@ SkynetClient.prototype.getDownloadUrl = function (skylink, customOptions = {}) {
 };
 
 SkynetClient.prototype.metadata = async function (skylink, customOptions = {}) {
-  const opts = { ...defaultDownloadOptions, ...customOptions };
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };
@@ -54,7 +54,7 @@ SkynetClient.prototype.metadata = async function (skylink, customOptions = {}) {
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  */
 SkynetClient.prototype.open = function (skylink, customOptions = {}) {
-  const opts = { ...defaultDownloadOptions, ...customOptions };
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink));
 
   window.open(url, "_blank");
@@ -67,7 +67,7 @@ SkynetClient.prototype.open = function (skylink, customOptions = {}) {
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  */
 SkynetClient.prototype.openHns = async function (domain, customOptions = {}) {
-  const opts = { ...defaultDownloadHnsOptions, ...customOptions };
+  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);
 
@@ -79,5 +79,5 @@ SkynetClient.prototype.openHns = async function (domain, customOptions = {}) {
 };
 
 SkynetClient.prototype.openHnsres = async function (domain, customOptions = {}) {
-  const opts = { ...defaultDownloadHnsOptions, ...customOptions };
+  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 };

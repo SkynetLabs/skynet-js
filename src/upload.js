@@ -9,7 +9,7 @@ const defaultUploadOptions = {
 };
 
 SkynetClient.prototype.upload = async function (file, customOptions = {}) {
-  const opts = { ...defaultUploadOptions, ...customOptions };
+  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();
   file = ensureFileObjectConsistency(file);
@@ -41,7 +41,7 @@ SkynetClient.prototype.upload = async function (file, customOptions = {}) {
  * @returns {number} data.bitfield - The bitfield that gets encoded into the skylink.
  */
 SkynetClient.prototype.uploadDirectory = async function (directory, filename, customOptions = {}) {
-  const opts = { ...defaultUploadOptions, ...customOptions };
+  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {

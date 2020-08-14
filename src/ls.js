@@ -9,7 +9,7 @@ const defaultLsOptions = {
 };
 
 SkynetClient.prototype.ls = async function (customOptions = {}) {
-  const opts = { ...defaultLsOptions, ...customOptions };
+  const opts = { ...defaultLsOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
 };
