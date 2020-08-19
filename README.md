@@ -32,20 +32,21 @@ The following are functions provided by `skynet-js` that only make sense in the 
 
 #### open(skylink)
 
-```javascript
-import { SkynetClient } from "skynet-js";
-```
-
-Use the client to open `skylink` in a new browser tab. Browsers support opening natively only limited file extensions like .html or .jpg and will fallback to downloading the file.
-
-`skylink` (string) - 46 character skylink.
-
-Returns nothing.
+You can open a skylink in a new tab instead of downloading it. See the documentation for `download`.
 
 #### getDownloadUrl(skylink, [options])
 
 ```javascript
 import { SkynetClient } from "skynet-js";
+
+const client = new SkynetClient();
+const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+
+try {
+  const url = client.getDownloadUrl(skylink);
+} catch (error) {
+  console.log(error);
+}
 ```
 
 Use the client to generate direct `skylink` url.
@@ -58,6 +59,15 @@ Use the client to generate direct `skylink` url.
 
 ```javascript
 import { parseSkylink } from "skynet-js";
+
+const client = new SkynetClient();
+const uri = "sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+
+try {
+  const skylink = parseSkylink(uri);
+} catch (error) {
+  console.log(error);
+}
 ```
 
 Use the `parseSkylink` to extract skylink from a string.
