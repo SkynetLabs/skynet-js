@@ -79,8 +79,7 @@ describe("uploadFile", () => {
   });
 
   it("should send custom user agent if defined", async () => {
-    const client2 = new SkynetClient(portalUrl);
-    client2.setCustomOptions({ customUserAgent: "Sia-Agent" });
+    const client2 = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
     // Should use client's user agent.
 
