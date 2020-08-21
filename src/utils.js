@@ -53,8 +53,7 @@ export function getRootDirectory(file) {
  * arguments.
  * @returns {string} url - The URL.
  */
-export function makeUrl() {
-  let args = Array.from(arguments);
+export function makeUrl(...args) {
   return args.reduce(function (acc, cur) {
     return urljoin(acc, cur);
   });

@@ -19,6 +19,7 @@ describe("uploadFile", () => {
 
   beforeEach(() => {
     mock.onPost(url).reply(200, { skylink: skylink });
+    mock.resetHistory();
   });
 
   it("should send formdata with file", async () => {
@@ -26,7 +27,6 @@ describe("uploadFile", () => {
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
-    mock.resetHistory();
 
     await compareFormData(request.data, [["file", "foo", filename]]);
 
@@ -45,7 +45,6 @@ describe("uploadFile", () => {
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
-    mock.resetHistory();
 
     expect(request.onUploadProgress).toEqual(expect.any(Function));
     await compareFormData(request.data, [["file", "foo", filename]]);
@@ -58,7 +57,6 @@ describe("uploadFile", () => {
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
-    mock.resetHistory();
 
     await compareFormData(request.data, [["file", "foo", "testname"]]);
 
@@ -70,7 +68,6 @@ describe("uploadFile", () => {
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
-    mock.resetHistory();
 
     expect(request.auth).toEqual({ username: "", password: "foobar" });
     await compareFormData(request.data, [["file", "foo", filename]]);
@@ -79,15 +76,12 @@ describe("uploadFile", () => {
   });
 
   it("should send custom user agent if defined", async () => {
-    const client2 = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
-    // Should use client's user agent.
-
-    let data = await client2.upload(file);
+    const data = await client.upload(file);
 
     expect(mock.history.post.length).toBe(1);
-    let request = mock.history.post[0];
-    mock.resetHistory();
+    const request = mock.history.post[0];
 
     expect(request.headers["User-Agent"]).toEqual("Sia-Agent");
     // Check that other headers weren't altered.
@@ -95,14 +89,15 @@ describe("uploadFile", () => {
     await compareFormData(request.data, [["file", "foo", filename]]);
 
     expect(data).toEqual({ skylink });
+  });
 
-    // Should use user agent set in options to function.
+  it("Should use user agent set in options to function", async () => {
+    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
-    data = await client2.upload(file, { customUserAgent: "Sia-Agent-2" });
+    const data = await client.upload(file, { customUserAgent: "Sia-Agent-2" });
 
     expect(mock.history.post.length).toBe(1);
-    request = mock.history.post[0];
-    mock.resetHistory();
+    const request = mock.history.post[0];
 
     expect(request.headers["User-Agent"]).toEqual("Sia-Agent-2");
     // Check that other headers weren't altered.
@@ -124,6 +119,7 @@ describe("uploadDirectory", () => {
 
   beforeEach(() => {
     mock.onPost(url).reply(200, { skylink: skylink });
+    mock.resetHistory();
   });
 
   it("should send formdata with files", async () => {
@@ -131,7 +127,6 @@ describe("uploadDirectory", () => {
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
-    mock.resetHistory();
 
     await compareFormData(request.data, [
       ["files[]", "foo1", "i-am-not/file1.jpeg"],
@@ -147,7 +142,6 @@ describe("uploadDirectory", () => {
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
-    mock.resetHistory();
 
     expect(request.onUploadProgress).toEqual(expect.any(Function));
 

@@ -13,7 +13,7 @@ const defaultDownloadHnsOptions = {
 };
 
 /**
- * Initiates a download of the content at the skylink within the browser.
+ * Initiates a download of the content of the skylink within the browser.
  * @param {string} skylink - 46 character skylink.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
@@ -48,7 +48,7 @@ SkynetClient.prototype.metadata = async function (skylink, customOptions = {}) {
 };
 
 /**
- * Opens the content at the skylink within the browser.
+ * Opens the content of the skylink within the browser.
  * @param {string} skylink - 46 character skylink.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
@@ -61,7 +61,7 @@ SkynetClient.prototype.open = function (skylink, customOptions = {}) {
 };
 
 /**
- * Opens the content at the skylink from the given Handshake domain within the browser.
+ * Opens the content of the skylink from the given Handshake domain within the browser.
  * @param {string} hns - Handshake domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.

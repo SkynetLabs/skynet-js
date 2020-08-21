@@ -6,7 +6,7 @@ import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 const mock = new MockAdapter(axios);
 
 const portalUrl = defaultSkynetPortalUrl;
-const hnsLink = "doesn";
+const hnsLink = "foo";
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const validSkylinkVariations = [
@@ -73,18 +73,16 @@ describe("openHns", () => {
   it("should call axios.get with the portal and hns link", async () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
-    let i = 1;
     for (const input of validHnsLinkVariations) {
+      mock.resetHistory();
+      windowOpen.mockReset();
+
       await client.openHns(input);
 
-      expect(mock.history.get.length).toBe(i);
+      expect(mock.history.get.length).toBe(1);
 
-      expect(windowOpen).toHaveBeenCalledTimes(i);
+      expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
-
-      i++;
     }
-
-    mock.resetHistory();
   });
 });

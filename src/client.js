@@ -17,10 +17,7 @@ export class SkynetClient {
    * @param {Function} [customOptions.onUploadProgress] - Optional callback to track progress.
    * @param {Object} [customOptions.query={}] - Query parameters to include in the URl.
    */
-  constructor(portalUrl = "", customOptions = {}) {
-    if (portalUrl === "") {
-      portalUrl = defaultPortalUrl();
-    }
+  constructor(portalUrl = defaultPortalUrl(), customOptions = {}) {
     this.portalUrl = portalUrl;
     this.customOptions = customOptions;
   }
