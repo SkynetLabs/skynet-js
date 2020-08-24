@@ -8,7 +8,7 @@ const defaultUploadOptions = {
   customFilename: "",
 };
 
-SkynetClient.prototype.upload = async function (file, customOptions = {}) {
+SkynetClient.prototype.uploadFile = async function (file, customOptions = {}) {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();

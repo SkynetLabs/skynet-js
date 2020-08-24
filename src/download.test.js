@@ -19,14 +19,14 @@ const validSkylinkVariations = [
 ];
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 
-describe("download", () => {
+describe("downloadFile", () => {
   it("should call window.open with a download url with attachment set", () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
     validSkylinkVariations.forEach((input) => {
       windowOpen.mockReset();
 
-      client.download(input);
+      client.downloadFile(input);
 
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}?attachment=true`, "_blank");

@@ -15,11 +15,6 @@ export function addUrlQuery(url, query) {
   return parsed.toString();
 }
 
-export function defaultPortalUrl() {
-  var url = new URL(window.location.href);
-  return url.href.substring(0, url.href.indexOf(url.pathname));
-}
-
 export function defaultOptions(endpointPath) {
   return {
     endpointPath: endpointPath,
@@ -27,6 +22,13 @@ export function defaultOptions(endpointPath) {
     APIKey: "",
     customUserAgent: "",
   };
+}
+
+// TODO: This will be smarter. See
+// https://github.com/NebulousLabs/skynet-docs/issues/21.
+export function defaultPortalUrl() {
+  var url = new URL(window.location.href);
+  return url.href.substring(0, url.href.indexOf(url.pathname));
 }
 
 function getFilePath(file) {

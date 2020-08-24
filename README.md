@@ -36,7 +36,7 @@ const client = new SkynetClient("https://siasky.net");
 
 Calling `SkynetClient` without parameters will use the URL of the current portal that is running the skapp (sky app).
 
-### async upload(file, [options])
+### async uploadFile(file, [options])
 
 Use the client to upload `file` contents.
 
@@ -58,7 +58,7 @@ const onUploadProgress = (progress, { loaded, total }) => {
 
 async function uploadExample() {
   try {
-    const { skylink } = await client.upload(file, { onUploadProgress });
+    const { skylink } = await client.uploadFile(file, { onUploadProgress });
   } catch (error) {
     console.log(error);
   }
@@ -74,7 +74,7 @@ const client = new SkynetClient("https://siasky.net");
 
 async function authenticationExample() {
   try {
-    const { skylink } = await client.upload(file, { APIKey: "foobar" });
+    const { skylink } = await client.uploadFile(file, { APIKey: "foobar" });
   } catch (error) {
     console.log(error);
   }
@@ -124,7 +124,7 @@ async function uploadDirectoryExample() {
 }
 ```
 
-### download(skylink)
+### downloadFile(skylink)
 
 ```javascript
 import { SkynetClient } from "skynet-js";
@@ -134,7 +134,7 @@ const client = new SkynetClient("https://siasky.net");
 // Assume we have a skylink e.g. from a previous upload.
 
 try {
-  client.download(skylink);
+  client.downloadFile(skylink);
 } catch (error) {
   console.log(error);
 }

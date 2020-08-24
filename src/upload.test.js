@@ -23,7 +23,7 @@ describe("uploadFile", () => {
   });
 
   it("should send formdata with file", async () => {
-    const data = await client.upload(file);
+    const data = await client.uploadFile(file);
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
@@ -41,7 +41,7 @@ describe("uploadFile", () => {
     // Use replyOnce to catch a single request with the new URL.
     mock.onPost(url).replyOnce(200, { skylink: skylink });
 
-    const data = await client.upload(file, { onUploadProgress: jest.fn() });
+    const data = await client.uploadFile(file, { onUploadProgress: jest.fn() });
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
@@ -53,7 +53,7 @@ describe("uploadFile", () => {
   });
 
   it("should use custom filename if provided", async () => {
-    const data = await client.upload(file, { customFilename: "testname" });
+    const data = await client.uploadFile(file, { customFilename: "testname" });
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
@@ -64,7 +64,7 @@ describe("uploadFile", () => {
   });
 
   it("should send base-64 authentication password if provided", async () => {
-    const data = await client.upload(file, { APIKey: "foobar" });
+    const data = await client.uploadFile(file, { APIKey: "foobar" });
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
@@ -78,7 +78,7 @@ describe("uploadFile", () => {
   it("should send custom user agent if defined", async () => {
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
-    const data = await client.upload(file);
+    const data = await client.uploadFile(file);
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
@@ -94,7 +94,7 @@ describe("uploadFile", () => {
   it("Should use user agent set in options to function", async () => {
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
-    const data = await client.upload(file, { customUserAgent: "Sia-Agent-2" });
+    const data = await client.uploadFile(file, { customUserAgent: "Sia-Agent-2" });
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];

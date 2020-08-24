@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 
-import { defaultOptions, SkynetClient } from "./utils.js";
+import { SkynetClient } from "./client.js";
+import { defaultOptions } from "./utils.js";
 
 const defaultConvertOptions = {
   ...defaultOptions("/skynet/skyfile"),

@@ -18,7 +18,7 @@ const defaultDownloadHnsOptions = {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  */
-SkynetClient.prototype.download = function (skylink, customOptions = {}) {
+SkynetClient.prototype.downloadFile = function (skylink, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getDownloadUrl(skylink, opts);
 
