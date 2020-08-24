@@ -36,7 +36,7 @@ describe("SkynetClient", () => {
     expect(client).toHaveProperty("unpin");
 
     // Portals
-    expect(client).toHaveProperty("getPortal");
+    expect(client).toHaveProperty("getPortals");
     expect(client).toHaveProperty("updatePortals");
 
     // Stats

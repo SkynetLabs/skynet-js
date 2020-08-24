@@ -11,7 +11,7 @@ const defaultUpdatePortalsOptions = {
   ...defaultOptions("/skynet/portals"),
 };
 
-SkynetClient.prototype.getPortal = async function (customOptions = {}) {
+SkynetClient.prototype.getPortals = async function (customOptions = {}) {
   const opts = { ...defaultGetPortalsOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
