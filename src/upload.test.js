@@ -1,7 +1,7 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { SkynetClient, defaultSkynetPortalUrl } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
 import { compareFormData } from "./test_utils.js";
 
 const mock = new MockAdapter(axios);
@@ -9,6 +9,7 @@ const mock = new MockAdapter(axios);
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const sialink = `${uriSkynetPrefix}${skylink}`;
 
 describe("uploadFile", () => {
   const url = `${portalUrl}/skynet/skyfile`;
@@ -30,7 +31,7 @@ describe("uploadFile", () => {
 
     await compareFormData(request.data, [["file", "foo", filename]]);
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 
   it("should send register onUploadProgress callback if defined", async () => {
@@ -49,7 +50,7 @@ describe("uploadFile", () => {
     expect(request.onUploadProgress).toEqual(expect.any(Function));
     await compareFormData(request.data, [["file", "foo", filename]]);
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 
   it("should use custom filename if provided", async () => {
@@ -60,7 +61,7 @@ describe("uploadFile", () => {
 
     await compareFormData(request.data, [["file", "foo", "testname"]]);
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 
   it("should send base-64 authentication password if provided", async () => {
@@ -72,7 +73,7 @@ describe("uploadFile", () => {
     expect(request.auth).toEqual({ username: "", password: "foobar" });
     await compareFormData(request.data, [["file", "foo", filename]]);
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 
   it("should send custom user agent if defined", async () => {
@@ -88,7 +89,7 @@ describe("uploadFile", () => {
     expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 
   it("Should use user agent set in options to function", async () => {
@@ -104,7 +105,7 @@ describe("uploadFile", () => {
     expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 });
 
@@ -134,7 +135,7 @@ describe("uploadDirectory", () => {
       ["files[]", "foo3", "i-am-not/me-neither/file3.jpeg"],
     ]);
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 
   it("should send register onUploadProgress callback if defined", async () => {
@@ -145,6 +146,6 @@ describe("uploadDirectory", () => {
 
     expect(request.onUploadProgress).toEqual(expect.any(Function));
 
-    expect(data).toEqual({ skylink });
+    expect(data).toEqual(sialink);
   });
 });

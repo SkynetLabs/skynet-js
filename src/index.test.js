@@ -44,6 +44,8 @@ describe("SkynetClient", () => {
 
     // Upload
     expect(client).toHaveProperty("uploadFile");
+    expect(client).toHaveProperty("uploadFileRequest");
     expect(client).toHaveProperty("uploadDirectory");
+    expect(client).toHaveProperty("uploadDirectoryRequest");
   });
 });
