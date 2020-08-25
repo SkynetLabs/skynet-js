@@ -18,6 +18,7 @@ const validSkylinkVariations = [
   `${portalUrl}/${skylink}?foo=bar`,
 ];
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
+const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
 describe("downloadFile", () => {
   it("should call window.open with a download url with attachment set", () => {
@@ -49,7 +50,7 @@ describe("getDownloadUrl", () => {
 });
 
 describe("open", () => {
-  it("should call window.open with a download url", () => {
+  it("should call window.open", () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
     validSkylinkVariations.forEach((input) => {
@@ -63,6 +64,30 @@ describe("open", () => {
   });
 });
 
+describe("downloadHns", () => {
+  const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
+
+  beforeEach(() => {
+    mock.onGet(hnsUrl).reply(200, { skylink: skylink });
+  });
+
+  it("should call axios.get with the portal and hns link and then window.open with attachment set", async () => {
+    const windowOpen = jest.spyOn(window, "open").mockImplementation();
+
+    for (const input of validHnsLinkVariations) {
+      mock.resetHistory();
+      windowOpen.mockReset();
+
+      await client.downloadHns(input);
+
+      expect(mock.history.get.length).toBe(1);
+
+      expect(windowOpen).toHaveBeenCalledTimes(1);
+      expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}?attachment=true`, "_blank");
+    }
+  });
+});
+
 describe("openHns", () => {
   const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
 
@@ -70,7 +95,7 @@ describe("openHns", () => {
     mock.onGet(hnsUrl).reply(200, { skylink: skylink });
   });
 
-  it("should call axios.get with the portal and hns link", async () => {
+  it("should call axios.get with the portal and hns link and then window.open", async () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
     for (const input of validHnsLinkVariations) {
@@ -83,6 +108,25 @@ describe("openHns", () => {
 
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
+    }
+  });
+});
+
+describe("resolveHns", () => {
+  const hnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
+
+  beforeEach(() => {
+    mock.onGet(hnsresUrl).reply(200, { skylink: skylink });
+  });
+
+  it("should call axios.get with the portal and hnsres link and return the json body", async () => {
+    for (const input of validHnsresLinkVariations) {
+      mock.resetHistory();
+
+      const data = await client.resolveHns(input);
+
+      expect(mock.history.get.length).toBe(1);
+      expect(data.skylink).toEqual(skylink);
     }
   });
 });
