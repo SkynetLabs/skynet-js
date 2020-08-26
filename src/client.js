@@ -27,8 +27,11 @@ export class SkynetClient {
    * @param {Object} config - Configuration for the request. See docs for constructor for the full list of options.
    */
   executeRequest(config) {
-    let url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
-    url = addUrlQuery(url, config.query);
+    let url = config.url;
+    if (!url) {
+      url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
+      url = addUrlQuery(url, config.query);
+    }
 
     return axios({
       url: url,

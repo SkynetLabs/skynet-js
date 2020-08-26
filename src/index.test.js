@@ -13,12 +13,14 @@ describe("SkynetClient", () => {
 
     // Download
     expect(client).toHaveProperty("downloadFile");
-    expect(client).toHaveProperty("downloadHns");
-    expect(client).toHaveProperty("getDownloadUrl");
+    expect(client).toHaveProperty("downloadFileHns");
+    expect(client).toHaveProperty("getHnsUrl");
+    expect(client).toHaveProperty("getHnsresUrl");
+    expect(client).toHaveProperty("getSkylinkUrl");
     expect(client).toHaveProperty("metadata");
-    expect(client).toHaveProperty("open");
-    expect(client).toHaveProperty("openHns");
-    expect(client).toHaveProperty("resolveHns");
+    expect(client).toHaveProperty("openFile");
+    expect(client).toHaveProperty("openFileHns");
+    expect(client).toHaveProperty("resolveSkylinkHns");
 
     // Encryption
     expect(client).toHaveProperty("addSkykey");
