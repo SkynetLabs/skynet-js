@@ -60,7 +60,7 @@ SkynetClient.prototype.getSkylinkUrl = function (skylink, customOptions = {}) {
 };
 
 SkynetClient.prototype.getHnsUrl = function (domain, customOptions = {}) {
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
   const url = makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakePrefix));
@@ -68,7 +68,7 @@ SkynetClient.prototype.getHnsUrl = function (domain, customOptions = {}) {
 };
 
 SkynetClient.prototype.getHnsresUrl = function (domain, customOptions = {}) {
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
   return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
