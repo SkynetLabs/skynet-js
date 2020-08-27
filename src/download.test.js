@@ -122,7 +122,7 @@ describe("openFileHns", () => {
   });
 });
 
-describe("resolveSkylinkHns", () => {
+describe("resolveHns", () => {
   beforeEach(() => {
     mock.onGet(hnsresUrl).reply(200, { skylink: skylink });
   });
@@ -131,7 +131,7 @@ describe("resolveSkylinkHns", () => {
     for (const input of validHnsresLinkVariations) {
       mock.resetHistory();
 
-      const data = await client.resolveSkylinkHns(input);
+      const data = await client.resolveHns(input);
 
       expect(mock.history.get.length).toBe(1);
       expect(data.skylink).toEqual(skylink);

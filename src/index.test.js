@@ -20,7 +20,7 @@ describe("SkynetClient", () => {
     expect(client).toHaveProperty("metadata");
     expect(client).toHaveProperty("openFile");
     expect(client).toHaveProperty("openFileHns");
-    expect(client).toHaveProperty("resolveSkylinkHns");
+    expect(client).toHaveProperty("resolveHns");
 
     // Encryption
     expect(client).toHaveProperty("addSkykey");

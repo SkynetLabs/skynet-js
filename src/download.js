@@ -112,7 +112,7 @@ SkynetClient.prototype.openFileHns = async function (domain, customOptions = {})
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
  */
-SkynetClient.prototype.resolveSkylinkHns = async function (domain, customOptions = {}) {
+SkynetClient.prototype.resolveHns = async function (domain, customOptions = {}) {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsresUrl(domain, opts);
 
