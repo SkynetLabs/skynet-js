@@ -74,7 +74,7 @@ SkynetClient.prototype.getHnsresUrl = function (domain, customOptions = {}) {
   return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
 };
 
-SkynetClient.prototype.metadata = async function (skylink, customOptions = {}) {
+SkynetClient.prototype.getMetadata = async function (skylink, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");

@@ -10,7 +10,7 @@ describe("SkynetClient", () => {
     expect(client).toHaveProperty("getHnsUrl");
     expect(client).toHaveProperty("getHnsresUrl");
     expect(client).toHaveProperty("getSkylinkUrl");
-    expect(client).toHaveProperty("metadata");
+    expect(client).toHaveProperty("getMetadata");
     expect(client).toHaveProperty("openFile");
     expect(client).toHaveProperty("openFileHns");
     expect(client).toHaveProperty("resolveHns");
