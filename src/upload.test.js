@@ -1,98 +1,151 @@
 import axios from "axios";
+import MockAdapter from "axios-mock-adapter";
 
-import { SkynetClient, defaultSkynetPortalUrl } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
+import { compareFormData } from "./test_utils.js";
 
-jest.mock("axios");
+const mock = new MockAdapter(axios);
 
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const sialink = `${uriSkynetPrefix}${skylink}`;
 
 describe("uploadFile", () => {
+  const url = `${portalUrl}/skynet/skyfile`;
   const filename = "bar.txt";
   const file = new File(["foo"], filename, {
     type: "text/plain",
   });
 
   beforeEach(() => {
-    axios.post.mockResolvedValue({ data: { skylink } });
+    mock.onPost(url).reply(200, { skylink: skylink });
+    mock.resetHistory();
   });
 
-  it("should send post request with FormData", () => {
-    client.upload(file, {});
+  it("should send formdata with file", async () => {
+    const data = await client.uploadFile(file);
 
-    expect(axios.post).toHaveBeenCalledWith(
-      `${portalUrl}/skynet/skyfile`,
-      expect.any(FormData), // TODO: Inspect data contents.
-      undefined
-    );
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual(sialink);
   });
 
-  it("should send register onUploadProgress callback if defined", () => {
+  it("should send register onUploadProgress callback if defined", async () => {
     const newPortal = "https://my-portal.net";
+    const url = `${newPortal}/skynet/skyfile`;
     const client = new SkynetClient(newPortal);
-    client.upload(file, { onUploadProgress: jest.fn() });
 
-    expect(axios.post).toHaveBeenCalledWith(
-      `${newPortal}/skynet/skyfile`,
-      expect.any(FormData), // TODO: Inspect data contents.
-      {
-        onUploadProgress: expect.any(Function),
-      }
-    );
+    // Use replyOnce to catch a single request with the new URL.
+    mock.onPost(url).replyOnce(200, { skylink: skylink });
+
+    const data = await client.uploadFile(file, { onUploadProgress: jest.fn() });
+
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    expect(request.onUploadProgress).toEqual(expect.any(Function));
+    await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual(sialink);
   });
 
-  it("should send base-64 authentication password if provided", () => {
-    client.upload(file, { APIKey: "foobar" });
+  it("should use custom filename if provided", async () => {
+    const data = await client.uploadFile(file, { customFilename: "testname" });
 
-    expect(axios.post).toHaveBeenCalledWith(
-      `${portalUrl}/skynet/skyfile`,
-      expect.any(FormData), // TODO: Inspect data contents.
-      undefined
-    );
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    await compareFormData(request.data, [["file", "foo", "testname"]]);
+
+    expect(data).toEqual(sialink);
   });
 
-  it("should return skylink on success", async () => {
-    const data = await client.upload(file);
+  it("should send base-64 authentication password if provided", async () => {
+    const data = await client.uploadFile(file, { APIKey: "foobar" });
 
-    expect(data).toEqual({ skylink });
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    expect(request.auth).toEqual({ username: "", password: "foobar" });
+    await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual(sialink);
+  });
+
+  it("should send custom user agent if defined", async () => {
+    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+
+    const data = await client.uploadFile(file);
+
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    expect(request.headers["User-Agent"]).toEqual("Sia-Agent");
+    // Check that other headers weren't altered.
+    expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
+    await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual(sialink);
+  });
+
+  it("Should use user agent set in options to function", async () => {
+    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+
+    const data = await client.uploadFile(file, { customUserAgent: "Sia-Agent-2" });
+
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    expect(request.headers["User-Agent"]).toEqual("Sia-Agent-2");
+    // Check that other headers weren't altered.
+    expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
+    await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual(sialink);
   });
 });
 
 describe("uploadDirectory", () => {
-  const blob = new Blob([], { type: "image/jpeg" });
   const filename = "i-am-root";
   const directory = {
-    "i-am-not/file1.jpeg": new File([blob], "i-am-not/file1.jpeg"),
-    "i-am-not/file2.jpeg": new File([blob], "i-am-not/file2.jpeg"),
-    "i-am-not/me-neither/file3.jpeg": new File([blob], "i-am-not/me-neither/file3.jpeg"),
+    "i-am-not/file1.jpeg": new File(["foo1"], "i-am-not/file1.jpeg"),
+    "i-am-not/file2.jpeg": new File(["foo2"], "i-am-not/file2.jpeg"),
+    "i-am-not/me-neither/file3.jpeg": new File(["foo3"], "i-am-not/me-neither/file3.jpeg"),
   };
+  const url = `${portalUrl}/skynet/skyfile?filename=${filename}`;
 
   beforeEach(() => {
-    axios.post.mockResolvedValue({ data: { skylink } });
+    mock.onPost(url).reply(200, { skylink: skylink });
+    mock.resetHistory();
   });
 
-  it("should send post request with FormData", () => {
-    client.uploadDirectory(directory, filename);
-
-    expect(axios.post).toHaveBeenCalledWith(
-      `${portalUrl}/skynet/skyfile?filename=${filename}`,
-      expect.any(FormData), // TODO: Inspect data contents.
-      undefined
-    );
-  });
-
-  it("should send register onUploadProgress callback if defined", () => {
-    client.uploadDirectory(directory, filename, { onUploadProgress: jest.fn() });
-
-    expect(axios.post).toHaveBeenCalledWith(`${portalUrl}/skynet/skyfile?filename=${filename}`, expect.any(FormData), {
-      onUploadProgress: expect.any(Function),
-    });
-  });
-
-  it("should return single skylink on success", async () => {
+  it("should send formdata with files", async () => {
     const data = await client.uploadDirectory(directory, filename);
 
-    expect(data).toEqual({ skylink });
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    await compareFormData(request.data, [
+      ["files[]", "foo1", "i-am-not/file1.jpeg"],
+      ["files[]", "foo2", "i-am-not/file2.jpeg"],
+      ["files[]", "foo3", "i-am-not/me-neither/file3.jpeg"],
+    ]);
+
+    expect(data).toEqual(sialink);
+  });
+
+  it("should send register onUploadProgress callback if defined", async () => {
+    const data = await client.uploadDirectory(directory, filename, { onUploadProgress: jest.fn() });
+
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+
+    expect(request.onUploadProgress).toEqual(expect.any(Function));
+
+    expect(data).toEqual(sialink);
   });
 });

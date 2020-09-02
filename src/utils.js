@@ -1,41 +1,35 @@
 // import axios from "axios";
 import path from "path-browserify";
 import parse from "url-parse";
+import urljoin from "url-join";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
-export function defaultPortalUrl() {
-  var url = new URL(window.location.href);
-  return url.href.substring(0, url.href.indexOf(url.pathname));
+export const uriHandshakePrefix = "hns:";
+export const uriHandshakeResolverPrefix = "hnsres:";
+export const uriSkynetPrefix = "sia:";
+
+export function addUrlQuery(url, query) {
+  const parsed = parse(url);
+  parsed.set("query", query);
+  return parsed.toString();
 }
 
 export function defaultOptions(endpointPath) {
   return {
     endpointPath: endpointPath,
-    // TODO:
-    // APIKey: "",
-    // customUserAgent: "",
+
+    APIKey: "",
+    customUserAgent: "",
   };
 }
 
-// TODO: Use this to simplify creating requests. Needs to be tested.
-// export function executeRequest(portalUrl, method, opts, query, data = {}) {
-//   const url = makeUrl(portalUrl, opts.endpointPath, query);
-
-//   return axios({
-//     method: method,
-//     url: url,
-//     data: data,
-//     auth: opts.APIKey && {username: "", password: opts.APIKey },
-//     onUploadProgress: opts.onUploadProgress && {
-//       onUploadProgress: ({ loaded, total }) => {
-//         const progress = loaded / total;
-
-//         opts.onUploadProgress(progress, { loaded, total });
-//       },
-//     }
-//   });
-// }
+// TODO: This will be smarter. See
+// https://github.com/NebulousLabs/skynet-docs/issues/21.
+export function defaultPortalUrl() {
+  var url = new URL(window.location.href);
+  return url.href.substring(0, url.href.indexOf(url.pathname));
+}
 
 function getFilePath(file) {
   return file.webkitRelativePath || file.path || file.name;
@@ -56,27 +50,23 @@ export function getRootDirectory(file) {
   return path.normalize(dir).slice(root.length).split(path.sep)[0];
 }
 
-export function makeUrl(portalUrl, pathname, query = {}) {
-  const parsed = parse(portalUrl);
-
-  parsed.set("pathname", pathname);
-  parsed.set("query", query);
-  return parsed.toString();
-}
-
-export function makeUrlWithSkylink(portalUrl, endpointPath, skylink, query = {}) {
-  const parsedSkylink = parseSkylink(skylink);
-
-  return makeUrl(portalUrl, path.posix.join(endpointPath, parsedSkylink), query);
+/**
+ * Properly joins paths together to create a URL. Takes a variable number of
+ * arguments.
+ * @returns {string} url - The URL.
+ */
+export function makeUrl(...args) {
+  return args.reduce(function (acc, cur) {
+    return urljoin(acc, cur);
+  });
 }
 
 const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-const SKYLINK_SIA_PREFIXED_REGEX = new RegExp(`^sia:(?://)?${SKYLINK_MATCHER}$`);
 const SKYLINK_PATHNAME_REGEX = new RegExp(`^/${SKYLINK_MATCHER}`);
 const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
-export function parseSkylink(skylink = "") {
+export function parseSkylink(skylink) {
   if (typeof skylink !== "string") throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
 
   // check for direct skylink match
@@ -86,8 +76,7 @@ export function parseSkylink(skylink = "") {
   // check for skylink prefixed with sia: or sia:// and extract it
   // example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   // example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  const matchSiaPrefixed = skylink.match(SKYLINK_SIA_PREFIXED_REGEX);
-  if (matchSiaPrefixed) return matchSiaPrefixed[SKYLINK_REGEXP_MATCH_POSITION];
+  skylink = trimUriPrefix(skylink, uriSkynetPrefix);
 
   // check for skylink passed in an url and extract it
   // example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
@@ -96,4 +85,17 @@ export function parseSkylink(skylink = "") {
   if (matchPathname) return matchPathname[SKYLINK_REGEXP_MATCH_POSITION];
 
   throw new Error(`Could not extract skylink from '${skylink}'`);
+}
+
+export function trimUriPrefix(str, prefix) {
+  const longPrefix = `${prefix}//`;
+  if (str.startsWith(longPrefix)) {
+    // longPrefix is exactly at the beginning
+    return str.slice(longPrefix.length);
+  }
+  if (str.startsWith(prefix)) {
+    // else prefix is exactly at the beginning
+    return str.slice(prefix.length);
+  }
+  return str;
 }
