@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.1]
+
+### Changed
+
+- Publish only compiled version (resolves issues with webpack).
+
 ## [2.0.0]
 
 _Prior version numbers skipped to maintain parity with API._
