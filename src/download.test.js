@@ -3,8 +3,6 @@ import MockAdapter from "axios-mock-adapter";
 
 import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 
-const mock = new MockAdapter(axios);
-
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
 const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
@@ -23,6 +21,12 @@ const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
 describe("downloadFile", () => {
+  let mock;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
   it("should call window.open with a download url with attachment set", () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
@@ -88,6 +92,12 @@ describe("open", () => {
 });
 
 describe("downloadFileHns", () => {
+  let mock;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
   it("should set domain with the portal and hns link and then call window.openFile with attachment set", async () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
@@ -104,6 +114,11 @@ describe("downloadFileHns", () => {
 
 describe("openFileHns", () => {
   const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
+  let mock;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
 
   it("should set domain with the portal and hns link and then call window.openFile", async () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
@@ -123,7 +138,10 @@ describe("openFileHns", () => {
 });
 
 describe("resolveHns", () => {
+  let mock;
+
   beforeEach(() => {
+    mock = new MockAdapter(axios);
     mock.onGet(hnsresUrl).reply(200, { skylink: skylink });
   });
 
