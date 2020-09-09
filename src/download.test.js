@@ -5,18 +5,26 @@ import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
-const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
-const hnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+
+const expectedUrl = `${portalUrl}/${skylink}`;
+const attachment = "?attachment=true";
 const validSkylinkVariations = [
-  skylink,
-  `sia:${skylink}`,
-  `sia://${skylink}`,
-  `${portalUrl}/${skylink}`,
-  `${portalUrl}/${skylink}/foo/bar`,
-  `${portalUrl}/${skylink}?foo=bar`,
+  [skylink, ""],
+  [`sia:${skylink}`, ""],
+  [`sia://${skylink}`, ""],
+  [`${portalUrl}/${skylink}`, ""],
+  [`${portalUrl}/${skylink}/foo/bar`, "/foo/bar"],
+  [`${portalUrl}/${skylink}/foo%3Fbar`, "/foo%3Fbar"],
+  [`${portalUrl}/${skylink}?foo=bar`, "?foo=bar"],
+  [`${portalUrl}/${skylink}/?foo=bar`, "?foo=bar"],
+  [`${portalUrl}/${skylink}#foobar`, "#foobar"],
+  [`${portalUrl}/${skylink}/#foobar`, "#foobar"],
 ];
+
+const expectedHnsUrl = `${portalUrl}/hns/${hnsLink}`;
+const expectedHnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
@@ -27,67 +35,29 @@ describe("downloadFile", () => {
     mock = new MockAdapter(axios);
   });
 
-  it("should call window.open with a download url with attachment set", () => {
-    const windowOpen = jest.spyOn(window, "open").mockImplementation();
-
-    validSkylinkVariations.forEach((input) => {
-      windowOpen.mockReset();
-
-      client.downloadFile(input);
+  it("should download with a skylink url with attachment set", () => {
+    validSkylinkVariations.forEach(([fullSkylink, path]) => {
+      const url = client.downloadFile(fullSkylink);
 
       expect(mock.history.get.length).toBe(0);
-    });
-  });
-});
 
-describe("getHnsUrl", () => {
-  it("should return correctly formed hns URL", () => {
-    validHnsLinkVariations.forEach((input) => {
-      expect(client.getHnsUrl(input)).toEqual(hnsUrl);
-    });
-  });
-
-  it("should return correctly formed hns URL with forced download", () => {
-    const url = client.getHnsUrl(hnsLink, { download: true });
-
-    expect(url).toEqual(`${hnsUrl}?attachment=true`);
-  });
-});
-
-describe("getHnsresUrl", () => {
-  it("should return correctly formed hnsres URL", () => {
-    validHnsresLinkVariations.forEach((input) => {
-      expect(client.getHnsresUrl(input)).toEqual(hnsresUrl);
-    });
-  });
-});
-
-describe("getSkylinkUrl", () => {
-  it("should return correctly formed skylink URL", () => {
-    validSkylinkVariations.forEach((input) => {
-      expect(client.getSkylinkUrl(input)).toEqual(`${portalUrl}/${skylink}`);
+      let expectedUrl2 = `${expectedUrl}${path}${attachment}`;
+      if (path.startsWith("#")) {
+        // Hash should come after query.
+        expectedUrl2 = `${expectedUrl}${attachment}${path}`;
+      }
+      // Change ?attachment=true to &attachment=true if need be.
+      if ((expectedUrl2.match(/\?/g) || []).length > 1) {
+        expectedUrl2 = expectedUrl2.replace(attachment, "&attachment=true");
+      }
+      expect(url).toEqual(expectedUrl2);
     });
   });
 
-  it("should return correctly formed URL with forced download", () => {
-    const url = client.getSkylinkUrl(skylink, { download: true, endpointPath: "skynet/skylink" });
+  it("should download with the optional path being correctly URI-encoded", () => {
+    const url = client.downloadFile(skylink, { path: ["test?encoding"] });
 
-    expect(url).toEqual(`${portalUrl}/skynet/skylink/${skylink}?attachment=true`);
-  });
-});
-
-describe("open", () => {
-  it("should call window.openFile", () => {
-    const windowOpen = jest.spyOn(window, "open").mockImplementation();
-
-    validSkylinkVariations.forEach((input) => {
-      windowOpen.mockReset();
-
-      client.openFile(input);
-
-      expect(windowOpen).toHaveBeenCalledTimes(1);
-      expect(windowOpen).toHaveBeenCalledWith(`${portalUrl}/${skylink}`, "_blank");
-    });
+    expect(url).toEqual(`${expectedUrl}/test%3Fencoding${attachment}`);
   });
 });
 
@@ -98,17 +68,78 @@ describe("downloadFileHns", () => {
     mock = new MockAdapter(axios);
   });
 
-  it("should set domain with the portal and hns link and then call window.openFile with attachment set", async () => {
-    const windowOpen = jest.spyOn(window, "open").mockImplementation();
-
+  it("should download with the correct hns link", async () => {
     for (const input of validHnsLinkVariations) {
-      mock.resetHistory();
-      windowOpen.mockReset();
-
-      await client.downloadFileHns(input);
+      const url = client.downloadFileHns(input);
 
       expect(mock.history.get.length).toBe(0);
+
+      expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
     }
+  });
+});
+
+describe("getHnsUrl", () => {
+  it("should return correctly formed hns URL", () => {
+    validHnsLinkVariations.forEach((input) => {
+      expect(client.getHnsUrl(input)).toEqual(expectedHnsUrl);
+    });
+  });
+
+  it("should return correctly formed hns URL with forced download", () => {
+    const url = client.getHnsUrl(hnsLink, { download: true });
+
+    expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
+  });
+});
+
+describe("getHnsresUrl", () => {
+  it("should return correctly formed hnsres URL", () => {
+    validHnsresLinkVariations.forEach((input) => {
+      expect(client.getHnsresUrl(input)).toEqual(expectedHnsresUrl);
+    });
+  });
+});
+
+describe("getSkylinkUrl", () => {
+  const expectedUrl = `${portalUrl}/${skylink}`;
+
+  it("should return correctly formed skylink URL", () => {
+    validSkylinkVariations.forEach(([fullSkylink, path]) => {
+      expect(client.getSkylinkUrl(fullSkylink)).toEqual(`${expectedUrl}${path}`);
+    });
+  });
+
+  it("should return correctly formed URLs when path is given", () => {
+    expect(client.getSkylinkUrl(skylink, { path: ["foo", "bar"] })).toEqual(`${expectedUrl}/foo/bar`);
+    expect(client.getSkylinkUrl(skylink, { path: ["foo?bar"] })).toEqual(`${expectedUrl}/foo%3Fbar`);
+  });
+
+  it("should return correctly formed URL with forced download", () => {
+    const url = client.getSkylinkUrl(skylink, { download: true, endpointPath: "skynet/skylink" });
+
+    expect(url).toEqual(`${portalUrl}/skynet/skylink/${skylink}${attachment}`);
+  });
+
+  it("should return correctly formed URLs with forced download and path", () => {
+    expect(client.getSkylinkUrl(skylink, { download: true, path: ["foo?bar"] })).toEqual(
+      `${expectedUrl}/foo%3Fbar${attachment}`
+    );
+  });
+});
+
+describe("openFile", () => {
+  it("should call window.openFile", () => {
+    const windowOpen = jest.spyOn(window, "open").mockImplementation();
+
+    validSkylinkVariations.forEach(([fullSkylink, path]) => {
+      windowOpen.mockReset();
+
+      client.openFile(fullSkylink);
+
+      expect(windowOpen).toHaveBeenCalledTimes(1);
+      expect(windowOpen).toHaveBeenCalledWith(`${expectedUrl}${path}`, "_blank");
+    });
   });
 });
 
@@ -142,7 +173,7 @@ describe("resolveHns", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onGet(hnsresUrl).reply(200, { skylink: skylink });
+    mock.onGet(expectedHnsresUrl).reply(200, { skylink: skylink });
   });
 
   it("should call axios.get with the portal and hnsres link and return the json body", async () => {

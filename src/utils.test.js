@@ -19,6 +19,11 @@ describe("addUrlQuery", () => {
     expect(addUrlQuery(`${portalUrl}/path/`, { download: true })).toEqual(`${portalUrl}/path/?download=true`);
     expect(addUrlQuery(`${portalUrl}/skynet/`, { foo: 1, bar: 2 })).toEqual(`${portalUrl}/skynet/?foo=1&bar=2`);
     expect(addUrlQuery(`${portalUrl}/`, { attachment: true })).toEqual(`${portalUrl}/?attachment=true`);
+    expect(addUrlQuery(`${portalUrl}?foo=bar`, { attachment: true })).toEqual(`${portalUrl}?foo=bar&attachment=true`);
+    expect(addUrlQuery(`${portalUrl}/?attachment=true`, { foo: "bar" })).toEqual(
+      `${portalUrl}/?attachment=true&foo=bar`
+    );
+    expect(addUrlQuery(`${portalUrl}#foobar`, { foo: "bar" })).toEqual(`${portalUrl}?foo=bar#foobar`);
   });
 });
 
@@ -31,6 +36,9 @@ describe("makeUrl", () => {
     expect(makeUrl(portalUrl, "/", skylink)).toEqual(`${portalUrl}/${skylink}`);
     expect(makeUrl(portalUrl, "/skynet", skylink)).toEqual(`${portalUrl}/skynet/${skylink}`);
     expect(makeUrl(portalUrl, "//skynet/", skylink)).toEqual(`${portalUrl}/skynet/${skylink}`);
+    expect(makeUrl(portalUrl, "/skynet/", `${skylink}?foo=bar`)).toEqual(`${portalUrl}/skynet/${skylink}?foo=bar`);
+    expect(makeUrl(portalUrl, `${skylink}/?foo=bar`)).toEqual(`${portalUrl}/${skylink}?foo=bar`);
+    expect(makeUrl(portalUrl, `${skylink}#foobar`)).toEqual(`${portalUrl}/${skylink}#foobar`);
   });
 });
 
@@ -51,16 +59,24 @@ describe("trimUriPrefix", () => {
 describe("parseSkylink", () => {
   it("should correctly parse skylink out of different strings", () => {
     const validSkylinkVariations = [
-      skylink,
-      `sia:${skylink}`,
-      `sia://${skylink}`,
-      `${portalUrl}/${skylink}`,
-      `${portalUrl}/${skylink}/foo/bar`,
-      `${portalUrl}/${skylink}?foo=bar`,
+      [skylink, ""],
+      [`${skylink}?foo=bar`, "?foo=bar"],
+      [`${skylink}/foo/bar`, "/foo/bar"],
+      [`${skylink}#foobar`, "#foobar"],
+      [`sia:${skylink}`, ""],
+      [`sia://${skylink}`, ""],
+      [`${portalUrl}/${skylink}`, ""],
+      [`${portalUrl}/${skylink}/`, "/"],
+      [`${portalUrl}/${skylink}/foo/bar`, "/foo/bar"],
+      [`${portalUrl}/${skylink}/foo/bar?foo=bar`, "/foo/bar?foo=bar"],
+      [`${portalUrl}/${skylink}?foo=bar`, "?foo=bar"],
+      [`${portalUrl}/${skylink}/?foo=bar`, "/?foo=bar"],
+      [`${portalUrl}/${skylink}#foobar`, "#foobar"],
+      [`${portalUrl}/${skylink}/#foobar`, "/#foobar"],
     ];
 
-    validSkylinkVariations.forEach((input) => {
-      expect(parseSkylink(input)).toEqual(skylink);
+    validSkylinkVariations.forEach(([fullSkylink, path]) => {
+      expect(parseSkylink(fullSkylink)).toEqual(`${skylink}${path}`);
     });
   });
 

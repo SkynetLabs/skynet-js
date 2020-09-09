@@ -19,7 +19,7 @@ describe("uploadFile", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onPost(url).reply(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink: skylink });
     mock.resetHistory();
   });
 
@@ -121,7 +121,7 @@ describe("uploadDirectory", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onPost(url).reply(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink: skylink });
     mock.resetHistory();
   });
 
@@ -147,6 +147,19 @@ describe("uploadDirectory", () => {
     const request = mock.history.post[0];
 
     expect(request.onUploadProgress).toEqual(expect.any(Function));
+
+    expect(data).toEqual(sialink);
+  });
+
+  it("should encode special characters in the URL", async () => {
+    const filename = "encoding?test";
+    const url = `${portalUrl}/skynet/skyfile?filename=encoding%3Ftest`;
+    mock.resetHandlers();
+    mock.onPost(url).replyOnce(200, { skylink: skylink });
+
+    const data = await client.uploadDirectory(directory, filename);
+
+    expect(mock.history.post.length).toBe(1);
 
     expect(data).toEqual(sialink);
   });

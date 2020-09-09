@@ -10,7 +10,11 @@ export const uriHandshakeResolverPrefix = "hnsres:";
 export const uriSkynetPrefix = "sia:";
 
 export function addUrlQuery(url, query) {
-  const parsed = parse(url);
+  const parsed = parse(url, true);
+  if (parsed.query) {
+    // Combine the desired query params with the already existing ones.
+    query = { ...parsed.query, ...query };
+  }
   parsed.set("query", query);
   return parsed.toString();
 }
@@ -61,13 +65,17 @@ export function makeUrl(...args) {
   });
 }
 
-const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
+// Allow ?, /, and # to end the hash portion of a skylink.
+const SKYLINK_BOUNDARY = "[?|/|#]";
+const SKYLINK_MATCHER = `([a-zA-Z0-9_-]{46}${SKYLINK_BOUNDARY}*.*)`;
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
 const SKYLINK_PATHNAME_REGEX = new RegExp(`^/${SKYLINK_MATCHER}`);
 const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
 export function parseSkylink(skylink) {
-  if (typeof skylink !== "string") throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
+  if (typeof skylink !== "string") {
+    throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
+  }
 
   // check for direct skylink match
   const matchDirect = skylink.match(SKYLINK_DIRECT_REGEX);
@@ -82,7 +90,12 @@ export function parseSkylink(skylink) {
   // example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   const parsed = parse(skylink);
   const matchPathname = parsed.pathname.match(SKYLINK_PATHNAME_REGEX);
-  if (matchPathname) return matchPathname[SKYLINK_REGEXP_MATCH_POSITION];
+  if (matchPathname) {
+    const query = parsed.query;
+    // const hash = parsed.hash ? `#${parsed.hash}` : "";
+    const hash = parsed.hash;
+    return `${matchPathname[SKYLINK_REGEXP_MATCH_POSITION]}${query}${hash}`;
+  }
 
   throw new Error(`Could not extract skylink from '${skylink}'`);
 }
