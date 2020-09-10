@@ -25,10 +25,11 @@ const defaultResolveHnsOptions = {
 
 /**
  * Initiates a download of the content of the skylink within the browser.
- * @param {string} skylink - 46 character skylink.
+ * @param {string} skylink - 46 character skylink, possibly followed by a path or query parameters. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
- * @param {string} [customOptions.path] - An array of path elements to append to the skylink. Each element will be URI-encoded (e.g. "?" -> "%3F") so make sure it is not already encoded. The encoded path elements are joined to form the full path, e.g. `dir1/dir2/file`.
+ * @param {string} [customOptions.path] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
+ * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the skylink.
  * @returns {string} - The full URL that was used.
  */
 SkynetClient.prototype.downloadFile = function (skylink, customOptions = {}) {
@@ -46,6 +47,7 @@ SkynetClient.prototype.downloadFile = function (skylink, customOptions = {}) {
  * @param {string} domain - Handshake domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
  * @returns {string} - The full URL that was used.
  */
 SkynetClient.prototype.downloadFileHns = function (domain, customOptions = {}) {
@@ -60,15 +62,21 @@ SkynetClient.prototype.downloadFileHns = function (domain, customOptions = {}) {
 
 SkynetClient.prototype.getSkylinkUrl = function (skylink, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const query = opts.download ? { attachment: true } : {};
+  const query = opts.query ?? {};
+  if (opts.download) {
+    query.attachment = true;
+  }
 
   let path = "";
   if (opts.path) {
-    if (!Array.isArray(opts.path)) {
-      throw new Error(`opts.path has to be an array, ${typeof opts.path} provided`);
+    if (typeof opts.path != "string") {
+      throw new Error(`opts.path has to be a string, ${typeof opts.path} provided`);
     }
     // Encode each element of the path separately and join them.
-    path = opts.path.map((element) => encodeURIComponent(element)).join("/");
+    path = opts.path
+      .split("/")
+      .map((element) => encodeURIComponent(element))
+      .join("/");
   }
 
   const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink), path);
@@ -77,7 +85,10 @@ SkynetClient.prototype.getSkylinkUrl = function (skylink, customOptions = {}) {
 
 SkynetClient.prototype.getHnsUrl = function (domain, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
-  const query = opts.download ? { attachment: true } : {};
+  const query = opts.query ?? {};
+  if (opts.download) {
+    query.attachment = true;
+  }
 
   const url = makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakePrefix));
   return addUrlQuery(url, query);
@@ -85,7 +96,10 @@ SkynetClient.prototype.getHnsUrl = function (domain, customOptions = {}) {
 
 SkynetClient.prototype.getHnsresUrl = function (domain, customOptions = {}) {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
-  const query = opts.download ? { attachment: true } : {};
+  const query = opts.query ?? {};
+  if (opts.download) {
+    query.attachment = true;
+  }
 
   return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
 };
@@ -131,6 +145,7 @@ SkynetClient.prototype.openFileHns = function (domain, customOptions = {}) {
  * @param {string} domain - Handshake resolver domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
+ * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
  */
 SkynetClient.prototype.resolveHns = async function (domain, customOptions = {}) {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };

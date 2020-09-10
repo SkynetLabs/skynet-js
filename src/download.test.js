@@ -60,9 +60,15 @@ describe("downloadFile", () => {
   });
 
   it("should download with the optional path being correctly URI-encoded", () => {
-    const url = client.downloadFile(skylink, { path: ["test?encoding"] });
+    const url = client.downloadFile(skylink, { path: "dir/test?encoding" });
 
-    expect(url).toEqual(`${expectedUrl}/test%3Fencoding${attachment}`);
+    expect(url).toEqual(`${expectedUrl}/dir/test%3Fencoding${attachment}`);
+  });
+
+  it("should download with query parameters being appended to the URL", () => {
+    const url = client.downloadFile(skylink, { query: { name: "test" } });
+
+    expect(url).toEqual(`${expectedUrl}?name=test&attachment=true`);
   });
 });
 
@@ -116,8 +122,8 @@ describe("getSkylinkUrl", () => {
   });
 
   it("should return correctly formed URLs when path is given", () => {
-    expect(client.getSkylinkUrl(skylink, { path: ["foo", "bar"] })).toEqual(`${expectedUrl}/foo/bar`);
-    expect(client.getSkylinkUrl(skylink, { path: ["foo?bar"] })).toEqual(`${expectedUrl}/foo%3Fbar`);
+    expect(client.getSkylinkUrl(skylink, { path: "foo/bar" })).toEqual(`${expectedUrl}/foo/bar`);
+    expect(client.getSkylinkUrl(skylink, { path: "foo?bar" })).toEqual(`${expectedUrl}/foo%3Fbar`);
   });
 
   it("should return correctly formed URL with forced download", () => {
@@ -127,7 +133,7 @@ describe("getSkylinkUrl", () => {
   });
 
   it("should return correctly formed URLs with forced download and path", () => {
-    expect(client.getSkylinkUrl(skylink, { download: true, path: ["foo?bar"] })).toEqual(
+    expect(client.getSkylinkUrl(skylink, { download: true, path: "foo?bar" })).toEqual(
       `${expectedUrl}/foo%3Fbar${attachment}`
     );
   });
