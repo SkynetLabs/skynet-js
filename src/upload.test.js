@@ -76,7 +76,7 @@ describe("uploadFile", () => {
     expect(data).toEqual(sialink);
   });
 
-  it("should send custom user agent if defined", async () => {
+  it("should send portal's custom user agent if defined", async () => {
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
     const data = await client.uploadFile(file);
@@ -92,7 +92,7 @@ describe("uploadFile", () => {
     expect(data).toEqual(sialink);
   });
 
-  it("Should use user agent set in options to function", async () => {
+  it("Should use user agent set in options passed to function", async () => {
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
     const data = await client.uploadFile(file, { customUserAgent: "Sia-Agent-2" });
@@ -104,6 +104,21 @@ describe("uploadFile", () => {
     // Check that other headers weren't altered.
     expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual(sialink);
+  });
+
+  it("Should send custom query parameters if provided", async () => {
+    // Create a client with a unique portal so we don't accidentally hit another
+    // request mocker.
+    const portalUrl = "https://portal.net";
+    const url = `${portalUrl}/skynet/skyfile`;
+    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+
+    mock.onPost(`${url}?file=test`).replyOnce(200, { skylink: skylink });
+
+    const query = { file: "test" };
+    const data = await client.uploadFile(file, { query });
 
     expect(data).toEqual(sialink);
   });
