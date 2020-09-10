@@ -92,7 +92,6 @@ export function parseSkylink(skylink) {
   const matchPathname = parsed.pathname.match(SKYLINK_PATHNAME_REGEX);
   if (matchPathname) {
     const query = parsed.query;
-    // const hash = parsed.hash ? `#${parsed.hash}` : "";
     const hash = parsed.hash;
     return `${matchPathname[SKYLINK_REGEXP_MATCH_POSITION]}${query}${hash}`;
   }

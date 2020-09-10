@@ -28,7 +28,7 @@ const defaultResolveHnsOptions = {
  * @param {string} skylink - 46 character skylink.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
- * @param {string} [customOptions.path] - An array of path elements to append to the skylink. Each element will be URI-encoded (e.g. "?" -> "%3F") so make sure it is not already encoded. Then the elements are joined to full the full path, e.g. `dir1/dir2/file`.
+ * @param {string} [customOptions.path] - An array of path elements to append to the skylink. Each element will be URI-encoded (e.g. "?" -> "%3F") so make sure it is not already encoded. The encoded path elements are joined to form the full path, e.g. `dir1/dir2/file`.
  * @returns {string} - The full URL that was used.
  */
 SkynetClient.prototype.downloadFile = function (skylink, customOptions = {}) {
