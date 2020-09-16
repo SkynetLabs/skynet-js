@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.2]
+
+### Added
+
+- MIT license
+
+### Changed
+
+- `regeneratorRuntime` error when packaging with `webpack` has been fixed.
+
 ## [2.0.1]
 
 ### Changed
