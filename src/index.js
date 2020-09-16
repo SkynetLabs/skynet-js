@@ -1,3 +1,6 @@
+// For regeneratorRuntime errors when testing locally.
+import "regenerator-runtime/runtime.js";
+
 export { SkynetClient } from "./client.js";
 
 // Get the following files to run or the client's methods won't be defined.

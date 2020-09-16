@@ -33,11 +33,14 @@ export class SkynetClient {
       url = addUrlQuery(url, config.query);
     }
 
+    // No other headers.
+    const headers = config.customUserAgent && { "User-Agent": config.customUserAgent };
+
     return axios({
-      url: url,
+      url,
       method: config.method,
       data: config.data,
-      headers: config.customUserAgent && { "User-Agent": config.customUserAgent },
+      headers,
       auth: config.APIKey && { username: "", password: config.APIKey },
       onUploadProgress:
         config.onUploadProgress &&
