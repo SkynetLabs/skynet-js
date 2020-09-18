@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.3]
+
+### Changed
+
+- Remove some test code that made it into the published version.
+
 ## [2.0.2]
 
 ### Added
