@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.4]
+
+### Changes
+
+- Fixed a bug causing `uploadFile` to not work.
+
 ## [2.0.3]
 
 ### Changed

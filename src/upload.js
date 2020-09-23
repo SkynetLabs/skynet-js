@@ -18,8 +18,8 @@ SkynetClient.prototype.uploadFileRequest = async function (file, customOptions =
 
   const formData = new FormData();
   file = ensureFileObjectConsistency(file);
-  const filename = opts.customFilename ? opts.customFilename : "";
-  formData.append(opts.portalFileFieldname, file, filename);
+  const options = opts.customFilename ? { filename: opts.customFilename } : {};
+  formData.append(opts.portalFileFieldname, file, options);
 
   const { data } = await this.executeRequest({
     ...opts,
