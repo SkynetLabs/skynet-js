@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.6]
+
+### Changed
+
+- Fixed a bug in server-side rendering where `typeof` was not used for `window`.
+
 ## [2.0.5]
 
 ### Changed
