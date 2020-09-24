@@ -18,7 +18,6 @@ export function addUrlQuery(url, query) {
 export function defaultOptions(endpointPath) {
   return {
     endpointPath: endpointPath,
-
     APIKey: "",
     customUserAgent: "",
   };
@@ -27,7 +26,8 @@ export function defaultOptions(endpointPath) {
 // TODO: This will be smarter. See
 // https://github.com/NebulousLabs/skynet-docs/issues/21.
 export function defaultPortalUrl() {
-  var url = new URL(window.location.href);
+  if (window === undefined) return "/"; // default to path root on ssr
+  const url = new URL(window.location.href);
   return url.href.substring(0, url.href.indexOf(url.pathname));
 }
 
