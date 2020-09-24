@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.5]
+
+### Changed
+
+- Fixed a bug in server-side rendering where `window` was `undefined`.
+
 ## [2.0.4]
 
 ### Changes
