@@ -26,7 +26,7 @@ export function defaultOptions(endpointPath) {
 // TODO: This will be smarter. See
 // https://github.com/NebulousLabs/skynet-docs/issues/21.
 export function defaultPortalUrl() {
-  if (window === undefined) return "/"; // default to path root on ssr
+  if (typeof window === "undefined") return "/"; // default to path root on ssr
   const url = new URL(window.location.href);
   return url.href.substring(0, url.href.indexOf(url.pathname));
 }
