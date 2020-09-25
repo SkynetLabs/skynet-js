@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Revert: "Fixed a bug causing `uploadFile` to not work." introduced in 2.04
+- Revert: "Fixed a bug causing `uploadFile` to not work." introduced in 2.0.4
 
 ## [2.0.6]
 
