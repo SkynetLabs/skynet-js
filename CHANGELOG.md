@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.7]
+
+### Changed
+
+- Revert: "Fixed a bug causing `uploadFile` to not work." introduced in 2.04
+
 ## [2.0.6]
 
 ### Changed
