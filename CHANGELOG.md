@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.8]
+
+### Changed
+
+- Revert 2.0.7 and fix `uploadFile` filename bug.
+
 ## [2.0.7]
 
 ### Changed
