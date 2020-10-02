@@ -27,8 +27,7 @@ export function defaultOptions(endpointPath) {
 // https://github.com/NebulousLabs/skynet-docs/issues/21.
 export function defaultPortalUrl() {
   if (typeof window === "undefined") return "/"; // default to path root on ssr
-  const url = new URL(window.location.href);
-  return url.origin;
+  return window.location.origin;
 }
 
 function getFilePath(file) {
