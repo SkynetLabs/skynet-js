@@ -68,5 +68,6 @@ describe("parseSkylink", () => {
     expect(() => parseSkylink()).toThrowError("Skylink has to be a string, undefined provided");
     expect(() => parseSkylink(123)).toThrowError("Skylink has to be a string, number provided");
     expect(() => parseSkylink("123")).toThrowError("Could not extract skylink from '123'");
+    expect(() => parseSkylink(`${skylink}xxx`)).toThrowError(`Could not extract skylink from '${skylink}xxx'`);
   });
 });
