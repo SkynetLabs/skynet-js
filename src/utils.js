@@ -28,7 +28,7 @@ export function defaultOptions(endpointPath) {
 export function defaultPortalUrl() {
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   const url = new URL(window.location.href);
-  return url.href.substring(0, url.href.indexOf(url.pathname));
+  return url.origin;
 }
 
 function getFilePath(file) {
