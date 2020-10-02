@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "2.0.1",
+  "version": "2.0.8",
   "description": "Sia Skynet Javascript Client",
   "main": "dist/index.js",
   "files": [
@@ -40,6 +40,7 @@
   },
   "homepage": "https://nebulouslabs.github.io/skynet-js/",
   "dependencies": {
+    "@babel/runtime": "^7.11.2",
     "axios": "^0.20.0",
     "path-browserify": "^1.0.1",
     "url-join": "^4.0.1",
@@ -48,6 +49,7 @@
   "devDependencies": {
     "@babel/cli": "^7.11.6",
     "@babel/core": "^7.11.6",
+    "@babel/plugin-transform-runtime": "^7.11.5",
     "@babel/preset-env": "^7.11.5",
     "axios-mock-adapter": "^1.18.2",
     "eslint": "^7.8.1",

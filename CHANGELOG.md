@@ -1,5 +1,51 @@
 # Changelog
 
+## [2.0.8]
+
+### Changed
+
+- Revert 2.0.7 and fix `uploadFile` filename bug.
+
+## [2.0.7]
+
+### Changed
+
+- Revert: "Fixed a bug causing `uploadFile` to not work." introduced in 2.0.4
+
+## [2.0.6]
+
+### Changed
+
+- Fixed a bug in server-side rendering where `typeof` was not used for `window`.
+
+## [2.0.5]
+
+### Changed
+
+- Fixed a bug in server-side rendering where `window` was `undefined`.
+
+## [2.0.4]
+
+### Changes
+
+- Fixed a bug causing `uploadFile` to not work.
+
+## [2.0.3]
+
+### Changed
+
+- Remove some test code that made it into the published version.
+
+## [2.0.2]
+
+### Added
+
+- MIT license
+
+### Changed
+
+- `regeneratorRuntime` error when packaging with `webpack` has been fixed.
+
 ## [2.0.1]
 
 ### Changed
