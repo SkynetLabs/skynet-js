@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.9]
+
+### Changed
+
+- Fix some bugs with skylink parsing.
+
 ## [2.0.8]
 
 ### Changed
