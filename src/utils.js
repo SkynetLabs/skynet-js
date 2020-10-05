@@ -68,7 +68,7 @@ export function makeUrl(...args) {
 const SKYLINK_BOUNDARY = "[?|/|#]";
 const SKYLINK_MATCHER = `([a-zA-Z0-9_-]{46}${SKYLINK_BOUNDARY}*.*)`;
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-const SKYLINK_PATHNAME_REGEX = new RegExp(`^/${SKYLINK_MATCHER}`);
+const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}([/?].*)?$`);
 const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
 export function parseSkylink(skylink) {
@@ -87,7 +87,9 @@ export function parseSkylink(skylink) {
 
   // check for skylink passed in an url and extract it
   // example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  const parsed = parse(skylink);
+
+  // pass empty object as second param to disable using location as base url when parsing in browser
+  const parsed = parse(skylink, {});
   const matchPathname = parsed.pathname.match(SKYLINK_PATHNAME_REGEX);
   if (matchPathname) {
     const query = parsed.query;
