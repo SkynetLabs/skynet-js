@@ -62,7 +62,7 @@ export function makeUrl(...args) {
 
 const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-const SKYLINK_PATHNAME_REGEX = new RegExp(`^/${SKYLINK_MATCHER}`);
+const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}`);
 const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
 export function parseSkylink(skylink) {
