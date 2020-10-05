@@ -55,6 +55,8 @@ describe("parseSkylink", () => {
       `sia:${skylink}`,
       `sia://${skylink}`,
       `${portalUrl}/${skylink}`,
+      `${portalUrl}/${skylink}/`,
+      `${portalUrl}/${skylink}?`,
       `${portalUrl}/${skylink}/foo/bar`,
       `${portalUrl}/${skylink}?foo=bar`,
     ];
@@ -68,5 +70,8 @@ describe("parseSkylink", () => {
     expect(() => parseSkylink()).toThrowError("Skylink has to be a string, undefined provided");
     expect(() => parseSkylink(123)).toThrowError("Skylink has to be a string, number provided");
     expect(() => parseSkylink("123")).toThrowError("Could not extract skylink from '123'");
+    expect(() => parseSkylink(`${skylink}xxx`)).toThrowError(`Could not extract skylink from '${skylink}xxx'`);
+    expect(() => parseSkylink(`${skylink}xxx/foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx/foo'`);
+    expect(() => parseSkylink(`${skylink}xxx?foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx?foo'`);
   });
 });
