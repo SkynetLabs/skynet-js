@@ -55,6 +55,8 @@ describe("parseSkylink", () => {
       `sia:${skylink}`,
       `sia://${skylink}`,
       `${portalUrl}/${skylink}`,
+      `${portalUrl}/${skylink}/`,
+      `${portalUrl}/${skylink}?`,
       `${portalUrl}/${skylink}/foo/bar`,
       `${portalUrl}/${skylink}?foo=bar`,
     ];
