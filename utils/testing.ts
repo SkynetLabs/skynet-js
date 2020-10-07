@@ -22,7 +22,7 @@ export async function compareFormData(formData, entries) {
       expect(e.target.result).toEqual(expectedData);
     };
     reader.readAsText(file);
-    while (reader.readyState != "2") {
+    while (reader.readyState !== 2) {
       // Sleep for 10ms while we wait for the readyState to be DONE.
       await new Promise((r) => setTimeout(r, 10)); // eslint-disable-line
     }

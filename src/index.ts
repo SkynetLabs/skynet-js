@@ -1,9 +1,9 @@
-export { SkynetClient } from "./client.js";
+export { SkynetClient } from "./client";
 
 // Get the following files to run or the client's methods won't be defined.
-export {} from "./download.js";
-export {} from "./encryption.js";
-export {} from "./upload.js";
+export {} from "./download";
+export {} from "./encryption";
+export {} from "./upload";
 
 export {
   defaultPortalUrl,
@@ -14,4 +14,4 @@ export {
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
   uriSkynetPrefix,
-} from "./utils.js";
+} from "./utils";

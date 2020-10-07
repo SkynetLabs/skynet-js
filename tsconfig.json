@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    // "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": false,
+    "noImplicitAny": true,
+    "declaration": true,
+    "isolatedModules": true,
+    "outDir": "dist",
+    "types": ["node", "jest"],
+    "typeRoots": ["./types", "./node_modules/@types"]
+  },
+  "include": ["src", "types/**/*.d.ts"],
+  "exclude": ["src/*.test.ts"]
+}
