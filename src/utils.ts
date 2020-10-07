@@ -1,4 +1,3 @@
-// import axios from "axios";
 import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
@@ -9,15 +8,15 @@ export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
 export const uriSkynetPrefix = "sia:";
 
-export function addUrlQuery(url, query) {
+export function addUrlQuery(url: string, query: Record<string, unknown>): string {
   const parsed = parse(url);
   parsed.set("query", query);
   return parsed.toString();
 }
 
-export function defaultOptions(endpointPath) {
+export function defaultOptions(endpointPath: string): Record<string, unknown> {
   return {
-    endpointPath: endpointPath,
+    endpointPath,
     APIKey: "",
     customUserAgent: "",
   };
@@ -25,16 +24,21 @@ export function defaultOptions(endpointPath) {
 
 // TODO: This will be smarter. See
 // https://github.com/NebulousLabs/skynet-docs/issues/21.
-export function defaultPortalUrl() {
+export function defaultPortalUrl(): string {
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   return window.location.origin;
 }
 
-function getFilePath(file) {
+function getFilePath(
+  file: File & {
+    webkitRelativePath?: string;
+    path?: string;
+  }
+): string {
   return file.webkitRelativePath || file.path || file.name;
 }
 
-export function getRelativeFilePath(file) {
+export function getRelativeFilePath(file: File): string {
   const filePath = getFilePath(file);
   const { root, dir, base } = path.parse(filePath);
   const relative = path.normalize(dir).slice(root.length).split(path.sep).slice(1);
@@ -42,7 +46,7 @@ export function getRelativeFilePath(file) {
   return path.join(...relative, base);
 }
 
-export function getRootDirectory(file) {
+export function getRootDirectory(file: File): string {
   const filePath = getFilePath(file);
   const { root, dir } = path.parse(filePath);
 
@@ -52,12 +56,9 @@ export function getRootDirectory(file) {
 /**
  * Properly joins paths together to create a URL. Takes a variable number of
  * arguments.
- * @returns {string} url - The URL.
  */
-export function makeUrl(...args) {
-  return args.reduce(function (acc, cur) {
-    return urljoin(acc, cur);
-  });
+export function makeUrl(...args: string[]): string {
+  return args.reduce((acc, cur) => urljoin(acc, cur));
 }
 
 const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
@@ -65,7 +66,7 @@ const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
 const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}([/?].*)?$`);
 const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
-export function parseSkylink(skylink) {
+export function parseSkylink(skylink: string): string {
   if (typeof skylink !== "string") throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
 
   // check for direct skylink match
@@ -88,7 +89,7 @@ export function parseSkylink(skylink) {
   throw new Error(`Could not extract skylink from '${skylink}'`);
 }
 
-export function trimUriPrefix(str, prefix) {
+export function trimUriPrefix(str: string, prefix: string): string {
   const longPrefix = `${prefix}//`;
   if (str.startsWith(longPrefix)) {
     // longPrefix is exactly at the beginning

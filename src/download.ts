@@ -1,8 +1,3 @@
-/* eslint-disable no-unused-vars */
-
-import axios from "axios";
-
-import { SkynetClient } from "./client.js";
 import {
   addUrlQuery,
   defaultOptions,
@@ -11,7 +6,7 @@ import {
   trimUriPrefix,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
-} from "./utils.js";
+} from "./utils";
 
 const defaultDownloadOptions = {
   ...defaultOptions("/"),
@@ -29,13 +24,13 @@ const defaultResolveHnsOptions = {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  */
-SkynetClient.prototype.downloadFile = function (skylink, customOptions = {}) {
+export function downloadFile(skylink: string, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getSkylinkUrl(skylink, opts);
 
   // Download the url.
   window.location = url;
-};
+}
 
 /**
  * Initiates a download of the content of the skylink at the Handshake domain.
@@ -43,42 +38,41 @@ SkynetClient.prototype.downloadFile = function (skylink, customOptions = {}) {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  */
-SkynetClient.prototype.downloadFileHns = async function (domain, customOptions = {}) {
+export async function downloadFileHns(domain: string, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getHnsUrl(domain, opts);
 
   // Download the url.
   window.location = url;
-};
+}
 
-SkynetClient.prototype.getSkylinkUrl = function (skylink, customOptions = {}) {
+export function getSkylinkUrl(skylink: string, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
   const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink));
   return addUrlQuery(url, query);
-};
+}
 
-SkynetClient.prototype.getHnsUrl = function (domain, customOptions = {}) {
+export function getHnsUrl(domain: string, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
   const url = makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakePrefix));
   return addUrlQuery(url, query);
-};
+}
 
-SkynetClient.prototype.getHnsresUrl = function (domain, customOptions = {}) {
+export function getHnsresUrl(domain: string, customOptions = {}) {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
-  const query = opts.download ? { attachment: true } : {};
 
   return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
-};
+}
 
-SkynetClient.prototype.getMetadata = async function (skylink, customOptions = {}) {
+export async function getMetadata(skylink: string, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
-};
+}
 
 /**
  * Opens the content of the skylink within the browser.
@@ -86,12 +80,12 @@ SkynetClient.prototype.getMetadata = async function (skylink, customOptions = {}
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  */
-SkynetClient.prototype.openFile = function (skylink, customOptions = {}) {
+export function openFile(skylink: string, customOptions = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
   window.open(url, "_blank");
-};
+}
 
 /**
  * Opens the content of the skylink from the given Handshake domain within the browser.
@@ -99,20 +93,20 @@ SkynetClient.prototype.openFile = function (skylink, customOptions = {}) {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  */
-SkynetClient.prototype.openFileHns = async function (domain, customOptions = {}) {
+export async function openFileHns(domain: string, customOptions = {}) {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsUrl(domain, opts);
 
   // Open the url in a new tab.
   window.open(url, "_blank");
-};
+}
 
 /**
  * @param {string} domain - Handshake resolver domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
  */
-SkynetClient.prototype.resolveHns = async function (domain, customOptions = {}) {
+export async function resolveHns(domain: string, customOptions = {}) {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsresUrl(domain, opts);
 
@@ -124,4 +118,4 @@ SkynetClient.prototype.resolveHns = async function (domain, customOptions = {}) 
   });
 
   return response.data;
-};
+}

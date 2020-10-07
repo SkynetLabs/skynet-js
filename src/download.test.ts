@@ -21,7 +21,7 @@ const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
 describe("downloadFile", () => {
-  let mock;
+  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -92,7 +92,7 @@ describe("open", () => {
 });
 
 describe("downloadFileHns", () => {
-  let mock;
+  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -114,7 +114,7 @@ describe("downloadFileHns", () => {
 
 describe("openFileHns", () => {
   const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
-  let mock;
+  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -138,7 +138,7 @@ describe("openFileHns", () => {
 });
 
 describe("resolveHns", () => {
-  let mock;
+  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
