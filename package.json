@@ -8,9 +8,9 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --emitDeclarationOnly",
+    "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
     "lint:eslint": "eslint --ext .ts utils src",
-    "lint:tsc": "tsc --noemit",
+    "lint:tsc": "tsc",
     "prepublishOnly": "yarn build"
   },
   "jest": {

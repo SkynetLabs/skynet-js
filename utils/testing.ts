@@ -3,7 +3,7 @@
  * @param {Object} formData - opaque FormData to compare.
  * @param {array} entries - array of expected entries.
  */
-export async function compareFormData(formData, entries) {
+export async function compareFormData(formData: Record<string, any>, entries: Array<any>) {
   let i = 0;
   for (const [fieldName, file] of formData.entries()) {
     const entry = entries[i];
