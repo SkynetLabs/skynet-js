@@ -1,6 +1,7 @@
 import { pkcs5, pki } from "node-forge";
 import { HashFileID, HashRegistryValue } from "./crypto";
-import { RegistryValue } from "./registry";
+import { RegistryValue, SignedRegistryValue } from "./registry";
+import { trimUriPrefix, uriSkynetPrefix } from "./utils";
 
 // FILEID_V1 represents version 1 of the FileID object
 export const FILEID_V1 = 1;
@@ -40,15 +41,15 @@ export async function setFile(user: User, fileID: FileID, file: File) {
   const skylink = await this.uploadFile(file, { customFilename });
 
   // fetch the current value to find out the revision
-  const existing = await this.lookupRegistry(user, fileID);
+  const existing: SignedRegistryValue | null = await this.lookupRegistry(user, fileID);
 
   // TODO: we could (/should?) verify here
 
   // build the registry value
   const value: RegistryValue = {
     tweak: HashFileID(fileID),
-    data: skylink,
-    revision: existing ? existing.Revision++ : 0,
+    data: trimUriPrefix(skylink, uriSkynetPrefix),
+    revision: existing ? existing.value.revision + 1 : 0,
   };
 
   // sign it
@@ -62,7 +63,12 @@ export async function setFile(user: User, fileID: FileID, file: File) {
 }
 
 // NewFileID takes the input parameters and returns a FileID.
-export function NewFileID(applicationID: string, fileType: number, filename: string): FileID {
+export function NewFileID(applicationID: string, fileType: FileType, filename: string): FileID {
+  // validate file type
+  if (fileType !== FileType.PublicUnencrypted) {
+    throw new Error("invalid file type");
+  }
+
   return {
     version: FILEID_V1,
     applicationID,

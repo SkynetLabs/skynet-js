@@ -1,3 +1,4 @@
+import { AxiosResponse } from "axios";
 import { FileID, User } from "./skydb";
 import { defaultOptions } from "./utils";
 
@@ -27,14 +28,20 @@ export async function lookupRegistry(
     ...this.customOptions,
   };
 
-  const response = await this.executeRequest({
-    ...opts,
-    method: "get",
-    query: {
-      userid: user.id,
-      fileid: Buffer.from(JSON.stringify(fileID)),
-    },
-  });
+  let response: AxiosResponse;
+  try {
+    response = await this.executeRequest({
+      ...opts,
+      method: "get",
+      query: {
+        userid: user.id,
+        fileid: Buffer.from(JSON.stringify(fileID)),
+      },
+    });
+  } catch (err: unknown) {
+    // unfortunately axios rejects anything that's not >= 200 and < 300
+    return null;
+  }
 
   if (response.status === 200) {
     return {
@@ -46,7 +53,7 @@ export async function lookupRegistry(
       signature: response.data.Signature,
     };
   }
-  return null;
+  throw new Error(`unexpected response status code ${response.status}`);
 }
 
 export async function updateRegistry(user: User, fileID: FileID, srv: SignedRegistryValue, customOptions = {}) {

@@ -100,15 +100,48 @@ describe("setFile", () => {
     expect(mock.history.get.length).toBe(1);
     expect(mock.history.post.length).toBe(2);
 
-    // TODO: assert requests individually
-    // TODO: assert revision number increase
+    const data = mock.history.post[1].data as FormData;
+    expect(data).toBeDefined();
+    expect(data.get("data")).toEqual(skylink);
+    expect(data.get("publickey")).toEqual(user.id);
+    expect(data.get("fileid")).toEqual(JSON.stringify(fileID));
+    expect(data.get("revision")).toEqual("12");
+    expect(data.get("signature")).toBeDefined();
+    expect(data.get("signature")).toBeTruthy();
   });
 
   it("should use a revision number of 0 if the lookup failed", async () => {
-    // TODO
-  });
+    // mock a successful upload
+    mock.onPost(uploadUrl).reply(200, { skylink });
 
-  it("should return an error on an incorrect lookup result", async () => {
-    // TODO (this is only a TODO if we add signature verification)
+    // mock a failed registry lookup
+    const registryLookupUrl = addUrlQuery(registryUrl, {
+      userid: user.id,
+      fileid: Buffer.from(JSON.stringify(fileID)),
+    });
+
+    mock.onGet(registryLookupUrl).reply(400);
+
+    // mock a successful registry update
+    mock.onPost(registryUrl).reply(204);
+
+    // mock a file
+    const file = new File(["thisistext"], filename, { type: "text/plain" });
+
+    // call `setFile` on the client
+    await client.setFile(user, fileID, file);
+
+    // assert our request history contains the expected amount of requests
+    expect(mock.history.get.length).toBe(1);
+    expect(mock.history.post.length).toBe(2);
+
+    const data = mock.history.post[1].data as FormData;
+    expect(data).toBeDefined();
+    expect(data.get("data")).toEqual(skylink);
+    expect(data.get("publickey")).toEqual(user.id);
+    expect(data.get("fileid")).toEqual(JSON.stringify(fileID));
+    expect(data.get("revision")).toEqual("0");
+    expect(data.get("signature")).toBeDefined();
+    expect(data.get("signature")).toBeTruthy();
   });
 });
