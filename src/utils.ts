@@ -101,3 +101,7 @@ export function trimUriPrefix(str: string, prefix: string): string {
   }
   return str;
 }
+
+export function randomNumber(low: number, high: number): number {
+  return Math.random() * (high - low) + low;
+}

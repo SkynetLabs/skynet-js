@@ -14,6 +14,8 @@ import {
 } from "./download";
 
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
+import { getFile, setFile } from "./skydb";
+import { lookupRegistry, updateRegistry } from "./registry";
 
 export class SkynetClient {
   portalUrl: string;
@@ -58,6 +60,14 @@ export class SkynetClient {
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;
+
+  // SkyDB
+  getFile = getFile;
+  setFile = setFile;
+
+  // SkyDB helpers
+  lookupRegistry = lookupRegistry;
+  updateRegistry = updateRegistry;
 
   /**
    * Creates and executes a request.

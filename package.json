@@ -48,7 +48,11 @@
   "homepage": "https://nebulouslabs.github.io/skynet-js/",
   "dependencies": {
     "@babel/runtime": "^7.11.2",
+    "@types/blake2": "^4.0.0",
+    "@types/node-forge": "^0.9.5",
     "axios": "^0.20.0",
+    "blake2": "^4.0.1",
+    "node-forge": "^0.10.0",
     "path-browserify": "^1.0.1",
     "url-join": "^4.0.1",
     "url-parse": "^1.4.7"
