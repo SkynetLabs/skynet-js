@@ -34,7 +34,7 @@ export async function getFile(user: User, fileID: FileID) {
 }
 
 // setFile uploads a file and sets updates the registry
-export async function setFile(user: User, fileID: FileID, file: SkyFile) {
+export async function setFile(user: User, fileID: FileID, file: File) {
   // upload the file to acquire its skylink
   const customFilename = fileID.filename;
   const skylink = await this.uploadFile(file, { customFilename });
@@ -91,19 +91,5 @@ export class User {
 
   public sign(options: pki.ed25519.ToNativeBufferParameters): string {
     return pki.ed25519.sign({ ...options, privateKey: this.secretKey }).toString("hex");
-  }
-}
-
-// SkyFile wraps a File. Currently it does not do much more than that, but in
-// the future we might
-export class SkyFile {
-  public static New(file: File): SkyFile {
-    return new SkyFile(file);
-  }
-
-  public constructor(protected file: File) {}
-
-  public getFile(): File {
-    return this.file;
   }
 }

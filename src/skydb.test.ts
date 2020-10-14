@@ -4,7 +4,7 @@ import MockAdapter from "axios-mock-adapter";
 import { random } from "node-forge";
 import { addUrlQuery, defaultSkynetPortalUrl, randomNumber } from "./utils";
 import { SkynetClient } from ".";
-import { FileType, NewFileID, SkyFile, User } from "./skydb";
+import { FileType, NewFileID, User } from "./skydb";
 
 describe("User", () => {
   it("should have set a user id", async () => {
@@ -92,10 +92,9 @@ describe("setFile", () => {
 
     // mock a file
     const file = new File(["thisistext"], filename, { type: "text/plain" });
-    const skyfile = SkyFile.New(file);
 
     // call `setFile` on the client
-    await client.setFile(user, fileID, skyfile);
+    await client.setFile(user, fileID, file);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
