@@ -5,7 +5,6 @@ import { random } from "node-forge";
 import { addUrlQuery, defaultSkynetPortalUrl, randomNumber } from "./utils";
 import { SkynetClient } from ".";
 import { FileType, NewFileID, SkyFile, User } from "./skydb";
-import { hashAll } from "./crypto";
 
 describe("User", () => {
   it("should have set a user id", async () => {
@@ -33,7 +32,6 @@ const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
 
 const portalUrl = defaultSkynetPortalUrl;
 const registryUrl = `${portalUrl}/skynet/registry`;
-const skylinkUrl = `${portalUrl}/${skylink}`;
 const uploadUrl = `${portalUrl}/skynet/skyfile`;
 
 const client = new SkynetClient(portalUrl);

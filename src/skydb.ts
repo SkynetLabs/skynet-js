@@ -1,8 +1,15 @@
 import { pkcs5, pki } from "node-forge";
-import { hashAll } from "./crypto";
+import { HashFileID, HashRegistryValue } from "./crypto";
 import { RegistryValue } from "./registry";
 
+// FILEID_V1 represents version 1 of the FileID object
 export const FILEID_V1 = 1;
+
+// FileType is the type of the file
+export enum FileType {
+  Invalid, // 0 is invalid
+  PublicUnencrypted,
+}
 
 // FileID represent a file
 export type FileID = {
@@ -11,12 +18,6 @@ export type FileID = {
   fileType: FileType;
   filename: string;
 };
-
-// FileType is the type of the file
-export enum FileType {
-  Invalid, // 0 is invalid
-  PublicUnencrypted,
-}
 
 // getFile will lookup the entry for given skappID and filename, if it exists it
 // will try and download the file behind the skylink it has found in the entry.
@@ -43,24 +44,16 @@ export async function setFile(user: User, fileID: FileID, file: SkyFile) {
 
   // TODO: we could (/should?) verify here
 
-  // build the tweak
-  const tweak = hashAll(
-    fileID.version.toString(),
-    fileID.applicationID.toString(),
-    fileID.fileType.toString(),
-    fileID.filename.toString()
-  );
-
   // build the registry value
   const value: RegistryValue = {
-    tweak,
+    tweak: HashFileID(fileID),
     data: skylink,
     revision: existing ? existing.Revision++ : 0,
   };
 
   // sign it
   const signature = user.sign({
-    message: hashAll(value.tweak, value.data, value.revision.toString()),
+    message: HashRegistryValue(value),
     encoding: "utf8",
   });
 
