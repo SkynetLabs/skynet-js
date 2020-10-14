@@ -32,9 +32,7 @@ export async function lookupRegistry(
     method: "get",
     query: {
       userid: user.id,
-      applicationid: encodeURI(fileID.applicationID),
-      filetype: fileID.fileType,
-      filename: encodeURI(fileID.filename),
+      fileid: Buffer.from(JSON.stringify(fileID)),
     },
   });
 

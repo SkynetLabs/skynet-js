@@ -47,13 +47,10 @@ describe("getFile", () => {
   });
 
   it("should perform a lookup and update the window to the skylink url", async () => {
-    console.log(hashAll("abc"));
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
       userid: user.id,
-      applicationid: fileID.applicationID,
-      filetype: fileID.fileType,
-      filename: fileID.filename,
+      fileid: Buffer.from(JSON.stringify(fileID)),
     });
     mock.onGet(registryLookupUrl).reply(200, {
       Tweak: "",
@@ -82,9 +79,7 @@ describe("setFile", () => {
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
       userid: user.id,
-      applicationid: fileID.applicationID,
-      filetype: fileID.fileType,
-      filename: fileID.filename,
+      fileid: Buffer.from(JSON.stringify(fileID)),
     });
 
     mock.onGet(registryLookupUrl).reply(200, {
