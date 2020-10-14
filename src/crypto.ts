@@ -40,8 +40,8 @@ export function HashFileID(fileID: FileID): string {
   ).toString("hex");
 }
 
-// asciiToUint8Array converts a string to a uint8 array
-function asciiToUint8Array(str: string): Uint8Array {
+// stringToUint8Array converts a string to a uint8 array
+function stringToUint8Array(str: string): Uint8Array {
   return Uint8Array.from(Buffer.from(str));
 }
 
@@ -64,6 +64,6 @@ function encodeNumber(num: number): Uint8Array {
 function encodeString(str: string): Uint8Array {
   const encoded = new Uint8Array(8 + str.length);
   encoded.set(encodeNumber(str.length));
-  encoded.set(asciiToUint8Array(str), 8);
+  encoded.set(stringToUint8Array(str), 8);
   return encoded;
 }
