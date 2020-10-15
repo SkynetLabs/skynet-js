@@ -1,8 +1,7 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
-import { hexToUint8Array } from "./crypto";
 import { FileID, User } from "./skydb";
-import { defaultOptions } from "./utils";
+import { defaultOptions, hexToUint8Array } from "./utils";
 import { Buffer } from "buffer";
 
 const defaultRegistryOptions = {

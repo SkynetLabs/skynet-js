@@ -7,9 +7,9 @@ const appID = "HelloWorld";
 const filename = "hello.txt";
 const fileID = NewFileID(appID, FileType.PublicUnencrypted, filename);
 
-// used for debugging purposes
+// skip - used for debugging purposes
 describe.skip("siasky.dev end to end", () => {
-  it("should work", async () => {
+  it.only("should work", async () => {
     const user = new User("john.doe@gmail.com", "test1234");
     const file = new File(["thisistext"], filename, { type: "text/plain" });
     await client.setFile(user, fileID, new SkyFile(file));

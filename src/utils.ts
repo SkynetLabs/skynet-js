@@ -1,6 +1,7 @@
 import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
+import { Buffer } from "buffer";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
@@ -112,4 +113,14 @@ export async function timeout(ms: number) {
       resolve(null);
     }, ms);
   });
+}
+
+// stringToUint8Array converts a string to a uint8 array
+export function stringToUint8Array(str: string): Uint8Array {
+  return Uint8Array.from(Buffer.from(str));
+}
+
+// hexToUint8Array converts a hex encoded string to a uint8 array
+export function hexToUint8Array(str: string) {
+  return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 }
