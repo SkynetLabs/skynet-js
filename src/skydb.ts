@@ -27,7 +27,7 @@ export async function getFile(user: User, fileID: FileID) {
 }
 
 // setFile uploads a file and sets updates the registry
-export async function setFile(user: User, fileID: FileID, file: SkyFile) {
+export async function setFile(user: User, fileID: FileID, file: SkyFile): Promise<boolean> {
   // upload the file to acquire its skylink
   const customFilename = fileID.filename;
   const skylink = await this.uploadFile(file.file, { customFilename });
@@ -58,7 +58,8 @@ export async function setFile(user: User, fileID: FileID, file: SkyFile) {
   const signature = user.sign({ message: HashRegistryValue(value) });
 
   // update the registry
-  await this.updateRegistry(user, fileID, { value, signature });
+  const updated = await this.updateRegistry(user, fileID, { value, signature });
+  return updated;
 }
 
 // FileID represents a File
