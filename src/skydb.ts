@@ -34,14 +34,32 @@ export async function getFile(user: User, fileID: FileID) {
   this.downloadFile(skylink);
 }
 
+async function timeout(ms: number) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(null);
+    }, ms);
+  });
+}
+
 // setFile uploads a file and sets updates the registry
 export async function setFile(user: User, fileID: FileID, file: SkyFile) {
   // upload the file to acquire its skylink
   const customFilename = fileID.filename;
   const skylink = await this.uploadFile(file.file, { customFilename });
 
-  // fetch the current value to find out the revision
-  const existing: SignedRegistryValue | null = await this.lookupRegistry(user, fileID);
+  let existing: SignedRegistryValue | null;
+
+  try {
+    // fetch the current value to find out the revision
+    const result = (await Promise.all([timeout(2000), this.lookupRegistry(user, fileID)])) as [
+      null,
+      SignedRegistryValue | null
+    ];
+    existing = result[1];
+  } catch (error) {
+    existing = null;
+  }
 
   // TODO: we could (/should?) verify here
 
@@ -54,7 +72,7 @@ export async function setFile(user: User, fileID: FileID, file: SkyFile) {
 
   // sign it
   const signature = user.sign({ message: HashRegistryValue(value) });
-  console.log("signature", signature);
+
   // update the registry
   await this.updateRegistry(user, fileID, { value, signature });
 }
@@ -92,8 +110,8 @@ export class User {
     return new User(publicKey, privateKey);
   }
 
-  public sign(options: pki.ed25519.ToNativeBufferParameters): string {
-    return pki.ed25519.sign({ ...options, privateKey: this.secretKey }).toString("hex");
+  public sign(options: pki.ed25519.ToNativeBufferParameters): pki.ed25519.NativeBuffer {
+    return pki.ed25519.sign({ ...options, privateKey: this.secretKey });
   }
 }
 

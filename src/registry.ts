@@ -1,5 +1,6 @@
+import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
-import { EncodeUserPublicKey } from "./crypto";
+import { hexToUint8Array } from "./crypto";
 import { FileID, User } from "./skydb";
 import { defaultOptions } from "./utils";
 
@@ -15,7 +16,7 @@ export type RegistryValue = {
 
 export type SignedRegistryValue = {
   value: RegistryValue;
-  signature: string;
+  signature: pki.ed25519.NativeBuffer;
 };
 
 export async function lookupRegistry(
@@ -35,7 +36,7 @@ export async function lookupRegistry(
       ...opts,
       method: "get",
       query: {
-        publickey: Buffer.from(EncodeUserPublicKey(user)),
+        publickey: `ed25519:${user.id}`,
         fileid: Buffer.from(
           JSON.stringify({
             version: fileID.version,
@@ -43,11 +44,10 @@ export async function lookupRegistry(
             filetype: fileID.fileType,
             filename: fileID.filename,
           })
-        ),
+        ).toString("hex"),
       },
     });
   } catch (err: unknown) {
-    console.log("LOOKUP ERR", err);
     // unfortunately axios rejects anything that's not >= 200 and < 300
     return null;
   }
@@ -55,11 +55,11 @@ export async function lookupRegistry(
   if (response.status === 200) {
     return {
       value: {
-        tweak: Uint8Array.from(Buffer.from(response.data.Tweak)),
-        data: response.data.Data,
-        revision: parseInt(response.data.Revision, 10),
+        tweak: Uint8Array.from(Buffer.from(response.data.tweak)),
+        data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+        revision: parseInt(response.data.revision, 10),
       },
-      signature: response.data.Signature,
+      signature: response.data.signature,
     };
   }
   throw new Error(`unexpected response status code ${response.status}`);
@@ -95,11 +95,10 @@ export async function updateRegistry(
         },
         revision: srv.value.revision,
         data: Array.from(Uint8Array.from(Buffer.from(srv.value.data))),
-        signature: Array.from(Uint8Array.from(Buffer.from(srv.signature))),
+        signature: Array.from(Uint8Array.from(srv.signature)),
       },
     });
   } catch (err: unknown) {
-    console.log("UPDATE ERR", err);
     // unfortunately axios rejects anything that's not >= 200 and < 300
     return false;
   }
