@@ -35,7 +35,14 @@ export async function lookupRegistry(
       method: "get",
       query: {
         userid: user.id,
-        fileid: Buffer.from(JSON.stringify(fileID)),
+        fileid: Buffer.from(
+          JSON.stringify({
+            version: fileID.version,
+            applicationid: fileID.applicationID,
+            filetype: fileID.fileType,
+            filename: fileID.filename,
+          })
+        ),
       },
     });
   } catch (err: unknown) {
@@ -65,7 +72,15 @@ export async function updateRegistry(user: User, fileID: FileID, srv: SignedRegi
 
   const formData = new FormData();
   formData.append("publickey", user.id);
-  formData.append("fileid", JSON.stringify(fileID));
+  formData.append(
+    "fileid",
+    JSON.stringify({
+      version: fileID.version,
+      applicationid: fileID.applicationID,
+      filetype: fileID.fileType,
+      filename: fileID.filename,
+    })
+  );
   formData.append("revision", srv.value.revision.toString());
   formData.append("data", srv.value.data);
   formData.append("signature", srv.signature);

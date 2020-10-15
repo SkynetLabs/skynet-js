@@ -35,10 +35,10 @@ export async function getFile(user: User, fileID: FileID) {
 }
 
 // setFile uploads a file and sets updates the registry
-export async function setFile(user: User, fileID: FileID, file: File) {
+export async function setFile(user: User, fileID: FileID, file: SkyFile) {
   // upload the file to acquire its skylink
   const customFilename = fileID.filename;
-  const skylink = await this.uploadFile(file, { customFilename });
+  const skylink = await this.uploadFile(file.file, { customFilename });
 
   // fetch the current value to find out the revision
   const existing: SignedRegistryValue | null = await this.lookupRegistry(user, fileID);
@@ -77,7 +77,7 @@ export function NewFileID(applicationID: string, fileType: FileType, filename: s
   };
 }
 
-// User represents a user entity. It can be used to sign.
+// User represents a user entity and can be used to sign.
 export class User {
   public id: string;
 
@@ -98,4 +98,12 @@ export class User {
   public sign(options: pki.ed25519.ToNativeBufferParameters): string {
     return pki.ed25519.sign({ ...options, privateKey: this.secretKey }).toString("hex");
   }
+}
+
+// SkyFile wraps a File.
+export class SkyFile {
+  public static New(file: File): SkyFile {
+    return new SkyFile(file);
+  }
+  public constructor(public file: File) {}
 }

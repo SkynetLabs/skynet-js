@@ -4,7 +4,7 @@ import MockAdapter from "axios-mock-adapter";
 import { random } from "node-forge";
 import { addUrlQuery, defaultSkynetPortalUrl, randomNumber } from "./utils";
 import { SkynetClient } from ".";
-import { FileType, NewFileID, User } from "./skydb";
+import { FileType, NewFileID, SkyFile, User } from "./skydb";
 
 describe("User", () => {
   it("should have set a user id", async () => {
@@ -48,7 +48,14 @@ describe("getFile", () => {
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
       userid: user.id,
-      fileid: Buffer.from(JSON.stringify(fileID)),
+      fileid: Buffer.from(
+        JSON.stringify({
+          version: fileID.version,
+          applicationid: fileID.applicationID,
+          filetype: fileID.fileType,
+          filename: fileID.filename,
+        })
+      ),
     });
     mock.onGet(registryLookupUrl).reply(200, {
       Tweak: "",
@@ -77,7 +84,14 @@ describe("setFile", () => {
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
       userid: user.id,
-      fileid: Buffer.from(JSON.stringify(fileID)),
+      fileid: Buffer.from(
+        JSON.stringify({
+          version: fileID.version,
+          applicationid: fileID.applicationID,
+          filetype: fileID.fileType,
+          filename: fileID.filename,
+        })
+      ),
     });
 
     mock.onGet(registryLookupUrl).reply(200, {
@@ -94,7 +108,7 @@ describe("setFile", () => {
     const file = new File(["thisistext"], filename, { type: "text/plain" });
 
     // call `setFile` on the client
-    await client.setFile(user, fileID, file);
+    await client.setFile(user, fileID, SkyFile.New(file));
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
@@ -104,7 +118,14 @@ describe("setFile", () => {
     expect(data).toBeDefined();
     expect(data.get("data")).toEqual(skylink);
     expect(data.get("publickey")).toEqual(user.id);
-    expect(data.get("fileid")).toEqual(JSON.stringify(fileID));
+    expect(data.get("fileid")).toEqual(
+      JSON.stringify({
+        version: fileID.version,
+        applicationid: fileID.applicationID,
+        filetype: fileID.fileType,
+        filename: fileID.filename,
+      })
+    );
     expect(data.get("revision")).toEqual("12");
     expect(data.get("signature")).toBeDefined();
     expect(data.get("signature")).toBeTruthy();
@@ -129,7 +150,7 @@ describe("setFile", () => {
     const file = new File(["thisistext"], filename, { type: "text/plain" });
 
     // call `setFile` on the client
-    await client.setFile(user, fileID, file);
+    await client.setFile(user, fileID, SkyFile.New(file));
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
@@ -139,7 +160,14 @@ describe("setFile", () => {
     expect(data).toBeDefined();
     expect(data.get("data")).toEqual(skylink);
     expect(data.get("publickey")).toEqual(user.id);
-    expect(data.get("fileid")).toEqual(JSON.stringify(fileID));
+    expect(data.get("fileid")).toEqual(
+      JSON.stringify({
+        version: fileID.version,
+        applicationid: fileID.applicationID,
+        filetype: fileID.fileType,
+        filename: fileID.filename,
+      })
+    );
     expect(data.get("revision")).toEqual("0");
     expect(data.get("signature")).toBeDefined();
     expect(data.get("signature")).toBeTruthy();
