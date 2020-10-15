@@ -83,8 +83,6 @@ export class SkynetClient {
     // No other headers.
     const headers = config.customUserAgent && { "User-Agent": config.customUserAgent };
 
-    console.log(`Executing ${config.method} to ${url} with config ${JSON.stringify(config)}`);
-
     return axios({
       url,
       method: config.method,

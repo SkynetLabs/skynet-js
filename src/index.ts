@@ -4,6 +4,7 @@ export { SkynetClient } from "./client";
 export {} from "./download";
 export {} from "./encryption";
 export {} from "./upload";
+export {} from "./skydb";
 
 export {
   defaultPortalUrl,

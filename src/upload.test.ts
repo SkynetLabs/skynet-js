@@ -18,8 +18,8 @@ describe("uploadFile", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
-    mock = new MockAdapter(axios, { onNoMatch: "passthrough" });
-    mock.onPost(url + "1").reply(200, { skylink: skylink });
+    mock = new MockAdapter(axios);
+    mock.onPost(url).reply(200, { skylink: skylink });
     mock.resetHistory();
   });
 

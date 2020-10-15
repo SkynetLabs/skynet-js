@@ -105,3 +105,11 @@ export function trimUriPrefix(str: string, prefix: string): string {
 export function randomNumber(low: number, high: number): number {
   return Math.random() * (high - low) + low;
 }
+
+export async function timeout(ms: number) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(null);
+    }, ms);
+  });
+}

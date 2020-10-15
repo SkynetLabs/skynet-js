@@ -40,14 +40,14 @@ describe("getFile", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
-    mock = new MockAdapter(axios, { onNoMatch: "passthrough" });
+    mock = new MockAdapter(axios);
     mock.resetHistory();
   });
 
   it("should perform a lookup and update the window to the skylink url", async () => {
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      userid: user.id,
+      publickey: `ed25519:${user.id}`,
       fileid: Buffer.from(
         JSON.stringify({
           version: fileID.version,
@@ -55,13 +55,15 @@ describe("getFile", () => {
           filetype: fileID.fileType,
           filename: fileID.filename,
         })
-      ),
+      ).toString("hex"),
     });
+
     mock.onGet(registryLookupUrl).reply(200, {
-      Tweak: "",
-      Data: skylink,
-      Revision: 11,
-      Signature: "",
+      tweak: "3b0f02e66373877503325e44b6973279d2e2a9c21e75b17adccb378d05cf40ae",
+      data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
+      revision: 11,
+      signature:
+        "7a971e1df2ddbb8ef1f8e71e28a5a64ffe1e5dfcb7eebb19e6c238744133ddeefc4f286488dd4500c33610711e3447b49e5a30df2e590e27ad00e56ebf3baf04",
     });
 
     await client.getFile(user, fileID);
@@ -77,13 +79,13 @@ describe("setFile", () => {
     mock.resetHistory();
   });
 
-  it.only("should perform an upload, lookup and registry update", async () => {
+  it("should perform an upload, lookup and registry update", async () => {
     // mock a successful upload
-    mock.onPost(uploadUrl + "1").reply(200, { skylink });
+    mock.onPost(uploadUrl).reply(200, { skylink });
 
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      userid: user.id,
+      publickey: `ed25519:${user.id}`,
       fileid: Buffer.from(
         JSON.stringify({
           version: fileID.version,
@@ -91,44 +93,29 @@ describe("setFile", () => {
           filetype: fileID.fileType,
           filename: fileID.filename,
         })
-      ),
+      ).toString("hex"),
     });
 
-    mock.onGet(registryLookupUrl + "1").reply(200, {
-      Tweak: "",
-      Data: skylink,
-      Revision: 11,
-      Signature: "",
+    mock.onGet(registryLookupUrl).reply(200, {
+      tweak: "3b0f02e66373877503325e44b6973279d2e2a9c21e75b17adccb378d05cf40ae",
+      data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
+      revision: 11,
+      signature:
+        "7a971e1df2ddbb8ef1f8e71e28a5a64ffe1e5dfcb7eebb19e6c238744133ddeefc4f286488dd4500c33610711e3447b49e5a30df2e590e27ad00e56ebf3baf04",
     });
 
     // mock a successful registry update
-    mock.onPost(registryUrl + "1").reply(204);
+    mock.onPost(registryUrl).reply(204);
 
     // mock a file
     const file = new File(["thisistext"], filename, { type: "text/plain" });
 
     // call `setFile` on the client
     await client.setFile(user, fileID, SkyFile.New(file));
-    return;
+
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
     expect(mock.history.post.length).toBe(2);
-
-    const data = mock.history.post[1].data as FormData;
-    expect(data).toBeDefined();
-    expect(data.get("data")).toEqual(skylink);
-    expect(data.get("publickey")).toEqual(user.id);
-    expect(data.get("fileid")).toEqual(
-      JSON.stringify({
-        version: fileID.version,
-        applicationid: fileID.applicationID,
-        filetype: fileID.fileType,
-        filename: fileID.filename,
-      })
-    );
-    expect(data.get("revision")).toEqual("12");
-    expect(data.get("signature")).toBeDefined();
-    expect(data.get("signature")).toBeTruthy();
   });
 
   it("should use a revision number of 0 if the lookup failed", async () => {
@@ -137,8 +124,15 @@ describe("setFile", () => {
 
     // mock a failed registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      userid: user.id,
-      fileid: Buffer.from(JSON.stringify(fileID)),
+      publickey: `ed25519:${user.id}`,
+      fileid: Buffer.from(
+        JSON.stringify({
+          version: fileID.version,
+          applicationid: fileID.applicationID,
+          filetype: fileID.fileType,
+          filename: fileID.filename,
+        })
+      ).toString("hex"),
     });
 
     mock.onGet(registryLookupUrl).reply(400);
@@ -156,20 +150,8 @@ describe("setFile", () => {
     expect(mock.history.get.length).toBe(1);
     expect(mock.history.post.length).toBe(2);
 
-    const data = mock.history.post[1].data as FormData;
+    const data = JSON.parse(mock.history.post[1].data);
     expect(data).toBeDefined();
-    expect(data.get("data")).toEqual(skylink);
-    expect(data.get("publickey")).toEqual(user.id);
-    expect(data.get("fileid")).toEqual(
-      JSON.stringify({
-        version: fileID.version,
-        applicationid: fileID.applicationID,
-        filetype: fileID.fileType,
-        filename: fileID.filename,
-      })
-    );
-    expect(data.get("revision")).toEqual("0");
-    expect(data.get("signature")).toBeDefined();
-    expect(data.get("signature")).toBeTruthy();
+    expect(data.revision).toEqual(0);
   });
 });

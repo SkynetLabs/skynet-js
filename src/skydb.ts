@@ -1,7 +1,7 @@
 import { pkcs5, pki } from "node-forge";
 import { HashFileID, HashRegistryValue } from "./crypto";
 import { RegistryValue, SignedRegistryValue } from "./registry";
-import { trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { timeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
 
 // FILEID_V1 represents version 1 of the FileID object
 export const FILEID_V1 = 1;
@@ -32,14 +32,6 @@ export async function getFile(user: User, fileID: FileID) {
   const skylink = existing.value.data;
 
   this.downloadFile(skylink);
-}
-
-async function timeout(ms: number) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve(null);
-    }, ms);
-  });
 }
 
 // setFile uploads a file and sets updates the registry
