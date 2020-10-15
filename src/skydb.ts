@@ -14,16 +14,25 @@ export enum FileType {
 
 // getFile will lookup the entry for given skappID and filename, if it exists it
 // will try and download the file behind the skylink it has found in the entry.
-export async function getFile(user: User, fileID: FileID) {
+export async function getFile(user: User, fileID: FileID): Promise<SkyFile> {
   // lookup the registry entry
   const existing = await this.lookupRegistry(user, fileID);
   if (!existing) {
     throw new Error("not found");
   }
-  // TODO: should we validate the skylink
-  const skylink = existing.value.data;
 
-  this.downloadFile(skylink);
+  // download the data in that Skylink
+  const skylink = existing.value.data;
+  const response = await this.executeRequest({
+    ...this.customOptions,
+    method: "get",
+    url: this.getSkylinkUrl(skylink),
+  });
+
+  // wrap the data in a skyfile and return it
+  const metadata = JSON.parse(response.headers["skynet-file-metadata"]);
+  const file = new SkyFile(new File([response.data], metadata.filename, { type: response.headers["content-type"] }));
+  return file;
 }
 
 // setFile uploads a file and sets updates the registry
