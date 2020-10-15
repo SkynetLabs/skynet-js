@@ -5,7 +5,7 @@ export {} from "./download";
 export {} from "./encryption";
 export {} from "./upload";
 
-export * from "./skydb";
+export { FILEID_V1, FileType, NewFileID, User, SkyFile } from "./skydb";
 export type { SignedRegistryValue, RegistryValue } from "./registry";
 
 export {
