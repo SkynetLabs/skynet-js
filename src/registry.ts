@@ -93,7 +93,7 @@ export async function updateRegistry(
           })
         ),
         revision: srv.value.revision,
-        data: Buffer.from(srv.value.data),
+        data: Uint8Array.from(Buffer.from(srv.value.data)),
         signature: Buffer.from(srv.signature),
       },
     });
