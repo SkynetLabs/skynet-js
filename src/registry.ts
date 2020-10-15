@@ -1,4 +1,5 @@
 import { AxiosResponse } from "axios";
+import { encodeNumber, EncodeUserPublicKey } from "./crypto";
 import { FileID, User } from "./skydb";
 import { defaultOptions } from "./utils";
 
@@ -34,7 +35,7 @@ export async function lookupRegistry(
       ...opts,
       method: "get",
       query: {
-        userid: user.id,
+        publickey: Buffer.from(EncodeUserPublicKey(user)),
         fileid: Buffer.from(
           JSON.stringify({
             version: fileID.version,
@@ -46,6 +47,7 @@ export async function lookupRegistry(
       },
     });
   } catch (err: unknown) {
+    console.log("LOOKUP ERR", err);
     // unfortunately axios rejects anything that's not >= 200 and < 300
     return null;
   }
@@ -63,31 +65,46 @@ export async function lookupRegistry(
   throw new Error(`unexpected response status code ${response.status}`);
 }
 
-export async function updateRegistry(user: User, fileID: FileID, srv: SignedRegistryValue, customOptions = {}) {
+export async function updateRegistry(
+  user: User,
+  fileID: FileID,
+  srv: SignedRegistryValue,
+  customOptions = {}
+): Promise<boolean> {
   const opts = {
     ...defaultRegistryOptions,
     ...customOptions,
     ...this.customOptions,
   };
 
-  const formData = new FormData();
-  formData.append("publickey", user.id);
-  formData.append(
-    "fileid",
-    JSON.stringify({
-      version: fileID.version,
-      applicationid: fileID.applicationID,
-      filetype: fileID.fileType,
-      filename: fileID.filename,
-    })
-  );
-  formData.append("revision", srv.value.revision.toString());
-  formData.append("data", srv.value.data);
-  formData.append("signature", srv.signature);
+  let response: AxiosResponse;
+  try {
+    response = await this.executeRequest({
+      ...opts,
+      method: "post",
+      data: {
+        publickey: Buffer.from(EncodeUserPublicKey(user)),
+        fileid: Buffer.from(
+          JSON.stringify({
+            version: fileID.version,
+            applicationid: fileID.applicationID,
+            filetype: fileID.fileType,
+            filename: fileID.filename,
+          })
+        ),
+        revision: srv.value.revision,
+        data: Buffer.from(srv.value.data),
+        signature: Buffer.from(srv.signature),
+      },
+    });
+  } catch (err: unknown) {
+    console.log("UPDATE ERR", err);
+    // unfortunately axios rejects anything that's not >= 200 and < 300
+    return false;
+  }
 
-  await this.executeRequest({
-    ...opts,
-    method: "post",
-    data: formData,
-  });
+  if (response.status === 204) {
+    return true;
+  }
+  throw new Error(`unexpected response status code ${response.status}`);
 }

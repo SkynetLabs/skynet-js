@@ -40,7 +40,7 @@ describe("getFile", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
-    mock = new MockAdapter(axios);
+    mock = new MockAdapter(axios, { onNoMatch: "passthrough" });
     mock.resetHistory();
   });
 
@@ -77,9 +77,9 @@ describe("setFile", () => {
     mock.resetHistory();
   });
 
-  it("should perform an upload, lookup and registry update", async () => {
+  it.only("should perform an upload, lookup and registry update", async () => {
     // mock a successful upload
-    mock.onPost(uploadUrl).reply(200, { skylink });
+    mock.onPost(uploadUrl + "1").reply(200, { skylink });
 
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
@@ -94,7 +94,7 @@ describe("setFile", () => {
       ),
     });
 
-    mock.onGet(registryLookupUrl).reply(200, {
+    mock.onGet(registryLookupUrl + "1").reply(200, {
       Tweak: "",
       Data: skylink,
       Revision: 11,
@@ -102,14 +102,14 @@ describe("setFile", () => {
     });
 
     // mock a successful registry update
-    mock.onPost(registryUrl).reply(204);
+    mock.onPost(registryUrl + "1").reply(204);
 
     // mock a file
     const file = new File(["thisistext"], filename, { type: "text/plain" });
 
     // call `setFile` on the client
     await client.setFile(user, fileID, SkyFile.New(file));
-
+    return;
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
     expect(mock.history.post.length).toBe(2);
