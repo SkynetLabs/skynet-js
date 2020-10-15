@@ -53,11 +53,8 @@ export async function setFile(user: User, fileID: FileID, file: SkyFile) {
   };
 
   // sign it
-  const signature = user.sign({
-    message: HashRegistryValue(value),
-    encoding: "utf8",
-  });
-
+  const signature = user.sign({ message: HashRegistryValue(value) });
+  console.log("signature", signature);
   // update the registry
   await this.updateRegistry(user, fileID, { value, signature });
 }
@@ -81,7 +78,7 @@ export function NewFileID(applicationID: string, fileType: FileType, filename: s
 export class User {
   public id: string;
 
-  public constructor(protected publicKey: pki.ed25519.NativeBuffer, protected secretKey: pki.ed25519.NativeBuffer) {
+  public constructor(public publicKey: pki.ed25519.NativeBuffer, protected secretKey: pki.ed25519.NativeBuffer) {
     this.id = publicKey.toString("hex");
   }
 

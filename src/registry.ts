@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import { encodeNumber, EncodeUserPublicKey } from "./crypto";
+import { EncodeUserPublicKey } from "./crypto";
 import { FileID, User } from "./skydb";
 import { defaultOptions } from "./utils";
 
@@ -8,7 +8,7 @@ const defaultRegistryOptions = {
 };
 
 export type RegistryValue = {
-  tweak: string;
+  tweak: Uint8Array;
   data: string;
   revision: number;
 };
@@ -55,7 +55,7 @@ export async function lookupRegistry(
   if (response.status === 200) {
     return {
       value: {
-        tweak: response.data.Tweak,
+        tweak: Uint8Array.from(Buffer.from(response.data.Tweak)),
         data: response.data.Data,
         revision: parseInt(response.data.Revision, 10),
       },
@@ -83,18 +83,19 @@ export async function updateRegistry(
       ...opts,
       method: "post",
       data: {
-        publickey: Buffer.from(EncodeUserPublicKey(user)),
-        fileid: Buffer.from(
-          JSON.stringify({
-            version: fileID.version,
-            applicationid: fileID.applicationID,
-            filetype: fileID.fileType,
-            filename: fileID.filename,
-          })
-        ),
+        publickey: {
+          algorithm: "ed25519",
+          key: Array.from(user.publicKey),
+        },
+        fileid: {
+          version: fileID.version,
+          applicationid: fileID.applicationID,
+          filetype: fileID.fileType,
+          filename: fileID.filename,
+        },
         revision: srv.value.revision,
-        data: Uint8Array.from(Buffer.from(srv.value.data)),
-        signature: Buffer.from(srv.signature),
+        data: Array.from(Uint8Array.from(Buffer.from(srv.value.data))),
+        signature: Array.from(Uint8Array.from(Buffer.from(srv.signature))),
       },
     });
   } catch (err: unknown) {
