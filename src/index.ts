@@ -3,9 +3,10 @@ export { SkynetClient } from "./client";
 // Get the following files to run or the client's methods won't be defined.
 export {} from "./download";
 export {} from "./encryption";
-export {} from "./registry";
-export {} from "./skydb";
 export {} from "./upload";
+
+export * from "./skydb";
+export type { SignedRegistryValue, RegistryValue } from "./registry";
 
 export {
   defaultPortalUrl,
