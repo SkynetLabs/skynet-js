@@ -87,19 +87,16 @@ export function NewFileID(applicationID: string, fileType: FileType, filename: s
 // User represents a user entity and can be used to sign.
 export class User {
   public id: string;
+  public publicKey: pki.ed25519.NativeBuffer;
+  protected secretKey: pki.ed25519.NativeBuffer;
 
-  public constructor(public publicKey: pki.ed25519.NativeBuffer, protected secretKey: pki.ed25519.NativeBuffer) {
-    this.id = publicKey.toString("hex");
-  }
-
-  // New takes a username and password and generates a key pair representing
-  // that user, it returns a new User object.
-  //
   // NOTE: username should be the user's email address as ideally it's unique
-  public static New(username: string, password: string): User {
+  public constructor(username: string, password: string) {
     const seed = pkcs5.pbkdf2(password, username, 1000, 32);
     const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
-    return new User(publicKey, privateKey);
+    this.publicKey = publicKey;
+    this.secretKey = privateKey;
+    this.id = publicKey.toString("hex");
   }
 
   public sign(options: pki.ed25519.ToNativeBufferParameters): pki.ed25519.NativeBuffer {
@@ -109,8 +106,5 @@ export class User {
 
 // SkyFile wraps a File.
 export class SkyFile {
-  public static New(file: File): SkyFile {
-    return new SkyFile(file);
-  }
   public constructor(public file: File) {}
 }

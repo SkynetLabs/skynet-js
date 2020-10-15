@@ -8,21 +8,21 @@ import { FileType, NewFileID, SkyFile, User } from "./skydb";
 
 describe("User", () => {
   it("should have set a user id", async () => {
-    const user = User.New("john.doe@example.com", "supersecret");
+    const user = new User("john.doe@example.com", "supersecret");
     expect(user.id.length).toBeGreaterThan(0);
   });
 
   it("should be deterministic", async () => {
     const username = random.getBytesSync(randomNumber(6, 24));
     const password = random.getBytesSync(randomNumber(12, 64));
-    const expected = User.New(username, password);
+    const expected = new User(username, password);
     for (let i = 0; i < 100; i++) {
-      expect(User.New(username, password).id).toEqual(expected.id);
+      expect(new User(username, password).id).toEqual(expected.id);
     }
   });
 });
 
-const user = User.New("john.doe@example.com", "supersecret");
+const user = new User("john.doe@example.com", "supersecret");
 
 const appID = "SkySkapp";
 const filename = "foo.txt";
@@ -111,7 +111,7 @@ describe("setFile", () => {
     const file = new File(["thisistext"], filename, { type: "text/plain" });
 
     // call `setFile` on the client
-    await client.setFile(user, fileID, SkyFile.New(file));
+    await client.setFile(user, fileID, new SkyFile(file));
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
@@ -144,7 +144,7 @@ describe("setFile", () => {
     const file = new File(["thisistext"], filename, { type: "text/plain" });
 
     // call `setFile` on the client
-    await client.setFile(user, fileID, SkyFile.New(file));
+    await client.setFile(user, fileID, new SkyFile(file));
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);

@@ -26,8 +26,8 @@ export async function lookupRegistry(
 ): Promise<SignedRegistryValue | null> {
   const opts = {
     ...defaultRegistryOptions,
-    ...customOptions,
     ...this.customOptions,
+    ...customOptions,
   };
 
   let response: AxiosResponse;
@@ -73,8 +73,8 @@ export async function updateRegistry(
 ): Promise<boolean> {
   const opts = {
     ...defaultRegistryOptions,
-    ...customOptions,
     ...this.customOptions,
+    ...customOptions,
   };
 
   let response: AxiosResponse;
