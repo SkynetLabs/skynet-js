@@ -1,6 +1,7 @@
 import blake from "blakejs";
 import { RegistryValue } from "./registry";
 import { FileID, User } from "./skydb";
+import { Buffer } from "buffer";
 
 // NewHash returns a blake2b 256bit hasher.
 function NewHash() {

@@ -23,7 +23,7 @@ describe("uploadFile", () => {
     mock.resetHistory();
   });
 
-  it.only("should send formdata with file", async () => {
+  it("should send formdata with file", async () => {
     const data = await client.uploadFile(file);
 
     expect(mock.history.post.length).toBe(1);
