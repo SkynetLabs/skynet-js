@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.0]
+
+- Add SkyDB support
+- Move to Typescript
+
 ## [2.0.9]
 
 ### Changed
