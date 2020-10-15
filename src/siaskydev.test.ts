@@ -1,5 +1,5 @@
 import { SkynetClient } from "./client";
-import { FileType, FileID, SkyFile, User } from "./skydb";
+import { FileType, FileID, User } from "./skydb";
 
 const client = new SkynetClient("https://siasky.dev");
 
@@ -14,6 +14,6 @@ describe("siasky.dev end to end", () => {
     // const file = new File(["thisistext"], filename, { type: "text/plain" });
     // await client.setFile(user, fileID, new SkyFile(file));
     const file = await client.getFile(user, fileID);
-    console.log(file.file)
+    console.log("TEXT:", file.file.text)
   });
 });

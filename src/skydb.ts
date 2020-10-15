@@ -31,11 +31,12 @@ export async function getFile(user: User, fileID: FileID): Promise<SkyFile> {
 
   // wrap the data in a skyfile and return it
   const metadata = JSON.parse(response.headers['skynet-file-metadata'])
-  return new File(
+  const file = new SkyFile(new File(
     [response.data],
     metadata.filename,
-    { type: response.headers['content-type'] }
+    { type: 'text/plain' }
   ));
+  return file
 }
 
 // setFile uploads a file and sets updates the registry
