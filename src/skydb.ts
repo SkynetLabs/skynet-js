@@ -12,14 +12,6 @@ export enum FileType {
   PublicUnencrypted,
 }
 
-// FileID represent a file
-export type FileID = {
-  version: number;
-  applicationID: string;
-  fileType: FileType;
-  filename: string;
-};
-
 // getFile will lookup the entry for given skappID and filename, if it exists it
 // will try and download the file behind the skylink it has found in the entry.
 export async function getFile(user: User, fileID: FileID) {
@@ -69,19 +61,16 @@ export async function setFile(user: User, fileID: FileID, file: SkyFile) {
   await this.updateRegistry(user, fileID, { value, signature });
 }
 
-// NewFileID takes the input parameters and returns a FileID.
-export function NewFileID(applicationID: string, fileType: FileType, filename: string): FileID {
-  // validate file type
-  if (fileType !== FileType.PublicUnencrypted) {
-    throw new Error("invalid file type");
-  }
+// FileID represents a File
+export class FileID {
+  public version = FILEID_V1;
 
-  return {
-    version: FILEID_V1,
-    applicationID,
-    fileType,
-    filename,
-  };
+  public constructor(public applicationID: string, public fileType: FileType, public filename: string) {
+    // validate file type
+    if (fileType !== FileType.PublicUnencrypted) {
+      throw new Error("invalid file type");
+    }
+  }
 }
 
 // User represents a user entity and can be used to sign.

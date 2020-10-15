@@ -1,9 +1,9 @@
 import { HashFileID, HashRegistryValue } from "./crypto";
-import { FileType, NewFileID } from "./skydb";
+import { FileType, FileID } from "./skydb";
 
 const appID = "SkySkapp";
 const filename = "foo.txt";
-const fileID = NewFileID(appID, FileType.PublicUnencrypted, filename);
+const fileID = new FileID(appID, FileType.PublicUnencrypted, filename);
 
 describe("HashFileID", () => {
   it("should match siad for equal input", () => {

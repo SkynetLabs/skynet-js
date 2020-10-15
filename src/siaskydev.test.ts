@@ -1,11 +1,11 @@
 import { SkynetClient } from "./client";
-import { FileType, NewFileID, SkyFile, User } from "./skydb";
+import { FileType, FileID, SkyFile, User } from "./skydb";
 
 const client = new SkynetClient("https://siasky.dev");
 
 const appID = "HelloWorld";
 const filename = "hello.txt";
-const fileID = NewFileID(appID, FileType.PublicUnencrypted, filename);
+const fileID = new FileID(appID, FileType.PublicUnencrypted, filename);
 
 // skip - used for debugging purposes
 describe.skip("siasky.dev end to end", () => {

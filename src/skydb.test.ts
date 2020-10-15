@@ -4,7 +4,7 @@ import MockAdapter from "axios-mock-adapter";
 import { random } from "node-forge";
 import { addUrlQuery, defaultSkynetPortalUrl, randomNumber } from "./utils";
 import { SkynetClient } from ".";
-import { FileType, NewFileID, SkyFile, User } from "./skydb";
+import { FileType, FileID, SkyFile, User } from "./skydb";
 
 describe("User", () => {
   it("should have set a user id", async () => {
@@ -26,7 +26,7 @@ const user = new User("john.doe@example.com", "supersecret");
 
 const appID = "SkySkapp";
 const filename = "foo.txt";
-const fileID = NewFileID(appID, FileType.PublicUnencrypted, filename);
+const fileID = new FileID(appID, FileType.PublicUnencrypted, filename);
 
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
 
