@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.1]
+
+- Improve timeout handling for SkyDB
+- Extend end-to-end tests
+
 ## [2.1.0]
 
 - Add SkyDB support
