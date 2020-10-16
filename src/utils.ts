@@ -126,3 +126,14 @@ export function stringToUint8Array(str: string): Uint8Array {
 export function hexToUint8Array(str: string) {
   return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 }
+
+// readData is a helper function that uses a FileReader to read the contents of
+// the given file
+export function readData(file: File): Promise<string | ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+}
