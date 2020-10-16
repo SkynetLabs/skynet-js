@@ -1,7 +1,7 @@
 import { pkcs5, pki } from "node-forge";
 import { HashFileID, HashRegistryValue } from "./crypto";
 import { RegistryValue, SignedRegistryValue } from "./registry";
-import { timeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { promiseTimeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
 
 // FILEID_V1 represents version 1 of the FileID object
 export const FILEID_V1 = 1;
@@ -41,15 +41,10 @@ export async function setFile(user: User, fileID: FileID, file: SkyFile): Promis
   const customFilename = fileID.filename;
   const skylink = await this.uploadFile(file.file, { customFilename });
 
+  // fetch the current value to find out the revision, timeout after 2s
   let existing: SignedRegistryValue | null;
-
   try {
-    // fetch the current value to find out the revision
-    const result = (await Promise.all([timeout(2000), this.lookupRegistry(user, fileID)])) as [
-      null,
-      SignedRegistryValue | null
-    ];
-    existing = result[1];
+    existing = await promiseTimeout(this.lookupRegistry(user, fileID), 2000);
   } catch (error) {
     existing = null;
   }

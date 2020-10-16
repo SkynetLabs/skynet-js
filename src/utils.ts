@@ -107,12 +107,14 @@ export function randomNumber(low: number, high: number): number {
   return Math.random() * (high - low) + low;
 }
 
-export async function timeout(ms: number) {
-  return new Promise((resolve, reject) => {
+export async function promiseTimeout(promise: any, ms: number) {
+  const timeout = new Promise((resolve, reject) => {
     setTimeout(() => {
-      resolve(null);
+      reject(`Timed out after ${ms}ms`);
     }, ms);
   });
+
+  return Promise.race([promise, timeout]);
 }
 
 // stringToUint8Array converts a string to a uint8 array
