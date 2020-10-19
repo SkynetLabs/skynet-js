@@ -1,3 +1,4 @@
+import mimeDB from "mime-db";
 import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
@@ -136,4 +137,21 @@ export function readData(file: File): Promise<string | ArrayBuffer> {
     reader.onload = () => resolve(reader.result);
     reader.onerror = (error) => reject(error);
   });
+}
+
+/**
+ * Get the file mime type. In case the type is not provided, use mime-db and try
+ * to guess the file type based on the extension.
+ */
+export function getFileMimeType(file: File): string {
+  if (file.type) return file.type;
+  const extension = file.name.slice(file.name.lastIndexOf(".") + 1);
+  if (extension) {
+    for (const type in mimeDB) {
+      if (mimeDB[type]?.extensions?.includes(extension)) {
+        return type;
+      }
+    }
+  }
+  return "";
 }
