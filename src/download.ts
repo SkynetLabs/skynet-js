@@ -24,7 +24,7 @@ const defaultResolveHnsOptions = {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  */
-export function downloadFile(skylink: string, customOptions = {}) {
+export function downloadFile(skylink: string, customOptions = {}): void {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getSkylinkUrl(skylink, opts);
 
@@ -38,7 +38,7 @@ export function downloadFile(skylink: string, customOptions = {}) {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  */
-export async function downloadFileHns(domain: string, customOptions = {}) {
+export async function downloadFileHns(domain: string, customOptions = {}): Promise<void> {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getHnsUrl(domain, opts);
 
@@ -46,7 +46,7 @@ export async function downloadFileHns(domain: string, customOptions = {}) {
   window.location = url;
 }
 
-export function getSkylinkUrl(skylink: string, customOptions = {}) {
+export function getSkylinkUrl(skylink: string, customOptions = {}): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
@@ -54,7 +54,7 @@ export function getSkylinkUrl(skylink: string, customOptions = {}) {
   return addUrlQuery(url, query);
 }
 
-export function getHnsUrl(domain: string, customOptions = {}) {
+export function getHnsUrl(domain: string, customOptions = {}): string {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
@@ -62,7 +62,7 @@ export function getHnsUrl(domain: string, customOptions = {}) {
   return addUrlQuery(url, query);
 }
 
-export function getHnsresUrl(domain: string, customOptions = {}) {
+export function getHnsresUrl(domain: string, customOptions = {}): string {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
@@ -80,7 +80,7 @@ export async function getMetadata(skylink: string, customOptions = {}) {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  */
-export function openFile(skylink: string, customOptions = {}) {
+export function openFile(skylink: string, customOptions = {}): void {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
@@ -93,7 +93,7 @@ export function openFile(skylink: string, customOptions = {}) {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  */
-export async function openFileHns(domain: string, customOptions = {}) {
+export async function openFileHns(domain: string, customOptions = {}): Promise<void> {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsUrl(domain, opts);
 
@@ -106,7 +106,7 @@ export async function openFileHns(domain: string, customOptions = {}) {
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
  */
-export async function resolveHns(domain: string, customOptions = {}) {
+export async function resolveHns(domain: string, customOptions = {}): Promise<any> {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsresUrl(domain, opts);
 
