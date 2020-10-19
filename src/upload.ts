@@ -1,4 +1,4 @@
-import { defaultOptions, uriSkynetPrefix } from "./utils";
+import { defaultOptions, uriSkynetPrefix, getFileMimeType } from "./utils";
 
 const defaultUploadOptions = {
   ...defaultOptions("/skynet/skyfile"),
@@ -82,5 +82,5 @@ export async function uploadDirectoryRequest(directory: any, filename: string, c
  * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
  */
 function ensureFileObjectConsistency(file: File) {
-  return new File([file], file.name, { type: file.type });
+  return new File([file], file.name, { type: getFileMimeType(file) });
 }
