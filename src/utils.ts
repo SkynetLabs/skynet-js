@@ -69,19 +69,18 @@ export function makeUrl(...args: string[]): string {
 
 // Allow ?, /, and # to end the hash portion of a skylink.
 const SKYLINK_BOUNDARY = "[?|/|#]";
-const SKYLINK_MATCHER = `([a-zA-Z0-9_-]{46}${SKYLINK_BOUNDARY}*.*)`;
+const SKYLINK_MATCHER = `([a-zA-Z0-9_-]{46})`;
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}([/?].*)?$`);
-const SKYLINK_REGEXP_MATCH_POSITION = 1;
+const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?(${SKYLINK_MATCHER}(${SKYLINK_BOUNDARY}+.*)?)$`);
 
-export function parseSkylink(skylink: string): string {
+export function parseSkylink(skylink: string, opts = {}): string {
   if (typeof skylink !== "string") {
     throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
   }
 
   // check for direct skylink match
   const matchDirect = skylink.match(SKYLINK_DIRECT_REGEX);
-  if (matchDirect) return matchDirect[SKYLINK_REGEXP_MATCH_POSITION];
+  if (matchDirect) return matchDirect[1];
 
   // check for skylink prefixed with sia: or sia:// and extract it
   // example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
@@ -97,7 +96,7 @@ export function parseSkylink(skylink: string): string {
   if (matchPathname) {
     const query = parsed.query;
     const hash = parsed.hash;
-    return `${matchPathname[SKYLINK_REGEXP_MATCH_POSITION]}${query}${hash}`;
+    return `${matchPathname[1]}${query}${hash}`;
   }
 
   throw new Error(`Could not extract skylink from '${skylink}'`);

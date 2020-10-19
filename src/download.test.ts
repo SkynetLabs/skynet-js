@@ -73,17 +73,9 @@ describe("downloadFile", () => {
 });
 
 describe("downloadFileHns", () => {
-  let mock;
-
-  beforeEach(() => {
-    mock = new MockAdapter(axios);
-  });
-
   it("should download with the correct hns link", async () => {
     for (const input of validHnsLinkVariations) {
-      const url = client.downloadFileHns(input);
-
-      expect(mock.history.get.length).toBe(0);
+      const url = await client.downloadFileHns(input);
 
       expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
     }

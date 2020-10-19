@@ -61,6 +61,9 @@ describe("parseSkylink", () => {
   it("should correctly parse skylink out of different strings", () => {
     const validSkylinkVariations = [
       [skylink, ""],
+      [`${skylink}/`, "/"],
+      [`${skylink}//`, "//"],
+      [`${skylink}?`, "?"],
       [`${skylink}?foo=bar`, "?foo=bar"],
       [`${skylink}/foo/bar`, "/foo/bar"],
       [`${skylink}#foobar`, "#foobar"],
@@ -68,7 +71,8 @@ describe("parseSkylink", () => {
       [`sia://${skylink}`, ""],
       [`${portalUrl}/${skylink}`, ""],
       [`${portalUrl}/${skylink}/`, "/"],
-      [`${portalUrl}/${skylink}?`, ""],
+      [`${portalUrl}/${skylink}//`, "//"],
+      [`${portalUrl}/${skylink}?`, "?"],
       [`${portalUrl}/${skylink}/foo/bar`, "/foo/bar"],
       [`${portalUrl}/${skylink}/foo%3Fbar`, "/foo%3Fbar"],
       [`${portalUrl}/${skylink}/foo/bar?foo=bar`, "/foo/bar?foo=bar"],
