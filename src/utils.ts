@@ -124,7 +124,7 @@ export function stringToUint8Array(str: string): Uint8Array {
 }
 
 // hexToUint8Array converts a hex encoded string to a uint8 array
-export function hexToUint8Array(str: string) {
+export function hexToUint8Array(str: string): Uint8Array {
   return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 }
 

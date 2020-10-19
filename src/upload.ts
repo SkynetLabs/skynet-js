@@ -13,7 +13,7 @@ export async function uploadFile(file: File, customOptions = {}): Promise<string
   return `${uriSkynetPrefix}${response.skylink}`;
 }
 
-export async function uploadFileRequest(file: File, customOptions = {}) {
+export async function uploadFileRequest(file: File, customOptions = {}): Promise<any> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();
@@ -54,7 +54,7 @@ export async function uploadDirectory(directory: any, filename: string, customOp
   return `${uriSkynetPrefix}${response.skylink}`;
 }
 
-export async function uploadDirectoryRequest(directory: any, filename: string, customOptions = {}) {
+export async function uploadDirectoryRequest(directory: any, filename: string, customOptions = {}): Promise<any> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();
@@ -81,6 +81,6 @@ export async function uploadDirectoryRequest(directory: any, filename: string, c
  * as a constructor argument.
  * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
  */
-function ensureFileObjectConsistency(file: File) {
+function ensureFileObjectConsistency(file: File): File {
   return new File([file], file.name, { type: getFileMimeType(file) });
 }
