@@ -1,7 +1,8 @@
-// import axios from "axios";
+import mimeDB from "mime-db";
 import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
+import { Buffer } from "buffer";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
@@ -9,7 +10,7 @@ export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
 export const uriSkynetPrefix = "sia:";
 
-export function addUrlQuery(url, query) {
+export function addUrlQuery(url: string, query: Record<string, unknown>): string {
   const parsed = parse(url, true);
   if (parsed.query) {
     // Combine the desired query params with the already existing ones.
@@ -19,9 +20,9 @@ export function addUrlQuery(url, query) {
   return parsed.toString();
 }
 
-export function defaultOptions(endpointPath) {
+export function defaultOptions(endpointPath: string): Record<string, unknown> {
   return {
-    endpointPath: endpointPath,
+    endpointPath,
     APIKey: "",
     customUserAgent: "",
   };
@@ -29,16 +30,21 @@ export function defaultOptions(endpointPath) {
 
 // TODO: This will be smarter. See
 // https://github.com/NebulousLabs/skynet-docs/issues/21.
-export function defaultPortalUrl() {
+export function defaultPortalUrl(): string {
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   return window.location.origin;
 }
 
-function getFilePath(file) {
+function getFilePath(
+  file: File & {
+    webkitRelativePath?: string;
+    path?: string;
+  }
+): string {
   return file.webkitRelativePath || file.path || file.name;
 }
 
-export function getRelativeFilePath(file) {
+export function getRelativeFilePath(file: File): string {
   const filePath = getFilePath(file);
   const { root, dir, base } = path.parse(filePath);
   const relative = path.normalize(dir).slice(root.length).split(path.sep).slice(1);
@@ -46,7 +52,7 @@ export function getRelativeFilePath(file) {
   return path.join(...relative, base);
 }
 
-export function getRootDirectory(file) {
+export function getRootDirectory(file: File): string {
   const filePath = getFilePath(file);
   const { root, dir } = path.parse(filePath);
 
@@ -56,12 +62,9 @@ export function getRootDirectory(file) {
 /**
  * Properly joins paths together to create a URL. Takes a variable number of
  * arguments.
- * @returns {string} url - The URL.
  */
-export function makeUrl(...args) {
-  return args.reduce(function (acc, cur) {
-    return urljoin(acc, cur);
-  });
+export function makeUrl(...args: string[]): string {
+  return args.reduce((acc, cur) => urljoin(acc, cur));
 }
 
 // Allow ?, /, and # to end the hash portion of a skylink.
@@ -71,7 +74,7 @@ const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
 const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}([/?].*)?$`);
 const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
-export function parseSkylink(skylink) {
+export function parseSkylink(skylink: string): string {
   if (typeof skylink !== "string") {
     throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
   }
@@ -100,7 +103,7 @@ export function parseSkylink(skylink) {
   throw new Error(`Could not extract skylink from '${skylink}'`);
 }
 
-export function trimUriPrefix(str, prefix) {
+export function trimUriPrefix(str: string, prefix: string): string {
   const longPrefix = `${prefix}//`;
   if (str.startsWith(longPrefix)) {
     // longPrefix is exactly at the beginning
@@ -111,4 +114,56 @@ export function trimUriPrefix(str, prefix) {
     return str.slice(prefix.length);
   }
   return str;
+}
+
+export function randomNumber(low: number, high: number): number {
+  return Math.random() * (high - low) + low;
+}
+
+export async function promiseTimeout(promise: any, ms: number) {
+  const timeout = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      reject(`Timed out after ${ms}ms`);
+    }, ms);
+  });
+
+  return Promise.race([promise, timeout]);
+}
+
+// stringToUint8Array converts a string to a uint8 array
+export function stringToUint8Array(str: string): Uint8Array {
+  return Uint8Array.from(Buffer.from(str));
+}
+
+// hexToUint8Array converts a hex encoded string to a uint8 array
+export function hexToUint8Array(str: string): Uint8Array {
+  return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+}
+
+// readData is a helper function that uses a FileReader to read the contents of
+// the given file
+export function readData(file: File): Promise<string | ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+}
+
+/**
+ * Get the file mime type. In case the type is not provided, use mime-db and try
+ * to guess the file type based on the extension.
+ */
+export function getFileMimeType(file: File): string {
+  if (file.type) return file.type;
+  const extension = file.name.slice(file.name.lastIndexOf(".") + 1);
+  if (extension) {
+    for (const type in mimeDB) {
+      if (mimeDB[type]?.extensions?.includes(extension)) {
+        return type;
+      }
+    }
+  }
+  return "";
 }

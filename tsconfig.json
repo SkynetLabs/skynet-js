@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "esModuleInterop": true,
+    "strict": false,
+    "noImplicitAny": true,
+    "declaration": true,
+    "isolatedModules": true,
+    "types": ["node", "jest"],
+    "typeRoots": ["./types", "./node_modules/@types"]
+  }
+}

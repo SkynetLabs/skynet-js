@@ -2,7 +2,7 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
 import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
-import { compareFormData } from "./test_utils.js";
+import { compareFormData } from "../utils/testing";
 
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
@@ -15,7 +15,7 @@ describe("uploadFile", () => {
   const file = new File(["foo"], filename, {
     type: "text/plain",
   });
-  let mock;
+  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -132,7 +132,7 @@ describe("uploadDirectory", () => {
     "i-am-not/me-neither/file3.jpeg": new File(["foo3"], "i-am-not/me-neither/file3.jpeg"),
   };
   const url = `${portalUrl}/skynet/skyfile?filename=${filename}`;
-  let mock;
+  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);

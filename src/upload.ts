@@ -1,5 +1,4 @@
-import { SkynetClient } from "./client.js";
-import { defaultOptions, uriSkynetPrefix } from "./utils.js";
+import { defaultOptions, uriSkynetPrefix, getFileMimeType } from "./utils";
 
 const defaultUploadOptions = {
   ...defaultOptions("/skynet/skyfile"),
@@ -8,12 +7,13 @@ const defaultUploadOptions = {
   customFilename: "",
 };
 
-SkynetClient.prototype.uploadFile = async function (file, customOptions = {}) {
+export async function uploadFile(file: File, customOptions = {}): Promise<string> {
   const response = await this.uploadFileRequest(file, customOptions);
-  return `${uriSkynetPrefix}${response.skylink}`;
-};
 
-SkynetClient.prototype.uploadFileRequest = async function (file, customOptions = {}) {
+  return `${uriSkynetPrefix}${response.skylink}`;
+}
+
+export async function uploadFileRequest(file: File, customOptions = {}): Promise<any> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();
@@ -31,7 +31,7 @@ SkynetClient.prototype.uploadFileRequest = async function (file, customOptions =
   });
 
   return data;
-};
+}
 
 /**
  * Uploads a local directory to Skynet.
@@ -48,18 +48,19 @@ SkynetClient.prototype.uploadFileRequest = async function (file, customOptions =
  * @returns {string} data.merkleroot - The hash that is encoded into the skylink.
  * @returns {number} data.bitfield - The bitfield that gets encoded into the skylink.
  */
-SkynetClient.prototype.uploadDirectory = async function (directory, filename, customOptions = {}) {
+export async function uploadDirectory(directory: any, filename: string, customOptions = {}): Promise<string> {
   const response = await this.uploadDirectoryRequest(directory, filename, customOptions);
-  return `${uriSkynetPrefix}${response.skylink}`;
-};
 
-SkynetClient.prototype.uploadDirectoryRequest = async function (directory, filename, customOptions = {}) {
+  return `${uriSkynetPrefix}${response.skylink}`;
+}
+
+export async function uploadDirectoryRequest(directory: any, filename: string, customOptions = {}): Promise<any> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {
-    file = ensureFileObjectConsistency(file);
-    formData.append(opts.portalDirectoryFileFieldname, file, path);
+    file = ensureFileObjectConsistency(file as File);
+    formData.append(opts.portalDirectoryFileFieldname, file as File, path);
   });
 
   const { data } = await this.executeRequest({
@@ -70,7 +71,7 @@ SkynetClient.prototype.uploadDirectoryRequest = async function (directory, filen
   });
 
   return data;
-};
+}
 
 /**
  * Sometimes file object might have had the type property defined manually with
@@ -80,6 +81,6 @@ SkynetClient.prototype.uploadDirectoryRequest = async function (directory, filen
  * as a constructor argument.
  * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
  */
-function ensureFileObjectConsistency(file) {
-  return new File([file], file.name, { type: file.type });
+function ensureFileObjectConsistency(file: File): File {
+  return new File([file], file.name, { type: getFileMimeType(file) });
 }

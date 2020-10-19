@@ -1,15 +1,27 @@
 {
   "name": "skynet-js",
-  "version": "2.0.8",
+  "version": "2.1.1",
   "description": "Sia Skynet Javascript Client",
   "main": "dist/index.js",
   "files": [
     "dist/*"
   ],
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "not OperaMini all"
+  ],
   "scripts": {
     "test": "jest",
-    "build": "rimraf dist && babel src --out-dir dist --ignore src/**/*.test.js",
+    "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
+    "lint:eslint": "eslint --ext .ts utils src",
+    "lint:tsc": "tsc",
     "prepublishOnly": "yarn build"
+  },
+  "jest": {
+    "testTimeout": 60000,
+    "clearMocks": true,
+    "rootDir": "src"
   },
   "husky": {
     "hooks": {
@@ -17,8 +29,9 @@
     }
   },
   "lint-staged": {
-    "*.{js}": [
-      "eslint --fix",
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --ext .ts --fix",
+      "tsc --esModuleInterop --noemit",
       "prettier --write"
     ],
     "*.{json,yml,md}": [
@@ -42,6 +55,10 @@
   "dependencies": {
     "@babel/runtime": "^7.11.2",
     "axios": "^0.20.0",
+    "blakejs": "^1.1.0",
+    "buffer": "^5.6.0",
+    "mime-db": "^1.45.0",
+    "node-forge": "^0.10.0",
     "path-browserify": "^1.0.1",
     "url-join": "^4.0.1",
     "url-parse": "^1.4.7"
@@ -49,14 +66,27 @@
   "devDependencies": {
     "@babel/cli": "^7.11.6",
     "@babel/core": "^7.11.6",
+    "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/plugin-transform-runtime": "^7.11.5",
     "@babel/preset-env": "^7.11.5",
+    "@babel/preset-typescript": "^7.10.4",
+    "@types/jest": "^26.0.14",
+    "@types/mime-db": "^1.43.0",
+    "@types/node": "^14.11.2",
+    "@types/node-forge": "^0.9.5",
+    "@types/url-join": "^4.0.0",
+    "@types/url-parse": "^1.4.3",
+    "@typescript-eslint/eslint-plugin": "^4.3.0",
+    "@typescript-eslint/parser": "^4.3.0",
     "axios-mock-adapter": "^1.18.2",
-    "eslint": "^7.8.1",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "eslint": "^7.11.0",
+    "eslint-plugin-compat": "^3.8.0",
     "husky": "^4.3.0",
     "jest": "^26.4.2",
     "lint-staged": "^10.3.0",
     "prettier": "^2.1.1",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "typescript": "^4.0.3"
   }
 }

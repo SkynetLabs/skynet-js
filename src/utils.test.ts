@@ -6,6 +6,7 @@ import {
   trimUriPrefix,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
+  getFileMimeType,
 } from "./utils";
 
 const portalUrl = defaultSkynetPortalUrl;
@@ -83,11 +84,42 @@ describe("parseSkylink", () => {
   });
 
   it("should throw on invalid skylink", () => {
+    // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => parseSkylink()).toThrowError("Skylink has to be a string, undefined provided");
+    // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => parseSkylink(123)).toThrowError("Skylink has to be a string, number provided");
     expect(() => parseSkylink("123")).toThrowError("Could not extract skylink from '123'");
     expect(() => parseSkylink(`${skylink}xxx`)).toThrowError(`Could not extract skylink from '${skylink}xxx'`);
     expect(() => parseSkylink(`${skylink}xxx/foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx/foo'`);
     expect(() => parseSkylink(`${skylink}xxx?foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx?foo'`);
+  });
+});
+
+describe("getFileMimeType", () => {
+  it("should return file type if type is specified on a file", () => {
+    const file = new File([], "foobar.baz", { type: "foo/bar" });
+
+    expect(getFileMimeType(file)).toEqual("foo/bar");
+  });
+
+  describe("when there is no file type", () => {
+    it("should guess the file type based on the extension", () => {
+      // list a few popular extensions just to be sure the mime db works
+      expect(getFileMimeType(new File([], "foo.html"))).toEqual("text/html");
+      expect(getFileMimeType(new File([], "foo.txt"))).toEqual("text/plain");
+      expect(getFileMimeType(new File([], "foo.json"))).toEqual("application/json");
+    });
+
+    it("should return empty file type if there is no file extension", () => {
+      const file = new File([], "foobar");
+
+      expect(getFileMimeType(file)).toEqual("");
+    });
+
+    it("should return empty file type if the extension is not matched to any mime type", () => {
+      const file = new File([], "foobar.baz");
+
+      expect(getFileMimeType(file)).toEqual("");
+    });
   });
 });

@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.1.1]
+
+- Improve timeout handling for SkyDB
+- Extend end-to-end tests
+
+## [2.1.0]
+
+- Add SkyDB support
+- Move to Typescript
+
+## [2.0.9]
+
+### Changed
+
+- Fix some bugs with skylink parsing.
+
 ## [2.0.8]
 
 ### Changed

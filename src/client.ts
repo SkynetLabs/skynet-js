@@ -1,8 +1,26 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
+import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
+import { addSkykey, createSkykey, getSkykeyById, getSkykeyByName, getSkykeys } from "./encryption";
+import {
+  downloadFile,
+  downloadFileHns,
+  getSkylinkUrl,
+  getHnsUrl,
+  getHnsresUrl,
+  getMetadata,
+  openFile,
+  openFileHns,
+  resolveHns,
+} from "./download";
 
-import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils.js";
+import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
+import { getFile, setFile } from "./skydb";
+import { lookupRegistry, updateRegistry } from "./registry";
 
 export class SkynetClient {
+  portalUrl: string;
+  customOptions: Record<string, unknown>;
+
   /**
    * The Skynet Client which can be used to access Skynet.
    * @constructor
@@ -22,11 +40,40 @@ export class SkynetClient {
     this.customOptions = customOptions;
   }
 
+  uploadFile = uploadFile;
+  uploadDirectory = uploadDirectory;
+  uploadDirectoryRequest = uploadDirectoryRequest;
+  uploadFileRequest = uploadFileRequest;
+
+  addSkykey = addSkykey;
+  createSkykey = createSkykey;
+  getSkykeyById = getSkykeyById;
+  getSkykeyByName = getSkykeyByName;
+  getSkykeys = getSkykeys;
+
+  downloadFile = downloadFile;
+  downloadFileHns = downloadFileHns;
+  getSkylinkUrl = getSkylinkUrl;
+  getHnsUrl = getHnsUrl;
+  getHnsresUrl = getHnsresUrl;
+  getMetadata = getMetadata;
+  openFile = openFile;
+  openFileHns = openFileHns;
+  resolveHns = resolveHns;
+
+  // SkyDB
+  getFile = getFile;
+  setFile = setFile;
+
+  // SkyDB helpers
+  lookupRegistry = lookupRegistry;
+  updateRegistry = updateRegistry;
+
   /**
    * Creates and executes a request.
    * @param {Object} config - Configuration for the request. See docs for constructor for the full list of options.
    */
-  executeRequest(config) {
+  executeRequest(config: any): Promise<AxiosResponse> {
     let url = config.url;
     if (!url) {
       url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
