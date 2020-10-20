@@ -68,12 +68,16 @@ export function makeUrl(...args: string[]): string {
 }
 
 // Allow ?, /, and # to end the hash portion of a skylink.
-const SKYLINK_BOUNDARY = "[?|/|#]";
+const SKYLINK_BOUNDARY = "[/]";
 const SKYLINK_MATCHER = `([a-zA-Z0-9_-]{46})`;
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
 const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?(${SKYLINK_MATCHER}(${SKYLINK_BOUNDARY}+.*)?)$`);
 
-export function parseSkylink(skylink: string, opts = {}): string {
+/**
+ * Parses a skylink from a string, optionally including the path as well.
+ * @param [includePath=false] - Whether to include the path after the skylink.
+ */
+export function parseSkylink(skylink: string, includePath = false): string {
   if (typeof skylink !== "string") {
     throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
   }
@@ -92,11 +96,9 @@ export function parseSkylink(skylink: string, opts = {}): string {
 
   // pass empty object as second param to disable using location as base url when parsing in browser
   const parsed = parse(skylink, {});
-  const matchPathname = parsed.pathname.match(SKYLINK_PATHNAME_REGEX);
-  if (matchPathname) {
-    const query = parsed.query;
-    const hash = parsed.hash;
-    return `${matchPathname[1]}${query}${hash}`;
+  const matchIndirect = parsed.pathname.match(SKYLINK_PATHNAME_REGEX);
+  if (matchIndirect) {
+    return includePath ? matchIndirect[1] : matchIndirect[2];
   }
 
   throw new Error(`Could not extract skylink from '${skylink}'`);

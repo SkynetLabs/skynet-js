@@ -20,8 +20,8 @@ const defaultResolveHnsOptions = {
 
 /**
  * Initiates a download of the content of the skylink within the browser.
- * @param {string} skylink - 46 character skylink, possibly followed by a path or query parameters. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
- * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param skylink - 46 character skylink, possibly followed by a path or query parameters. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
+ * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @param {string} [customOptions.path] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
  * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the skylink.
@@ -39,8 +39,8 @@ export function downloadFile(skylink: string, customOptions = {}): string {
 
 /**
  * Initiates a download of the content of the skylink at the Handshake domain.
- * @param {string} domain - Handshake domain.
- * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param domain - Handshake domain.
+ * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
  * @returns {string} - The full URL that was used.
@@ -75,7 +75,7 @@ export function getSkylinkUrl(skylink: string, customOptions = {}): string {
       .join("/");
   }
 
-  const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink), path);
+  const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink, true), path);
   return addUrlQuery(url, query);
 }
 
@@ -104,9 +104,10 @@ export async function getMetadata(skylink: string, customOptions = {}) {
 
 /**
  * Opens the content of the skylink within the browser.
- * @param {string} skylink - 46 character skylink.
- * @param {Object} [customOptions={}] - Additional settings that can optionally be set. See `downloadFile` for the full list.
- * @returns {string} - The full URL that was used.
+ * @param skylink - 46 character skylink.
+ * @param [customOptions={}] - Additional settings that can optionally be set.. See `downloadFile` for the full list.
+ * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The full URL that was used.
  */
 export function openFile(skylink: string, customOptions = {}): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
@@ -119,8 +120,9 @@ export function openFile(skylink: string, customOptions = {}): string {
 
 /**
  * Opens the content of the skylink from the given Handshake domain within the browser.
- * @param {string} domain - Handshake domain.
- * @param {Object} [customOptions={}] - Additional settings that can optionally be set. See `downloadFileHns` for the full list.
+ * @param domain - Handshake domain.
+ * @param [customOptions={}] - Additional settings that can optionally be set. See `downloadFileHns` for the full list.
+ * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns {string} - The full URL that was used.
  */
 export async function openFileHns(domain: string, customOptions = {}): Promise<string> {
@@ -134,8 +136,8 @@ export async function openFileHns(domain: string, customOptions = {}): Promise<s
 }
 
 /**
- * @param {string} domain - Handshake resolver domain.
- * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param domain - Handshake resolver domain.
+ * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
  * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
  */

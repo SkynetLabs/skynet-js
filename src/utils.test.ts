@@ -59,31 +59,31 @@ describe("trimUriPrefix", () => {
 
 describe("parseSkylink", () => {
   it("should correctly parse skylink out of different strings", () => {
-    const validSkylinkVariations = [
-      [skylink, ""],
-      [`${skylink}/`, "/"],
-      [`${skylink}//`, "//"],
-      [`${skylink}?`, "?"],
-      [`${skylink}?foo=bar`, "?foo=bar"],
-      [`${skylink}/foo/bar`, "/foo/bar"],
-      [`${skylink}#foobar`, "#foobar"],
-      [`sia:${skylink}`, ""],
-      [`sia://${skylink}`, ""],
-      [`${portalUrl}/${skylink}`, ""],
-      [`${portalUrl}/${skylink}/`, "/"],
-      [`${portalUrl}/${skylink}//`, "//"],
-      [`${portalUrl}/${skylink}?`, "?"],
-      [`${portalUrl}/${skylink}/foo/bar`, "/foo/bar"],
-      [`${portalUrl}/${skylink}/foo%3Fbar`, "/foo%3Fbar"],
-      [`${portalUrl}/${skylink}/foo/bar?foo=bar`, "/foo/bar?foo=bar"],
-      [`${portalUrl}/${skylink}?foo=bar`, "?foo=bar"],
-      [`${portalUrl}/${skylink}/?foo=bar`, "/?foo=bar"],
-      [`${portalUrl}/${skylink}#foobar`, "#foobar"],
-      [`${portalUrl}/${skylink}/#foobar`, "/#foobar"],
+    const validSkylinkVariations: Array<[string, boolean, string]> = [
+      [skylink, true, ""],
+      [`${skylink}/`, true, "/"],
+      [`${skylink}//`, true, "//"],
+      [`${skylink}?`, true, ""],
+      [`${skylink}?foo=bar`, true, ""],
+      [`${skylink}/foo/bar`, false, ""],
+      [`${skylink}/foo/bar`, true, "/foo/bar"],
+      [`${skylink}#foobar`, true, ""],
+      [`sia:${skylink}`, true, ""],
+      [`sia://${skylink}`, true, ""],
+      [`${portalUrl}/${skylink}`, true, ""],
+      [`${portalUrl}/${skylink}/`, true, "/"],
+      [`${portalUrl}/${skylink}//`, true, "//"],
+      [`${portalUrl}/${skylink}?`, true, ""],
+      [`${portalUrl}/${skylink}/foo/bar`, false, ""],
+      [`${portalUrl}/${skylink}/foo/bar`, true, "/foo/bar"],
+      [`${portalUrl}/${skylink}/foo%3Fbar`, true, "/foo%3Fbar"],
+      [`${portalUrl}/${skylink}/foo/bar?foo=bar`, true, "/foo/bar"],
+      [`${portalUrl}/${skylink}?foo=bar`, true, ""],
+      [`${portalUrl}/${skylink}#foobar`, true, ""],
     ];
 
-    validSkylinkVariations.forEach(([fullSkylink, path]) => {
-      expect(parseSkylink(fullSkylink)).toEqual(`${skylink}${path}`);
+    validSkylinkVariations.forEach(([fullSkylink, includePath, path]) => {
+      expect(parseSkylink(fullSkylink, includePath)).toEqual(`${skylink}${path}`);
     });
   });
 

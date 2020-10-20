@@ -12,20 +12,18 @@ const expectedUrl = `${portalUrl}/${skylink}`;
 const attachment = "?attachment=true";
 const validSkylinkVariations = [
   [skylink, ""],
-  [`${skylink}?foo=bar`, "?foo=bar"],
+  [`${skylink}?foo=bar`, ""],
   [`${skylink}/foo/bar`, "/foo/bar"],
-  [`${skylink}#foobar`, "#foobar"],
+  [`${skylink}#foobar`, ""],
   [`sia:${skylink}`, ""],
   [`sia://${skylink}`, ""],
   [`${portalUrl}/${skylink}`, ""],
   [`${portalUrl}/${skylink}/`, ""],
   [`${portalUrl}/${skylink}/foo/bar`, "/foo/bar"],
   [`${portalUrl}/${skylink}/foo%3Fbar`, "/foo%3Fbar"],
-  [`${portalUrl}/${skylink}/foo/bar?foo=bar`, "/foo/bar?foo=bar"],
-  [`${portalUrl}/${skylink}?foo=bar`, "?foo=bar"],
-  [`${portalUrl}/${skylink}/?foo=bar`, "?foo=bar"],
-  [`${portalUrl}/${skylink}#foobar`, "#foobar"],
-  [`${portalUrl}/${skylink}/#foobar`, "#foobar"],
+  [`${portalUrl}/${skylink}/foo/bar?foo=bar`, "/foo/bar"],
+  [`${portalUrl}/${skylink}?foo=bar`, ""],
+  [`${portalUrl}/${skylink}#foobar`, ""],
 ];
 
 const expectedHnsUrl = `${portalUrl}/hns/${hnsLink}`;
