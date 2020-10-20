@@ -7,6 +7,7 @@ import {
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
   getFileMimeType,
+  convertSkylinkToBase32,
 } from "./utils";
 
 const portalUrl = defaultSkynetPortalUrl;
@@ -20,6 +21,17 @@ describe("addUrlQuery", () => {
     expect(addUrlQuery(`${portalUrl}/path/`, { download: true })).toEqual(`${portalUrl}/path/?download=true`);
     expect(addUrlQuery(`${portalUrl}/skynet/`, { foo: 1, bar: 2 })).toEqual(`${portalUrl}/skynet/?foo=1&bar=2`);
     expect(addUrlQuery(`${portalUrl}/`, { attachment: true })).toEqual(`${portalUrl}/?attachment=true`);
+  });
+});
+
+describe("convertSkylinkToBase32", () => {
+  it("should convert the base64 skylink to base32", () => {
+    const base64 = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+    const base32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
+
+    const encoded = convertSkylinkToBase32(base64);
+
+    expect(encoded).toEqual(base32);
   });
 });
 

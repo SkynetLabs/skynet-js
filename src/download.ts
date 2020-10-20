@@ -1,5 +1,7 @@
 import {
+  addSubdomain,
   addUrlQuery,
+  convertSkylinkToBase32,
   defaultOptions,
   makeUrl,
   parseSkylink,
@@ -22,7 +24,9 @@ const defaultResolveHnsOptions = {
  * Initiates a download of the content of the skylink within the browser.
  * @param {string} skylink - 46 character skylink.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param {boolean} [customOptions.base32=false] - Whether to return a base32 skylink instead of base64.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param {boolean} [customOptions.subdomain=false] - Whether to return the final skylink in subdomain format.
  */
 export function downloadFile(skylink: string, customOptions = {}): void {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
@@ -37,6 +41,7 @@ export function downloadFile(skylink: string, customOptions = {}): void {
  * @param {string} domain - Handshake domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param {boolean} [customOptions.subdomain=false] - Whether to return the final URL with the HNS domain as a subdomain.
  */
 export async function downloadFileHns(domain: string, customOptions = {}): Promise<void> {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
@@ -50,7 +55,13 @@ export function getSkylinkUrl(skylink: string, customOptions = {}): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
-  const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink));
+  skylink = parseSkylink(skylink);
+  if (opts.base32) {
+    skylink = convertSkylinkToBase32(skylink);
+  }
+  const url = opts.subdomain
+    ? addSubdomain(this.portalUrl, skylink)
+    : makeUrl(this.portalUrl, opts.endpointPath, skylink);
   return addUrlQuery(url, query);
 }
 
@@ -58,14 +69,21 @@ export function getHnsUrl(domain: string, customOptions = {}): string {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
-  const url = makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakePrefix));
+  domain = trimUriPrefix(domain, uriHandshakePrefix);
+  const url = opts.subdomain
+    ? addSubdomain(addSubdomain(this.portalUrl, opts.endpointPath), domain)
+    : makeUrl(this.portalUrl, opts.endpointPath, domain);
   return addUrlQuery(url, query);
 }
 
 export function getHnsresUrl(domain: string, customOptions = {}): string {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
-  return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
+  domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
+  const url = opts.subdomain
+    ? addSubdomain(addSubdomain(this.portalUrl, opts.endpointPath), domain)
+    : makeUrl(this.portalUrl, opts.endpointPath, domain);
+  return url;
 }
 
 export async function getMetadata(skylink: string, customOptions = {}) {
@@ -105,6 +123,7 @@ export async function openFileHns(domain: string, customOptions = {}): Promise<v
  * @param {string} domain - Handshake resolver domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
+ * @param {boolean} [customOptions.subdomain=false] - Whether to return the final URL with the HNS domain as a subdomain.
  */
 export async function resolveHns(domain: string, customOptions = {}): Promise<any> {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };

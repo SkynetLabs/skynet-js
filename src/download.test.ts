@@ -6,7 +6,9 @@ import { SkynetClient, defaultSkynetPortalUrl } from "./index";
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
 const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
+const hnsUrlSubdomain = `https://${hnsLink}.hns.siasky.net`;
 const hnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
+const hnsresUrlSubdomain = `https://${hnsLink}.hnsres.siasky.net`;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const validSkylinkVariations = [
@@ -44,6 +46,7 @@ describe("getHnsUrl", () => {
   it("should return correctly formed hns URL", () => {
     validHnsLinkVariations.forEach((input) => {
       expect(client.getHnsUrl(input)).toEqual(hnsUrl);
+      expect(client.getHnsUrl(input, { subdomain: true })).toEqual(hnsUrlSubdomain);
     });
   });
 
@@ -58,6 +61,7 @@ describe("getHnsresUrl", () => {
   it("should return correctly formed hnsres URL", () => {
     validHnsresLinkVariations.forEach((input) => {
       expect(client.getHnsresUrl(input)).toEqual(hnsresUrl);
+      expect(client.getHnsresUrl(input, { subdomain: true })).toEqual(hnsresUrlSubdomain);
     });
   });
 });
@@ -73,6 +77,16 @@ describe("getSkylinkUrl", () => {
     const url = client.getSkylinkUrl(skylink, { download: true, endpointPath: "skynet/skylink" });
 
     expect(url).toEqual(`${portalUrl}/skynet/skylink/${skylink}?attachment=true`);
+  });
+
+  it("should convert base64 skylinks to base32", () => {
+    const expectedBase32 = "https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net";
+
+    validSkylinkVariations.forEach((input) => {
+      const url = client.getSkylinkUrl(input, { base32: true, subdomain: true });
+
+      expect(url).toEqual(expectedBase32);
+    });
   });
 });
 

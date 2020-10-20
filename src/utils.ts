@@ -1,3 +1,5 @@
+import base64 from "base64-js";
+import base32Encode from "base32-encode";
 import mimeDB from "mime-db";
 import path from "path-browserify";
 import parse from "url-parse";
@@ -10,10 +12,29 @@ export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
 export const uriSkynetPrefix = "sia:";
 
+// TODO: Use a third-party library to make this more robust.
+export function addSubdomain(url: string, subdomain: string): string {
+  while (subdomain.startsWith("/")) {
+    subdomain = subdomain.slice(1);
+  }
+  if (url.includes("https://")) {
+    return url.replace("https://", `https://${subdomain}.`);
+  }
+  if (url.includes("http://")) {
+    return url.replace("http://", `http://${subdomain}.`);
+  }
+  return `${subdomain}.${url}`;
+}
+
 export function addUrlQuery(url: string, query: Record<string, unknown>): string {
   const parsed = parse(url);
   parsed.set("query", query);
   return parsed.toString();
+}
+
+export function convertSkylinkToBase32(input: string): string {
+  const decoded = base64.toByteArray(input.padEnd(input.length + 4 - (input.length % 4), "="));
+  return base32Encode(decoded, "RFC4648-HEX", { padding: false }).toLowerCase();
 }
 
 export function defaultOptions(endpointPath: string): Record<string, unknown> {
