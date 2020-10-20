@@ -1,4 +1,4 @@
-import { pkcs5, pki } from "node-forge";
+import { md, pkcs5, pki } from "node-forge";
 import { HashFileID, HashRegistryValue } from "./crypto";
 import { RegistryValue, SignedRegistryValue } from "./registry";
 import { promiseTimeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
@@ -86,7 +86,7 @@ export class User {
 
   // NOTE: username should be the user's email address as ideally it's unique
   public constructor(username: string, password: string) {
-    const seed = pkcs5.pbkdf2(password, username, 1000, 32);
+    const seed = pkcs5.pbkdf2(password, username, 1000, 32, md.sha256.create());
     const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
     this.publicKey = publicKey;
     this.secretKey = privateKey;
