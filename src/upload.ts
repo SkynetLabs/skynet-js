@@ -1,4 +1,11 @@
 import { defaultOptions, uriSkynetPrefix, getFileMimeType } from "./utils";
+import { SkynetClient, CustomClientOptions } from "./client";
+
+type CustomUploadOptions = {
+  portalFileFieldname?: string;
+  portalDirectoryFileFieldname?: string;
+  customFilename?: string;
+} & CustomClientOptions;
 
 const defaultUploadOptions = {
   ...defaultOptions("/skynet/skyfile"),
@@ -7,16 +14,20 @@ const defaultUploadOptions = {
   customFilename: "",
 };
 
-export async function uploadFile(file: File, customOptions = {}): Promise<string> {
+export async function uploadFile(this: SkynetClient, file: File, customOptions?: CustomUploadOptions): Promise<string> {
   const response = await this.uploadFileRequest(file, customOptions);
 
   return `${uriSkynetPrefix}${response.skylink}`;
 }
 
-export async function uploadFileRequest(file: File, customOptions = {}): Promise<any> {
+export async function uploadFileRequest(
+  this: SkynetClient,
+  file: File,
+  customOptions?: CustomUploadOptions
+): Promise<any> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
-
   const formData = new FormData();
+
   file = ensureFileObjectConsistency(file);
   if (opts.customFilename) {
     formData.append(opts.portalFileFieldname, file, opts.customFilename);
@@ -48,16 +59,26 @@ export async function uploadFileRequest(file: File, customOptions = {}): Promise
  * @returns {string} data.merkleroot - The hash that is encoded into the skylink.
  * @returns {number} data.bitfield - The bitfield that gets encoded into the skylink.
  */
-export async function uploadDirectory(directory: any, filename: string, customOptions = {}): Promise<string> {
+export async function uploadDirectory(
+  this: SkynetClient,
+  directory: any,
+  filename: string,
+  customOptions?: CustomUploadOptions
+): Promise<string> {
   const response = await this.uploadDirectoryRequest(directory, filename, customOptions);
 
   return `${uriSkynetPrefix}${response.skylink}`;
 }
 
-export async function uploadDirectoryRequest(directory: any, filename: string, customOptions = {}): Promise<any> {
+export async function uploadDirectoryRequest(
+  this: SkynetClient,
+  directory: any,
+  filename: string,
+  customOptions?: CustomUploadOptions
+): Promise<any> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
-
   const formData = new FormData();
+
   Object.entries(directory).forEach(([path, file]) => {
     file = ensureFileObjectConsistency(file as File);
     formData.append(opts.portalDirectoryFileFieldname, file as File, path);

@@ -1,3 +1,4 @@
+import { SkynetClient } from "./client";
 import { defaultOptions } from "./utils";
 
 const defaultAddSkykeyOptions = {
@@ -16,22 +17,22 @@ const defaultGetSkykeysOptions = {
   ...defaultOptions("/skynet/skykeys"),
 };
 
-export async function addSkykey(skykey: string, customOptions = {}) {
+export async function addSkykey(this: SkynetClient, skykey: string, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export async function createSkykey(skykeyName: string, skykeyType: string, customOptions = {}) {
+export async function createSkykey(this: SkynetClient, skykeyName: string, skykeyType: string, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export async function getSkykeyById(skykeyId: string, customOptions = {}) {
+export async function getSkykeyById(this: SkynetClient, skykeyId: string, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export async function getSkykeyByName(skykeyName: string, customOptions = {}) {
+export async function getSkykeyByName(this: SkynetClient, skykeyName: string, customOptions = {}) {
   throw new Error("Unimplemented");
 }
 
-export async function getSkykeys(customOptions = {}) {
+export async function getSkykeys(this: SkynetClient, customOptions = {}) {
   throw new Error("Unimplemented");
 }

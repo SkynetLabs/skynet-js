@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosResponse, AxiosRequestConfig } from "axios";
 import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
 import { addSkykey, createSkykey, getSkykeyById, getSkykeyByName, getSkykeys } from "./encryption";
 import {
@@ -17,25 +17,17 @@ import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
 import { getFile, setFile } from "./skydb";
 import { lookupRegistry, updateRegistry } from "./registry";
 
+export type CustomClientOptions = {
+  APIKey?: string; // authentication password to use
+  customUserAgent?: string; // custom user agent header to set
+  onUploadProgress?: (progress: number, details: { loaded: number; total: number }) => void; // optional callback to track upload progress
+};
+
 export class SkynetClient {
   portalUrl: string;
-  customOptions: Record<string, unknown>;
+  customOptions: CustomClientOptions;
 
-  /**
-   * The Skynet Client which can be used to access Skynet.
-   * @constructor
-   * @param {string} [portalUrl="https://siasky.net"] - The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use "".
-   * @param {Object} [customOptions={}] - Configuration for the client.
-   * @param {string} [customOptions.method] - HTTP method to use.
-   * @param {string} [customOptions.APIKey] - Authentication password to use.
-   * @param {string} [customOptions.customUserAgent=""] - Custom user agent header to set.
-   * @param {Object} [customOptions.data=null] - Data to send in a POST.
-   * @param {string} [customOptions.endpointPath=""] - The relative URL path of the portal endpoint to contact.
-   * @param {string} [customOptions.extraPath=""] - Extra path element to append to the URL.
-   * @param {Function} [customOptions.onUploadProgress] - Optional callback to track progress.
-   * @param {Object} [customOptions.query={}] - Query parameters to include in the URl.
-   */
-  constructor(portalUrl = defaultPortalUrl(), customOptions = {}) {
+  constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
     this.portalUrl = portalUrl;
     this.customOptions = customOptions;
   }
@@ -91,10 +83,8 @@ export class SkynetClient {
       auth: config.APIKey && { username: "", password: config.APIKey },
       onUploadProgress:
         config.onUploadProgress &&
-        function ({ loaded, total }) {
-          const progress = loaded / total;
-
-          config.onUploadProgress(progress, { loaded, total });
+        function ({ loaded, total }: ProgressEvent) {
+          config.onUploadProgress(loaded / total, { loaded, total });
         },
     });
   }
