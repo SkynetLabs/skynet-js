@@ -5,6 +5,7 @@ type CustomUploadOptions = {
   portalFileFieldname?: string;
   portalDirectoryFileFieldname?: string;
   customFilename?: string;
+  query?: Record<string, unknown>;
 } & CustomClientOptions;
 
 const defaultUploadOptions = {
