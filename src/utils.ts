@@ -37,7 +37,7 @@ export function convertSkylinkToBase32(input: string): string {
   return base32Encode(decoded, "RFC4648-HEX", { padding: false }).toLowerCase();
 }
 
-export function defaultOptions(endpointPath: string): Record<string, unknown> {
+export function defaultOptions(endpointPath: string) {
   return {
     endpointPath,
     APIKey: "",
