@@ -20,7 +20,7 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
   return parsed.toString();
 }
 
-export function defaultOptions(endpointPath: string): Record<string, unknown> {
+export function defaultOptions(endpointPath: string) {
   return {
     endpointPath,
     APIKey: "",

@@ -29,8 +29,8 @@ yarn add skynet-js
 
 ## Documentation
 
-For documentation complete with examples, please see [the Skynet SDK docs](https://nebulouslabs.github.io/skynet-docs/?javascript--browser#introduction).
+For documentation complete with examples, please see [the Skynet SDK docs](https://siasky.net/docs/?javascript--browser#introduction).
 
 ### Browser Utility Functions
 
-`skynet-js` provides functions that only make sense in the browser, and are covered in the special section [Browser JS Utilities](https://nebulouslabs.github.io/skynet-docs/?javascript--browser#browser-js-utilities).
+`skynet-js` provides functions that only make sense in the browser, and are covered in the special section [Browser JS API](https://siasky.net/docs/?javascript--browser#browser-js-api).

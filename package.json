@@ -51,7 +51,7 @@
   "bugs": {
     "url": "https://github.com/NebulousLabs/skynet-js/issues"
   },
-  "homepage": "https://nebulouslabs.github.io/skynet-js/",
+  "homepage": "https://github.com/NebulousLabs/skynet-js",
   "dependencies": {
     "@babel/runtime": "^7.11.2",
     "axios": "^0.20.0",

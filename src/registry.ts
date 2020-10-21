@@ -1,5 +1,6 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
+import { SkynetClient } from "./client";
 import { FileID, User } from "./skydb";
 import { defaultOptions, hexToUint8Array } from "./utils";
 import { Buffer } from "buffer";
@@ -20,6 +21,7 @@ export type SignedRegistryValue = {
 };
 
 export async function lookupRegistry(
+  this: SkynetClient,
   user: User,
   fileID: FileID,
   customOptions = {}
@@ -66,6 +68,7 @@ export async function lookupRegistry(
 }
 
 export async function updateRegistry(
+  this: SkynetClient,
   user: User,
   fileID: FileID,
   srv: SignedRegistryValue,

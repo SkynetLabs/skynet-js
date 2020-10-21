@@ -31,18 +31,19 @@ const expectedHnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
+const mockLocationAssign = jest.fn();
+Object.defineProperty(window, "location", {
+  value: {
+    assign: mockLocationAssign,
+  },
+  writable: true,
+});
+
 describe("downloadFile", () => {
-  let mock: MockAdapter;
-
-  beforeEach(() => {
-    mock = new MockAdapter(axios);
-  });
-
   it("should download with a skylink url with attachment set", () => {
     validSkylinkVariations.forEach(([fullSkylink, path]) => {
+      mockLocationAssign.mockClear();
       const url = client.downloadFile(fullSkylink);
-
-      expect(mock.history.get.length).toBe(0);
 
       let expectedUrl2 = `${expectedUrl}${path}${attachment}`;
       if (path.startsWith("#")) {
@@ -54,6 +55,7 @@ describe("downloadFile", () => {
         expectedUrl2 = expectedUrl2.replace(attachment, "&attachment=true");
       }
       expect(url).toEqual(expectedUrl2);
+      expect(mockLocationAssign).toHaveBeenCalledWith(expectedUrl2);
     });
   });
 
@@ -141,6 +143,18 @@ describe("openFile", () => {
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(`${expectedUrl}${path}`, "_blank");
     });
+  });
+});
+
+describe("downloadFileHns", () => {
+  it("should set domain with the portal and hns link and then call window.openFile with attachment set", async () => {
+    for (const input of validHnsLinkVariations) {
+      mockLocationAssign.mockClear();
+
+      await client.downloadFileHns(input);
+
+      expect(mockLocationAssign).toHaveBeenCalledWith("https://siasky.net/hns/foo?attachment=true");
+    }
   });
 });
 

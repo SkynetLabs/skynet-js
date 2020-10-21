@@ -1,4 +1,5 @@
-import { pkcs5, pki } from "node-forge";
+import { md, pkcs5, pki } from "node-forge";
+import { SkynetClient } from "./client";
 import { HashFileID, HashRegistryValue } from "./crypto";
 import { RegistryValue, SignedRegistryValue } from "./registry";
 import { promiseTimeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
@@ -14,7 +15,7 @@ export enum FileType {
 
 // getFile will lookup the entry for given skappID and filename, if it exists it
 // will try and download the file behind the skylink it has found in the entry.
-export async function getFile(user: User, fileID: FileID): Promise<SkyFile> {
+export async function getFile(this: SkynetClient, user: User, fileID: FileID): Promise<SkyFile> {
   // lookup the registry entry
   const existing = await this.lookupRegistry(user, fileID);
   if (!existing) {
@@ -36,7 +37,7 @@ export async function getFile(user: User, fileID: FileID): Promise<SkyFile> {
 }
 
 // setFile uploads a file and sets updates the registry
-export async function setFile(user: User, fileID: FileID, file: SkyFile): Promise<boolean> {
+export async function setFile(this: SkynetClient, user: User, fileID: FileID, file: SkyFile): Promise<boolean> {
   // upload the file to acquire its skylink
   const customFilename = fileID.filename;
   const skylink = await this.uploadFile(file.file, { customFilename });
@@ -86,7 +87,7 @@ export class User {
 
   // NOTE: username should be the user's email address as ideally it's unique
   public constructor(username: string, password: string) {
-    const seed = pkcs5.pbkdf2(password, username, 1000, 32);
+    const seed = pkcs5.pbkdf2(password, username, 1000, 32, md.sha256.create());
     const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
     this.publicKey = publicKey;
     this.secretKey = privateKey;

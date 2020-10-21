@@ -16,7 +16,7 @@ describe("User", () => {
     const username = random.getBytesSync(randomNumber(6, 24));
     const password = random.getBytesSync(randomNumber(12, 64));
     const expected = new User(username, password);
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 5; i++) {
       expect(new User(username, password).id).toEqual(expected.id);
     }
   });

@@ -19,33 +19,34 @@ export function HashAll(...args: any[]): Uint8Array {
 
 // HashRegistryValue hashes the given registry value
 export function HashRegistryValue(registryValue: RegistryValue): Uint8Array {
-  return HashAll(registryValue.tweak, encodeString(registryValue.data), encodeUint8(registryValue.revision));
+  return HashAll(registryValue.tweak, encodeString(registryValue.data), encodeNumber(registryValue.revision));
 }
 
 // HashFileID hashes the given fileID
 export function HashFileID(fileID: FileID): Uint8Array {
   return HashAll(
-    encodeUint8(fileID.version),
+    encodeNumber(fileID.version),
     encodeString(fileID.applicationID),
-    encodeUint8(fileID.fileType),
+    encodeNumber(fileID.fileType),
     encodeString(fileID.filename)
   );
 }
 
-// encodeUint8 converts the given number into a uint8 array
-function encodeUint8(num: number): Uint8Array {
-  if (num > 255) {
-    throw new Error("overflow");
-  }
+// encodeNumber converts the given number into a uint8 array
+function encodeNumber(num: number): Uint8Array {
   const encoded = new Uint8Array(8);
-  encoded[0] = num;
+  for (let index = 0; index < encoded.length; index++) {
+    const byte = num & 0xff;
+    encoded[index] = byte;
+    num = num >> 8;
+  }
   return encoded;
 }
 
-// encodeUint8 converts the given string into a uint8 array
+// encodeString converts the given string into a uint8 array
 function encodeString(str: string): Uint8Array {
   const encoded = new Uint8Array(8 + str.length);
-  encoded.set(encodeUint8(str.length));
+  encoded.set(encodeNumber(str.length));
   encoded.set(stringToUint8Array(str), 8);
   return encoded;
 }

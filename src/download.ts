@@ -1,3 +1,4 @@
+import { SkynetClient } from "./client";
 import {
   addUrlQuery,
   defaultOptions,
@@ -27,12 +28,12 @@ const defaultResolveHnsOptions = {
  * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the skylink.
  * @returns {string} - The full URL that was used.
  */
-export function downloadFile(skylink: string, customOptions = {}): string {
+export function downloadFile(this: SkynetClient, skylink: string, customOptions: any = {}): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getSkylinkUrl(skylink, opts);
 
   // Download the url.
-  window.location = url;
+  window.location.assign(url);
 
   return url;
 }
@@ -45,17 +46,17 @@ export function downloadFile(skylink: string, customOptions = {}): string {
  * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
  * @returns {string} - The full URL that was used.
  */
-export async function downloadFileHns(domain: string, customOptions = {}): Promise<string> {
+export async function downloadFileHns(this: SkynetClient, domain: string, customOptions: any = {}): Promise<string> {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getHnsUrl(domain, opts);
 
   // Download the url.
-  window.location = url;
+  window.location.assign(url);
 
   return url;
 }
 
-export function getSkylinkUrl(skylink: string, customOptions = {}): string {
+export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions: any = {}): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
@@ -79,7 +80,7 @@ export function getSkylinkUrl(skylink: string, customOptions = {}): string {
   return addUrlQuery(url, query);
 }
 
-export function getHnsUrl(domain: string, customOptions = {}): string {
+export function getHnsUrl(this: SkynetClient, domain: string, customOptions: any = {}): string {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
@@ -90,13 +91,13 @@ export function getHnsUrl(domain: string, customOptions = {}): string {
   return addUrlQuery(url, query);
 }
 
-export function getHnsresUrl(domain: string, customOptions = {}): string {
+export function getHnsresUrl(this: SkynetClient, domain: string, customOptions: any = {}): string {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
 }
 
-export async function getMetadata(skylink: string, customOptions = {}) {
+export async function getMetadata(this: SkynetClient, skylink: string, customOptions: any = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   throw new Error("Unimplemented");
@@ -109,7 +110,7 @@ export async function getMetadata(skylink: string, customOptions = {}) {
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  */
-export function openFile(skylink: string, customOptions = {}): string {
+export function openFile(this: SkynetClient, skylink: string, customOptions = {}): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
@@ -125,7 +126,7 @@ export function openFile(skylink: string, customOptions = {}): string {
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns {string} - The full URL that was used.
  */
-export async function openFileHns(domain: string, customOptions = {}): Promise<string> {
+export async function openFileHns(this: SkynetClient, domain: string, customOptions = {}): Promise<string> {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsUrl(domain, opts);
 
@@ -141,7 +142,7 @@ export async function openFileHns(domain: string, customOptions = {}): Promise<s
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
  * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
  */
-export async function resolveHns(domain: string, customOptions = {}): Promise<any> {
+export async function resolveHns(this: SkynetClient, domain: string, customOptions = {}): Promise<any> {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsresUrl(domain, opts);
 
