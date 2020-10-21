@@ -27,6 +27,11 @@ export class SkynetClient {
   portalUrl: string;
   customOptions: CustomClientOptions;
 
+  /**
+   * The Skynet Client which can be used to access Skynet.
+   * @param portalUrl The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
+   * @param customOptions Configuration for the client
+   */
   constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
     this.portalUrl = portalUrl;
     this.customOptions = customOptions;
