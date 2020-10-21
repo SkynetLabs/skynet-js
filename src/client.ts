@@ -20,7 +20,7 @@ import { lookupRegistry, updateRegistry } from "./registry";
 export type CustomClientOptions = {
   APIKey?: string; // authentication password to use
   customUserAgent?: string; // custom user agent header to set
-  onUploadProgress?: (progress: number, details: { loaded: number; total: number }) => void; // optional callback to track upload progress
+  onUploadProgress?: (progress: number, event: ProgressEvent) => void; // optional callback to track upload progress
 };
 
 export class SkynetClient {
@@ -83,8 +83,10 @@ export class SkynetClient {
       auth: config.APIKey && { username: "", password: config.APIKey },
       onUploadProgress:
         config.onUploadProgress &&
-        function ({ loaded, total }: ProgressEvent) {
-          config.onUploadProgress(loaded / total, { loaded, total });
+        function (event: ProgressEvent) {
+          const progress = event.loaded / event.total;
+
+          config.onUploadProgress(progress, event);
         },
     });
   }
