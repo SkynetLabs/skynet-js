@@ -18,9 +18,12 @@ import { getFile, setFile } from "./skydb";
 import { lookupRegistry, updateRegistry } from "./registry";
 
 export type CustomClientOptions = {
-  APIKey?: string; // authentication password to use
-  customUserAgent?: string; // custom user agent header to set
-  onUploadProgress?: (progress: number, event: ProgressEvent) => void; // optional callback to track upload progress
+  /** authentication password to use */
+  APIKey?: string;
+  /** custom user agent header to set */
+  customUserAgent?: string;
+  /** optional callback to track upload progress */
+  onUploadProgress?: (progress: number, event: ProgressEvent) => void;
 };
 
 export class SkynetClient {
