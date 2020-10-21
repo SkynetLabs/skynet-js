@@ -20,22 +20,22 @@ const validSkylinkVariations = [
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
+const mockLocationAssign = jest.fn();
+Object.defineProperty(window, "location", {
+  value: {
+    assign: mockLocationAssign,
+  },
+  writable: true,
+});
+
 describe("downloadFile", () => {
-  let mock: MockAdapter;
-
-  beforeEach(() => {
-    mock = new MockAdapter(axios);
-  });
-
   it("should call window.open with a download url with attachment set", () => {
-    const windowOpen = jest.spyOn(window, "open").mockImplementation();
-
     validSkylinkVariations.forEach((input) => {
-      windowOpen.mockReset();
+      mockLocationAssign.mockClear();
 
       client.downloadFile(input);
 
-      expect(mock.history.get.length).toBe(0);
+      expect(mockLocationAssign).toHaveBeenCalledWith(`${portalUrl}/${skylink}?attachment=true`);
     });
   });
 });
@@ -92,22 +92,13 @@ describe("open", () => {
 });
 
 describe("downloadFileHns", () => {
-  let mock: MockAdapter;
-
-  beforeEach(() => {
-    mock = new MockAdapter(axios);
-  });
-
   it("should set domain with the portal and hns link and then call window.openFile with attachment set", async () => {
-    const windowOpen = jest.spyOn(window, "open").mockImplementation();
-
     for (const input of validHnsLinkVariations) {
-      mock.resetHistory();
-      windowOpen.mockReset();
+      mockLocationAssign.mockClear();
 
       await client.downloadFileHns(input);
 
-      expect(mock.history.get.length).toBe(0);
+      expect(mockLocationAssign).toHaveBeenCalledWith("https://siasky.net/hns/foo?attachment=true");
     }
   });
 });
