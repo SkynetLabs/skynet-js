@@ -30,7 +30,7 @@ export function downloadFile(this: SkynetClient, skylink: string, customOptions:
   const url = this.getSkylinkUrl(skylink, opts);
 
   // Download the url.
-  window.location.href = url;
+  window.location.assign(url);
 }
 
 /**
@@ -44,7 +44,7 @@ export async function downloadFileHns(this: SkynetClient, domain: string, custom
   const url = this.getHnsUrl(domain, opts);
 
   // Download the url.
-  window.location.href = url;
+  window.location.assign(url);
 }
 
 export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions: any = {}): string {
