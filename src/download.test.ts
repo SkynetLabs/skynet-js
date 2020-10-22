@@ -131,19 +131,6 @@ describe("requestFile", () => {
       expect(fileData).toEqual(skynetFileContents);
     });
   });
-
-  it("should fail quietly when skynet headers not present", () => {
-    const headers = { "skynet-skylink": skylink };
-
-    validSkylinkVariations.forEach(async (input) => {
-      const skylinkUrl = client.getSkylinkUrl(input);
-      mock.onHead(skylinkUrl).reply(200, {}, headers);
-
-      const responseMetadata = await client.getMetadata(input);
-
-      expect(responseMetadata).toEqual({});
-    });
-  });
 });
 
 describe("open", () => {
