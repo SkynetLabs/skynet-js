@@ -86,6 +86,23 @@ export async function getMetadata(this: SkynetClient, skylink: string, customOpt
   }
 }
 
+export async function requestFile(this: SkynetClient, skylink: string, customOptions: any = {}) {
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const url = this.getSkylinkUrl(skylink, opts);
+
+  try {
+    const response = await this.executeRequest({
+      ...opts,
+      method: "get",
+      url,
+    });
+
+    return response.data;
+  } catch (error) {
+    throw new Error("Error requesting file from skylink");
+  }
+}
+
 /**
  * Opens the content of the skylink within the browser.
  * @param {string} skylink - 46 character skylink.

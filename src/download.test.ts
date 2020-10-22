@@ -111,6 +111,41 @@ describe("getMetadata", () => {
   });
 });
 
+describe("requestFile", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
+  it("should fetch successfully skynet file", () => {
+    const skynetFileContents = { arbitrary: "json string" };
+    const headers = { "content-type": "application/json" };
+
+    validSkylinkVariations.forEach(async (input) => {
+      const skylinkUrl = client.getSkylinkUrl(input);
+      mock.onGet(skylinkUrl).reply(200, skynetFileContents, headers);
+
+      const fileData = await client.requestFile(input);
+
+      expect(fileData).toEqual(skynetFileContents);
+    });
+  });
+
+  it("should fail quietly when skynet headers not present", () => {
+    const headers = { "skynet-skylink": skylink };
+
+    validSkylinkVariations.forEach(async (input) => {
+      const skylinkUrl = client.getSkylinkUrl(input);
+      mock.onHead(skylinkUrl).reply(200, {}, headers);
+
+      const responseMetadata = await client.getMetadata(input);
+
+      expect(responseMetadata).toEqual({});
+    });
+  });
+});
+
 describe("open", () => {
   it("should call window.openFile", () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();

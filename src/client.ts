@@ -8,6 +8,7 @@ import {
   getHnsUrl,
   getHnsresUrl,
   getMetadata,
+  requestFile,
   openFile,
   openFileHns,
   resolveHns,
@@ -57,6 +58,7 @@ export class SkynetClient {
   getHnsUrl = getHnsUrl;
   getHnsresUrl = getHnsresUrl;
   getMetadata = getMetadata;
+  requestFile = requestFile;
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;
