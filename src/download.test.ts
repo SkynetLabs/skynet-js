@@ -131,6 +131,41 @@ describe("getSkylinkUrl", () => {
   });
 });
 
+describe("getMetadata", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
+  it("should fetch successfully skynet file headers", () => {
+    const skynetFileMetadata = { filename: "sia.pdf" };
+    const headers = { "skynet-skylink": skylink, "skynet-file-metadata": JSON.stringify(skynetFileMetadata) };
+
+    validSkylinkVariations.forEach(async ([input, _1, _2]) => {
+      const skylinkUrl = client.getSkylinkUrl(input);
+      mock.onHead(skylinkUrl).reply(200, {}, headers);
+
+      const responseMetadata = await client.getMetadata(input);
+
+      expect(responseMetadata).toEqual(skynetFileMetadata);
+    });
+  });
+
+  it("should fail quietly when skynet headers not present", () => {
+    const headers = { "skynet-skylink": skylink };
+
+    validSkylinkVariations.forEach(async ([input, _1, _2]) => {
+      const skylinkUrl = client.getSkylinkUrl(input);
+      mock.onHead(skylinkUrl).reply(200, {}, headers);
+
+      const responseMetadata = await client.getMetadata(input);
+
+      expect(responseMetadata).toEqual({});
+    });
+  });
+});
+
 describe("openFile", () => {
   it("should call window.openFile", () => {
     const windowOpen = jest.spyOn(window, "open").mockImplementation();
