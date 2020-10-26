@@ -35,7 +35,7 @@ describe("SkynetClient", () => {
 
     // SkyDB helpers
     expect(client).toHaveProperty("registry");
-    expect(client.registry).toHaveProperty("lookup");
-    expect(client.registry).toHaveProperty("update");
+    expect(client.registry).toHaveProperty("getEntry");
+    expect(client.registry).toHaveProperty("setEntry");
   });
 });

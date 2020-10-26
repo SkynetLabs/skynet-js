@@ -10,7 +10,7 @@ export async function getJSON(
   dataKey: string
 ): Promise<{ data: Record<string, unknown>; revision: number } | null> {
   // lookup the registry entry
-  const entry = await this.registry.lookup(publicKey, dataKey);
+  const entry = await this.registry.getEntry(publicKey, dataKey);
   if (entry === null) {
     return null;
   }
@@ -48,7 +48,7 @@ export async function setJSON(
   const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   if (!revision) {
     // fetch the current value to find out the revision.
-    const entry = await this.registry.lookup(publicKey, dataKey);
+    const entry = await this.registry.getEntry(publicKey, dataKey);
 
     if (entry) {
       // verify here
@@ -81,5 +81,5 @@ export async function setJSON(
   });
 
   // update the registry
-  return this.registry.update(publicKey, dataKey, entry, signature);
+  return this.registry.setEntry(publicKey, dataKey, entry, signature);
 }

@@ -18,7 +18,7 @@ export type SignedRegistryEntry = {
   signature: Signature;
 };
 
-export async function lookup(
+export async function getEntry(
   this: SkynetClient,
   publickey: PublicKey,
   datakey: string,
@@ -58,7 +58,7 @@ export async function lookup(
   throw new Error(`unexpected response status code ${response.status}`);
 }
 
-export async function update(
+export async function setEntry(
   this: SkynetClient,
   publickey: PublicKey,
   datakey: string,
