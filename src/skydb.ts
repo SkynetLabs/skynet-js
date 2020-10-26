@@ -8,7 +8,7 @@ export async function getJSON(
   this: SkynetClient,
   publicKey: PublicKey,
   dataKey: string
-): Promise<{ json: object; revision: number } | null> {
+): Promise<{ json: Record<string, unknown>; revision: number } | null> {
   // lookup the registry entry
   const entry = await this.registry.lookup(publicKey, dataKey);
   if (entry === null) {
@@ -37,8 +37,8 @@ export async function setJSON(
   this: SkynetClient,
   privateKey: SecretKey,
   dataKey: string,
-  json: object,
-  revision: number = -1
+  json: Record<string, unknown>,
+  revision = -1
 ): Promise<boolean> {
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
