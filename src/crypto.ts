@@ -4,7 +4,7 @@ import { stringToUint8Array } from "./utils";
 import { pki } from "node-forge";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
-export type SecretKey = pki.ed25519.NativeBuffer
+export type SecretKey = pki.ed25519.NativeBuffer;
 export type Signature = pki.ed25519.NativeBuffer;
 
 // NewHash returns a blake2b 256bit hasher.

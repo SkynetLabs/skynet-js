@@ -4,7 +4,11 @@ import { HashRegistryEntry, PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry } from "./registry";
 import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
 
-export async function getJSON(this: SkynetClient, publicKey: PublicKey, dataKey: string): Promise<{ json: object, revision: number }|null> {
+export async function getJSON(
+  this: SkynetClient,
+  publicKey: PublicKey,
+  dataKey: string
+): Promise<{ json: object; revision: number } | null> {
   // lookup the registry entry
   const entry = await this.registry.lookup(publicKey, dataKey);
   if (entry === null) {
@@ -29,29 +33,37 @@ export async function getJSON(this: SkynetClient, publicKey: PublicKey, dataKey:
   return { json: response.data, revision: entry.revision };
 }
 
-export async function setJSON(this: SkynetClient, privateKey: SecretKey, dataKey: string, json: object, revision: number = -1): Promise<boolean> {
+export async function setJSON(
+  this: SkynetClient,
+  privateKey: SecretKey,
+  dataKey: string,
+  json: object,
+  revision: number = -1
+): Promise<boolean> {
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
-  const response = await this.executeRequest({
+  const { data } = await this.executeRequest({
     ...this.customOptions,
     method: "post",
     endpointPath: "/skynet/skyfile",
     data: json.toString(),
   });
-  const skylink = response.skylink;
+  const skylink = data.skylink;
 
-  const publicKey = pki.ed25519.publicKeyFromPrivateKey({privateKey});
+  const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   if (revision === -1) {
     // fetch the current value to find out the revision.
-    const entry = await this.registry.lookup(publicKey, dataKey)
+    const entry = await this.registry.lookup(publicKey, dataKey);
 
     if (entry) {
       // verify here
-      if (!pki.ed25519.verify({
-        message: HashRegistryEntry(entry.entry),
-        signature: entry.signature,
-        publicKey,
-      })) {
+      if (
+        !pki.ed25519.verify({
+          message: HashRegistryEntry(entry.entry),
+          signature: entry.signature,
+          publicKey,
+        })
+      ) {
         throw new Error("could not verify signature");
       }
 

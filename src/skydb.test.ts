@@ -1,12 +1,15 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { random } from "node-forge";
-import { addUrlQuery, defaultSkynetPortalUrl, randomNumber } from "./utils";
+import { pki } from "node-forge";
+import { addUrlQuery, defaultSkynetPortalUrl } from "./utils";
 import { SkynetClient } from ".";
 
 const filename = "foo.txt";
+const { publicKey, privateKey } = pki.ed25519.generateKeyPair();
+const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
+const json = { data: "thisistext" };
 
 const portalUrl = defaultSkynetPortalUrl;
 const registryUrl = `${portalUrl}/skynet/registry`;
@@ -25,19 +28,11 @@ describe.skip("getFile", () => {
   it("should perform a lookup and update the window to the skylink url", async () => {
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${user.id}`,
-      fileid: Buffer.from(
-        JSON.stringify({
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        })
-      ).toString("hex"),
+      publickey: `ed25519:${publicKey}`,
+      datakey: dataKey,
     });
 
     mock.onGet(registryLookupUrl).reply(200, {
-      tweak: "3b0f02e66373877503325e44b6973279d2e2a9c21e75b17adccb378d05cf40ae",
       data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
       revision: 11,
       signature:
@@ -46,7 +41,7 @@ describe.skip("getFile", () => {
 
     // TODO mock skylink download request
 
-    await client.getFile(user, fileID);
+    await client.db.getJSON(publicKey, dataKey);
     expect(mock.history.get.length).toBe(1);
   });
 });
@@ -65,19 +60,11 @@ describe("setFile", () => {
 
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${user.id}`,
-      fileid: Buffer.from(
-        JSON.stringify({
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        })
-      ).toString("hex"),
+      publickey: `ed25519:${publicKey}`,
+      datakey: dataKey,
     });
 
     mock.onGet(registryLookupUrl).reply(200, {
-      tweak: "3b0f02e66373877503325e44b6973279d2e2a9c21e75b17adccb378d05cf40ae",
       data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
       revision: 11,
       signature:
@@ -87,11 +74,8 @@ describe("setFile", () => {
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
 
-    // mock a file
-    const file = new File(["thisistext"], filename, { type: "text/plain" });
-
-    // call `setFile` on the client
-    await client.setFile(user, fileID, new SkyFile(file));
+    // set data
+    await client.db.setJSON(privateKey, dataKey, json);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
@@ -104,15 +88,8 @@ describe("setFile", () => {
 
     // mock a failed registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${user.id}`,
-      fileid: Buffer.from(
-        JSON.stringify({
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        })
-      ).toString("hex"),
+      publickey: `ed25519:${publicKey}`,
+      datakey: dataKey,
     });
 
     mock.onGet(registryLookupUrl).reply(400);
@@ -120,11 +97,8 @@ describe("setFile", () => {
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
 
-    // mock a file
-    const file = new File(["thisistext"], filename, { type: "text/plain" });
-
     // call `setFile` on the client
-    await client.setFile(user, fileID, new SkyFile(file));
+    await client.db.setJSON(privateKey, dataKey, json);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);

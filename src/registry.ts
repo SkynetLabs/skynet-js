@@ -18,7 +18,12 @@ export type SignedRegistryEntry = {
   signature: Signature;
 };
 
-export async function lookup(this: SkynetClient, publickey: PublicKey, datakey: string, customOptions = {}): Promise<SignedRegistryEntry|null> {
+export async function lookup(
+  this: SkynetClient,
+  publickey: PublicKey,
+  datakey: string,
+  customOptions = {}
+): Promise<SignedRegistryEntry | null> {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
@@ -53,7 +58,14 @@ export async function lookup(this: SkynetClient, publickey: PublicKey, datakey: 
   throw new Error(`unexpected response status code ${response.status}`);
 }
 
-export async function update(this: SkynetClient, publickey: PublicKey, datakey: string, entry: RegistryEntry, signature: Signature, customOptions = {}): Promise<boolean> {
+export async function update(
+  this: SkynetClient,
+  publickey: PublicKey,
+  datakey: string,
+  entry: RegistryEntry,
+  signature: Signature,
+  customOptions = {}
+): Promise<boolean> {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
