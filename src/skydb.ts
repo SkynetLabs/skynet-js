@@ -46,7 +46,7 @@ export async function setJSON(
   const skylink = data.skylink;
 
   const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
-  if (revision) {
+  if (!revision) {
     // fetch the current value to find out the revision.
     const entry = await this.registry.lookup(publicKey, dataKey);
 

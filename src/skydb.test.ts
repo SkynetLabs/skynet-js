@@ -75,7 +75,9 @@ describe("setFile", () => {
     mock.onPost(registryUrl).reply(204);
 
     // set data
-    await client.db.setJSON(privateKey, dataKey, json);
+    const updated = await client.db.setJSON(privateKey, dataKey, json);
+
+    expect(updated);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
@@ -98,7 +100,9 @@ describe("setFile", () => {
     mock.onPost(registryUrl).reply(204);
 
     // call `setFile` on the client
-    await client.db.setJSON(privateKey, dataKey, json);
+    const updated = await client.db.setJSON(privateKey, dataKey, json);
+
+    expect(updated);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
