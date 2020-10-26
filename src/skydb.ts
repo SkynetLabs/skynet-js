@@ -8,21 +8,16 @@ export async function getJSON(
   this: SkynetClient,
   publicKey: PublicKey,
   dataKey: string
-): Promise<{ json: Record<string, unknown>; revision: number } | null> {
+): Promise<{ data: Record<string, unknown>; revision: number } | null> {
   // lookup the registry entry
   const entry = await this.registry.lookup(publicKey, dataKey);
   if (entry === null) {
-    throw new Error("not found");
+    return null;
   }
 
   // Download the data in that Skylink
   // TODO: Replace with download request method.
-  let skylink: string;
-  try {
-    skylink = parseSkylink(entry.value.data);
-  } catch (error) {
-    throw new Error(`invalid skylink: ${error}`);
-  }
+  const skylink = parseSkylink(entry.value.data);
 
   const response = await this.executeRequest({
     ...this.customOptions,
@@ -30,7 +25,7 @@ export async function getJSON(
     url: this.getSkylinkUrl(skylink),
   });
 
-  return { json: response.data, revision: entry.revision };
+  return { data: response.data, revision: entry.revision };
 }
 
 export async function setJSON(
@@ -38,7 +33,7 @@ export async function setJSON(
   privateKey: SecretKey,
   dataKey: string,
   json: Record<string, unknown>,
-  revision = -1
+  revision?: number
 ): Promise<boolean> {
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
@@ -51,7 +46,7 @@ export async function setJSON(
   const skylink = data.skylink;
 
   const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
-  if (revision === -1) {
+  if (revision) {
     // fetch the current value to find out the revision.
     const entry = await this.registry.lookup(publicKey, dataKey);
 
@@ -86,6 +81,5 @@ export async function setJSON(
   });
 
   // update the registry
-  const updated = await this.registry.update(publicKey, dataKey, entry, signature);
-  return updated;
+  return this.registry.update(publicKey, dataKey, entry, signature);
 }

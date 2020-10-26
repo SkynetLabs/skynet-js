@@ -84,7 +84,7 @@ export async function update(
         },
         datakey,
         revision: entry.revision,
-        data: Array.from(Uint8Array.from(Buffer.from(entry.data))),
+        data: Array.from(Buffer.from(entry.data)),
         signature: Array.from(signature),
       },
     });
