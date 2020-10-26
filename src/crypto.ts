@@ -21,7 +21,7 @@ export function HashAll(...args: any[]): Uint8Array {
   return blake.blake2bFinal(h);
 }
 
-// Ashes the given registry entry
+// Hashes the given registry entry.
 export function HashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
   return HashAll(encodeString(registryEntry.data), encodeNumber(registryEntry.revision));
 }

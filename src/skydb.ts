@@ -2,7 +2,7 @@ import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { HashRegistryEntry, PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry } from "./registry";
-import { trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
 
 export async function getJSON(this: SkynetClient, publicKey: PublicKey, dataKey: string): Promise<{ json: object, revision: number }|null> {
   // lookup the registry entry
@@ -13,7 +13,13 @@ export async function getJSON(this: SkynetClient, publicKey: PublicKey, dataKey:
 
   // Download the data in that Skylink
   // TODO: Replace with download request method.
-  const skylink = entry.value.data;
+  let skylink: string;
+  try {
+    skylink = parseSkylink(entry.value.data);
+  } catch (error) {
+    throw new Error(`invalid skylink: ${error}`);
+  }
+
   const response = await this.executeRequest({
     ...this.customOptions,
     method: "get",
@@ -38,14 +44,22 @@ export async function setJSON(this: SkynetClient, privateKey: SecretKey, dataKey
   if (revision === -1) {
     // fetch the current value to find out the revision.
     const entry = await this.registry.lookup(publicKey, dataKey)
+
     if (entry) {
+      // verify here
+      if (!pki.ed25519.verify({
+        message: HashRegistryEntry(entry.entry),
+        signature: entry.signature,
+        publicKey,
+      })) {
+        throw new Error("could not verify signature");
+      }
+
       revision = entry.revision + 1;
     } else {
       revision = 0;
     }
   }
-
-  // TODO: we could (/should?) verify here
 
   // build the registry value
   const entry: RegistryEntry = {

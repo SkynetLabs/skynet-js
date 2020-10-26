@@ -14,7 +14,7 @@ export type RegistryEntry = {
 };
 
 export type SignedRegistryEntry = {
-  value: RegistryEntry;
+  entry: RegistryEntry;
   signature: Signature;
 };
 
@@ -43,7 +43,7 @@ export async function lookup(this: SkynetClient, publickey: PublicKey, datakey: 
 
   if (response.status === 200) {
     return {
-      value: {
+      entry: {
         data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
         revision: parseInt(response.data.revision, 10),
       },
