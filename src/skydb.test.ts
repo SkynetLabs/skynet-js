@@ -4,30 +4,8 @@ import MockAdapter from "axios-mock-adapter";
 import { random } from "node-forge";
 import { addUrlQuery, defaultSkynetPortalUrl, randomNumber } from "./utils";
 import { SkynetClient } from ".";
-import { FileType, FileID, SkyFile, User } from "./skydb";
 
-describe("User", () => {
-  it("should have set a user id", async () => {
-    const user = new User("john.doe@example.com", "supersecret");
-    expect(user.id.length).toBeGreaterThan(0);
-  });
-
-  it("should be deterministic", async () => {
-    const username = random.getBytesSync(randomNumber(6, 24));
-    const password = random.getBytesSync(randomNumber(12, 64));
-    const expected = new User(username, password);
-    for (let i = 0; i < 5; i++) {
-      expect(new User(username, password).id).toEqual(expected.id);
-    }
-  });
-});
-
-const user = new User("john.doe@example.com", "supersecret");
-
-const appID = "SkySkapp";
 const filename = "foo.txt";
-const fileID = new FileID(appID, FileType.PublicUnencrypted, filename);
-
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
 
 const portalUrl = defaultSkynetPortalUrl;

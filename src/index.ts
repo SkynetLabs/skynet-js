@@ -1,7 +1,6 @@
 export { SkynetClient } from "./client";
 
-export { FILEID_V1, FileType, FileID, User, SkyFile } from "./skydb";
-export type { SignedRegistryValue, RegistryValue } from "./registry";
+export type { SignedRegistryEntry, RegistryEntry } from "./registry";
 
 export {
   defaultPortalUrl,

@@ -1,105 +1,65 @@
-import { md, pkcs5, pki } from "node-forge";
+import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { HashFileID, HashRegistryValue } from "./crypto";
-import { RegistryValue, SignedRegistryValue } from "./registry";
-import { promiseTimeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { HashRegistryEntry, PublicKey, SecretKey } from "./crypto";
+import { RegistryEntry } from "./registry";
+import { trimUriPrefix, uriSkynetPrefix } from "./utils";
 
-// FILEID_V1 represents version 1 of the FileID object
-export const FILEID_V1 = 1;
-
-// FileType is the type of the file
-export enum FileType {
-  Invalid, // 0 is invalid
-  PublicUnencrypted,
-}
-
-// getFile will lookup the entry for given skappID and filename, if it exists it
-// will try and download the file behind the skylink it has found in the entry.
-export async function getFile(this: SkynetClient, user: User, fileID: FileID): Promise<SkyFile> {
+export async function getJSON(this: SkynetClient, publicKey: PublicKey, dataKey: string): Promise<{ json: object, revision: number }|null> {
   // lookup the registry entry
-  const existing = await this.lookupRegistry(user, fileID);
-  if (!existing) {
+  const entry = await this.registry.lookup(publicKey, dataKey);
+  if (entry === null) {
     throw new Error("not found");
   }
 
-  // download the data in that Skylink
-  const skylink = existing.value.data;
+  // Download the data in that Skylink
+  // TODO: Replace with download request method.
+  const skylink = entry.value.data;
   const response = await this.executeRequest({
     ...this.customOptions,
     method: "get",
     url: this.getSkylinkUrl(skylink),
   });
 
-  // wrap the data in a skyfile and return it
-  const metadata = JSON.parse(response.headers["skynet-file-metadata"]);
-  const file = new SkyFile(new File([response.data], metadata.filename, { type: response.headers["content-type"] }));
-  return file;
+  return { json: response.data, revision: entry.revision };
 }
 
-// setFile uploads a file and sets updates the registry
-export async function setFile(this: SkynetClient, user: User, fileID: FileID, file: SkyFile): Promise<boolean> {
-  // upload the file to acquire its skylink
-  const customFilename = fileID.filename;
-  const skylink = await this.uploadFile(file.file, { customFilename });
+export async function setJSON(this: SkynetClient, privateKey: SecretKey, dataKey: string, json: object, revision: number = -1): Promise<boolean> {
+  // Upload the data to acquire its skylink
+  // TODO: Replace with upload request method.
+  const response = await this.executeRequest({
+    ...this.customOptions,
+    method: "post",
+    endpointPath: "/skynet/skyfile",
+    data: json.toString(),
+  });
+  const skylink = response.skylink;
 
-  // fetch the current value to find out the revision, timeout after 2s
-  let existing: SignedRegistryValue | null;
-  try {
-    existing = await promiseTimeout(this.lookupRegistry(user, fileID), 2000);
-  } catch (error) {
-    existing = null;
+  const publicKey = pki.ed25519.publicKeyFromPrivateKey({privateKey});
+  if (revision === -1) {
+    // fetch the current value to find out the revision.
+    const entry = await this.registry.lookup(publicKey, dataKey)
+    if (entry) {
+      revision = entry.revision + 1;
+    } else {
+      revision = 0;
+    }
   }
 
   // TODO: we could (/should?) verify here
 
   // build the registry value
-  const value: RegistryValue = {
-    tweak: HashFileID(fileID),
+  const entry: RegistryEntry = {
     data: trimUriPrefix(skylink, uriSkynetPrefix),
-    revision: existing ? existing.value.revision + 1 : 0,
+    revision,
   };
 
   // sign it
-  const signature = user.sign({ message: HashRegistryValue(value) });
+  const signature = pki.ed25519.sign({
+    message: HashRegistryEntry(entry),
+    privateKey,
+  });
 
   // update the registry
-  const updated = await this.updateRegistry(user, fileID, { value, signature });
+  const updated = await this.registry.update(publicKey, dataKey, entry, signature);
   return updated;
-}
-
-// FileID represents a File
-export class FileID {
-  public version = FILEID_V1;
-
-  public constructor(public applicationID: string, public fileType: FileType, public filename: string) {
-    // validate file type
-    if (fileType !== FileType.PublicUnencrypted) {
-      throw new Error("invalid file type");
-    }
-  }
-}
-
-// User represents a user entity and can be used to sign.
-export class User {
-  public id: string;
-  public publicKey: pki.ed25519.NativeBuffer;
-  protected secretKey: pki.ed25519.NativeBuffer;
-
-  // NOTE: username should be the user's email address as ideally it's unique
-  public constructor(username: string, password: string) {
-    const seed = pkcs5.pbkdf2(password, username, 1000, 32, md.sha256.create());
-    const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
-    this.publicKey = publicKey;
-    this.secretKey = privateKey;
-    this.id = publicKey.toString("hex");
-  }
-
-  public sign(options: pki.ed25519.ToNativeBufferParameters): pki.ed25519.NativeBuffer {
-    return pki.ed25519.sign({ ...options, privateKey: this.secretKey });
-  }
-}
-
-// SkyFile wraps a File.
-export class SkyFile {
-  public constructor(public file: File) {}
 }

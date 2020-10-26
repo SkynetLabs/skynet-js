@@ -1,7 +1,11 @@
 import blake from "blakejs";
-import { RegistryValue } from "./registry";
-import { FileID } from "./skydb";
+import { RegistryEntry } from "./registry";
 import { stringToUint8Array } from "./utils";
+import { pki } from "node-forge";
+
+export type PublicKey = pki.ed25519.NativeBuffer;
+export type SecretKey = pki.ed25519.NativeBuffer
+export type Signature = pki.ed25519.NativeBuffer;
 
 // NewHash returns a blake2b 256bit hasher.
 function NewHash() {
@@ -17,19 +21,9 @@ export function HashAll(...args: any[]): Uint8Array {
   return blake.blake2bFinal(h);
 }
 
-// HashRegistryValue hashes the given registry value
-export function HashRegistryValue(registryValue: RegistryValue): Uint8Array {
-  return HashAll(registryValue.tweak, encodeString(registryValue.data), encodeNumber(registryValue.revision));
-}
-
-// HashFileID hashes the given fileID
-export function HashFileID(fileID: FileID): Uint8Array {
-  return HashAll(
-    encodeNumber(fileID.version),
-    encodeString(fileID.applicationID),
-    encodeNumber(fileID.fileType),
-    encodeString(fileID.filename)
-  );
+// Ashes the given registry entry
+export function HashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
+  return HashAll(encodeString(registryEntry.data), encodeNumber(registryEntry.revision));
 }
 
 // encodeNumber converts the given number into a uint8 array

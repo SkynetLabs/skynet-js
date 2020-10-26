@@ -1,52 +1,39 @@
-import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { FileID, User } from "./skydb";
 import { defaultOptions, hexToUint8Array } from "./utils";
 import { Buffer } from "buffer";
+import { PublicKey, Signature } from "./crypto";
 
 const defaultRegistryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
 
-export type RegistryValue = {
-  tweak: Uint8Array;
+export type RegistryEntry = {
   data: string;
   revision: number;
 };
 
-export type SignedRegistryValue = {
-  value: RegistryValue;
-  signature: pki.ed25519.NativeBuffer;
+export type SignedRegistryEntry = {
+  value: RegistryEntry;
+  signature: Signature;
 };
 
-export async function lookupRegistry(
-  this: SkynetClient,
-  user: User,
-  fileID: FileID,
-  customOptions = {}
-): Promise<SignedRegistryValue | null> {
+export async function lookup(this: SkynetClient, publickey: PublicKey, datakey: string, customOptions = {}): Promise<SignedRegistryEntry|null> {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
+  const userID = publickey.toString("hex");
   let response: AxiosResponse;
   try {
     response = await this.executeRequest({
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${user.id}`,
-        fileid: Buffer.from(
-          JSON.stringify({
-            version: fileID.version,
-            applicationid: fileID.applicationID,
-            filetype: fileID.fileType,
-            filename: fileID.filename,
-          })
-        ).toString("hex"),
+        publickey: `ed25519:${userID}`,
+        datakey,
       },
     });
   } catch (err: unknown) {
@@ -57,7 +44,6 @@ export async function lookupRegistry(
   if (response.status === 200) {
     return {
       value: {
-        tweak: Uint8Array.from(Buffer.from(response.data.tweak)),
         data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
         revision: parseInt(response.data.revision, 10),
       },
@@ -67,13 +53,7 @@ export async function lookupRegistry(
   throw new Error(`unexpected response status code ${response.status}`);
 }
 
-export async function updateRegistry(
-  this: SkynetClient,
-  user: User,
-  fileID: FileID,
-  srv: SignedRegistryValue,
-  customOptions = {}
-): Promise<boolean> {
+export async function update(this: SkynetClient, publickey: PublicKey, datakey: string, entry: RegistryEntry, signature: Signature, customOptions = {}): Promise<boolean> {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
@@ -88,17 +68,12 @@ export async function updateRegistry(
       data: {
         publickey: {
           algorithm: "ed25519",
-          key: Array.from(user.publicKey),
+          key: Array.from(publickey),
         },
-        fileid: {
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        },
-        revision: srv.value.revision,
-        data: Array.from(Uint8Array.from(Buffer.from(srv.value.data))),
-        signature: Array.from(Uint8Array.from(srv.signature)),
+        datakey,
+        revision: entry.revision,
+        data: Array.from(Uint8Array.from(Buffer.from(entry.data))),
+        signature: Array.from(signature),
       },
     });
   } catch (err: unknown) {
