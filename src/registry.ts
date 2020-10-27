@@ -50,6 +50,7 @@ export async function getEntry(
     return {
       entry: {
         data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+        // TODO: Handle uint64 properly.
         revision: parseInt(response.data.revision, 10),
       },
       signature: response.data.signature,
