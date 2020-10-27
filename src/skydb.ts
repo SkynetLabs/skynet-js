@@ -1,8 +1,8 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { HashRegistryEntry, PublicKey, SecretKey } from "./crypto";
-import { RegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { RegistryEntry, SignedRegistryEntry } from "./registry";
+import { parseSkylink, promiseTimeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
 
 export async function getJSON(
   this: SkynetClient,
@@ -11,7 +11,7 @@ export async function getJSON(
 ): Promise<{ data: Record<string, unknown>; revision: number } | null> {
   // lookup the registry entry
   console.log(10);
-  const entry = await this.registry.getEntry(publicKey, dataKey);
+  const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey);
   if (entry === null) {
     return null;
   }
@@ -19,7 +19,7 @@ export async function getJSON(
 
   // Download the data in that Skylink
   // TODO: Replace with download request method.
-  const skylink = parseSkylink(entry.value.data);
+  const skylink = parseSkylink(entry.entry.data);
 
   const response = await this.executeRequest({
     ...this.customOptions,
@@ -28,7 +28,7 @@ export async function getJSON(
   });
   console.log(12);
 
-  return { data: response.data, revision: entry.revision };
+  return { data: response.data, revision: entry.entry.revision };
 }
 
 export async function setJSON(
@@ -37,7 +37,7 @@ export async function setJSON(
   dataKey: string,
   json: Record<string, unknown>,
   revision?: number
-): Promise<boolean> {
+) {
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
   console.log(1);
@@ -49,7 +49,7 @@ export async function setJSON(
   if (!revision) {
     // fetch the current value to find out the revision.
     console.log(3);
-    const entry = await this.registry.getEntry(publicKey, dataKey);
+    const entry = await promiseTimeout(this.registry.getEntry(publicKey, dataKey), 5000);
     console.log(4);
 
     if (entry) {
@@ -76,6 +76,7 @@ export async function setJSON(
   console.log(8);
   // build the registry value
   const entry: RegistryEntry = {
+    datakey: dataKey,
     data: trimUriPrefix(skylink, uriSkynetPrefix),
     revision,
   };
@@ -88,5 +89,5 @@ export async function setJSON(
 
   console.log(9);
   // update the registry
-  return this.registry.setEntry(publicKey, dataKey, entry, signature);
+  this.registry.setEntry(publicKey, dataKey, entry, signature);
 }
