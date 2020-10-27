@@ -7,13 +7,19 @@
 
 A Javascript module made to simplify communication with Sia Skynet portals from the browser.
 
+## Documentation
+
+For documentation complete with examples, please see [the Skynet SDK docs](https://siasky.net/docs/?javascript--browser#introduction).
+
+We also have an [example tutorial about creating your first web app on Skynet](https://blog.sia.tech/creating-your-first-web-app-on-skynet-ec6f4fff405f)
+
 ## How use skynet-js in your project?
 
 If you're thinking about "wait, how can I `import()` in the browser" then here is the answer:
 
 While skynet-js is built with Node.js, you can easily compile it to one minified javascript file what is compatible with browsers.
 
-Webpack will compile only the used functions (unused code will be removed automatically), so it is recommended to build your whole project in Node.js and compile it with webpack ([click here for detailed tutorial](https://github.com/NebulousLabs/skynet-workshop/tree/master/intro)):
+Webpack will compile only the used functions (unused code will be removed automatically), so it is recommended to build your whole project in Node.js and compile it with webpack ([click here for detailed tutorial](https://blog.sia.tech/creating-your-first-web-app-on-skynet-ec6f4fff405f)):
 
 `cd you_project`
 
@@ -31,10 +37,6 @@ add    - "private": true,
 Create folders `mkdir dist src`. Make sure you have your javascript files in `src` and the main (entry) javascript is named `index.js`.
 
 Compile with `npx webpack`! You will find the minified `main.js` in the `dist` folder.
-
-## Documentation
-
-For documentation complete with examples, please see [the Skynet SDK docs](https://siasky.net/docs/?javascript--browser#introduction).
 
 ### Browser Utility Functions
 
