@@ -56,7 +56,7 @@ export async function getEntry(
       signature: response.data.signature,
     };
   }
-  throw new Error(`unexpected response status code ${response.status}`);
+  return null;
 }
 
 export async function setEntry(
@@ -97,5 +97,5 @@ export async function setEntry(
   if (response.status === 204) {
     return true;
   }
-  throw new Error(`unexpected response status code ${response.status}`);
+  return false;
 }

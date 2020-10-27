@@ -37,13 +37,8 @@ export async function setJSON(
 ): Promise<boolean> {
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
-  const { data } = await this.executeRequest({
-    ...this.customOptions,
-    method: "post",
-    endpointPath: "/skynet/skyfile",
-    data: json.toString(),
-  });
-  const skylink = data.skylink;
+  const file = new File([JSON.stringify(json)], dataKey, { type: "text/plain" });
+  const { skylink } = await this.uploadFileRequest(file, this.customOptions);
 
   const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   if (!revision) {

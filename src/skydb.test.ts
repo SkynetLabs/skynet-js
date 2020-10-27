@@ -17,7 +17,7 @@ const uploadUrl = `${portalUrl}/skynet/skyfile`;
 
 const client = new SkynetClient(portalUrl);
 
-describe.skip("getFile", () => {
+describe("getFile", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
