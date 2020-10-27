@@ -2,7 +2,7 @@ import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 import { defaultOptions, hexToUint8Array } from "./utils";
 import { Buffer } from "buffer";
-import { PublicKey, Signature } from "./crypto";
+import { HashAll, PublicKey, Signature } from "./crypto";
 
 const defaultRegistryOptions = {
   ...defaultOptions("/skynet/registry"),
@@ -31,6 +31,7 @@ export async function getEntry(
   };
 
   const userID = publickey.toString("hex");
+  datakey = Buffer.from(HashAll(datakey)).toString("hex");
   let response: AxiosResponse;
   try {
     response = await this.executeRequest({
@@ -66,36 +67,29 @@ export async function setEntry(
   entry: RegistryEntry,
   signature: Signature,
   customOptions = {}
-): Promise<boolean> {
+) {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
-  let response: AxiosResponse;
-  try {
-    response = await this.executeRequest({
-      ...opts,
-      method: "post",
-      data: {
-        publickey: {
-          algorithm: "ed25519",
-          key: Array.from(publickey),
-        },
-        datakey,
-        revision: entry.revision,
-        data: Array.from(Buffer.from(entry.data)),
-        signature: Array.from(signature),
-      },
-    });
-  } catch (err: unknown) {
-    // unfortunately axios rejects anything that's not >= 200 and < 300
-    return false;
-  }
+  datakey = Buffer.from(HashAll(datakey)).toString("hex");
+  const data = {
+    publickey: {
+      algorithm: "ed25519",
+      key: Array.from(publickey),
+    },
+    datakey,
+    revision: entry.revision,
+    data: Array.from(Buffer.from(entry.data)),
+    signature: Array.from(signature),
+  };
+  console.log(data);
 
-  if (response.status === 204) {
-    return true;
-  }
-  return false;
+  this.executeRequest({
+    ...opts,
+    method: "post",
+    data,
+  });
 }
