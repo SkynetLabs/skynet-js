@@ -87,7 +87,7 @@ export async function setEntry(
   };
   console.log(data);
 
-  this.executeRequest({
+  await this.executeRequest({
     ...opts,
     method: "post",
     data,

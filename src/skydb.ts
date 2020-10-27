@@ -49,7 +49,7 @@ export async function setJSON(
   if (!revision) {
     // fetch the current value to find out the revision.
     console.log(3);
-    const entry = await promiseTimeout(this.registry.getEntry(publicKey, dataKey), 5000);
+    const entry = await this.registry.getEntry(publicKey, dataKey);
     console.log(4);
 
     if (entry) {
@@ -89,5 +89,5 @@ export async function setJSON(
 
   console.log(9);
   // update the registry
-  this.registry.setEntry(publicKey, dataKey, entry, signature);
+  await this.registry.setEntry(publicKey, dataKey, entry, signature);
 }

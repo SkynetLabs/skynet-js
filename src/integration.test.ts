@@ -10,7 +10,7 @@ const datakey = "HelloWorld";
 const json = { data: "thisistext" };
 
 // skip - used to verify end-to-end flow
-describe("siasky.dev end to end", () => {
+describe.skip("siasky.dev end to end", () => {
   it("to update the file in the SkyDB", async () => {
     // set the file in the SkyDB
     await client.db.setJSON(privateKey, datakey, json);
