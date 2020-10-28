@@ -15,6 +15,6 @@ describe.skip("siasky.dev end to end integration test", () => {
 
     // get the file in the SkyDB
     const actual = await client.db.getJSON(publicKey, datakey);
-    expect(actual).toEqual(json);
+    expect(actual.data).toEqual(json);
   });
 });

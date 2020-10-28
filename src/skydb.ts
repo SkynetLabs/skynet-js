@@ -8,7 +8,7 @@ export async function getJSON(
   this: SkynetClient,
   publicKey: PublicKey,
   dataKey: string
-): Promise<Record<string, unknown> | null> {
+): Promise<{ data: Record<string, unknown>; revision: number } | null> {
   // lookup the registry entry
   const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey);
   if (entry === null) {
@@ -25,7 +25,7 @@ export async function getJSON(
     url: this.getSkylinkUrl(skylink),
   });
 
-  return response.data;
+  return { data: response.data, revision: entry.entry.revision };
 }
 
 export async function setJSON(
