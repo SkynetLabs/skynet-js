@@ -5,7 +5,6 @@ import { pki } from "node-forge";
 import { addUrlQuery, defaultSkynetPortalUrl } from "./utils";
 import { SkynetClient } from ".";
 
-const filename = "foo.txt";
 const { publicKey, privateKey } = pki.ed25519.generateKeyPair();
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
@@ -17,7 +16,7 @@ const uploadUrl = `${portalUrl}/skynet/skyfile`;
 
 const client = new SkynetClient(portalUrl);
 
-describe("getFile", () => {
+describe("getJSON", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
@@ -25,19 +24,22 @@ describe("getFile", () => {
     mock.resetHistory();
   });
 
-  it("should perform a lookup and update the window to the skylink url", async () => {
+  // TODO
+  it.skip("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
-    const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${publicKey}`,
+    const params = {
+      publickey: `ed25519:${publicKey.toString("hex")}`,
       datakey: dataKey,
-    });
+    };
+    const registryLookupUrl = addUrlQuery(registryUrl, params);
 
-    mock.onGet(registryLookupUrl).reply(200, {
+    const data = {
       data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
       revision: 11,
       signature:
         "7a971e1df2ddbb8ef1f8e71e28a5a64ffe1e5dfcb7eebb19e6c238744133ddeefc4f286488dd4500c33610711e3447b49e5a30df2e590e27ad00e56ebf3baf04",
-    });
+    };
+    mock.onGet(registryLookupUrl).reply(200, data);
 
     // TODO mock skylink download request
 
@@ -46,7 +48,7 @@ describe("getFile", () => {
   });
 });
 
-describe("setFile", () => {
+describe("setJSON", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
@@ -99,7 +101,7 @@ describe("setFile", () => {
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
 
-    // call `setFile` on the client
+    // call `setJSON` on the client
     const updated = await client.db.setJSON(privateKey, dataKey, json);
 
     expect(updated);

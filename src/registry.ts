@@ -31,14 +31,13 @@ export async function getEntry(
     ...customOptions,
   };
 
-  const userID = publickey.toString("hex");
   let response: AxiosResponse;
   try {
     response = await this.executeRequest({
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${userID}`,
+        publickey: `ed25519:${publickey.toString("hex")}`,
         datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
       },
     });
@@ -85,7 +84,6 @@ export async function setEntry(
     data: Array.from(Buffer.from(entry.data)),
     signature: Array.from(signature),
   };
-  console.log(data);
 
   await this.executeRequest({
     ...opts,
