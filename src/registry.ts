@@ -1,31 +1,38 @@
-import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { FileID, User } from "./skydb";
-import { defaultOptions, hexToUint8Array } from "./utils";
+import { defaultOptions, hexToUint8Array, promiseTimeout } from "./utils";
 import { Buffer } from "buffer";
+import { HashDataKey, PublicKey, Signature } from "./crypto";
 
 const defaultRegistryOptions = {
   ...defaultOptions("/skynet/registry"),
+  timeout: 5_000,
 };
 
-export type RegistryValue = {
-  tweak: Uint8Array;
+export type RegistryEntry = {
+  datakey: string;
   data: string;
   revision: number;
 };
 
-export type SignedRegistryValue = {
-  value: RegistryValue;
-  signature: pki.ed25519.NativeBuffer;
+export type SignedRegistryEntry = {
+  entry: RegistryEntry;
+  signature: Signature;
 };
 
-export async function lookupRegistry(
+/**
+ * Gets the registry entry corresponding to the publicKey and dataKey.
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions={}] - Additional settings that can optionally be set.
+ * @param [customOptions.timeout=5000] - Timeout in ms for the registry lookup.
+ */
+export async function getEntry(
   this: SkynetClient,
-  user: User,
-  fileID: FileID,
+  publickey: PublicKey,
+  datakey: string,
   customOptions = {}
-): Promise<SignedRegistryValue | null> {
+): Promise<SignedRegistryEntry | null> {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
@@ -38,16 +45,10 @@ export async function lookupRegistry(
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${user.id}`,
-        fileid: Buffer.from(
-          JSON.stringify({
-            version: fileID.version,
-            applicationid: fileID.applicationID,
-            filetype: fileID.fileType,
-            filename: fileID.filename,
-          })
-        ).toString("hex"),
+        publickey: `ed25519:${publickey.toString("hex")}`,
+        datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
       },
+      timeout: opts.timeout,
     });
   } catch (err: unknown) {
     // unfortunately axios rejects anything that's not >= 200 and < 300
@@ -56,58 +57,46 @@ export async function lookupRegistry(
 
   if (response.status === 200) {
     return {
-      value: {
-        tweak: Uint8Array.from(Buffer.from(response.data.tweak)),
+      entry: {
+        datakey,
         data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+        // TODO: Handle uint64 properly.
         revision: parseInt(response.data.revision, 10),
       },
       signature: response.data.signature,
     };
   }
-  throw new Error(`unexpected response status code ${response.status}`);
+  return null;
 }
 
-export async function updateRegistry(
+export async function setEntry(
   this: SkynetClient,
-  user: User,
-  fileID: FileID,
-  srv: SignedRegistryValue,
+  publickey: PublicKey,
+  datakey: string,
+  entry: RegistryEntry,
+  signature: Signature,
   customOptions = {}
-): Promise<boolean> {
+): Promise<void> {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
-  let response: AxiosResponse;
-  try {
-    response = await this.executeRequest({
-      ...opts,
-      method: "post",
-      data: {
-        publickey: {
-          algorithm: "ed25519",
-          key: Array.from(user.publicKey),
-        },
-        fileid: {
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        },
-        revision: srv.value.revision,
-        data: Array.from(Uint8Array.from(Buffer.from(srv.value.data))),
-        signature: Array.from(Uint8Array.from(srv.signature)),
-      },
-    });
-  } catch (err: unknown) {
-    // unfortunately axios rejects anything that's not >= 200 and < 300
-    return false;
-  }
+  const data = {
+    publickey: {
+      algorithm: "ed25519",
+      key: Array.from(publickey),
+    },
+    datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
+    revision: entry.revision,
+    data: Array.from(Buffer.from(entry.data)),
+    signature: Array.from(signature),
+  };
 
-  if (response.status === 204) {
-    return true;
-  }
-  throw new Error(`unexpected response status code ${response.status}`);
+  await this.executeRequest({
+    ...opts,
+    method: "post",
+    data,
+  });
 }
