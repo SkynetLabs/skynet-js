@@ -9,14 +9,14 @@ import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.timeout_seconds=30] - Timeout in seconds for the registry lookup.
+ * @param [customOptions.timeout=5000] - Timeout in ms for the registry lookup.
  */
 export async function getJSON(
   this: SkynetClient,
   publicKey: PublicKey,
   dataKey: string,
   customOptions = {}
-): Promise<{ json: Record<string, unknown>; revision: number } | null> {
+): Promise<{ data: Record<string, unknown>; revision: number } | null> {
   const opts = {
     ...this.customOptions,
     ...customOptions,
@@ -38,7 +38,7 @@ export async function getJSON(
     url: this.getSkylinkUrl(skylink),
   });
 
-  return { json: response.data, revision: entry.entry.revision };
+  return { data: response.data, revision: entry.entry.revision };
 }
 
 export async function setJSON(

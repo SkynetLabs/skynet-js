@@ -100,6 +100,7 @@ export class SkynetClient {
 
           config.onUploadProgress(progress, event);
         },
+      timeout: config.timeout,
     });
   }
 }
