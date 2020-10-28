@@ -8,7 +8,7 @@ export async function getJSON(
   this: SkynetClient,
   publicKey: PublicKey,
   dataKey: string
-): Promise<{ data: Record<string, unknown>; revision: number } | null> {
+): Promise<{ json: Record<string, unknown>; revision: number } | null> {
   // lookup the registry entry
   const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey);
   if (entry === null) {
@@ -25,7 +25,7 @@ export async function getJSON(
     url: this.getSkylinkUrl(skylink),
   });
 
-  return { data: response.data, revision: entry.entry.revision };
+  return { json: response.data, revision: entry.entry.revision };
 }
 
 export async function setJSON(
@@ -45,7 +45,7 @@ export async function setJSON(
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
-      entry = await promiseTimeout(this.registry.getEntry(publicKey, dataKey), 5000);
+      entry = await promiseTimeout(this.registry.getEntry(publicKey, dataKey), 30_000);
 
       // verify here
       if (
