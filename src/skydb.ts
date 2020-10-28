@@ -2,15 +2,28 @@ import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { HashRegistryEntry, PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, promiseTimeout, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
 
+/**
+ * Gets the JSON object corresponding to the publicKey and dataKey.
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions={}] - Additional settings that can optionally be set.
+ * @param [customOptions.timeout_seconds=30] - Timeout in seconds for the registry lookup.
+ */
 export async function getJSON(
   this: SkynetClient,
   publicKey: PublicKey,
-  dataKey: string
+  dataKey: string,
+  customOptions = {}
 ): Promise<{ json: Record<string, unknown>; revision: number } | null> {
+  const opts = {
+    ...this.customOptions,
+    ...customOptions,
+  };
+
   // lookup the registry entry
-  const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey);
+  const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
     return null;
   }
@@ -20,7 +33,7 @@ export async function getJSON(
   const skylink = parseSkylink(entry.entry.data);
 
   const response = await this.executeRequest({
-    ...this.customOptions,
+    ...opts,
     method: "get",
     url: this.getSkylinkUrl(skylink),
   });
@@ -33,19 +46,25 @@ export async function setJSON(
   privateKey: SecretKey,
   dataKey: string,
   json: Record<string, unknown>,
-  revision?: number
+  revision?: number,
+  customOptions = {}
 ): Promise<void> {
+  const opts = {
+    ...this.customOptions,
+    ...customOptions,
+  };
+
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const { skylink } = await this.uploadFileRequest(file, this.customOptions);
+  const { skylink } = await this.uploadFileRequest(file, opts);
 
   const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   if (!revision) {
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
-      entry = await promiseTimeout(this.registry.getEntry(publicKey, dataKey), 30_000);
+      entry = await this.registry.getEntry(publicKey, dataKey, opts);
 
       // verify here
       if (

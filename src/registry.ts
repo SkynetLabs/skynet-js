@@ -1,11 +1,12 @@
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { defaultOptions, hexToUint8Array } from "./utils";
+import { defaultOptions, hexToUint8Array, promiseTimeout } from "./utils";
 import { Buffer } from "buffer";
 import { HashDataKey, PublicKey, Signature } from "./crypto";
 
 const defaultRegistryOptions = {
   ...defaultOptions("/skynet/registry"),
+  timeout_seconds: 5,
 };
 
 export type RegistryEntry = {
@@ -19,6 +20,13 @@ export type SignedRegistryEntry = {
   signature: Signature;
 };
 
+/**
+ * Gets the registry entry corresponding to the publicKey and dataKey.
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions={}] - Additional settings that can optionally be set.
+ * @param [customOptions.timeout_seconds=30] - Timeout in seconds for the registry lookup.
+ */
 export async function getEntry(
   this: SkynetClient,
   publickey: PublicKey,
@@ -33,14 +41,17 @@ export async function getEntry(
 
   let response: AxiosResponse;
   try {
-    response = await this.executeRequest({
-      ...opts,
-      method: "get",
-      query: {
-        publickey: `ed25519:${publickey.toString("hex")}`,
-        datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
-      },
-    });
+    response = await promiseTimeout(
+      this.executeRequest({
+        ...opts,
+        method: "get",
+        query: {
+          publickey: `ed25519:${publickey.toString("hex")}`,
+          datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
+        },
+      }),
+      opts.timeout_seconds * 1000
+    );
   } catch (err: unknown) {
     // unfortunately axios rejects anything that's not >= 200 and < 300
     return null;
