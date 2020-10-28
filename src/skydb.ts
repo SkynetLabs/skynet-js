@@ -34,7 +34,7 @@ export async function setJSON(
   dataKey: string,
   json: Record<string, unknown>,
   revision?: number
-) {
+): Promise<void> {
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
@@ -43,7 +43,7 @@ export async function setJSON(
   const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   if (!revision) {
     // fetch the current value to find out the revision.
-    const entry = await this.registry.getEntry(publicKey, dataKey);
+    const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey);
 
     if (entry) {
       // verify here
@@ -54,10 +54,10 @@ export async function setJSON(
           publicKey,
         })
       ) {
-        throw new Error("could not verify signature");
+        throw new Error("could not verify signature from retrieved, signed registry entry");
       }
 
-      revision = entry.revision + 1;
+      revision = entry.entry.revision + 1;
     } else {
       revision = 0;
     }

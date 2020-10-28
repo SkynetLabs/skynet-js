@@ -67,7 +67,7 @@ export async function setEntry(
   entry: RegistryEntry,
   signature: Signature,
   customOptions = {}
-) {
+): Promise<void> {
   const opts = {
     ...defaultRegistryOptions,
     ...this.customOptions,
