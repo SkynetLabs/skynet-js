@@ -13,15 +13,15 @@ For documentation complete with examples, please see [the Skynet SDK docs](https
 
 We also have an [example tutorial about creating your first web app on Skynet](https://blog.sia.tech/creating-your-first-web-app-on-skynet-ec6f4fff405f)
 
-## How use skynet-js in your project?
+## How To Use skynet-js In Your Project
 
-If you're thinking about "wait, how can I `import()` in the browser" then here is the answer:
+If you're thinking, "wait, how can I `import()` in the browser," then here is the answer:
 
-While skynet-js is built with Node.js, you can easily compile it to one minified javascript file what is compatible with browsers.
+While `skynet-js` is built with Node.js, you can easily compile it to one minified javascript file that is compatible with browsers.
 
 Webpack will compile only the used functions (unused code will be removed automatically), so it is recommended to build your whole project in Node.js and compile it with webpack ([click here for detailed tutorial](https://blog.sia.tech/creating-your-first-web-app-on-skynet-ec6f4fff405f)):
 
-`cd you_project`
+`cd your_project`
 
 `npm install skynet-js`
 
