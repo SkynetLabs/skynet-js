@@ -55,7 +55,7 @@ export async function setJSON(
           publicKey,
         })
       ) {
-        throw new Error("could not verify signature from retrieved, signed registry entry");
+        throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
       }
 
       revision = entry.entry.revision + 1;
