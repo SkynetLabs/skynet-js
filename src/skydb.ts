@@ -43,9 +43,10 @@ export async function setJSON(
   const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   if (!revision) {
     // fetch the current value to find out the revision.
-    const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey);
+    let entry: SignedRegistryEntry;
+    try {
+      entry = await promiseTimeout(this.registry.getEntry(publicKey, dataKey), 5000);
 
-    if (entry) {
       // verify here
       if (
         !pki.ed25519.verify({
@@ -58,7 +59,7 @@ export async function setJSON(
       }
 
       revision = entry.entry.revision + 1;
-    } else {
+    } catch (err) {
       revision = 0;
     }
   }
