@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.3.0]
+
+### Changed
+
+- Simplified registry API.
+
 ## [2.2.0]
 
 ### Changed
