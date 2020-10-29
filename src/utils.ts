@@ -1,3 +1,5 @@
+import { pki, pkcs5, md } from "node-forge";
+import { PublicKey, SecretKey } from "./crypto";
 import mimeDB from "mime-db";
 import path from "path-browserify";
 import parse from "url-parse";
@@ -56,6 +58,16 @@ export function getRootDirectory(file: File): string {
 }
 
 /**
+ * Generates a public and private key from a provided, secure seed.
+ * @param seed - A secure seed.
+ */
+export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKey: SecretKey } {
+  // Get a 32-byte seed.
+  seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
+  return pki.ed25519.generateKeyPair({ seed });
+}
+
+/**
  * Properly joins paths together to create a URL. Takes a variable number of
  * arguments.
  */
@@ -106,16 +118,6 @@ export function trimUriPrefix(str: string, prefix: string): string {
 
 export function randomNumber(low: number, high: number): number {
   return Math.random() * (high - low) + low;
-}
-
-export async function promiseTimeout(promise: any, ms: number) {
-  const timeout = new Promise((resolve, reject) => {
-    setTimeout(() => {
-      reject(`Timed out after ${ms}ms`);
-    }, ms);
-  });
-
-  return Promise.race([promise, timeout]);
 }
 
 // stringToUint8Array converts a string to a uint8 array

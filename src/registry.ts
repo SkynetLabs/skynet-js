@@ -1,6 +1,6 @@
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { defaultOptions, hexToUint8Array, promiseTimeout } from "./utils";
+import { defaultOptions, hexToUint8Array } from "./utils";
 import { Buffer } from "buffer";
 import { HashDataKey, PublicKey, Signature } from "./crypto";
 
@@ -63,7 +63,7 @@ export async function getEntry(
         // TODO: Handle uint64 properly.
         revision: parseInt(response.data.revision, 10),
       },
-      signature: response.data.signature,
+      signature: Buffer.from(hexToUint8Array(response.data.signature)),
     };
   }
   return null;

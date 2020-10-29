@@ -66,20 +66,21 @@ export async function setJSON(
     try {
       entry = await this.registry.getEntry(publicKey, dataKey, opts);
 
-      // verify here
-      if (
-        !pki.ed25519.verify({
-          message: HashRegistryEntry(entry.entry),
-          signature: entry.signature,
-          publicKey,
-        })
-      ) {
-        throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
-      }
-
       revision = entry.entry.revision + 1;
     } catch (err) {
       revision = 0;
+    }
+
+    // Verify here if we fetched the entry earlier.
+    if (
+      entry &&
+      !pki.ed25519.verify({
+        message: HashRegistryEntry(entry.entry),
+        signature: entry.signature,
+        publicKey,
+      })
+    ) {
+      throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
     }
   }
 

@@ -9,6 +9,7 @@ export {
   defaultSkynetPortalUrl,
   getRelativeFilePath,
   getRootDirectory,
+  keyPairFromSeed,
   parseSkylink,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
