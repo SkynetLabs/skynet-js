@@ -1,13 +1,26 @@
 # Changelog
 
+## [2.2.0]
+
+### Changed
+
+- Change SkyDB and Registry APIs.
+
 ## [2.1.1]
+
+### Changed
 
 - Improve timeout handling for SkyDB
 - Extend end-to-end tests
 
 ## [2.1.0]
 
+### Added
+
 - Add SkyDB support
+
+### Changed
+
 - Move to Typescript
 
 ## [2.0.9]
