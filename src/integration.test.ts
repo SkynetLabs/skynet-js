@@ -17,7 +17,7 @@ function makeSeed(length: number) {
 }
 
 // skip - used to verify end-to-end flow
-describe("siasky.dev end to end integration test", () => {
+describe.skip("siasky.dev end to end integration test", () => {
   it("should be able to both setJSON and getJSON", async () => {
     // set the file in the SkyDB
     await client.db.setJSON(privateKey, datakey, json);
