@@ -1,6 +1,6 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { HashRegistryEntry, PublicKey, SecretKey } from "./crypto";
+import { PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
 import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
 
@@ -59,28 +59,16 @@ export async function setJSON(
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
   const { skylink } = await this.uploadFileRequest(file, opts);
 
-  const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   if (!revision) {
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
+      const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
       entry = await this.registry.getEntry(publicKey, dataKey, opts);
 
       revision = entry.entry.revision + 1;
     } catch (err) {
       revision = 0;
-    }
-
-    // Verify here if we fetched the entry earlier.
-    if (
-      entry &&
-      !pki.ed25519.verify({
-        message: HashRegistryEntry(entry.entry),
-        signature: entry.signature,
-        publicKey,
-      })
-    ) {
-      throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
     }
   }
 
@@ -91,12 +79,6 @@ export async function setJSON(
     revision,
   };
 
-  // sign it
-  const signature = pki.ed25519.sign({
-    message: HashRegistryEntry(entry),
-    privateKey,
-  });
-
   // update the registry
-  await this.registry.setEntry(publicKey, dataKey, entry, signature);
+  await this.registry.setEntry(privateKey, dataKey, entry);
 }
