@@ -1,8 +1,9 @@
+import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 import { defaultOptions, hexToUint8Array } from "./utils";
 import { Buffer } from "buffer";
-import { HashDataKey, PublicKey, Signature } from "./crypto";
+import { HashDataKey, HashRegistryEntry, PublicKey, SecretKey, Signature } from "./crypto";
 
 const defaultRegistryOptions = {
   ...defaultOptions("/skynet/registry"),
@@ -29,7 +30,7 @@ export type SignedRegistryEntry = {
  */
 export async function getEntry(
   this: SkynetClient,
-  publickey: PublicKey,
+  publicKey: PublicKey,
   datakey: string,
   customOptions = {}
 ): Promise<SignedRegistryEntry | null> {
@@ -45,7 +46,7 @@ export async function getEntry(
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${publickey.toString("hex")}`,
+        publickey: `ed25519:${publicKey.toString("hex")}`,
         datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
       },
       timeout: opts.timeout,
@@ -55,26 +56,38 @@ export async function getEntry(
     return null;
   }
 
-  if (response.status === 200) {
-    return {
-      entry: {
-        datakey,
-        data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
-        // TODO: Handle uint64 properly.
-        revision: parseInt(response.data.revision, 10),
-      },
-      signature: Buffer.from(hexToUint8Array(response.data.signature)),
-    };
+  if (response.status !== 200) {
+    return null;
   }
-  return null;
+
+  const entry = {
+    entry: {
+      datakey,
+      data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+      // TODO: Handle uint64 properly.
+      revision: parseInt(response.data.revision, 10),
+    },
+    signature: Buffer.from(hexToUint8Array(response.data.signature)),
+  };
+  if (
+    entry &&
+    !pki.ed25519.verify({
+      message: HashRegistryEntry(entry.entry),
+      signature: entry.signature,
+      publicKey,
+    })
+  ) {
+    throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
+  }
+
+  return entry;
 }
 
 export async function setEntry(
   this: SkynetClient,
-  publickey: PublicKey,
+  privateKey: SecretKey,
   datakey: string,
   entry: RegistryEntry,
-  signature: Signature,
   customOptions = {}
 ): Promise<void> {
   const opts = {
@@ -83,6 +96,13 @@ export async function setEntry(
     ...customOptions,
   };
 
+  // Sign the entry.
+  const signature = pki.ed25519.sign({
+    message: HashRegistryEntry(entry),
+    privateKey,
+  });
+
+  const publickey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
   const data = {
     publickey: {
       algorithm: "ed25519",
