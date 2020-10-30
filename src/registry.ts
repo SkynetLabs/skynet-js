@@ -46,7 +46,7 @@ export async function getEntry(
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${publicKey.toString("hex")}`,
+        publickey: `ed25519:${Buffer.from(publicKey).toString("hex")}`,
         datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
       },
       timeout: opts.timeout,
