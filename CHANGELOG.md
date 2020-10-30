@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.3.1]
+
+### Changed
+
+- Fix compatibility issue that made `getEntry` not work in the browser.
+
 ## [2.3.0]
 
 ### Changed
