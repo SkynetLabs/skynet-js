@@ -1,5 +1,7 @@
 export { SkynetClient } from "./client";
 
+export { deriveChildSeed, generateKeyPairAndSeed, keyPairFromSeed } from "./crypto";
+
 export type { PublicKey, SecretKey, Signature } from "./crypto";
 
 export type { SignedRegistryEntry, RegistryEntry } from "./registry";
@@ -9,7 +11,6 @@ export {
   defaultSkynetPortalUrl,
   getRelativeFilePath,
   getRootDirectory,
-  keyPairFromSeed,
   parseSkylink,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,

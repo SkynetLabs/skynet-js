@@ -1,7 +1,7 @@
+import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
-import { stringToUint8Array } from "./utils";
-import { pki } from "node-forge";
+import { stringToUint8Array, validateHnsDomain } from "./utils";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
@@ -52,4 +52,37 @@ function encodeString(str: string): Uint8Array {
   encoded.set(encodeNumber(str.length));
   encoded.set(stringToUint8Array(str), 8);
   return encoded;
+}
+
+export function deriveChildSeed(masterSeed: string, seed: string): string {
+  if (!validateHnsDomain(seed)) {
+    throw new Error("seed contained invalid character(s) -- only lowercase ASCII is permitted");
+  }
+  return HashAll(masterSeed, seed).toString();
+}
+
+export function generateKeyPairAndSeed(length?: 64): { publicKey: PublicKey; privateKey: SecretKey; seed: string } {
+  const seed = makeSeed(length);
+  const { publicKey, privateKey } = keyPairFromSeed(seed);
+  return { publicKey, privateKey, seed };
+}
+
+/**
+ * Generates a public and private key from a provided, secure seed.
+ * @param seed - A secure seed.
+ */
+export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKey: SecretKey } {
+  // Get a 32-byte seed.
+  seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
+  return pki.ed25519.generateKeyPair({ seed });
+}
+
+function makeSeed(length: number) {
+  let result = "";
+  const characters = "abcdefghijklmnopqrstuvwxyz";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
 }
