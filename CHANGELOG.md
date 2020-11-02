@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.4.0]
+
+### Changed
+
+- Add crypto API for generating seeds and deriving subkeys.
+
 ## [2.3.1]
 
 ### Changed
