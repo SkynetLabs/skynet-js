@@ -58,10 +58,13 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
   return HashAll(masterSeed, seed).toString();
 }
 
+/**
+ * Generates a master key pair and seed.
+ * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
+ */
 export function generateKeyPairAndSeed(length?: 64): { publicKey: PublicKey; privateKey: SecretKey; seed: string } {
   const seed = makeSeed(length);
-  const { publicKey, privateKey } = keyPairFromSeed(seed);
-  return { publicKey, privateKey, seed };
+  return { ...keyPairFromSeed(seed), seed };
 }
 
 /**
@@ -74,12 +77,9 @@ export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKe
   return pki.ed25519.generateKeyPair({ seed });
 }
 
-function makeSeed(length: number) {
-  let result = "";
-  const characters = "abcdefghijklmnopqrstuvwxyz";
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
+function makeSeed(length: number): string {
+  const array = new Uint8Array(length);
+  // Use built-in cryptographically-secure random number generator.
+  window.crypto.getRandomValues(array);
+  return Buffer.from(array).toString("hex");
 }
