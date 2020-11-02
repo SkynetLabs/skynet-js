@@ -2,6 +2,26 @@ import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
 import { stringToUint8Array } from "./utils";
+let crypto: any;
+
+const isBrowser =
+  typeof window !== "undefined" &&
+  Object.prototype.hasOwnProperty.call(window, "Window") &&
+  window instanceof window.Window;
+
+function hasStrongRandom() {
+  return "crypto" in window && window["crypto"] !== null;
+}
+
+if (isBrowser) {
+  if (hasStrongRandom()) {
+    crypto = window["crypto"];
+  } else {
+    throw "Error, you browser does not support secure random generation.";
+  }
+} else {
+  crypto = require("crypto");
+}
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
@@ -62,7 +82,7 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
  * Generates a master key pair and seed.
  * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
  */
-export function generateKeyPairAndSeed(length?: 64): { publicKey: PublicKey; privateKey: SecretKey; seed: string } {
+export function generateKeyPairAndSeed(length = 64): { publicKey: PublicKey; privateKey: SecretKey; seed: string } {
   const seed = makeSeed(length);
   return { ...keyPairFromSeed(seed), seed };
 }
@@ -78,8 +98,13 @@ export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKe
 }
 
 function makeSeed(length: number): string {
-  const array = new Uint8Array(length);
-  // Use built-in cryptographically-secure random number generator.
-  window.crypto.getRandomValues(array);
-  return Buffer.from(array).toString("hex");
+  if (isBrowser) {
+    const array = new Uint8Array(length);
+    // Use built-in cryptographically-secure random number generator.
+    window.crypto.getRandomValues(array);
+    return Buffer.from(array).toString("hex");
+  } else {
+    const array = crypto.randomBytes(length);
+    return Buffer.from(array).toString("hex");
+  }
 }
