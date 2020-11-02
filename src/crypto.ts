@@ -1,7 +1,7 @@
 import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
-import { stringToUint8Array, validateHnsDomain } from "./utils";
+import { stringToUint8Array } from "./utils";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
@@ -55,9 +55,6 @@ function encodeString(str: string): Uint8Array {
 }
 
 export function deriveChildSeed(masterSeed: string, seed: string): string {
-  if (!validateHnsDomain(seed)) {
-    throw new Error("seed contained invalid character(s) -- only lowercase ASCII is permitted");
-  }
   return HashAll(masterSeed, seed).toString();
 }
 

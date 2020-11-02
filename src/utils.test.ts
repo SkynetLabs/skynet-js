@@ -7,7 +7,6 @@ import {
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
   getFileMimeType,
-  validateHnsDomain,
 } from "./utils";
 
 const portalUrl = defaultSkynetPortalUrl;
@@ -106,12 +105,5 @@ describe("getFileMimeType", () => {
 
       expect(getFileMimeType(file)).toEqual("");
     });
-  });
-});
-
-describe("validateHnsDomain", () => {
-  it("should only allow lowercase ascii character", () => {
-    expect(validateHnsDomain("domain"));
-    expect(!validateHnsDomain("domain2"));
   });
 });

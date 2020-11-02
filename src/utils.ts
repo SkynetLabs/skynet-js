@@ -145,7 +145,3 @@ export function getFileMimeType(file: File): string {
   }
   return "";
 }
-
-export function validateHnsDomain(domain: string) {
-  return !/[^a-z]/.test(domain);
-}
