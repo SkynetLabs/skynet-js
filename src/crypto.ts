@@ -2,26 +2,7 @@ import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
 import { stringToUint8Array } from "./utils";
-let crypto: any;
-
-const isBrowser =
-  typeof window !== "undefined" &&
-  Object.prototype.hasOwnProperty.call(window, "Window") &&
-  window instanceof window.Window;
-
-function hasStrongRandom() {
-  return "crypto" in window && window["crypto"] !== null;
-}
-
-if (isBrowser) {
-  if (hasStrongRandom()) {
-    crypto = window["crypto"];
-  } else {
-    throw "Error, you browser does not support secure random generation.";
-  }
-} else {
-  crypto = require("crypto");
-}
+import { randomBytes } from "randombytes";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
@@ -98,13 +79,8 @@ export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKe
 }
 
 function makeSeed(length: number): string {
-  if (isBrowser) {
-    const array = new Uint8Array(length);
-    // Use built-in cryptographically-secure random number generator.
-    window.crypto.getRandomValues(array);
-    return Buffer.from(array).toString("hex");
-  } else {
-    const array = crypto.randomBytes(length);
-    return Buffer.from(array).toString("hex");
-  }
+  // Cryptographically-secure random number generator. It should use the
+  // built-in crypto.getRandomValues in the browser.
+  const array = randomBytes(length);
+  return Buffer.from(array).toString("hex");
 }

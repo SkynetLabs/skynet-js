@@ -60,6 +60,7 @@
     "mime-db": "^1.45.0",
     "node-forge": "^0.10.0",
     "path-browserify": "^1.0.1",
+    "randombytes": "^2.1.0",
     "url-join": "^4.0.1",
     "url-parse": "^1.4.7"
   },
