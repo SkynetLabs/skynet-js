@@ -1,5 +1,3 @@
-import { pki, pkcs5, md } from "node-forge";
-import { PublicKey, SecretKey } from "./crypto";
 import mimeDB from "mime-db";
 import path from "path-browserify";
 import parse from "url-parse";
@@ -55,16 +53,6 @@ export function getRootDirectory(file: File): string {
   const { root, dir } = path.parse(filePath);
 
   return path.normalize(dir).slice(root.length).split(path.sep)[0];
-}
-
-/**
- * Generates a public and private key from a provided, secure seed.
- * @param seed - A secure seed.
- */
-export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKey: SecretKey } {
-  // Get a 32-byte seed.
-  seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
-  return pki.ed25519.generateKeyPair({ seed });
 }
 
 /**

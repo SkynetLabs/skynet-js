@@ -1,7 +1,8 @@
+import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
 import { stringToUint8Array } from "./utils";
-import { pki } from "node-forge";
+import randomBytes from "randombytes";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
@@ -52,4 +53,34 @@ function encodeString(str: string): Uint8Array {
   encoded.set(encodeNumber(str.length));
   encoded.set(stringToUint8Array(str), 8);
   return encoded;
+}
+
+export function deriveChildSeed(masterSeed: string, seed: string): string {
+  return HashAll(masterSeed, seed).toString();
+}
+
+/**
+ * Generates a master key pair and seed.
+ * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
+ */
+export function generateKeyPairAndSeed(length = 64): { publicKey: PublicKey; privateKey: SecretKey; seed: string } {
+  const seed = makeSeed(length);
+  return { ...keyPairFromSeed(seed), seed };
+}
+
+/**
+ * Generates a public and private key from a provided, secure seed.
+ * @param seed - A secure seed.
+ */
+export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKey: SecretKey } {
+  // Get a 32-byte seed.
+  seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
+  return pki.ed25519.generateKeyPair({ seed });
+}
+
+function makeSeed(length: number): string {
+  // Cryptographically-secure random number generator. It should use the
+  // built-in crypto.getRandomValues in the browser.
+  const array = randomBytes(length);
+  return Buffer.from(array).toString("hex");
 }
