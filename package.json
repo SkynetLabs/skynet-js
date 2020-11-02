@@ -75,6 +75,7 @@
     "@types/mime-db": "^1.43.0",
     "@types/node": "^14.11.2",
     "@types/node-forge": "^0.9.5",
+    "@types/randombytes": "^2.0.0",
     "@types/url-join": "^4.0.0",
     "@types/url-parse": "^1.4.3",
     "@typescript-eslint/eslint-plugin": "^4.3.0",

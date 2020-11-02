@@ -2,7 +2,7 @@ import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
 import { stringToUint8Array } from "./utils";
-import { randomBytes } from "randombytes";
+import randomBytes from "randombytes";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
