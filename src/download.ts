@@ -16,6 +16,7 @@ const defaultDownloadOptions = {
 };
 const defaultDownloadHnsOptions = {
   ...defaultOptions("/hns"),
+  hnsSubdomain: "hns",
 };
 const defaultResolveHnsOptions = {
   ...defaultOptions("/hnsres"),
@@ -25,7 +26,6 @@ const defaultResolveHnsOptions = {
  * Initiates a download of the content of the skylink within the browser.
  * @param {string} skylink - 46 character skylink.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
- * @param {boolean} [customOptions.base32=false] - Whether to return a base32 skylink instead of base64.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @param {boolean} [customOptions.subdomain=false] - Whether to return the final skylink in subdomain format.
  */
@@ -57,7 +57,7 @@ export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions
   const query = opts.download ? { attachment: true } : {};
 
   skylink = parseSkylink(skylink);
-  if (opts.base32) {
+  if (opts.subdomain) {
     skylink = convertSkylinkToBase32(skylink);
   }
   const url = opts.subdomain
@@ -72,7 +72,7 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions: any
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);
   const url = opts.subdomain
-    ? addSubdomain(addSubdomain(this.portalUrl, opts.endpointPath), domain)
+    ? addSubdomain(addSubdomain(this.portalUrl, opts.hnsSubdomain), domain)
     : makeUrl(this.portalUrl, opts.endpointPath, domain);
   return addUrlQuery(url, query);
 }
@@ -81,9 +81,7 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions: 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
-  const url = opts.subdomain
-    ? addSubdomain(addSubdomain(this.portalUrl, opts.endpointPath), domain)
-    : makeUrl(this.portalUrl, opts.endpointPath, domain);
+  const url = makeUrl(this.portalUrl, opts.endpointPath, domain);
   return url;
 }
 
@@ -135,7 +133,6 @@ export async function openFileHns(this: SkynetClient, domain: string, customOpti
  * @param {string} domain - Handshake resolver domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
- * @param {boolean} [customOptions.subdomain=false] - Whether to return the final URL with the HNS domain as a subdomain.
  */
 export async function resolveHns(this: SkynetClient, domain: string, customOptions = {}): Promise<any> {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };

@@ -14,16 +14,9 @@ export const uriSkynetPrefix = "sia:";
 
 // TODO: Use a third-party library to make this more robust.
 export function addSubdomain(url: string, subdomain: string): string {
-  while (subdomain.startsWith("/")) {
-    subdomain = subdomain.slice(1);
-  }
-  if (url.includes("https://")) {
-    return url.replace("https://", `https://${subdomain}.`);
-  }
-  if (url.includes("http://")) {
-    return url.replace("http://", `http://${subdomain}.`);
-  }
-  return `${subdomain}.${url}`;
+  const urlObj = new URL(url);
+  urlObj.hostname = `${subdomain}.${urlObj.hostname}`;
+  return urlObj.toString();
 }
 
 export function addUrlQuery(url: string, query: Record<string, unknown>): string {

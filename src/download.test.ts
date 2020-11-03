@@ -8,7 +8,6 @@ const hnsLink = "foo";
 const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
 const hnsUrlSubdomain = `https://${hnsLink}.hns.siasky.net`;
 const hnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
-const hnsresUrlSubdomain = `https://${hnsLink}.hnsres.siasky.net`;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const validSkylinkVariations = [
@@ -46,7 +45,7 @@ describe("getHnsUrl", () => {
   it("should return correctly formed hns URL", () => {
     validHnsLinkVariations.forEach((input) => {
       expect(client.getHnsUrl(input)).toEqual(hnsUrl);
-      expect(client.getHnsUrl(input, { subdomain: true })).toEqual(hnsUrlSubdomain);
+      expect(client.getHnsUrl(input, { subdomain: true })).toEqual(`${hnsUrlSubdomain}/`);
     });
   });
 
@@ -61,7 +60,6 @@ describe("getHnsresUrl", () => {
   it("should return correctly formed hnsres URL", () => {
     validHnsresLinkVariations.forEach((input) => {
       expect(client.getHnsresUrl(input)).toEqual(hnsresUrl);
-      expect(client.getHnsresUrl(input, { subdomain: true })).toEqual(hnsresUrlSubdomain);
     });
   });
 });
@@ -85,7 +83,7 @@ describe("getSkylinkUrl", () => {
     validSkylinkVariations.forEach((input) => {
       const url = client.getSkylinkUrl(input, { base32: true, subdomain: true });
 
-      expect(url).toEqual(expectedBase32);
+      expect(url).toEqual(`${expectedBase32}/`);
     });
   });
 });
