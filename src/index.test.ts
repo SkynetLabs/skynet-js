@@ -29,11 +29,13 @@ describe("SkynetClient", () => {
     expect(client).toHaveProperty("uploadDirectoryRequest");
 
     // SkyDB
-    expect(client).toHaveProperty("getFile");
-    expect(client).toHaveProperty("setFile");
+    expect(client).toHaveProperty("db");
+    expect(client.db).toHaveProperty("getJSON");
+    expect(client.db).toHaveProperty("setJSON");
 
     // SkyDB helpers
-    expect(client).toHaveProperty("lookupRegistry");
-    expect(client).toHaveProperty("updateRegistry");
+    expect(client).toHaveProperty("registry");
+    expect(client.registry).toHaveProperty("getEntry");
+    expect(client.registry).toHaveProperty("setEntry");
   });
 });

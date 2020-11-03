@@ -1,13 +1,44 @@
 # Changelog
 
+## [2.4.0]
+
+### Changed
+
+- Add crypto API for generating seeds and deriving subkeys.
+
+## [2.3.1]
+
+### Changed
+
+- Fix compatibility issue that made `getEntry` not work in the browser.
+
+## [2.3.0]
+
+### Changed
+
+- Simplified registry API.
+
+## [2.2.0]
+
+### Changed
+
+- Change SkyDB and Registry APIs.
+
 ## [2.1.1]
+
+### Changed
 
 - Improve timeout handling for SkyDB
 - Extend end-to-end tests
 
 ## [2.1.0]
 
+### Added
+
 - Add SkyDB support
+
+### Changed
+
 - Move to Typescript
 
 ## [2.0.9]
