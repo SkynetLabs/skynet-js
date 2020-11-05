@@ -77,12 +77,15 @@ export function makeUrl(...args: string[]): string {
   return args.reduce((acc, cur) => urljoin(acc, cur));
 }
 
-const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
-const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}([/?].*)?$`);
-const SKYLINK_REGEXP_MATCH_POSITION = 1;
+export function parseSkylink(skylink: string, opts: any = {}): string {
+  let SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
+  if (opts.subdomain) {
+    SKYLINK_MATCHER = "([a-z0-9_-]{55}).";
+  }
+  const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
+  const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}([/?].*)?$`);
+  const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
-export function parseSkylink(skylink: string): string {
   if (typeof skylink !== "string") throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
 
   // check for direct skylink match

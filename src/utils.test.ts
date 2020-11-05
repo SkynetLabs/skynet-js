@@ -8,10 +8,13 @@ import {
   uriHandshakeResolverPrefix,
   getFileMimeType,
   convertSkylinkToBase32,
+  addSubdomain,
 } from "./utils";
 
 const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
+const portalUrlSubdomain = addSubdomain(portalUrl, skylinkBase32);
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
 
@@ -26,12 +29,9 @@ describe("addUrlQuery", () => {
 
 describe("convertSkylinkToBase32", () => {
   it("should convert the base64 skylink to base32", () => {
-    const base64 = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
-    const base32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
+    const encoded = convertSkylinkToBase32(skylink);
 
-    const encoded = convertSkylinkToBase32(base64);
-
-    expect(encoded).toEqual(base32);
+    expect(encoded).toEqual(skylinkBase32);
   });
 });
 
@@ -77,6 +77,10 @@ describe("parseSkylink", () => {
     validSkylinkVariations.forEach((input) => {
       expect(parseSkylink(input)).toEqual(skylink);
     });
+  });
+
+  it("should parse out base32 skylink from subdomain", () => {
+    expect(parseSkylink(portalUrlSubdomain, { subdomain: true })).toEqual(skylinkBase32);
   });
 
   it("should throw on invalid skylink", () => {
