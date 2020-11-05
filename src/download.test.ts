@@ -45,7 +45,7 @@ describe("getHnsUrl", () => {
   it("should return correctly formed hns URL", () => {
     validHnsLinkVariations.forEach((input) => {
       expect(client.getHnsUrl(input)).toEqual(hnsUrl);
-      expect(client.getHnsUrl(input, { subdomain: true })).toEqual(`${hnsUrlSubdomain}/`);
+      expect(client.getHnsUrl(input, { subdomain: true })).toEqual(hnsUrlSubdomain);
     });
   });
 
@@ -81,9 +81,9 @@ describe("getSkylinkUrl", () => {
     const expectedBase32 = "https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net";
 
     validSkylinkVariations.forEach((input) => {
-      const url = client.getSkylinkUrl(input, { base32: true, subdomain: true });
+      const url = client.getSkylinkUrl(input, { subdomain: true });
 
-      expect(url).toEqual(`${expectedBase32}/`);
+      expect(url).toEqual(expectedBase32);
     });
   });
 });

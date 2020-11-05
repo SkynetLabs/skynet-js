@@ -16,7 +16,11 @@ export const uriSkynetPrefix = "sia:";
 export function addSubdomain(url: string, subdomain: string): string {
   const urlObj = new URL(url);
   urlObj.hostname = `${subdomain}.${urlObj.hostname}`;
-  return urlObj.toString();
+  const str = urlObj.toString();
+  if (str.endsWith("/")) {
+    return str.substring(0, str.length - 1);
+  }
+  return str;
 }
 
 export function addUrlQuery(url: string, query: Record<string, unknown>): string {
@@ -77,35 +81,64 @@ export function makeUrl(...args: string[]): string {
   return args.reduce((acc, cur) => urljoin(acc, cur));
 }
 
-export function parseSkylink(skylink: string, opts: any = {}): string {
-  let SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
+const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
+const SKYLINK_MATCHER_SUBDOMAIN = "([a-z0-9_-]{55})";
+const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
+// const SKYLINK_SUBDOMAIN_PATHNAME_REGEX = new RegExp(`^${SKYLINK_MATCHER}(`);
+const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}(/.*)?$`);
+const SKYLINK_SUBDOMAIN_REGEX = new RegExp(`^/?${SKYLINK_MATCHER_SUBDOMAIN}(\\..*)?$`);
+const SKYLINK_REGEXP_MATCH_POSITION = 1;
+
+/**
+ * Parses the given string for a base64 skylink, or base32 if opts.subdomain is given.
+ * @param skylinkStr - plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
+ * @param [opts={}] - Additional settings that can optionally be set.
+ * @param [opts.subdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
+ */
+export function parseSkylink(skylinkStr: string, opts: any = {}): string {
+  if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
+
   if (opts.subdomain) {
-    SKYLINK_MATCHER = "([a-z0-9_-]{55}).";
+    return parseSkylinkBase32(skylinkStr);
   }
-  const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-  const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}([/?].*)?$`);
-  const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
-  if (typeof skylink !== "string") throw new Error(`Skylink has to be a string, ${typeof skylink} provided`);
+  let hasSkynetPrefix = false;
 
-  // check for direct skylink match
-  const matchDirect = skylink.match(SKYLINK_DIRECT_REGEX);
+  // Check for skylink prefixed with sia: or sia:// and extract it.
+  // Example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
+  // Example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
+  if (skylinkStr.startsWith(uriSkynetPrefix)) {
+    skylinkStr = trimUriPrefix(skylinkStr, uriSkynetPrefix);
+    hasSkynetPrefix = true;
+  }
+
+  // Check for direct base64 skylink match.
+  const matchDirect = skylinkStr.match(SKYLINK_DIRECT_REGEX);
   if (matchDirect) return matchDirect[SKYLINK_REGEXP_MATCH_POSITION];
 
-  // check for skylink prefixed with sia: or sia:// and extract it
-  // example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  // example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  skylink = trimUriPrefix(skylink, uriSkynetPrefix);
+  if (hasSkynetPrefix) {
+    throw new Error(`String '${skylinkStr} had ${uriSkynetPrefix} prefix but did not contain a 46-character skylink`);
+  }
 
-  // check for skylink passed in an url and extract it
-  // example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
+  // Check for skylink passed in an url and extract it.
+  // Example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
+  // Example: https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net (if opts.subdomain = true)
 
-  // pass empty object as second param to disable using location as base url when parsing in browser
-  const parsed = parse(skylink, {});
+  // Pass empty object as second param to disable using location as base url when parsing in browser.
+  const parsed = parse(skylinkStr, {});
   const matchPathname = parsed.pathname.match(SKYLINK_PATHNAME_REGEX);
   if (matchPathname) return matchPathname[SKYLINK_REGEXP_MATCH_POSITION];
 
-  throw new Error(`Could not extract skylink from '${skylink}'`);
+  throw new Error(`Could not extract skylink from '${skylinkStr}'`);
+}
+
+function parseSkylinkBase32(skylinkStr: string): string {
+  // Pass empty object as second param to disable using location as base url when parsing in browser.
+  const parsed = parse(skylinkStr, {});
+  const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
+  if (matchHostname) return matchHostname[SKYLINK_REGEXP_MATCH_POSITION];
+
+  throw new Error(`Could not extract skylink from '${skylinkStr}'`);
 }
 
 export function trimUriPrefix(str: string, prefix: string): string {

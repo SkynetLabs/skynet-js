@@ -81,8 +81,7 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions: 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
-  const url = makeUrl(this.portalUrl, opts.endpointPath, domain);
-  return url;
+  return makeUrl(this.portalUrl, opts.endpointPath, domain);
 }
 
 export async function getMetadata(this: SkynetClient, skylink: string, customOptions: any = {}) {

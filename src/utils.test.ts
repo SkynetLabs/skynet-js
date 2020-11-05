@@ -8,13 +8,12 @@ import {
   uriHandshakeResolverPrefix,
   getFileMimeType,
   convertSkylinkToBase32,
-  addSubdomain,
 } from "./utils";
 
 const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
-const portalUrlSubdomain = addSubdomain(portalUrl, skylinkBase32);
+const portalUrlSubdomain = `https://${skylinkBase32}.siasky.net`;
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
 
@@ -69,6 +68,7 @@ describe("parseSkylink", () => {
       `sia://${skylink}`,
       `${portalUrl}/${skylink}`,
       `${portalUrl}/${skylink}/`,
+      `${portalUrl}/${skylink}/xxx`,
       `${portalUrl}/${skylink}?`,
       `${portalUrl}/${skylink}/foo/bar`,
       `${portalUrl}/${skylink}?foo=bar`,
@@ -84,6 +84,9 @@ describe("parseSkylink", () => {
   });
 
   it("should throw on invalid skylink", () => {
+    const badUrl = `https://${skylinkBase32}xxx.siasky.net`;
+    expect(() => parseSkylink(badUrl, { subdomain: true })).toThrowError(`Could not extract skylink from '${badUrl}'`);
+
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => parseSkylink()).toThrowError("Skylink has to be a string, undefined provided");
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
