@@ -1,6 +1,6 @@
-import { generateKeyPairAndSeed, SkynetClient } from "./index";
+import { genKeyPairAndSeed, SkynetClient } from "./index";
 
-const { publicKey, privateKey } = generateKeyPairAndSeed();
+const { publicKey, privateKey } = genKeyPairAndSeed();
 const client = new SkynetClient("https://siasky.dev");
 
 const datakey = "HelloWorld";

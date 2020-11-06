@@ -63,16 +63,16 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
  * Generates a master key pair and seed.
  * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
  */
-export function generateKeyPairAndSeed(length = 64): { publicKey: string; privateKey: string; seed: string } {
+export function genKeyPairAndSeed(length = 64): { publicKey: string; privateKey: string; seed: string } {
   const seed = makeSeed(length);
-  return { ...keyPairFromSeed(seed), seed };
+  return { ...genKeyPairFromSeed(seed), seed };
 }
 
 /**
  * Generates a public and private key from a provided, secure seed.
  * @param seed - A secure seed.
  */
-export function keyPairFromSeed(seed: string): { publicKey: string; privateKey: string } {
+export function genKeyPairFromSeed(seed: string): { publicKey: string; privateKey: string } {
   // Get a 32-byte seed.
   seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
   const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
