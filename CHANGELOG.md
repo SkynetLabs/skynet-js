@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.5.0]
+
+### Changed
+
+- Rename `keyPairFromSeed` to `genKeyPairFromSeed` and have it return keys in the form of hex strings.
+- Rename `generateKeyPairAndSeed` to `genKeyPairAndSeed` and have it return keys in the form of hex strings.
+- Use hex strings as keys as inputs to `getJSON`, `setJSON`, `getEntry`, and `setEntry`.
+- `setEntry` no longer takes a `datakey` argument as it is already in `entry`.
+
 ## [2.4.0]
 
 ### Changed
