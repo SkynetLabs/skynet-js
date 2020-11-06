@@ -8,18 +8,18 @@ export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
 export type Signature = pki.ed25519.NativeBuffer;
 
-// Returns a blake2b 256bit hasher.
+// Returns a blake2b 256bit hasher. See `NewHash` in Sia.
 function newHash() {
   return blake.blake2bInit(32, null);
 }
 
 // Takes all given arguments and hashes them.
 export function hashAll(...args: any[]): Uint8Array {
-  const h = newHash();
+  const hasher = newHash();
   for (let i = 0; i < args.length; i++) {
-    blake.blake2bUpdate(h, args[i]);
+    blake.blake2bUpdate(hasher, args[i]);
   }
-  return blake.blake2bFinal(h);
+  return blake.blake2bFinal(hasher);
 }
 
 // Hash the given data key.
