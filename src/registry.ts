@@ -3,7 +3,7 @@ import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 import { defaultOptions, hexToUint8Array } from "./utils";
 import { Buffer } from "buffer";
-import { HashDataKey, HashRegistryEntry, PublicKey, SecretKey, Signature } from "./crypto";
+import { hashDataKey, hashRegistryEntry, PublicKey, SecretKey, Signature } from "./crypto";
 
 const defaultRegistryOptions = {
   ...defaultOptions("/skynet/registry"),
@@ -30,7 +30,7 @@ export type SignedRegistryEntry = {
  */
 export async function getEntry(
   this: SkynetClient,
-  publicKey: PublicKey,
+  publicKey: string,
   datakey: string,
   customOptions = {}
 ): Promise<SignedRegistryEntry | null> {
@@ -40,24 +40,26 @@ export async function getEntry(
     ...customOptions,
   };
 
+  const publicKeyBuffer = Buffer.from(publicKey, "hex");
+
   let response: AxiosResponse;
   try {
     response = await this.executeRequest({
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${Buffer.from(publicKey).toString("hex")}`,
-        datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
+        publickey: `ed25519:${publicKey}`,
+        datakey: Buffer.from(hashDataKey(datakey)).toString("hex"),
       },
       timeout: opts.timeout,
     });
   } catch (err: unknown) {
     // unfortunately axios rejects anything that's not >= 200 and < 300
-    return null;
+    return { entry: null, signature: null };
   }
 
   if (response.status !== 200) {
-    return null;
+    return { entry: null, signature: null };
   }
 
   const entry = {
@@ -72,9 +74,9 @@ export async function getEntry(
   if (
     entry &&
     !pki.ed25519.verify({
-      message: HashRegistryEntry(entry.entry),
+      message: hashRegistryEntry(entry.entry),
       signature: entry.signature,
-      publicKey,
+      publicKey: publicKeyBuffer,
     })
   ) {
     throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
@@ -85,8 +87,7 @@ export async function getEntry(
 
 export async function setEntry(
   this: SkynetClient,
-  privateKey: SecretKey,
-  datakey: string,
+  privateKey: string,
   entry: RegistryEntry,
   customOptions = {}
 ): Promise<void> {
@@ -96,19 +97,21 @@ export async function setEntry(
     ...customOptions,
   };
 
+  const privateKeyBuffer = Buffer.from(privateKey, "hex");
+
   // Sign the entry.
   const signature = pki.ed25519.sign({
-    message: HashRegistryEntry(entry),
-    privateKey,
+    message: hashRegistryEntry(entry),
+    privateKey: privateKeyBuffer,
   });
 
-  const publickey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
+  const publickey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
   const data = {
     publickey: {
       algorithm: "ed25519",
       key: Array.from(publickey),
     },
-    datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
+    datakey: Buffer.from(hashDataKey(entry.datakey)).toString("hex"),
     revision: entry.revision,
     data: Array.from(Buffer.from(entry.data)),
     signature: Array.from(signature),

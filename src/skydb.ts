@@ -13,7 +13,7 @@ import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
  */
 export async function getJSON(
   this: SkynetClient,
-  publicKey: PublicKey,
+  publicKey: string,
   dataKey: string,
   customOptions = {}
 ): Promise<{ data: Record<string, unknown>; revision: number } | null> {
@@ -43,7 +43,7 @@ export async function getJSON(
 
 export async function setJSON(
   this: SkynetClient,
-  privateKey: SecretKey,
+  privateKey: string,
   dataKey: string,
   json: Record<string, unknown>,
   revision?: number,
@@ -54,6 +54,8 @@ export async function setJSON(
     ...customOptions,
   };
 
+  const privateKeyBuffer = Buffer.from(privateKey, "hex");
+
   // Upload the data to acquire its skylink
   // TODO: Replace with upload request method.
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
@@ -63,7 +65,7 @@ export async function setJSON(
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
-      const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
+      const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
       entry = await this.registry.getEntry(publicKey, dataKey, opts);
 
       revision = entry.entry.revision + 1;
@@ -80,5 +82,5 @@ export async function setJSON(
   };
 
   // update the registry
-  await this.registry.setEntry(privateKey, dataKey, entry);
+  await this.registry.setEntry(privateKey, entry);
 }

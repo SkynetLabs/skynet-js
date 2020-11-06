@@ -1,6 +1,6 @@
 export { SkynetClient } from "./client";
 
-export { deriveChildSeed, generateKeyPairAndSeed, keyPairFromSeed } from "./crypto";
+export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
 
 export type { PublicKey, SecretKey, Signature } from "./crypto";
 
