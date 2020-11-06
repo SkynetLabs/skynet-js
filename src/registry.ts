@@ -31,7 +31,7 @@ export type SignedRegistryEntry = {
 export async function getEntry(
   this: SkynetClient,
   publicKey: string,
-  datakey: string,
+  dataKey: string,
   customOptions = {}
 ): Promise<SignedRegistryEntry | null> {
   const opts = {
@@ -49,7 +49,7 @@ export async function getEntry(
       method: "get",
       query: {
         publickey: `ed25519:${publicKey}`,
-        datakey: Buffer.from(hashDataKey(datakey)).toString("hex"),
+        datakey: Buffer.from(hashDataKey(dataKey)).toString("hex"),
       },
       timeout: opts.timeout,
     });
@@ -64,7 +64,7 @@ export async function getEntry(
 
   const entry = {
     entry: {
-      datakey,
+      datakey: dataKey,
       data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
       // TODO: Handle uint64 properly.
       revision: parseInt(response.data.revision, 10),
