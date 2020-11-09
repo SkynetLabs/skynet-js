@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { defaultOptions, hexToUint8Array } from "./utils";
+import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl } from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, PublicKey, SecretKey, Signature } from "./crypto";
 
@@ -83,6 +83,24 @@ export async function getEntry(
   }
 
   return entry;
+}
+
+export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: string, customOptions = {}): string {
+  const opts = {
+    ...defaultRegistryOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const query = {
+    publickey: `ed25519:${publicKey}`,
+    datakey: Buffer.from(hashDataKey(dataKey)).toString("hex"),
+  };
+
+  let url = makeUrl(this.portalUrl, opts.endpointPath);
+  url = addUrlQuery(url, query);
+
+  return url;
 }
 
 export async function setEntry(

@@ -13,7 +13,7 @@ import {
   resolveHns,
 } from "./download";
 import { getJSON, setJSON } from "./skydb";
-import { getEntry, setEntry } from "./registry";
+import { getEntry, getEntryUrl, setEntry } from "./registry";
 
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
 
@@ -70,6 +70,7 @@ export class SkynetClient {
   // SkyDB helpers
   registry = {
     getEntry: getEntry.bind(this),
+    getEntryUrl: getEntryUrl.bind(this),
     setEntry: setEntry.bind(this),
   };
 
