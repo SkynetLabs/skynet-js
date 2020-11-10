@@ -122,7 +122,7 @@ export function hexToUint8Array(str: string): Uint8Array {
  * Convert a byte array to a hex string.
  * From https://stackoverflow.com/a/44608819.
  */
-export function toHexString(byteArray: Uint8Array) {
+export function toHexString(byteArray: Uint8Array): string {
   let s = "";
   byteArray.forEach(function (byte) {
     s += ("0" + (byte & 0xff).toString(16)).slice(-2);

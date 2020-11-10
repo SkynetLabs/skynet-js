@@ -1,6 +1,5 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
 import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
 import { Buffer } from "buffer";
@@ -47,7 +46,7 @@ export async function setJSON(
   privateKey: string,
   dataKey: string,
   json: Record<string, unknown>,
-  revision?: number,
+  revision = -1,
   customOptions = {}
 ): Promise<void> {
   const opts = {
@@ -62,7 +61,7 @@ export async function setJSON(
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
   const { skylink } = await this.uploadFileRequest(file, opts);
 
-  if (!revision) {
+  if (revision == -1) {
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
