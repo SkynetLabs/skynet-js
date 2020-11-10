@@ -3,7 +3,6 @@ import blake from "blakejs";
 import { RegistryEntry } from "./registry";
 import { stringToUint8Array, toHexString } from "./utils";
 import randomBytes from "randombytes";
-import { Buffer } from "buffer";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
@@ -15,7 +14,7 @@ function newHash() {
 }
 
 // Takes all given arguments and hashes them.
-export function hashAll(...args: any[]): Uint8Array {
+export function hashAll(...args: Uint8Array[]): Uint8Array {
   const hasher = newHash();
   for (let i = 0; i < args.length; i++) {
     blake.blake2bUpdate(hasher, args[i]);
@@ -57,7 +56,7 @@ function encodeString(str: string): Uint8Array {
 }
 
 export function deriveChildSeed(masterSeed: string, seed: string): string {
-  return toHexString(hashAll(masterSeed, seed));
+  return toHexString(hashAll(encodeString(masterSeed), encodeString(seed)));
 }
 
 /**

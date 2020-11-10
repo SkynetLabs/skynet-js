@@ -1,13 +1,36 @@
-import { deriveChildSeed, hashRegistryEntry } from "./crypto";
+import { deriveChildSeed, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
 import { toHexString } from "./utils";
 
 describe("deriveChildSeed", () => {
   it("should correctly derive a child seed", () => {
+    // Hard-code expected values to catch any breaking changes.
+
     const masterSeed = "c1197e1275fbf570d21dde01a00af83ed4a743d1884e4a09cebce0dd21ae254c";
     const seed = "seed";
-    const childSeed = deriveChildSeed(masterSeed, seed);
+    const expected = "6140d0d1d8f9e2b759ca7fc96ad3620cd382189f8d46339737e26a2764122b99";
 
-    expect(childSeed).toEqual("f79cd29b92124c80a662f3085bba98955f7defbaed6e58ea891b901dc99aafc0");
+    const childSeed = deriveChildSeed(masterSeed, seed);
+    expect(childSeed).toEqual(expected);
+
+    const seed1 = deriveChildSeed(masterSeed, "asd");
+    const seed2 = deriveChildSeed(masterSeed, "aa");
+    const seed3 = deriveChildSeed(masterSeed, "ds");
+    expect(seed1).not.toEqual(seed2);
+    expect(seed2).not.toEqual(seed3);
+  });
+});
+
+describe("genKeyPairFromSeed", () => {
+  it("should create an expected keypair from a given seed", () => {
+    // Hard-code expected values to catch any breaking changes.
+    const seed = "c1197e1275fbf570d21dde01a00af83ed4a743d1884e4a09cebce0dd21ae254c";
+    const expectedPublicKey = "f8a7da8324fabb9d57bb32c59c48d4ba304d08ee5f1297a46836cf841da71c80";
+    const expectedPrivateKey =
+      "c404ff07fba961000dfb25ece7477f45b109b50a5169a45f3fb239343002c1cff8a7da8324fabb9d57bb32c59c48d4ba304d08ee5f1297a46836cf841da71c80";
+
+    const { publicKey, privateKey } = genKeyPairFromSeed(seed);
+    expect(publicKey).toEqual(expectedPublicKey);
+    expect(privateKey).toEqual(expectedPrivateKey);
   });
 });
 
