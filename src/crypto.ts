@@ -77,7 +77,7 @@ export function genKeyPairFromSeed(seed: string): { publicKey: string; privateKe
   // Get a 32-byte seed.
   seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
   const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
-  return { publicKey: Buffer.from(publicKey).toString("hex"), privateKey: Buffer.from(privateKey).toString("hex") };
+  return { publicKey: toHexString(publicKey), privateKey: toHexString(privateKey) };
 }
 
 function makeSeed(length: number): string {
