@@ -1,7 +1,7 @@
 import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
-import { stringToUint8Array } from "./utils";
+import { stringToUint8Array, toHexString } from "./utils";
 import randomBytes from "randombytes";
 import { Buffer } from "buffer";
 
@@ -57,7 +57,7 @@ function encodeString(str: string): Uint8Array {
 }
 
 export function deriveChildSeed(masterSeed: string, seed: string): string {
-  return hashAll(masterSeed, seed).toString();
+  return toHexString(hashAll(masterSeed, seed));
 }
 
 /**
@@ -84,5 +84,5 @@ function makeSeed(length: number): string {
   // Cryptographically-secure random number generator. It should use the
   // built-in crypto.getRandomValues in the browser.
   const array = randomBytes(length);
-  return Buffer.from(array).toString("hex");
+  return toHexString(array);
 }

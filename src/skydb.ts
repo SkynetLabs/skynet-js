@@ -3,6 +3,7 @@ import { SkynetClient } from "./client";
 import { PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
 import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { Buffer } from "buffer";
 
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
