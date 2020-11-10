@@ -1,8 +1,7 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString } from "./utils";
 import { Buffer } from "buffer";
 
 /**
@@ -67,8 +66,7 @@ export async function setJSON(
     let entry: SignedRegistryEntry;
     try {
       const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
-      entry = await this.registry.getEntry(publicKey, dataKey, opts);
-
+      entry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
       revision = entry.entry.revision + 1;
     } catch (err) {
       revision = 0;
