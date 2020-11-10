@@ -3,6 +3,7 @@ import blake from "blakejs";
 import { RegistryEntry } from "./registry";
 import { stringToUint8Array } from "./utils";
 import randomBytes from "randombytes";
+import { Buffer } from "buffer";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
@@ -76,7 +77,7 @@ export function genKeyPairFromSeed(seed: string): { publicKey: string; privateKe
   // Get a 32-byte seed.
   seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
   const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
-  return { publicKey: publicKey.toString("hex"), privateKey: privateKey.toString("hex") };
+  return { publicKey: Buffer.from(publicKey).toString("hex"), privateKey: Buffer.from(privateKey).toString("hex") };
 }
 
 function makeSeed(length: number): string {

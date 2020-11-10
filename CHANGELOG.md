@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.6.0]
+
+### Added
+
+- Add `getEntryUrl`
+
+### Changed
+
+- Fix `genKeyPair*` functions
+
 ## [2.5.0]
 
 _Note: this version contains breaking changes in the SkyDB and Registry APIs._
