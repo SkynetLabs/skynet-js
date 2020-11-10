@@ -41,12 +41,15 @@ export async function getJSON(
   return { data: response.data, revision: entry.entry.revision };
 }
 
+/**
+ * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ */
 export async function setJSON(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
   json: Record<string, unknown>,
-  revision = -1,
+  revision?: number,
   customOptions = {}
 ): Promise<void> {
   const opts = {
@@ -61,7 +64,7 @@ export async function setJSON(
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
   const { skylink } = await this.uploadFileRequest(file, opts);
 
-  if (revision == -1) {
+  if (revision === undefined) {
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
