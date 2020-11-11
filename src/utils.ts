@@ -108,18 +108,30 @@ export function randomNumber(low: number, high: number): number {
   return Math.random() * (high - low) + low;
 }
 
-// stringToUint8Array converts a string to a uint8 array
+// Converts a string to a uint8 array
 export function stringToUint8Array(str: string): Uint8Array {
   return Uint8Array.from(Buffer.from(str));
 }
 
-// hexToUint8Array converts a hex encoded string to a uint8 array
+// Converts a hex encoded string to a uint8 array
 export function hexToUint8Array(str: string): Uint8Array {
   return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 }
 
-// readData is a helper function that uses a FileReader to read the contents of
-// the given file
+/**
+ * Convert a byte array to a hex string.
+ * From https://stackoverflow.com/a/44608819.
+ */
+export function toHexString(byteArray: Uint8Array): string {
+  let s = "";
+  byteArray.forEach(function (byte) {
+    s += ("0" + (byte & 0xff).toString(16)).slice(-2);
+  });
+  return s;
+}
+
+// A helper function that uses a FileReader to read the contents of the given
+// file
 export function readData(file: File): Promise<string | ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

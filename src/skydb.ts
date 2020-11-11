@@ -1,8 +1,8 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { PublicKey, SecretKey } from "./crypto";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString } from "./utils";
+import { Buffer } from "buffer";
 
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
@@ -41,6 +41,9 @@ export async function getJSON(
   return { data: response.data, revision: entry.entry.revision };
 }
 
+/**
+ * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ */
 export async function setJSON(
   this: SkynetClient,
   privateKey: string,
@@ -61,13 +64,12 @@ export async function setJSON(
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
   const { skylink } = await this.uploadFileRequest(file, opts);
 
-  if (!revision) {
+  if (revision === undefined) {
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
       const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
-      entry = await this.registry.getEntry(publicKey, dataKey, opts);
-
+      entry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
       revision = entry.entry.revision + 1;
     } catch (err) {
       revision = 0;

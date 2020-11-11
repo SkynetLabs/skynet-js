@@ -1,13 +1,17 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl } from "./utils";
+import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
 import { Buffer } from "buffer";
-import { hashDataKey, hashRegistryEntry, PublicKey, SecretKey, Signature } from "./crypto";
+import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
-const defaultRegistryOptions = {
+const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
   timeout: 5_000,
+};
+
+const defaultSetEntryOptions = {
+  ...defaultOptions("/skynet/registry"),
 };
 
 export type RegistryEntry = {
@@ -35,7 +39,7 @@ export async function getEntry(
   customOptions = {}
 ): Promise<SignedRegistryEntry | null> {
   const opts = {
-    ...defaultRegistryOptions,
+    ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
@@ -49,7 +53,7 @@ export async function getEntry(
       method: "get",
       query: {
         publickey: `ed25519:${publicKey}`,
-        datakey: Buffer.from(hashDataKey(dataKey)).toString("hex"),
+        datakey: toHexString(hashDataKey(dataKey)),
       },
       timeout: opts.timeout,
     });
@@ -87,14 +91,14 @@ export async function getEntry(
 
 export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: string, customOptions = {}): string {
   const opts = {
-    ...defaultRegistryOptions,
+    ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
   const query = {
     publickey: `ed25519:${publicKey}`,
-    datakey: Buffer.from(hashDataKey(dataKey)).toString("hex"),
+    datakey: toHexString(hashDataKey(dataKey)),
   };
 
   let url = makeUrl(this.portalUrl, opts.endpointPath);
@@ -110,7 +114,7 @@ export async function setEntry(
   customOptions = {}
 ): Promise<void> {
   const opts = {
-    ...defaultRegistryOptions,
+    ...defaultSetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
@@ -123,13 +127,13 @@ export async function setEntry(
     privateKey: privateKeyBuffer,
   });
 
-  const publickey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
+  const publicKeyBuffer = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
   const data = {
     publickey: {
       algorithm: "ed25519",
-      key: Array.from(publickey),
+      key: Array.from(publicKeyBuffer),
     },
-    datakey: Buffer.from(hashDataKey(entry.datakey)).toString("hex"),
+    datakey: toHexString(hashDataKey(entry.datakey)),
     revision: entry.revision,
     data: Array.from(Buffer.from(entry.data)),
     signature: Array.from(signature),
