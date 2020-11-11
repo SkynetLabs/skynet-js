@@ -1,42 +1,42 @@
 import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
-import { stringToUint8Array } from "./utils";
+import { stringToUint8Array, toHexString } from "./utils";
 import randomBytes from "randombytes";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
 export type Signature = pki.ed25519.NativeBuffer;
 
-// NewHash returns a blake2b 256bit hasher.
-function NewHash() {
+// Returns a blake2b 256bit hasher. See `NewHash` in Sia.
+function newHash() {
   return blake.blake2bInit(32, null);
 }
 
-// HashAll takes all given arguments and hashes them.
-export function HashAll(...args: any[]): Uint8Array {
-  const h = NewHash();
+// Takes all given arguments and hashes them.
+export function hashAll(...args: Uint8Array[]): Uint8Array {
+  const hasher = newHash();
   for (let i = 0; i < args.length; i++) {
-    blake.blake2bUpdate(h, args[i]);
+    blake.blake2bUpdate(hasher, args[i]);
   }
-  return blake.blake2bFinal(h);
+  return blake.blake2bFinal(hasher);
 }
 
 // Hash the given data key.
-export function HashDataKey(datakey: string): Uint8Array {
-  return HashAll(encodeString(datakey));
+export function hashDataKey(datakey: string): Uint8Array {
+  return hashAll(encodeString(datakey));
 }
 
 // Hashes the given registry entry.
-export function HashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
-  return HashAll(
-    HashDataKey(registryEntry.datakey),
+export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
+  return hashAll(
+    hashDataKey(registryEntry.datakey),
     encodeString(registryEntry.data),
     encodeNumber(registryEntry.revision)
   );
 }
 
-// encodeNumber converts the given number into a uint8 array
+// Converts the given number into a uint8 array
 function encodeNumber(num: number): Uint8Array {
   const encoded = new Uint8Array(8);
   for (let index = 0; index < encoded.length; index++) {
@@ -47,7 +47,7 @@ function encodeNumber(num: number): Uint8Array {
   return encoded;
 }
 
-// encodeString converts the given string into a uint8 array
+// Converts the given string into a uint8 array
 function encodeString(str: string): Uint8Array {
   const encoded = new Uint8Array(8 + str.length);
   encoded.set(encodeNumber(str.length));
@@ -56,31 +56,32 @@ function encodeString(str: string): Uint8Array {
 }
 
 export function deriveChildSeed(masterSeed: string, seed: string): string {
-  return HashAll(masterSeed, seed).toString();
+  return toHexString(hashAll(encodeString(masterSeed), encodeString(seed)));
 }
 
 /**
  * Generates a master key pair and seed.
  * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
  */
-export function generateKeyPairAndSeed(length = 64): { publicKey: PublicKey; privateKey: SecretKey; seed: string } {
+export function genKeyPairAndSeed(length = 64): { publicKey: string; privateKey: string; seed: string } {
   const seed = makeSeed(length);
-  return { ...keyPairFromSeed(seed), seed };
+  return { ...genKeyPairFromSeed(seed), seed };
 }
 
 /**
  * Generates a public and private key from a provided, secure seed.
  * @param seed - A secure seed.
  */
-export function keyPairFromSeed(seed: string): { publicKey: PublicKey; privateKey: SecretKey } {
+export function genKeyPairFromSeed(seed: string): { publicKey: string; privateKey: string } {
   // Get a 32-byte seed.
   seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
-  return pki.ed25519.generateKeyPair({ seed });
+  const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
+  return { publicKey: toHexString(publicKey), privateKey: toHexString(privateKey) };
 }
 
 function makeSeed(length: number): string {
   // Cryptographically-secure random number generator. It should use the
   // built-in crypto.getRandomValues in the browser.
   const array = randomBytes(length);
-  return Buffer.from(array).toString("hex");
+  return toHexString(array);
 }

@@ -1,13 +1,17 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { defaultOptions, hexToUint8Array } from "./utils";
+import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
 import { Buffer } from "buffer";
-import { HashDataKey, HashRegistryEntry, PublicKey, SecretKey, Signature } from "./crypto";
+import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
-const defaultRegistryOptions = {
+const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
   timeout: 5_000,
+};
+
+const defaultSetEntryOptions = {
+  ...defaultOptions("/skynet/registry"),
 };
 
 export type RegistryEntry = {
@@ -30,15 +34,17 @@ export type SignedRegistryEntry = {
  */
 export async function getEntry(
   this: SkynetClient,
-  publicKey: PublicKey,
-  datakey: string,
+  publicKey: string,
+  dataKey: string,
   customOptions = {}
 ): Promise<SignedRegistryEntry | null> {
   const opts = {
-    ...defaultRegistryOptions,
+    ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
+
+  const publicKeyBuffer = Buffer.from(publicKey, "hex");
 
   let response: AxiosResponse;
   try {
@@ -46,23 +52,23 @@ export async function getEntry(
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${Buffer.from(publicKey).toString("hex")}`,
-        datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
+        publickey: `ed25519:${publicKey}`,
+        datakey: toHexString(hashDataKey(dataKey)),
       },
       timeout: opts.timeout,
     });
   } catch (err: unknown) {
     // unfortunately axios rejects anything that's not >= 200 and < 300
-    return null;
+    return { entry: null, signature: null };
   }
 
   if (response.status !== 200) {
-    return null;
+    return { entry: null, signature: null };
   }
 
   const entry = {
     entry: {
-      datakey,
+      datakey: dataKey,
       data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
       // TODO: Handle uint64 properly.
       revision: parseInt(response.data.revision, 10),
@@ -72,9 +78,9 @@ export async function getEntry(
   if (
     entry &&
     !pki.ed25519.verify({
-      message: HashRegistryEntry(entry.entry),
+      message: hashRegistryEntry(entry.entry),
       signature: entry.signature,
-      publicKey,
+      publicKey: publicKeyBuffer,
     })
   ) {
     throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
@@ -83,32 +89,51 @@ export async function getEntry(
   return entry;
 }
 
-export async function setEntry(
-  this: SkynetClient,
-  privateKey: SecretKey,
-  datakey: string,
-  entry: RegistryEntry,
-  customOptions = {}
-): Promise<void> {
+export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: string, customOptions = {}): string {
   const opts = {
-    ...defaultRegistryOptions,
+    ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
+  const query = {
+    publickey: `ed25519:${publicKey}`,
+    datakey: toHexString(hashDataKey(dataKey)),
+  };
+
+  let url = makeUrl(this.portalUrl, opts.endpointPath);
+  url = addUrlQuery(url, query);
+
+  return url;
+}
+
+export async function setEntry(
+  this: SkynetClient,
+  privateKey: string,
+  entry: RegistryEntry,
+  customOptions = {}
+): Promise<void> {
+  const opts = {
+    ...defaultSetEntryOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const privateKeyBuffer = Buffer.from(privateKey, "hex");
+
   // Sign the entry.
   const signature = pki.ed25519.sign({
-    message: HashRegistryEntry(entry),
-    privateKey,
+    message: hashRegistryEntry(entry),
+    privateKey: privateKeyBuffer,
   });
 
-  const publickey = pki.ed25519.publicKeyFromPrivateKey({ privateKey });
+  const publicKeyBuffer = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
   const data = {
     publickey: {
       algorithm: "ed25519",
-      key: Array.from(publickey),
+      key: Array.from(publicKeyBuffer),
     },
-    datakey: Buffer.from(HashDataKey(datakey)).toString("hex"),
+    datakey: toHexString(hashDataKey(entry.datakey)),
     revision: entry.revision,
     data: Array.from(Buffer.from(entry.data)),
     signature: Array.from(signature),

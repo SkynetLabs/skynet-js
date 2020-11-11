@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.7.0]
+
+_Note: this version contains breaking changes to `deriveChildSeed`._
+
+### Changed
+
+- Fix `deriveChildSeed` bugs. It will now return hex-encoded strings. Note that it will now return different values than before these bugs were fixed.
+- Fix `setJSON` function not using hex-encoded publickeys when making its request.
+- Do not use a timeout for `setEntry` by default (was 5s previously).
+- Fix a bug when calling `setJSON` with `revision = 0` where `setJSON` would fetch the latest revision anyway.
+
+## [2.6.0]
+
+### Added
+
+- Add `getEntryUrl`
+
+### Changed
+
+- Fix `genKeyPair*` functions
+
+## [2.5.0]
+
+_Note: this version contains breaking changes in the SkyDB and Registry APIs._
+
+### Changed
+
+- Rename `keyPairFromSeed` to `genKeyPairFromSeed` and have it return keys in the form of hex strings.
+- Rename `generateKeyPairAndSeed` to `genKeyPairAndSeed` and have it return keys in the form of hex strings.
+- Use hex strings as keys as inputs to `getJSON`, `setJSON`, `getEntry`, and `setEntry`.
+- `setEntry` no longer takes a `datakey` argument as it is already in `entry`.
+
 ## [2.4.0]
 
 ### Changed

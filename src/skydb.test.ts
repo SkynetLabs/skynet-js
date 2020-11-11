@@ -1,11 +1,10 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { pki } from "node-forge";
 import { addUrlQuery, defaultSkynetPortalUrl } from "./utils";
-import { SkynetClient } from ".";
+import { SkynetClient, genKeyPairAndSeed } from "./index";
 
-const { publicKey, privateKey } = pki.ed25519.generateKeyPair();
+const { publicKey, privateKey } = genKeyPairAndSeed();
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
 const json = { data: "thisistext" };
@@ -28,7 +27,7 @@ describe("getJSON", () => {
   it.skip("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
     const params = {
-      publickey: `ed25519:${publicKey.toString("hex")}`,
+      publickey: `ed25519:${publicKey}`,
       datakey: dataKey,
     };
     const registryLookupUrl = addUrlQuery(registryUrl, params);
