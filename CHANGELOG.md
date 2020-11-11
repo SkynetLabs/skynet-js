@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.7.0]
+
+_Note: this version contains breaking changes to `deriveChildSeed`._
+
+### Changed
+
+- Fix `deriveChildSeed` bugs. It will now return hex-encoded strings. Note that it will now return different values than before these bugs were fixed.
+- Fix `setJSON` function not using hex-encoded publickeys when making its request.
+- Do not use a timeout for `setEntry` by default (was 5s previously).
+- Fix a bug when calling `setJSON` with `revision = 0` where `setJSON` would fetch the latest revision anyway.
+
 ## [2.6.0]
 
 ### Added
