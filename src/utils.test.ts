@@ -7,10 +7,18 @@ import {
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
   getFileMimeType,
+  convertSkylinkToBase32,
 } from "./utils";
+
+function combineStrings(...arrays: Array<Array<string>>) {
+  return arrays.reduce((acc, array) => {
+    return acc.map((first) => array.map((second) => first.concat(second))).reduce((acc, cases) => [...acc, ...cases]);
+  });
+}
 
 const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
 
@@ -20,6 +28,14 @@ describe("addUrlQuery", () => {
     expect(addUrlQuery(`${portalUrl}/path/`, { download: true })).toEqual(`${portalUrl}/path/?download=true`);
     expect(addUrlQuery(`${portalUrl}/skynet/`, { foo: 1, bar: 2 })).toEqual(`${portalUrl}/skynet/?foo=1&bar=2`);
     expect(addUrlQuery(`${portalUrl}/`, { attachment: true })).toEqual(`${portalUrl}/?attachment=true`);
+  });
+});
+
+describe("convertSkylinkToBase32", () => {
+  it("should convert the base64 skylink to base32", () => {
+    const encoded = convertSkylinkToBase32(skylink);
+
+    expect(encoded).toEqual(skylinkBase32);
   });
 });
 
@@ -50,32 +66,47 @@ describe("trimUriPrefix", () => {
 });
 
 describe("parseSkylink", () => {
-  it("should correctly parse skylink out of different strings", () => {
-    const validSkylinkVariations = [
-      skylink,
-      `sia:${skylink}`,
-      `sia://${skylink}`,
-      `${portalUrl}/${skylink}`,
-      `${portalUrl}/${skylink}/`,
-      `${portalUrl}/${skylink}?`,
-      `${portalUrl}/${skylink}/foo/bar`,
-      `${portalUrl}/${skylink}?foo=bar`,
-    ];
+  const basicCases = combineStrings(
+    ["", "sia:", "sia://", "https://siasky.net/", "https://foo.siasky.net/"],
+    [skylink],
+    ["", "/", "/foo", "/foo", "/foo/", "/foo/bar", "/foo/bar/"],
+    ["", "?", "?foo=bar", "?foo=bar&bar=baz"],
+    ["", "#", "#foo", "#foo?bar"]
+  );
 
-    validSkylinkVariations.forEach((input) => {
-      expect(parseSkylink(input)).toEqual(skylink);
-    });
+  it.each(basicCases)("should extract skylink from %s", (input) => {
+    expect(parseSkylink(input)).toEqual(skylink);
   });
 
-  it("should throw on invalid skylink", () => {
+  const subdomainCases = combineStrings(
+    ["https://"],
+    [skylinkBase32],
+    [".siasky.net", ".foo.siasky.net"],
+    ["", "/", "/foo", "/foo", "/foo/", "/foo/bar", "/foo/bar/"],
+    ["", "?", "?foo=bar", "?foo=bar&bar=baz"],
+    ["", "#", "#foo", "#foo?bar"]
+  );
+
+  it.each(subdomainCases)("should extract base32 skylink from %s", (input) => {
+    expect(parseSkylink(input, { subdomain: true })).toEqual(skylinkBase32);
+  });
+
+  it("should return null on invalid skylink", () => {
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => parseSkylink()).toThrowError("Skylink has to be a string, undefined provided");
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => parseSkylink(123)).toThrowError("Skylink has to be a string, number provided");
-    expect(() => parseSkylink("123")).toThrowError("Could not extract skylink from '123'");
-    expect(() => parseSkylink(`${skylink}xxx`)).toThrowError(`Could not extract skylink from '${skylink}xxx'`);
-    expect(() => parseSkylink(`${skylink}xxx/foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx/foo'`);
-    expect(() => parseSkylink(`${skylink}xxx?foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx?foo'`);
+  });
+
+  const invalidCases = ["123", `${skylink}xxx`, `${skylink}xxx/foo`, `${skylink}xxx?foo`];
+
+  it.each(invalidCases)("should return null on invalid case %s", (input) => {
+    expect(parseSkylink(input)).toBeNull();
+  });
+
+  it("should return null on invalid base32 subdomain", () => {
+    const badUrl = `https://${skylinkBase32}xxx.siasky.net`;
+    expect(parseSkylink(badUrl, { subdomain: true })).toBeNull();
   });
 });
 
