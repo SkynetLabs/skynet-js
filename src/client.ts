@@ -12,10 +12,10 @@ import {
   openFileHns,
   resolveHns,
 } from "./download";
+import { getJSON, setJSON } from "./skydb";
+import { getEntry, getEntryUrl, setEntry } from "./registry";
 
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
-import { getFile, setFile } from "./skydb";
-import { lookupRegistry, updateRegistry } from "./registry";
 
 export type CustomClientOptions = {
   /** authentication password to use */
@@ -62,12 +62,17 @@ export class SkynetClient {
   resolveHns = resolveHns;
 
   // SkyDB
-  getFile = getFile;
-  setFile = setFile;
+  db = {
+    getJSON: getJSON.bind(this),
+    setJSON: setJSON.bind(this),
+  };
 
   // SkyDB helpers
-  lookupRegistry = lookupRegistry;
-  updateRegistry = updateRegistry;
+  registry = {
+    getEntry: getEntry.bind(this),
+    getEntryUrl: getEntryUrl.bind(this),
+    setEntry: setEntry.bind(this),
+  };
 
   /**
    * Creates and executes a request.
@@ -98,6 +103,8 @@ export class SkynetClient {
 
           config.onUploadProgress(progress, event);
         },
+      timeout: config.timeout,
+
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
     });

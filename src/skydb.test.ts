@@ -1,34 +1,13 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { random } from "node-forge";
-import { addUrlQuery, defaultSkynetPortalUrl, randomNumber } from "./utils";
-import { SkynetClient } from ".";
-import { FileType, FileID, SkyFile, User } from "./skydb";
+import { addUrlQuery, defaultSkynetPortalUrl } from "./utils";
+import { SkynetClient, genKeyPairAndSeed } from "./index";
 
-describe("User", () => {
-  it("should have set a user id", async () => {
-    const user = new User("john.doe@example.com", "supersecret");
-    expect(user.id.length).toBeGreaterThan(0);
-  });
-
-  it("should be deterministic", async () => {
-    const username = random.getBytesSync(randomNumber(6, 24));
-    const password = random.getBytesSync(randomNumber(12, 64));
-    const expected = new User(username, password);
-    for (let i = 0; i < 5; i++) {
-      expect(new User(username, password).id).toEqual(expected.id);
-    }
-  });
-});
-
-const user = new User("john.doe@example.com", "supersecret");
-
-const appID = "SkySkapp";
-const filename = "foo.txt";
-const fileID = new FileID(appID, FileType.PublicUnencrypted, filename);
-
+const { publicKey, privateKey } = genKeyPairAndSeed();
+const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
+const json = { data: "thisistext" };
 
 const portalUrl = defaultSkynetPortalUrl;
 const registryUrl = `${portalUrl}/skynet/registry`;
@@ -36,7 +15,7 @@ const uploadUrl = `${portalUrl}/skynet/skyfile`;
 
 const client = new SkynetClient(portalUrl);
 
-describe.skip("getFile", () => {
+describe("getJSON", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
@@ -44,36 +23,31 @@ describe.skip("getFile", () => {
     mock.resetHistory();
   });
 
-  it("should perform a lookup and update the window to the skylink url", async () => {
+  // TODO
+  it.skip("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
-    const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${user.id}`,
-      fileid: Buffer.from(
-        JSON.stringify({
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        })
-      ).toString("hex"),
-    });
+    const params = {
+      publickey: `ed25519:${publicKey}`,
+      datakey: dataKey,
+    };
+    const registryLookupUrl = addUrlQuery(registryUrl, params);
 
-    mock.onGet(registryLookupUrl).reply(200, {
-      tweak: "3b0f02e66373877503325e44b6973279d2e2a9c21e75b17adccb378d05cf40ae",
+    const data = {
       data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
       revision: 11,
       signature:
         "7a971e1df2ddbb8ef1f8e71e28a5a64ffe1e5dfcb7eebb19e6c238744133ddeefc4f286488dd4500c33610711e3447b49e5a30df2e590e27ad00e56ebf3baf04",
-    });
+    };
+    mock.onGet(registryLookupUrl).reply(200, data);
 
     // TODO mock skylink download request
 
-    await client.getFile(user, fileID);
+    await client.db.getJSON(publicKey, dataKey);
     expect(mock.history.get.length).toBe(1);
   });
 });
 
-describe("setFile", () => {
+describe("setJSON", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
@@ -87,19 +61,11 @@ describe("setFile", () => {
 
     // mock a successful registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${user.id}`,
-      fileid: Buffer.from(
-        JSON.stringify({
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        })
-      ).toString("hex"),
+      publickey: `ed25519:${publicKey}`,
+      datakey: dataKey,
     });
 
     mock.onGet(registryLookupUrl).reply(200, {
-      tweak: "3b0f02e66373877503325e44b6973279d2e2a9c21e75b17adccb378d05cf40ae",
       data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
       revision: 11,
       signature:
@@ -109,11 +75,10 @@ describe("setFile", () => {
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
 
-    // mock a file
-    const file = new File(["thisistext"], filename, { type: "text/plain" });
+    // set data
+    const updated = await client.db.setJSON(privateKey, dataKey, json);
 
-    // call `setFile` on the client
-    await client.setFile(user, fileID, new SkyFile(file));
+    expect(updated);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
@@ -126,15 +91,8 @@ describe("setFile", () => {
 
     // mock a failed registry lookup
     const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${user.id}`,
-      fileid: Buffer.from(
-        JSON.stringify({
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        })
-      ).toString("hex"),
+      publickey: `ed25519:${publicKey}`,
+      datakey: dataKey,
     });
 
     mock.onGet(registryLookupUrl).reply(400);
@@ -142,11 +100,10 @@ describe("setFile", () => {
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
 
-    // mock a file
-    const file = new File(["thisistext"], filename, { type: "text/plain" });
+    // call `setJSON` on the client
+    const updated = await client.db.setJSON(privateKey, dataKey, json);
 
-    // call `setFile` on the client
-    await client.setFile(user, fileID, new SkyFile(file));
+    expect(updated);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);

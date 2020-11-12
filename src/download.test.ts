@@ -8,7 +8,6 @@ const hnsLink = "foo";
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 
-const expectedUrl = `${portalUrl}/${skylink}`;
 const attachment = "?attachment=true";
 const validSkylinkVariations = [
   [skylink, ""],
@@ -25,11 +24,13 @@ const validSkylinkVariations = [
   [`${portalUrl}/${skylink}?foo=bar`, ""],
   [`${portalUrl}/${skylink}#foobar`, ""],
 ];
-
-const expectedHnsUrl = `${portalUrl}/hns/${hnsLink}`;
-const expectedHnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
+
+const expectedUrl = `${portalUrl}/${skylink}`;
+const expectedHnsUrl = `${portalUrl}/hns/${hnsLink}`;
+const expectedHnsUrlSubdomain = `https://${hnsLink}.hns.siasky.net`;
+const expectedHnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
 
 const mockLocationAssign = jest.fn();
 Object.defineProperty(window, "location", {
@@ -86,6 +87,7 @@ describe("getHnsUrl", () => {
   it("should return correctly formed hns URL", () => {
     validHnsLinkVariations.forEach((input) => {
       expect(client.getHnsUrl(input)).toEqual(expectedHnsUrl);
+      expect(client.getHnsUrl(input, { subdomain: true })).toEqual(expectedHnsUrlSubdomain);
     });
   });
 
@@ -128,6 +130,16 @@ describe("getSkylinkUrl", () => {
     expect(client.getSkylinkUrl(skylink, { download: true, path: "foo?bar" })).toEqual(
       `${expectedUrl}/foo%3Fbar${attachment}`
     );
+  });
+
+  it("should convert base64 skylinks to base32", () => {
+    const expectedBase32 = "https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net";
+
+    validSkylinkVariations.forEach(([input]) => {
+      const url = client.getSkylinkUrl(input, { subdomain: true });
+
+      expect(url).toEqual(expectedBase32);
+    });
   });
 });
 
