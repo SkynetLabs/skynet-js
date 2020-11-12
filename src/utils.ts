@@ -84,9 +84,8 @@ export function makeUrl(...args: string[]): string {
 const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
 const SKYLINK_MATCHER_SUBDOMAIN = "([a-z0-9_-]{55})";
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-// const SKYLINK_SUBDOMAIN_PATHNAME_REGEX = new RegExp(`^${SKYLINK_MATCHER}(`);
 const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}(/.*)?$`);
-const SKYLINK_SUBDOMAIN_REGEX = new RegExp(`^/?${SKYLINK_MATCHER_SUBDOMAIN}(\\..*)?$`);
+const SKYLINK_SUBDOMAIN_REGEX = new RegExp(`^${SKYLINK_MATCHER_SUBDOMAIN}(\\..*)?$`);
 const SKYLINK_REGEXP_MATCH_POSITION = 1;
 
 /**
@@ -102,23 +101,14 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
     return parseSkylinkBase32(skylinkStr);
   }
 
-  let hasSkynetPrefix = false;
-
   // Check for skylink prefixed with sia: or sia:// and extract it.
   // Example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   // Example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  if (skylinkStr.startsWith(uriSkynetPrefix)) {
-    skylinkStr = trimUriPrefix(skylinkStr, uriSkynetPrefix);
-    hasSkynetPrefix = true;
-  }
+  skylinkStr = trimUriPrefix(skylinkStr, uriSkynetPrefix);
 
   // Check for direct base64 skylink match.
   const matchDirect = skylinkStr.match(SKYLINK_DIRECT_REGEX);
   if (matchDirect) return matchDirect[SKYLINK_REGEXP_MATCH_POSITION];
-
-  if (hasSkynetPrefix) {
-    throw new Error(`String '${skylinkStr} had ${uriSkynetPrefix} prefix but did not contain a 46-character skylink`);
-  }
 
   // Check for skylink passed in an url and extract it.
   // Example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
