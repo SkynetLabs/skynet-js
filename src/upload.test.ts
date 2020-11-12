@@ -19,7 +19,7 @@ describe("uploadFile", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onPost(url).replyOnce(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink });
     mock.resetHistory();
   });
 
@@ -40,7 +40,7 @@ describe("uploadFile", () => {
     const client = new SkynetClient(newPortal);
 
     // Use replyOnce to catch a single request with the new URL.
-    mock.onPost(url).replyOnce(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink });
 
     const data = await client.uploadFile(file, { onUploadProgress: jest.fn() });
 
@@ -115,7 +115,7 @@ describe("uploadFile", () => {
     const url = `${portalUrl}/skynet/skyfile`;
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
-    mock.onPost(`${url}?file=test`).replyOnce(200, { skylink: skylink });
+    mock.onPost(`${url}?file=test`).replyOnce(200, { skylink });
 
     const query = { file: "test" };
     const data = await client.uploadFile(file, { query });
@@ -136,7 +136,7 @@ describe("uploadDirectory", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onPost(url).replyOnce(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink });
     mock.resetHistory();
   });
 
@@ -170,7 +170,7 @@ describe("uploadDirectory", () => {
     const filename = "encoding?test";
     const url = `${portalUrl}/skynet/skyfile?filename=encoding%3Ftest`;
     mock.resetHandlers();
-    mock.onPost(url).replyOnce(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink });
 
     const data = await client.uploadDirectory(directory, filename);
 

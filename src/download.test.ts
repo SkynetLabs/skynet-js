@@ -2,6 +2,7 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
 import { SkynetClient, defaultSkynetPortalUrl } from "./index";
+import { trimForwardSlash } from "./utils";
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
@@ -135,10 +136,10 @@ describe("getSkylinkUrl", () => {
   it("should convert base64 skylinks to base32", () => {
     const expectedBase32 = "https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net";
 
-    validSkylinkVariations.forEach(([input]) => {
+    validSkylinkVariations.forEach(([input, path]) => {
       const url = client.getSkylinkUrl(input, { subdomain: true });
 
-      expect(url).toEqual(expectedBase32);
+      expect(url).toEqual(`${expectedBase32}${path}`);
     });
   });
 });
@@ -154,7 +155,7 @@ describe("getMetadata", () => {
     const skynetFileMetadata = { filename: "sia.pdf" };
     const headers = { "skynet-skylink": skylink, "skynet-file-metadata": JSON.stringify(skynetFileMetadata) };
 
-    validSkylinkVariations.forEach(async ([input, _1, _2]) => {
+    validSkylinkVariations.forEach(async ([input]) => {
       const skylinkUrl = client.getSkylinkUrl(input);
       mock.onHead(skylinkUrl).reply(200, {}, headers);
 
@@ -167,7 +168,7 @@ describe("getMetadata", () => {
   it("should fail quietly when skynet headers not present", () => {
     const headers = { "skynet-skylink": skylink };
 
-    validSkylinkVariations.forEach(async ([input, _1, _2]) => {
+    validSkylinkVariations.forEach(async ([input]) => {
       const skylinkUrl = client.getSkylinkUrl(input);
       mock.onHead(skylinkUrl).reply(200, {}, headers);
 

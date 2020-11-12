@@ -88,22 +88,27 @@ export function makeUrl(...args: string[]): string {
 const SKYLINK_MATCHER = "([a-zA-Z0-9_-]{46})";
 const SKYLINK_MATCHER_SUBDOMAIN = "([a-z0-9_-]{55})";
 const SKYLINK_DIRECT_REGEX = new RegExp(`^${SKYLINK_MATCHER}$`);
-const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}(/.*)?$`);
+const SKYLINK_PATHNAME_REGEX = new RegExp(`^/?${SKYLINK_MATCHER}((/.*)?)$`);
 const SKYLINK_SUBDOMAIN_REGEX = new RegExp(`^${SKYLINK_MATCHER_SUBDOMAIN}(\\..*)?$`);
 const SKYLINK_DIRECT_MATCH_POSITION = 1;
+const SKYLINK_PATH_MATCH_POSITION = 2;
 
 /**
  * Parses the given string for a base64 skylink, or base32 if opts.subdomain is given.
  * @param skylinkStr - plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
  * @param [opts={}] - Additional settings that can optionally be set.
+ * @param [opts.getPath=false] - Whether to parse out just the path. Will still return null if the string does not contain a skylink.
  * @param [opts.includePath=false] - Whether to include the path after the skylink.
  * @param [opts.subdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
  */
 export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
 
+  if (opts.includePath && opts.getPath) throw new Error("The includePath and getPath options cannot both be set");
+  if (opts.includePath && opts.subdomain) throw new Error("The includePath and subdomain options cannot both be set");
+
   if (opts.subdomain) {
-    return parseSkylinkBase32(skylinkStr);
+    return parseSkylinkBase32(skylinkStr, opts);
   }
 
   // Check for skylink prefixed with sia: or sia:// and extract it.
@@ -113,40 +118,58 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
 
   // Check for direct base64 skylink match.
   const matchDirect = skylinkStr.match(SKYLINK_DIRECT_REGEX);
-  if (matchDirect) return matchDirect[SKYLINK_DIRECT_MATCH_POSITION];
+  if (matchDirect) {
+    if (opts.getPath) {
+      return "";
+    }
+    return matchDirect[SKYLINK_DIRECT_MATCH_POSITION];
+  }
 
   // Check for skylink passed in an url and extract it.
   // Example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   // Example: https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net (if opts.subdomain = true)
 
-  // Pass empty object as second param to disable using location as base url when parsing in browser.
+  // Pass empty object as second param to disable using location as base url
+  // when parsing in browser.
   const parsed = parse(skylinkStr, {});
   const path = parsed.pathname;
   const matchPathname = path.match(SKYLINK_PATHNAME_REGEX);
-  if (matchPathname) {
-    return opts.includePath ? trimSuffix(trimPrefix(path, "/"), "/") : matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
+  if (!matchPathname) return null;
+
+  if (opts.includePath) return trimForwardSlash(path);
+  else if (opts.getPath) return trimForwardSlash(matchPathname[SKYLINK_PATH_MATCH_POSITION]);
+  else return matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
+}
+
+function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
+  // Pass empty object as second param to disable using location as base url
+  // when parsing in browser.
+  const parsed = parse(skylinkStr, {});
+
+  // Check if the hostname contains a skylink subdomain.
+  const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
+  if (matchHostname) {
+    if (opts.getPath) {
+      return trimForwardSlash(parsed.pathname);
+    }
+    return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];
   }
 
   return null;
 }
 
-function parseSkylinkBase32(skylinkStr: string): string {
-  // Pass empty object as second param to disable using location as base url when parsing in browser.
-  const parsed = parse(skylinkStr, {});
-  const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
-  if (matchHostname) return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];
-
-  return null;
+export function trimForwardSlash(str: string): string {
+  return trimPrefix(trimSuffix(str, "/"), "/");
 }
 
-export function trimPrefix(str: string, prefix: string): string {
+function trimPrefix(str: string, prefix: string): string {
   while (str.startsWith(prefix)) {
     str = str.slice(prefix.length);
   }
   return str;
 }
 
-export function trimSuffix(str: string, suffix: string): string {
+function trimSuffix(str: string, suffix: string): string {
   while (str.endsWith(suffix)) {
     str = str.substring(0, str.length - suffix.length);
   }

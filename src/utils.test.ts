@@ -8,8 +8,7 @@ import {
   uriHandshakeResolverPrefix,
   getFileMimeType,
   convertSkylinkToBase32,
-  trimPrefix,
-  trimSuffix,
+  trimForwardSlash,
 } from "./utils";
 
 import parse from "url-parse";
@@ -92,7 +91,7 @@ describe("parseSkylink", () => {
     // Check that we extract the path correctly.
     const parsed = parse(input, {});
     let path = parsed.pathname.replace(skylink, ""); // Remove skylink to get the path.
-    path = trimSuffix(trimPrefix(path, "/"), "/");
+    path = trimForwardSlash(path);
     const expected = path ? `${skylink}/${path}` : skylink;
     expect(parseSkylink(input, { includePath: true })).toEqual(expected);
   });

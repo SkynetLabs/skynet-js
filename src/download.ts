@@ -27,8 +27,8 @@ const defaultResolveHnsOptions = {
  * @param skylink - 46 character skylink, possibly followed by a path or query parameters. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
  * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
- * @param {string} [customOptions.path] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
- * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
+ * @param {string} [customOptions.path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
+ * @param {Object} [customOptions.query={}] - A query object to convert to a query parameter string and append to the URL.
  * @param {boolean} [customOptions.subdomain=false] - Whether to return the final skylink in subdomain format.
  * @returns {string} - The full URL that was used.
  */
@@ -71,10 +71,14 @@ export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions
   // URL-encode the path.
   let path = "";
   if (opts.path) {
-    if (typeof opts.path != "string") {
+    if (typeof opts.path !== "string") {
       throw new Error(`opts.path has to be a string, ${typeof opts.path} provided`);
     }
     // Encode each element of the path separately and join them.
+    //
+    // Don't use encodeURI because it does not encode characters such as '?'
+    // etc. These are allowed as filenames on Skynet and should be encoded so
+    // they are not treated as URL separators.
     path = opts.path
       .split("/")
       .map((element: string) => encodeURIComponent(element))
@@ -82,13 +86,17 @@ export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions
   }
 
   // TODO: fix subdomain + includePath
-  skylink = parseSkylink(skylink, { includePath: true });
+  let url;
   if (opts.subdomain) {
+    const skylinkPath = parseSkylink(skylink, { getPath: true });
+    skylink = parseSkylink(skylink);
     skylink = convertSkylinkToBase32(skylink);
+    url = addSubdomain(this.portalUrl, skylink);
+    url = makeUrl(url, skylinkPath, path);
+  } else {
+    skylink = parseSkylink(skylink, { includePath: true });
+    url = makeUrl(this.portalUrl, opts.endpointPath, skylink, path);
   }
-  const url = opts.subdomain
-    ? addSubdomain(this.portalUrl, skylink)
-    : makeUrl(this.portalUrl, opts.endpointPath, skylink, path);
   return addUrlQuery(url, query);
 }
 
