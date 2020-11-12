@@ -10,6 +10,12 @@ import {
   convertSkylinkToBase32,
 } from "./utils";
 
+function combineStrings(...arrays: Array<Array<string>>) {
+  return arrays.reduce((acc, array) => {
+    return acc.map((first) => array.map((second) => first.concat(second))).reduce((acc, cases) => [...acc, ...cases]);
+  });
+}
+
 const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
@@ -61,26 +67,29 @@ describe("trimUriPrefix", () => {
 });
 
 describe("parseSkylink", () => {
-  it("should correctly parse skylink out of different strings", () => {
-    const validSkylinkVariations = [
-      skylink,
-      `sia:${skylink}`,
-      `sia://${skylink}`,
-      `${portalUrl}/${skylink}`,
-      `${portalUrl}/${skylink}/`,
-      `${portalUrl}/${skylink}/xxx`,
-      `${portalUrl}/${skylink}?`,
-      `${portalUrl}/${skylink}/foo/bar`,
-      `${portalUrl}/${skylink}?foo=bar`,
-    ];
+  const basicCases = combineStrings(
+    ["", "sia:", "sia://", "https://siasky.net/", "https://foo.siasky.net/"],
+    [skylink],
+    ["", "/", "/foo", "/foo", "/foo/", "/foo/bar", "/foo/bar/"],
+    ["", "?", "?foo=bar", "?foo=bar&bar=baz"],
+    ["", "#", "#foo", "#foo?bar"]
+  );
 
-    validSkylinkVariations.forEach((input) => {
-      expect(parseSkylink(input)).toEqual(skylink);
-    });
+  it.each(basicCases)("should extract skylink from %s", (input) => {
+    expect(parseSkylink(input)).toEqual(skylink);
   });
 
-  it("should parse out base32 skylink from subdomain", () => {
-    expect(parseSkylink(portalUrlSubdomain, { subdomain: true })).toEqual(skylinkBase32);
+  const subdomainCases = combineStrings(
+    ["https://"],
+    [skylinkBase32],
+    [".siasky.net", ".foo.siasky.net"],
+    ["", "/", "/foo", "/foo", "/foo/", "/foo/bar", "/foo/bar/"],
+    ["", "?", "?foo=bar", "?foo=bar&bar=baz"],
+    ["", "#", "#foo", "#foo?bar"]
+  );
+
+  it.each(subdomainCases)("should extract base32 skylink from %s", (input) => {
+    expect(parseSkylink(input, { subdomain: true })).toEqual(skylinkBase32);
   });
 
   it("should throw on invalid skylink", () => {
