@@ -119,7 +119,7 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   const matchPathname = parsed.pathname.match(SKYLINK_PATHNAME_REGEX);
   if (matchPathname) return matchPathname[SKYLINK_REGEXP_MATCH_POSITION];
 
-  throw new Error(`Could not extract skylink from '${skylinkStr}'`);
+  return null;
 }
 
 function parseSkylinkBase32(skylinkStr: string): string {
@@ -128,7 +128,7 @@ function parseSkylinkBase32(skylinkStr: string): string {
   const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
   if (matchHostname) return matchHostname[SKYLINK_REGEXP_MATCH_POSITION];
 
-  throw new Error(`Could not extract skylink from '${skylinkStr}'`);
+  return null;
 }
 
 export function trimUriPrefix(str: string, prefix: string): string {

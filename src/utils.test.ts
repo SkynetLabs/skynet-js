@@ -19,7 +19,6 @@ function combineStrings(...arrays: Array<Array<string>>) {
 const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
-const portalUrlSubdomain = `https://${skylinkBase32}.siasky.net`;
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
 
@@ -92,18 +91,22 @@ describe("parseSkylink", () => {
     expect(parseSkylink(input, { subdomain: true })).toEqual(skylinkBase32);
   });
 
-  it("should throw on invalid skylink", () => {
-    const badUrl = `https://${skylinkBase32}xxx.siasky.net`;
-    expect(() => parseSkylink(badUrl, { subdomain: true })).toThrowError(`Could not extract skylink from '${badUrl}'`);
-
+  it("should return null on invalid skylink", () => {
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => parseSkylink()).toThrowError("Skylink has to be a string, undefined provided");
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => parseSkylink(123)).toThrowError("Skylink has to be a string, number provided");
-    expect(() => parseSkylink("123")).toThrowError("Could not extract skylink from '123'");
-    expect(() => parseSkylink(`${skylink}xxx`)).toThrowError(`Could not extract skylink from '${skylink}xxx'`);
-    expect(() => parseSkylink(`${skylink}xxx/foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx/foo'`);
-    expect(() => parseSkylink(`${skylink}xxx?foo`)).toThrowError(`Could not extract skylink from '${skylink}xxx?foo'`);
+  });
+
+  const invalidCases = ["123", `${skylink}xxx`, `${skylink}xxx/foo`, `${skylink}xxx?foo`];
+
+  it.each(invalidCases)("should return null on invalid case %s", (input) => {
+    expect(parseSkylink(input)).toBeNull();
+  });
+
+  it("should return null on invalid base32 subdomain", () => {
+    const badUrl = `https://${skylinkBase32}xxx.siasky.net`;
+    expect(parseSkylink(badUrl, { subdomain: true })).toBeNull();
   });
 });
 
