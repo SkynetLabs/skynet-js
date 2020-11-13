@@ -97,7 +97,7 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
  * Parses the given string for a base64 skylink, or base32 if opts.subdomain is given.
  * @param skylinkStr - plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
  * @param [opts={}] - Additional settings that can optionally be set.
- * @param [opts.getPath=false] - Whether to parse out just the path. Will still return null if the string does not contain a skylink.
+ * @param [opts.getPath=false] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
  * @param [opts.includePath=false] - Whether to include the path after the skylink.
  * @param [opts.subdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
  */
@@ -132,12 +132,15 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
   const parsed = parse(skylinkStr, {});
-  const path = parsed.pathname;
-  const matchPathname = path.match(SKYLINK_PATHNAME_REGEX);
+  const skylinkAndPath = trimSuffix(parsed.pathname, "/");
+  const matchPathname = skylinkAndPath.match(SKYLINK_PATHNAME_REGEX);
   if (!matchPathname) return null;
 
-  if (opts.includePath) return trimForwardSlash(path);
-  else if (opts.getPath) return trimForwardSlash(matchPathname[SKYLINK_PATH_MATCH_POSITION]);
+  let path = matchPathname[SKYLINK_PATH_MATCH_POSITION];
+  if (path == "/") path = "";
+
+  if (opts.includePath) return trimForwardSlash(skylinkAndPath);
+  else if (opts.getPath) return path;
   else return matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
 }
 
@@ -150,7 +153,7 @@ function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
   const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
   if (matchHostname) {
     if (opts.getPath) {
-      return trimForwardSlash(parsed.pathname);
+      return parsed.pathname;
     }
     return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];
   }

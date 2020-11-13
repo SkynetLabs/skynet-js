@@ -61,7 +61,7 @@ export async function downloadFileHns(this: SkynetClient, domain: string, custom
   return url;
 }
 
-export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions: any = {}): string {
+export function getSkylinkUrl(this: SkynetClient, skylinkStr: string, customOptions: any = {}): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
@@ -88,13 +88,24 @@ export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions
   // TODO: fix subdomain + includePath
   let url;
   if (opts.subdomain) {
-    const skylinkPath = parseSkylink(skylink, { getPath: true });
-    skylink = parseSkylink(skylink);
+    // Get the path from the skylink.
+    const skylinkPath = parseSkylink(skylinkStr, { getPath: true });
+    // Get just the skylink.
+    let skylink = parseSkylink(skylinkStr);
+    if (skylink === null) {
+      throw new Error(`Could not get skylink out of input '${skylinkStr}'`);
+    }
+    // Convert the skylink (without the path) to base32.
     skylink = convertSkylinkToBase32(skylink);
     url = addSubdomain(this.portalUrl, skylink);
     url = makeUrl(url, skylinkPath, path);
   } else {
-    skylink = parseSkylink(skylink, { includePath: true });
+    // Get the skylink including the path.
+    const skylink = parseSkylink(skylinkStr, { includePath: true });
+    if (skylink === null) {
+      throw new Error(`Could not get skylink out of input '${skylinkStr}'`);
+    }
+    // Add additional path if passed in.
     url = makeUrl(this.portalUrl, opts.endpointPath, skylink, path);
   }
   return addUrlQuery(url, query);

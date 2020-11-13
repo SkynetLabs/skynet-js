@@ -1,33 +1,26 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
+import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
 import { SkynetClient, defaultSkynetPortalUrl } from "./index";
-import { trimForwardSlash } from "./utils";
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 
-const attachment = "?attachment=true";
-const validSkylinkVariations = [
-  [skylink, ""],
-  [`${skylink}?foo=bar`, ""],
-  [`${skylink}/foo/bar`, "/foo/bar"],
-  [`${skylink}#foobar`, ""],
-  [`sia:${skylink}`, ""],
-  [`sia://${skylink}`, ""],
-  [`${portalUrl}/${skylink}`, ""],
-  [`${portalUrl}/${skylink}/`, ""],
-  [`${portalUrl}/${skylink}/foo/bar`, "/foo/bar"],
-  [`${portalUrl}/${skylink}/foo%3Fbar`, "/foo%3Fbar"],
-  [`${portalUrl}/${skylink}/foo/bar?foo=bar`, "/foo/bar"],
-  [`${portalUrl}/${skylink}?foo=bar`, ""],
-  [`${portalUrl}/${skylink}#foobar`, ""],
-];
+const validSkylinkVariations = combineStrings(
+  ["", "sia:", "sia://", "https://siasky.net/", "https://foo.siasky.net/", `https://${skylinkBase32}.siasky.net/`],
+  [skylink],
+  ["", "/", "//", "/foo", "/foo/", "/foo/bar", "/foo/bar/"],
+  ["", "?", "?foo=bar", "?foo=bar&bar=baz"],
+  ["", "#", "#foo", "#foo?bar"]
+);
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
+const attachment = "?attachment=true";
 const expectedUrl = `${portalUrl}/${skylink}`;
 const expectedHnsUrl = `${portalUrl}/hns/${hnsLink}`;
 const expectedHnsUrlSubdomain = `https://${hnsLink}.hns.siasky.net`;
@@ -42,23 +35,20 @@ Object.defineProperty(window, "location", {
 });
 
 describe("downloadFile", () => {
-  it("should download with a skylink url with attachment set", () => {
-    validSkylinkVariations.forEach(([fullSkylink, path]) => {
-      mockLocationAssign.mockClear();
-      const url = client.downloadFile(fullSkylink);
+  it.each(validSkylinkVariations)("should download with a skylink url with attachment set", (fullSkylink) => {
+    mockLocationAssign.mockClear();
+    const url = client.downloadFile(fullSkylink);
 
-      let expectedUrl2 = `${expectedUrl}${path}${attachment}`;
-      if (path.startsWith("#")) {
-        // Hash should come after query.
-        expectedUrl2 = `${expectedUrl}${attachment}${path}`;
-      }
-      // Change ?attachment=true to &attachment=true if need be.
-      if ((expectedUrl2.match(/\?/g) || []).length > 1) {
-        expectedUrl2 = expectedUrl2.replace(attachment, "&attachment=true");
-      }
-      expect(url).toEqual(expectedUrl2);
-      expect(mockLocationAssign).toHaveBeenCalledWith(expectedUrl2);
-    });
+    const path = extractNonSkylinkPath(fullSkylink, skylink);
+
+    let expectedUrl2 = `${expectedUrl}${path}${attachment}`;
+    // Change ?attachment=true to &attachment=true if need be.
+    if ((expectedUrl2.match(/\?/g) || []).length > 1) {
+      expectedUrl2 = expectedUrl2.replace(attachment, "&attachment=true");
+    }
+
+    expect(url).toEqual(expectedUrl2);
+    expect(mockLocationAssign).toHaveBeenCalledWith(expectedUrl2);
   });
 
   it("should download with the optional path being correctly URI-encoded", () => {
@@ -75,21 +65,17 @@ describe("downloadFile", () => {
 });
 
 describe("downloadFileHns", () => {
-  it("should download with the correct hns link", async () => {
-    for (const input of validHnsLinkVariations) {
-      const url = await client.downloadFileHns(input);
+  it.each(validHnsLinkVariations)("should download with the correct hns link", async (input) => {
+    const url = await client.downloadFileHns(input);
 
-      expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
-    }
+    expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
   });
 });
 
 describe("getHnsUrl", () => {
-  it("should return correctly formed hns URL", () => {
-    validHnsLinkVariations.forEach((input) => {
-      expect(client.getHnsUrl(input)).toEqual(expectedHnsUrl);
-      expect(client.getHnsUrl(input, { subdomain: true })).toEqual(expectedHnsUrlSubdomain);
-    });
+  it.each(validHnsLinkVariations)("should return correctly formed hns URL", (input) => {
+    expect(client.getHnsUrl(input)).toEqual(expectedHnsUrl);
+    expect(client.getHnsUrl(input, { subdomain: true })).toEqual(expectedHnsUrlSubdomain);
   });
 
   it("should return correctly formed hns URL with forced download", () => {
@@ -100,20 +86,18 @@ describe("getHnsUrl", () => {
 });
 
 describe("getHnsresUrl", () => {
-  it("should return correctly formed hnsres URL", () => {
-    validHnsresLinkVariations.forEach((input) => {
-      expect(client.getHnsresUrl(input)).toEqual(expectedHnsresUrl);
-    });
+  it.each(validHnsresLinkVariations)("should return correctly formed hnsres URL", (input) => {
+    expect(client.getHnsresUrl(input)).toEqual(expectedHnsresUrl);
   });
 });
 
 describe("getSkylinkUrl", () => {
   const expectedUrl = `${portalUrl}/${skylink}`;
 
-  it("should return correctly formed skylink URL", () => {
-    validSkylinkVariations.forEach(([fullSkylink, path]) => {
-      expect(client.getSkylinkUrl(fullSkylink)).toEqual(`${expectedUrl}${path}`);
-    });
+  it.each(validSkylinkVariations)("should return correctly formed skylink URL", (fullSkylink) => {
+    const path = extractNonSkylinkPath(fullSkylink, skylink);
+
+    expect(client.getSkylinkUrl(fullSkylink)).toEqual(`${expectedUrl}${path}`);
   });
 
   it("should return correctly formed URLs when path is given", () => {
@@ -133,14 +117,13 @@ describe("getSkylinkUrl", () => {
     );
   });
 
-  it("should convert base64 skylinks to base32", () => {
-    const expectedBase32 = "https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net";
+  const expectedBase32 = `https://${skylinkBase32}.siasky.net`;
 
-    validSkylinkVariations.forEach(([input, path]) => {
-      const url = client.getSkylinkUrl(input, { subdomain: true });
+  it.each(validSkylinkVariations)("should convert base64 skylinks to base32", (fullSkylink) => {
+    const path = extractNonSkylinkPath(fullSkylink, skylink);
+    const url = client.getSkylinkUrl(fullSkylink, { subdomain: true });
 
-      expect(url).toEqual(`${expectedBase32}${path}`);
-    });
+    expect(url).toEqual(`${expectedBase32}${path}`);
   });
 });
 
@@ -151,46 +134,41 @@ describe("getMetadata", () => {
     mock = new MockAdapter(axios);
   });
 
-  it("should fetch successfully skynet file headers", () => {
-    const skynetFileMetadata = { filename: "sia.pdf" };
-    const headers = { "skynet-skylink": skylink, "skynet-file-metadata": JSON.stringify(skynetFileMetadata) };
+  const skynetFileMetadata = { filename: "sia.pdf" };
+  const headersFull = { "skynet-skylink": skylink, "skynet-file-metadata": JSON.stringify(skynetFileMetadata) };
 
-    validSkylinkVariations.forEach(async ([input]) => {
-      const skylinkUrl = client.getSkylinkUrl(input);
-      mock.onHead(skylinkUrl).reply(200, {}, headers);
+  it.each(validSkylinkVariations)("should fetch successfully skynet file headers", async (fullSkylink) => {
+    const skylinkUrl = client.getSkylinkUrl(fullSkylink);
+    mock.onHead(skylinkUrl).reply(200, {}, headersFull);
 
-      const responseMetadata = await client.getMetadata(input);
+    const responseMetadata = await client.getMetadata(fullSkylink);
 
-      expect(responseMetadata).toEqual(skynetFileMetadata);
-    });
+    expect(responseMetadata).toEqual(skynetFileMetadata);
   });
 
-  it("should fail quietly when skynet headers not present", () => {
-    const headers = { "skynet-skylink": skylink };
+  const headersEmpty = { "skynet-skylink": skylink };
 
-    validSkylinkVariations.forEach(async ([input]) => {
-      const skylinkUrl = client.getSkylinkUrl(input);
-      mock.onHead(skylinkUrl).reply(200, {}, headers);
+  it.each(validSkylinkVariations)("should fail quietly when skynet headers not present", async (fullSkylink) => {
+    const skylinkUrl = client.getSkylinkUrl(fullSkylink);
+    mock.onHead(skylinkUrl).reply(200, {}, headersEmpty);
 
-      const responseMetadata = await client.getMetadata(input);
+    const responseMetadata = await client.getMetadata(fullSkylink);
 
-      expect(responseMetadata).toEqual({});
-    });
+    expect(responseMetadata).toEqual({});
   });
 });
 
 describe("openFile", () => {
-  it("should call window.openFile", () => {
-    const windowOpen = jest.spyOn(window, "open").mockImplementation();
+  const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
-    validSkylinkVariations.forEach(([fullSkylink, path]) => {
-      windowOpen.mockReset();
+  it.each(validSkylinkVariations)("should call window.openFile", (fullSkylink) => {
+    windowOpen.mockReset();
 
-      client.openFile(fullSkylink);
+    const path = extractNonSkylinkPath(fullSkylink, skylink);
+    client.openFile(fullSkylink);
 
-      expect(windowOpen).toHaveBeenCalledTimes(1);
-      expect(windowOpen).toHaveBeenCalledWith(`${expectedUrl}${path}`, "_blank");
-    });
+    expect(windowOpen).toHaveBeenCalledTimes(1);
+    expect(windowOpen).toHaveBeenCalledWith(`${expectedUrl}${path}`, "_blank");
   });
 });
 
