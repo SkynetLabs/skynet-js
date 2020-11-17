@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.8.0]
+
+### Added
+
+- `downloadFile` and `getSkylinkUrl` now accept a `subdomain` option which makes them return the skylink in subdomain format.
+- `parseSkylink` now accepts a `subdomain` option which parses the skylink as a base32 subdomain in a URL.
+
+### Changed
+
+- Trying to use the skykeyName or skykeyId parameters now results in an error, as previously users may not have realized they were unimplemented.
+
 ## [2.7.0]
 
 _Note: this version contains breaking changes to `deriveChildSeed`._
