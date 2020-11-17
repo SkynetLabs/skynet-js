@@ -79,6 +79,10 @@ export class SkynetClient {
    * @param {Object} config - Configuration for the request. See docs for constructor for the full list of options.
    */
   executeRequest(config: any): Promise<AxiosResponse> {
+    if (config.skykeyName || config.skykeyId) {
+      throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
+    }
+
     let url = config.url;
     if (!url) {
       url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
