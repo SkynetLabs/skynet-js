@@ -88,6 +88,8 @@ export class SkynetClient {
     let url = config.url;
     if (!url) {
       url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
+    }
+    if (config.query) {
       url = addUrlQuery(url, config.query);
     }
 
@@ -108,6 +110,9 @@ export class SkynetClient {
           config.onUploadProgress(progress, event);
         },
       timeout: config.timeout,
+
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
     });
   }
 }
