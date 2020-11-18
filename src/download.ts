@@ -101,7 +101,7 @@ export async function getMetadata(this: SkynetClient, skylink: string, customOpt
   }
 }
 
-export async function requestFile(this: SkynetClient, skylink: string, customOptions: any = {}) {
+export async function getFileContent(this: SkynetClient, skylink: string, customOptions: any = {}) {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 

@@ -123,7 +123,7 @@ describe("getMetadata", () => {
   });
 });
 
-describe("requestFile", () => {
+describe("getFileContent", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
@@ -138,7 +138,7 @@ describe("requestFile", () => {
       const skylinkUrl = client.getSkylinkUrl(input);
       mock.onGet(skylinkUrl).reply(200, skynetFileContents, headers);
 
-      const fileData = await client.requestFile(input);
+      const fileData = await client.getFileContent(input);
 
       expect(fileData).toEqual(skynetFileContents);
     });
