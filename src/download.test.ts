@@ -175,7 +175,7 @@ describe("getFileContent", () => {
     const skynetFileContents = { arbitrary: "json string" };
     const headers = { "content-type": "application/json" };
 
-    validSkylinkVariations.forEach(async (input) => {
+    validSkylinkVariations.forEach(async (input: string) => {
       const skylinkUrl = client.getSkylinkUrl(input);
       mock.onGet(skylinkUrl).reply(200, skynetFileContents, headers);
 
