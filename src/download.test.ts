@@ -35,20 +35,20 @@ Object.defineProperty(window, "location", {
 });
 
 describe("downloadFile", () => {
-  it.each(validSkylinkVariations)("should download with a skylink url with attachment set", (fullSkylink) => {
+  it.each(validSkylinkVariations)("should download with attachment set from skylink %s", (fullSkylink) => {
     mockLocationAssign.mockClear();
     const url = client.downloadFile(fullSkylink);
 
     const path = extractNonSkylinkPath(fullSkylink, skylink);
 
-    let expectedUrl2 = `${expectedUrl}${path}${attachment}`;
+    let fullExpectedUrl = `${expectedUrl}${path}${attachment}`;
     // Change ?attachment=true to &attachment=true if need be.
-    if ((expectedUrl2.match(/\?/g) || []).length > 1) {
-      expectedUrl2 = expectedUrl2.replace(attachment, "&attachment=true");
+    if ((fullExpectedUrl.match(/\?/g) || []).length > 1) {
+      fullExpectedUrl = fullExpectedUrl.replace(attachment, "&attachment=true");
     }
 
-    expect(url).toEqual(expectedUrl2);
-    expect(mockLocationAssign).toHaveBeenCalledWith(expectedUrl2);
+    expect(url).toEqual(fullExpectedUrl);
+    expect(mockLocationAssign).toHaveBeenCalledWith(fullExpectedUrl);
   });
 
   it("should download with the optional path being correctly URI-encoded", () => {
@@ -65,7 +65,7 @@ describe("downloadFile", () => {
 });
 
 describe("downloadFileHns", () => {
-  it.each(validHnsLinkVariations)("should download with the correct hns link", async (input) => {
+  it.each(validHnsLinkVariations)("should download with the correct link using hns link %s", async (input) => {
     const url = await client.downloadFileHns(input);
 
     expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
@@ -73,7 +73,7 @@ describe("downloadFileHns", () => {
 });
 
 describe("getHnsUrl", () => {
-  it.each(validHnsLinkVariations)("should return correctly formed hns URL", (input) => {
+  it.each(validHnsLinkVariations)("should return correctly formed hns URL using hns link %s", (input) => {
     expect(client.getHnsUrl(input)).toEqual(expectedHnsUrl);
     expect(client.getHnsUrl(input, { subdomain: true })).toEqual(expectedHnsUrlSubdomain);
   });
@@ -86,7 +86,7 @@ describe("getHnsUrl", () => {
 });
 
 describe("getHnsresUrl", () => {
-  it.each(validHnsresLinkVariations)("should return correctly formed hnsres URL", (input) => {
+  it.each(validHnsresLinkVariations)("should return correctly formed hnsres URL using hnsres link %s", (input) => {
     expect(client.getHnsresUrl(input)).toEqual(expectedHnsresUrl);
   });
 });
@@ -94,7 +94,7 @@ describe("getHnsresUrl", () => {
 describe("getSkylinkUrl", () => {
   const expectedUrl = `${portalUrl}/${skylink}`;
 
-  it.each(validSkylinkVariations)("should return correctly formed skylink URL", (fullSkylink) => {
+  it.each(validSkylinkVariations)("should return correctly formed skylink URL using skylink %s", (fullSkylink) => {
     const path = extractNonSkylinkPath(fullSkylink, skylink);
 
     expect(client.getSkylinkUrl(fullSkylink)).toEqual(`${expectedUrl}${path}`);
@@ -119,7 +119,7 @@ describe("getSkylinkUrl", () => {
 
   const expectedBase32 = `https://${skylinkBase32}.siasky.net`;
 
-  it.each(validSkylinkVariations)("should convert base64 skylinks to base32", (fullSkylink) => {
+  it.each(validSkylinkVariations)("should convert base64 skylink to base32 using skylink %s", (fullSkylink) => {
     const path = extractNonSkylinkPath(fullSkylink, skylink);
     const url = client.getSkylinkUrl(fullSkylink, { subdomain: true });
 
@@ -137,39 +137,48 @@ describe("getMetadata", () => {
   const skynetFileMetadata = { filename: "sia.pdf" };
   const headersFull = { "skynet-skylink": skylink, "skynet-file-metadata": JSON.stringify(skynetFileMetadata) };
 
-  it.each(validSkylinkVariations)("should fetch successfully skynet file headers", async (fullSkylink) => {
-    const skylinkUrl = client.getSkylinkUrl(fullSkylink);
-    mock.onHead(skylinkUrl).reply(200, {}, headersFull);
+  it.each(validSkylinkVariations)(
+    "should successfully fetch skynet file headers from skylink %s",
+    async (fullSkylink) => {
+      const skylinkUrl = client.getSkylinkUrl(fullSkylink);
+      mock.onHead(skylinkUrl).reply(200, {}, headersFull);
 
-    const responseMetadata = await client.getMetadata(fullSkylink);
+      const responseMetadata = await client.getMetadata(fullSkylink);
 
-    expect(responseMetadata).toEqual(skynetFileMetadata);
-  });
+      expect(responseMetadata).toEqual(skynetFileMetadata);
+    }
+  );
 
   const headersEmpty = { "skynet-skylink": skylink };
 
-  it.each(validSkylinkVariations)("should fail quietly when skynet headers not present", async (fullSkylink) => {
-    const skylinkUrl = client.getSkylinkUrl(fullSkylink);
-    mock.onHead(skylinkUrl).reply(200, {}, headersEmpty);
+  it.each(validSkylinkVariations)(
+    "should fail quietly when skynet headers not present using skylink %s",
+    async (fullSkylink) => {
+      const skylinkUrl = client.getSkylinkUrl(fullSkylink);
+      mock.onHead(skylinkUrl).reply(200, {}, headersEmpty);
 
-    const responseMetadata = await client.getMetadata(fullSkylink);
+      const responseMetadata = await client.getMetadata(fullSkylink);
 
-    expect(responseMetadata).toEqual({});
-  });
+      expect(responseMetadata).toEqual({});
+    }
+  );
 });
 
 describe("openFile", () => {
   const windowOpen = jest.spyOn(window, "open").mockImplementation();
 
-  it.each(validSkylinkVariations)("should call window.openFile", (fullSkylink) => {
-    windowOpen.mockReset();
+  it.each(validSkylinkVariations)(
+    "should call window.openFile when calling openFile with skylink %s",
+    (fullSkylink) => {
+      windowOpen.mockReset();
 
-    const path = extractNonSkylinkPath(fullSkylink, skylink);
-    client.openFile(fullSkylink);
+      const path = extractNonSkylinkPath(fullSkylink, skylink);
+      client.openFile(fullSkylink);
 
-    expect(windowOpen).toHaveBeenCalledTimes(1);
-    expect(windowOpen).toHaveBeenCalledWith(`${expectedUrl}${path}`, "_blank");
-  });
+      expect(windowOpen).toHaveBeenCalledTimes(1);
+      expect(windowOpen).toHaveBeenCalledWith(`${expectedUrl}${path}`, "_blank");
+    }
+  );
 });
 
 describe("downloadFileHns", () => {

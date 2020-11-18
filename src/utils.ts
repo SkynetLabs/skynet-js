@@ -97,14 +97,14 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
  * Parses the given string for a base64 skylink, or base32 if opts.subdomain is given.
  * @param skylinkStr - plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
  * @param [opts={}] - Additional settings that can optionally be set.
- * @param [opts.getPath=false] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
+ * @param [opts.onlyPath=false] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
  * @param [opts.includePath=false] - Whether to include the path after the skylink.
  * @param [opts.subdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
  */
 export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
 
-  if (opts.includePath && opts.getPath) throw new Error("The includePath and getPath options cannot both be set");
+  if (opts.includePath && opts.onlyPath) throw new Error("The includePath and onlyPath options cannot both be set");
   if (opts.includePath && opts.subdomain) throw new Error("The includePath and subdomain options cannot both be set");
 
   if (opts.subdomain) {
@@ -119,7 +119,7 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   // Check for direct base64 skylink match.
   const matchDirect = skylinkStr.match(SKYLINK_DIRECT_REGEX);
   if (matchDirect) {
-    if (opts.getPath) {
+    if (opts.onlyPath) {
       return "";
     }
     return matchDirect[SKYLINK_DIRECT_MATCH_POSITION];
@@ -140,7 +140,7 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   if (path == "/") path = "";
 
   if (opts.includePath) return trimForwardSlash(skylinkAndPath);
-  else if (opts.getPath) return path;
+  else if (opts.onlyPath) return path;
   else return matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
 }
 
@@ -152,7 +152,7 @@ function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
   // Check if the hostname contains a skylink subdomain.
   const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
   if (matchHostname) {
-    if (opts.getPath) {
+    if (opts.onlyPath) {
       return parsed.pathname;
     }
     return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];

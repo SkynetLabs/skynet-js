@@ -85,7 +85,7 @@ describe("parseSkylink", () => {
     const fullPath = `${skylink}${path}`;
 
     expect(parseSkylink(fullSkylink, { includePath: true })).toEqual(fullPath);
-    expect(parseSkylink(fullSkylink, { getPath: true })).toEqual(path);
+    expect(parseSkylink(fullSkylink, { onlyPath: true })).toEqual(path);
   });
 
   const subdomainCases = combineStrings(

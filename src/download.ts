@@ -89,7 +89,7 @@ export function getSkylinkUrl(this: SkynetClient, skylinkStr: string, customOpti
   let url;
   if (opts.subdomain) {
     // Get the path from the skylink.
-    const skylinkPath = parseSkylink(skylinkStr, { getPath: true });
+    const skylinkPath = parseSkylink(skylinkStr, { onlyPath: true });
     // Get just the skylink.
     let skylink = parseSkylink(skylinkStr);
     if (skylink === null) {
