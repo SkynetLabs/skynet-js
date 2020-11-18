@@ -12,15 +12,11 @@ export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
 export const uriSkynetPrefix = "sia:";
 
-// TODO: Use a third-party library to make this more robust.
 export function addSubdomain(url: string, subdomain: string): string {
   const urlObj = new URL(url);
   urlObj.hostname = `${subdomain}.${urlObj.hostname}`;
   const str = urlObj.toString();
-  if (str.endsWith("/")) {
-    return str.substring(0, str.length - 1);
-  }
-  return str;
+  return trimSuffix(str, "/");
 }
 
 export function addUrlQuery(url: string, query: Record<string, unknown>): string {
@@ -104,9 +100,12 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
 export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
 
-  if (opts.includePath && opts.onlyPath) throw new Error("The includePath and onlyPath options cannot both be set");
-  if (opts.includePath && opts.fromSubdomain)
+  if (opts.includePath && opts.onlyPath) {
+    throw new Error("The includePath and onlyPath options cannot both be set");
+  }
+  if (opts.includePath && opts.fromSubdomain) {
     throw new Error("The includePath and fromSubdomain options cannot both be set");
+  }
 
   if (opts.fromSubdomain) {
     return parseSkylinkBase32(skylinkStr, opts);
@@ -137,15 +136,14 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   const matchPathname = skylinkAndPath.match(SKYLINK_PATHNAME_REGEX);
   if (!matchPathname) return null;
 
-  let path = matchPathname[SKYLINK_PATH_MATCH_POSITION];
-  if (path == "/") path = "";
+  const path = matchPathname[SKYLINK_PATH_MATCH_POSITION];
 
   if (opts.includePath) return trimForwardSlash(skylinkAndPath);
   else if (opts.onlyPath) return path;
   else return matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
 }
 
-function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
+export function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
   const parsed = parse(skylinkStr, {});
@@ -154,7 +152,8 @@ function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
   const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
   if (matchHostname) {
     if (opts.onlyPath) {
-      return parsed.pathname;
+      const path = trimSuffix(parsed.pathname, "/");
+      return path;
     }
     return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];
   }
@@ -193,10 +192,6 @@ export function trimUriPrefix(str: string, prefix: string): string {
   return str;
 }
 
-export function randomNumber(low: number, high: number): number {
-  return Math.random() * (high - low) + low;
-}
-
 // Converts a string to a uint8 array
 export function stringToUint8Array(str: string): Uint8Array {
   return Uint8Array.from(Buffer.from(str));
@@ -219,27 +214,17 @@ export function toHexString(byteArray: Uint8Array): string {
   return s;
 }
 
-// A helper function that uses a FileReader to read the contents of the given
-// file
-export function readData(file: File): Promise<string | ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-}
-
 /**
  * Get the file mime type. In case the type is not provided, use mime-db and try
  * to guess the file type based on the extension.
  */
 export function getFileMimeType(file: File): string {
   if (file.type) return file.type;
-  const extension = file.name.slice(file.name.lastIndexOf(".") + 1);
-  if (extension) {
+  let { ext } = path.parse(file.name);
+  ext = trimPrefix(ext, ".");
+  if (ext != "") {
     for (const type in mimeDB) {
-      if (mimeDB[type]?.extensions?.includes(extension)) {
+      if (mimeDB[type]?.extensions?.includes(ext)) {
         return type;
       }
     }

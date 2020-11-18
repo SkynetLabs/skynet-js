@@ -8,6 +8,9 @@ import {
   uriHandshakeResolverPrefix,
   getFileMimeType,
   convertSkylinkToBase32,
+  getRootDirectory,
+  getRelativeFilePath,
+  parseSkylinkBase32,
 } from "./utils";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
@@ -36,6 +39,34 @@ describe("convertSkylinkToBase32", () => {
     const encoded = convertSkylinkToBase32(skylink);
 
     expect(encoded).toEqual(skylinkBase32);
+  });
+});
+
+describe("getRelativeFilePath", () => {
+  // TODO: Is this right?
+  const filepaths = [
+    ["abc/def", "abc:def"],
+    ["./abc/def", ".:abc:def"],
+    ["/abc/def.txt", ":abc:def.txt"],
+  ];
+
+  it.each(filepaths)("the relative file path for a file with the path %s should be %s", (filepath, directory) => {
+    const file = new File(["test contents"], filepath);
+    expect(getRelativeFilePath(file)).toEqual(directory);
+  });
+});
+
+describe("getRootDirectory", () => {
+  // TODO: Is this right?
+  const filepaths = [
+    ["abc/def", "."],
+    ["./abc/def", "."],
+    ["/abc/def", "."],
+  ];
+
+  it.each(filepaths)("the root directory for a file with the path %s should be %s", (filepath, directory) => {
+    const file = new File(["test contents"], filepath);
+    expect(getRootDirectory(file)).toEqual(directory);
   });
 });
 
@@ -99,6 +130,11 @@ describe("parseSkylink", () => {
 
   it.each(subdomainCases)("should extract base32 skylink from %s", (fullSkylink) => {
     expect(parseSkylink(fullSkylink, { fromSubdomain: true })).toEqual(skylinkBase32);
+    expect(parseSkylinkBase32(fullSkylink)).toEqual(skylinkBase32);
+
+    // Test the fromSubdomain and onlyPath options together.
+    const path = extractNonSkylinkPath(fullSkylink, ""); // Don't need to remove the skylink from the path portion here.
+    expect(parseSkylink(fullSkylink, { fromSubdomain: true, onlyPath: true })).toEqual(path);
   });
 
   it("should return null on invalid skylink", () => {
@@ -117,6 +153,15 @@ describe("parseSkylink", () => {
   it("should return null on invalid base32 subdomain", () => {
     const badUrl = `https://${skylinkBase32}xxx.siasky.net`;
     expect(parseSkylink(badUrl, { fromSubdomain: true })).toBeNull();
+  });
+
+  it("should reject invalid combinations of options", () => {
+    expect(() => {
+      parseSkylink("test", { includePath: true, onlyPath: true });
+    }).toThrow();
+    expect(() => {
+      parseSkylink("test", { includePath: true, fromSubdomain: true });
+    }).toThrow();
   });
 });
 

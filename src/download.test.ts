@@ -13,7 +13,7 @@ const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 const validSkylinkVariations = combineStrings(
   ["", "sia:", "sia://", "https://siasky.net/", "https://foo.siasky.net/", `https://${skylinkBase32}.siasky.net/`],
   [skylink],
-  ["", "/", "//", "/foo", "/foo/", "/foo/bar", "/foo/bar/"],
+  ["", "/", "//", "/foo", "/foo/", "/foo/bar", "/foo/bar/", "/foo/bar//"],
   ["", "?", "?foo=bar", "?foo=bar&bar=baz"],
   ["", "#", "#foo", "#foo?bar"]
 );
