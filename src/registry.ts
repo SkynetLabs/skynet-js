@@ -48,13 +48,11 @@ export async function getEntry(
 
   let response: AxiosResponse;
   try {
+    const url = this.registry.getEntryUrl(publicKey, dataKey);
     response = await this.executeRequest({
       ...opts,
+      url,
       method: "get",
-      query: {
-        publickey: `ed25519:${publicKey}`,
-        datakey: toHexString(hashDataKey(dataKey)),
-      },
       timeout: opts.timeout,
     });
   } catch (err: unknown) {

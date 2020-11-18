@@ -1,13 +1,22 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { addUrlQuery, defaultSkynetPortalUrl } from "./utils";
-import { SkynetClient, genKeyPairAndSeed } from "./index";
+import { addUrlQuery, defaultSkynetPortalUrl, trimUriPrefix, uriSkynetPrefix } from "./utils";
+import { SkynetClient, genKeyPairFromSeed } from "./index";
+import { RegistryEntry } from "./registry";
 
-const { publicKey, privateKey } = genKeyPairAndSeed();
+const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
 const json = { data: "thisistext" };
+const revision = 11;
+
+const entryData = {
+  data: "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367",
+  revision: revision.toString(),
+  signature:
+    "33d14d2889cb292142614da0e0ff13a205c4867961276001471d13b779fc9032568ddd292d9e0dff69d7b1f28be07972cc9d86da3cecf3adecb6f9b7311af809",
+};
 
 const portalUrl = defaultSkynetPortalUrl;
 const registryUrl = `${portalUrl}/skynet/registry`;
@@ -23,27 +32,16 @@ describe("getJSON", () => {
     mock.resetHistory();
   });
 
-  // TODO
-  it.skip("should perform a lookup and skylink GET", async () => {
+  it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
-    const params = {
-      publickey: `ed25519:${publicKey}`,
-      datakey: dataKey,
-    };
-    const registryLookupUrl = addUrlQuery(registryUrl, params);
+    const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
 
-    const data = {
-      data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
-      revision: 11,
-      signature:
-        "7a971e1df2ddbb8ef1f8e71e28a5a64ffe1e5dfcb7eebb19e6c238744133ddeefc4f286488dd4500c33610711e3447b49e5a30df2e590e27ad00e56ebf3baf04",
-    };
-    mock.onGet(registryLookupUrl).reply(200, data);
+    mock.onGet(registryLookupUrl).reply(200, entryData);
+    mock.onGet(client.getSkylinkUrl(skylink)).reply(200, json);
 
-    // TODO mock skylink download request
-
-    await client.db.getJSON(publicKey, dataKey);
-    expect(mock.history.get.length).toBe(1);
+    const jsonReturned = await client.db.getJSON(publicKey, dataKey);
+    expect(jsonReturned.data).toEqual(json);
+    expect(mock.history.get.length).toBe(2);
   });
 });
 
@@ -60,17 +58,9 @@ describe("setJSON", () => {
     mock.onPost(uploadUrl).reply(200, { skylink });
 
     // mock a successful registry lookup
-    const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${publicKey}`,
-      datakey: dataKey,
-    });
+    const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
 
-    mock.onGet(registryLookupUrl).reply(200, {
-      data: "41414333544f713757324a516c6a507567744d6a453555734a676973696b59624538465571677069646659486751",
-      revision: 11,
-      signature:
-        "7a971e1df2ddbb8ef1f8e71e28a5a64ffe1e5dfcb7eebb19e6c238744133ddeefc4f286488dd4500c33610711e3447b49e5a30df2e590e27ad00e56ebf3baf04",
-    });
+    mock.onGet(registryLookupUrl).reply(200, entryData);
 
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);

@@ -28,9 +28,9 @@ export async function getJSON(
     return null;
   }
 
-  // Download the data in that Skylink
+  // Download the data in that Skylink.
   // TODO: Replace with download request method.
-  const skylink = parseSkylink(entry.entry.data);
+  const skylink = entry.entry.data;
 
   const response = await this.executeRequest({
     ...opts,

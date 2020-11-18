@@ -1,6 +1,5 @@
 import axios, { AxiosResponse } from "axios";
 import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
-import { addSkykey, createSkykey, getSkykeyById, getSkykeyByName, getSkykeys } from "./encryption";
 import {
   downloadFile,
   downloadFileHns,
@@ -44,12 +43,6 @@ export class SkynetClient {
   uploadDirectory = uploadDirectory;
   uploadDirectoryRequest = uploadDirectoryRequest;
   uploadFileRequest = uploadFileRequest;
-
-  addSkykey = addSkykey;
-  createSkykey = createSkykey;
-  getSkykeyById = getSkykeyById;
-  getSkykeyByName = getSkykeyByName;
-  getSkykeys = getSkykeys;
 
   downloadFile = downloadFile;
   downloadFileHns = downloadFileHns;

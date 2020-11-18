@@ -12,7 +12,7 @@
     "not OperaMini all"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
     "lint:eslint": "eslint --ext .ts utils src",
     "lint:tsc": "tsc",
@@ -21,6 +21,17 @@
   "jest": {
     "testTimeout": 60000,
     "clearMocks": true,
+    "collectCoverageFrom": [
+      "**/*.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    },
     "rootDir": "src"
   },
   "husky": {
