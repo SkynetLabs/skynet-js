@@ -1,36 +1,50 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { FileID, User } from "./skydb";
-import { defaultOptions, hexToUint8Array } from "./utils";
+import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
 import { Buffer } from "buffer";
+import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
-const defaultRegistryOptions = {
+const defaultGetEntryOptions = {
+  ...defaultOptions("/skynet/registry"),
+  timeout: 5_000,
+};
+
+const defaultSetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
 
-export type RegistryValue = {
-  tweak: Uint8Array;
+export type RegistryEntry = {
+  datakey: string;
   data: string;
   revision: number;
 };
 
-export type SignedRegistryValue = {
-  value: RegistryValue;
-  signature: pki.ed25519.NativeBuffer;
+export type SignedRegistryEntry = {
+  entry: RegistryEntry;
+  signature: Signature;
 };
 
-export async function lookupRegistry(
+/**
+ * Gets the registry entry corresponding to the publicKey and dataKey.
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions={}] - Additional settings that can optionally be set.
+ * @param [customOptions.timeout=5000] - Timeout in ms for the registry lookup.
+ */
+export async function getEntry(
   this: SkynetClient,
-  user: User,
-  fileID: FileID,
+  publicKey: string,
+  dataKey: string,
   customOptions = {}
-): Promise<SignedRegistryValue | null> {
+): Promise<SignedRegistryEntry | null> {
   const opts = {
-    ...defaultRegistryOptions,
+    ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
+
+  const publicKeyBuffer = Buffer.from(publicKey, "hex");
 
   let response: AxiosResponse;
   try {
@@ -38,76 +52,96 @@ export async function lookupRegistry(
       ...opts,
       method: "get",
       query: {
-        publickey: `ed25519:${user.id}`,
-        fileid: Buffer.from(
-          JSON.stringify({
-            version: fileID.version,
-            applicationid: fileID.applicationID,
-            filetype: fileID.fileType,
-            filename: fileID.filename,
-          })
-        ).toString("hex"),
+        publickey: `ed25519:${publicKey}`,
+        datakey: toHexString(hashDataKey(dataKey)),
       },
+      timeout: opts.timeout,
     });
   } catch (err: unknown) {
     // unfortunately axios rejects anything that's not >= 200 and < 300
-    return null;
+    return { entry: null, signature: null };
   }
 
-  if (response.status === 200) {
-    return {
-      value: {
-        tweak: Uint8Array.from(Buffer.from(response.data.tweak)),
-        data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
-        revision: parseInt(response.data.revision, 10),
-      },
-      signature: response.data.signature,
-    };
+  if (response.status !== 200) {
+    return { entry: null, signature: null };
   }
-  throw new Error(`unexpected response status code ${response.status}`);
+
+  const entry = {
+    entry: {
+      datakey: dataKey,
+      data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+      // TODO: Handle uint64 properly.
+      revision: parseInt(response.data.revision, 10),
+    },
+    signature: Buffer.from(hexToUint8Array(response.data.signature)),
+  };
+  if (
+    entry &&
+    !pki.ed25519.verify({
+      message: hashRegistryEntry(entry.entry),
+      signature: entry.signature,
+      publicKey: publicKeyBuffer,
+    })
+  ) {
+    throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
+  }
+
+  return entry;
 }
 
-export async function updateRegistry(
-  this: SkynetClient,
-  user: User,
-  fileID: FileID,
-  srv: SignedRegistryValue,
-  customOptions = {}
-): Promise<boolean> {
+export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: string, customOptions = {}): string {
   const opts = {
-    ...defaultRegistryOptions,
+    ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
-  let response: AxiosResponse;
-  try {
-    response = await this.executeRequest({
-      ...opts,
-      method: "post",
-      data: {
-        publickey: {
-          algorithm: "ed25519",
-          key: Array.from(user.publicKey),
-        },
-        fileid: {
-          version: fileID.version,
-          applicationid: fileID.applicationID,
-          filetype: fileID.fileType,
-          filename: fileID.filename,
-        },
-        revision: srv.value.revision,
-        data: Array.from(Uint8Array.from(Buffer.from(srv.value.data))),
-        signature: Array.from(Uint8Array.from(srv.signature)),
-      },
-    });
-  } catch (err: unknown) {
-    // unfortunately axios rejects anything that's not >= 200 and < 300
-    return false;
-  }
+  const query = {
+    publickey: `ed25519:${publicKey}`,
+    datakey: toHexString(hashDataKey(dataKey)),
+  };
 
-  if (response.status === 204) {
-    return true;
-  }
-  throw new Error(`unexpected response status code ${response.status}`);
+  let url = makeUrl(this.portalUrl, opts.endpointPath);
+  url = addUrlQuery(url, query);
+
+  return url;
+}
+
+export async function setEntry(
+  this: SkynetClient,
+  privateKey: string,
+  entry: RegistryEntry,
+  customOptions = {}
+): Promise<void> {
+  const opts = {
+    ...defaultSetEntryOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const privateKeyBuffer = Buffer.from(privateKey, "hex");
+
+  // Sign the entry.
+  const signature = pki.ed25519.sign({
+    message: hashRegistryEntry(entry),
+    privateKey: privateKeyBuffer,
+  });
+
+  const publicKeyBuffer = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
+  const data = {
+    publickey: {
+      algorithm: "ed25519",
+      key: Array.from(publicKeyBuffer),
+    },
+    datakey: toHexString(hashDataKey(entry.datakey)),
+    revision: entry.revision,
+    data: Array.from(Buffer.from(entry.data)),
+    signature: Array.from(signature),
+  };
+
+  await this.executeRequest({
+    ...opts,
+    method: "post",
+    data,
+  });
 }

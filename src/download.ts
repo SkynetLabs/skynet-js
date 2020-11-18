@@ -1,6 +1,8 @@
 import { SkynetClient } from "./client";
 import {
+  addSubdomain,
   addUrlQuery,
+  convertSkylinkToBase32,
   defaultOptions,
   makeUrl,
   parseSkylink,
@@ -14,6 +16,7 @@ const defaultDownloadOptions = {
 };
 const defaultDownloadHnsOptions = {
   ...defaultOptions("/hns"),
+  hnsSubdomain: "hns",
 };
 const defaultResolveHnsOptions = {
   ...defaultOptions("/hnsres"),
@@ -24,6 +27,7 @@ const defaultResolveHnsOptions = {
  * @param {string} skylink - 46 character skylink.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param {boolean} [customOptions.subdomain=false] - Whether to return the final skylink in subdomain format.
  */
 export function downloadFile(this: SkynetClient, skylink: string, customOptions: any = {}): void {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
@@ -38,6 +42,7 @@ export function downloadFile(this: SkynetClient, skylink: string, customOptions:
  * @param {string} domain - Handshake domain.
  * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
  * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param {boolean} [customOptions.subdomain=false] - Whether to return the final URL with the HNS domain as a subdomain.
  */
 export async function downloadFileHns(this: SkynetClient, domain: string, customOptions: any = {}): Promise<void> {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
@@ -51,7 +56,13 @@ export function getSkylinkUrl(this: SkynetClient, skylink: string, customOptions
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
-  const url = makeUrl(this.portalUrl, opts.endpointPath, parseSkylink(skylink));
+  skylink = parseSkylink(skylink);
+  if (opts.subdomain) {
+    skylink = convertSkylinkToBase32(skylink);
+  }
+  const url = opts.subdomain
+    ? addSubdomain(this.portalUrl, skylink)
+    : makeUrl(this.portalUrl, opts.endpointPath, skylink);
   return addUrlQuery(url, query);
 }
 
@@ -59,14 +70,18 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions: any
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.download ? { attachment: true } : {};
 
-  const url = makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakePrefix));
+  domain = trimUriPrefix(domain, uriHandshakePrefix);
+  const url = opts.subdomain
+    ? addSubdomain(addSubdomain(this.portalUrl, opts.hnsSubdomain), domain)
+    : makeUrl(this.portalUrl, opts.endpointPath, domain);
   return addUrlQuery(url, query);
 }
 
 export function getHnsresUrl(this: SkynetClient, domain: string, customOptions: any = {}): string {
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
-  return makeUrl(this.portalUrl, opts.endpointPath, trimUriPrefix(domain, uriHandshakeResolverPrefix));
+  domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
+  return makeUrl(this.portalUrl, opts.endpointPath, domain);
 }
 
 export async function getMetadata(this: SkynetClient, skylink: string, customOptions: any = {}) {

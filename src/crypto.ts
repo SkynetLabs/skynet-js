@@ -1,38 +1,42 @@
+import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
-import { RegistryValue } from "./registry";
-import { FileID } from "./skydb";
-import { stringToUint8Array } from "./utils";
+import { RegistryEntry } from "./registry";
+import { stringToUint8Array, toHexString } from "./utils";
+import randomBytes from "randombytes";
 
-// NewHash returns a blake2b 256bit hasher.
-function NewHash() {
+export type PublicKey = pki.ed25519.NativeBuffer;
+export type SecretKey = pki.ed25519.NativeBuffer;
+export type Signature = pki.ed25519.NativeBuffer;
+
+// Returns a blake2b 256bit hasher. See `NewHash` in Sia.
+function newHash() {
   return blake.blake2bInit(32, null);
 }
 
-// HashAll takes all given arguments and hashes them.
-export function HashAll(...args: any[]): Uint8Array {
-  const h = NewHash();
+// Takes all given arguments and hashes them.
+export function hashAll(...args: Uint8Array[]): Uint8Array {
+  const hasher = newHash();
   for (let i = 0; i < args.length; i++) {
-    blake.blake2bUpdate(h, args[i]);
+    blake.blake2bUpdate(hasher, args[i]);
   }
-  return blake.blake2bFinal(h);
+  return blake.blake2bFinal(hasher);
 }
 
-// HashRegistryValue hashes the given registry value
-export function HashRegistryValue(registryValue: RegistryValue): Uint8Array {
-  return HashAll(registryValue.tweak, encodeString(registryValue.data), encodeNumber(registryValue.revision));
+// Hash the given data key.
+export function hashDataKey(datakey: string): Uint8Array {
+  return hashAll(encodeString(datakey));
 }
 
-// HashFileID hashes the given fileID
-export function HashFileID(fileID: FileID): Uint8Array {
-  return HashAll(
-    encodeNumber(fileID.version),
-    encodeString(fileID.applicationID),
-    encodeNumber(fileID.fileType),
-    encodeString(fileID.filename)
+// Hashes the given registry entry.
+export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
+  return hashAll(
+    hashDataKey(registryEntry.datakey),
+    encodeString(registryEntry.data),
+    encodeNumber(registryEntry.revision)
   );
 }
 
-// encodeNumber converts the given number into a uint8 array
+// Converts the given number into a uint8 array
 function encodeNumber(num: number): Uint8Array {
   const encoded = new Uint8Array(8);
   for (let index = 0; index < encoded.length; index++) {
@@ -43,10 +47,41 @@ function encodeNumber(num: number): Uint8Array {
   return encoded;
 }
 
-// encodeString converts the given string into a uint8 array
+// Converts the given string into a uint8 array
 function encodeString(str: string): Uint8Array {
   const encoded = new Uint8Array(8 + str.length);
   encoded.set(encodeNumber(str.length));
   encoded.set(stringToUint8Array(str), 8);
   return encoded;
+}
+
+export function deriveChildSeed(masterSeed: string, seed: string): string {
+  return toHexString(hashAll(encodeString(masterSeed), encodeString(seed)));
+}
+
+/**
+ * Generates a master key pair and seed.
+ * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
+ */
+export function genKeyPairAndSeed(length = 64): { publicKey: string; privateKey: string; seed: string } {
+  const seed = makeSeed(length);
+  return { ...genKeyPairFromSeed(seed), seed };
+}
+
+/**
+ * Generates a public and private key from a provided, secure seed.
+ * @param seed - A secure seed.
+ */
+export function genKeyPairFromSeed(seed: string): { publicKey: string; privateKey: string } {
+  // Get a 32-byte seed.
+  seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
+  const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
+  return { publicKey: toHexString(publicKey), privateKey: toHexString(privateKey) };
+}
+
+function makeSeed(length: number): string {
+  // Cryptographically-secure random number generator. It should use the
+  // built-in crypto.getRandomValues in the browser.
+  const array = randomBytes(length);
+  return toHexString(array);
 }
