@@ -19,7 +19,7 @@ describe("uploadFile", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onPost(url).reply(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink });
     mock.resetHistory();
   });
 
@@ -40,7 +40,7 @@ describe("uploadFile", () => {
     const client = new SkynetClient(newPortal);
 
     // Use replyOnce to catch a single request with the new URL.
-    mock.onPost(url).replyOnce(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink });
 
     const data = await client.uploadFile(file, { onUploadProgress: jest.fn() });
 
@@ -76,7 +76,7 @@ describe("uploadFile", () => {
     expect(data).toEqual(sialink);
   });
 
-  it("should send custom user agent if defined", async () => {
+  it("should send portal's custom user agent if defined", async () => {
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
     const data = await client.uploadFile(file);
@@ -92,7 +92,7 @@ describe("uploadFile", () => {
     expect(data).toEqual(sialink);
   });
 
-  it("Should use user agent set in options to function", async () => {
+  it("Should use user agent set in options passed to function", async () => {
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
 
     const data = await client.uploadFile(file, { customUserAgent: "Sia-Agent-2" });
@@ -104,6 +104,21 @@ describe("uploadFile", () => {
     // Check that other headers weren't altered.
     expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);
+
+    expect(data).toEqual(sialink);
+  });
+
+  it("Should send custom query parameters if provided", async () => {
+    // Create a client with a unique portal so we don't accidentally hit another
+    // request mocker.
+    const portalUrl = "https://portal.net";
+    const url = `${portalUrl}/skynet/skyfile`;
+    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+
+    mock.onPost(`${url}?file=test`).replyOnce(200, { skylink });
+
+    const query = { file: "test" };
+    const data = await client.uploadFile(file, { query });
 
     expect(data).toEqual(sialink);
   });
@@ -121,7 +136,7 @@ describe("uploadDirectory", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onPost(url).reply(200, { skylink: skylink });
+    mock.onPost(url).replyOnce(200, { skylink });
     mock.resetHistory();
   });
 
@@ -147,6 +162,19 @@ describe("uploadDirectory", () => {
     const request = mock.history.post[0];
 
     expect(request.onUploadProgress).toEqual(expect.any(Function));
+
+    expect(data).toEqual(sialink);
+  });
+
+  it("should encode special characters in the URL", async () => {
+    const filename = "encoding?test";
+    const url = `${portalUrl}/skynet/skyfile?filename=encoding%3Ftest`;
+    mock.resetHandlers();
+    mock.onPost(url).replyOnce(200, { skylink });
+
+    const data = await client.uploadDirectory(directory, filename);
+
+    expect(mock.history.post.length).toBe(1);
 
     expect(data).toEqual(sialink);
   });

@@ -1,3 +1,16 @@
+import { trimForwardSlash } from "../src/utils";
+
+import parse from "url-parse";
+
+/**
+ * Returns an array of strings of all possible permutations of the input strings.
+ */
+export function combineStrings(...arrays: Array<Array<string>>): Array<string> {
+  return arrays.reduce((acc, array) => {
+    return acc.map((first) => array.map((second) => first.concat(second))).reduce((acc, cases) => [...acc, ...cases]);
+  });
+}
+
 /**
  * Compares the provided FormData with the expected array of entries.
  * @param {Object} formData - opaque FormData to compare.
@@ -32,4 +45,14 @@ export async function compareFormData(formData: Record<string, any>, entries: Ar
 
   // Check that the formData contains the expected number of entries.
   expect(i).toEqual(entries.length);
+}
+
+export function extractNonSkylinkPath(url: string, skylink: string): string {
+  const parsed = parse(url, {});
+  let path = parsed.pathname.replace(skylink, ""); // Remove skylink to get the path.
+  path = trimForwardSlash(path);
+  if (path != "") {
+    path = `/${path}`;
+  }
+  return path;
 }
