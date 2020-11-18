@@ -98,7 +98,7 @@ describe("parseSkylink", () => {
   );
 
   it.each(subdomainCases)("should extract base32 skylink from %s", (fullSkylink) => {
-    expect(parseSkylink(fullSkylink, { subdomain: true })).toEqual(skylinkBase32);
+    expect(parseSkylink(fullSkylink, { fromSubdomain: true })).toEqual(skylinkBase32);
   });
 
   it("should return null on invalid skylink", () => {
@@ -116,7 +116,7 @@ describe("parseSkylink", () => {
 
   it("should return null on invalid base32 subdomain", () => {
     const badUrl = `https://${skylinkBase32}xxx.siasky.net`;
-    expect(parseSkylink(badUrl, { subdomain: true })).toBeNull();
+    expect(parseSkylink(badUrl, { fromSubdomain: true })).toBeNull();
   });
 });
 

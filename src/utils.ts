@@ -94,20 +94,21 @@ const SKYLINK_DIRECT_MATCH_POSITION = 1;
 const SKYLINK_PATH_MATCH_POSITION = 2;
 
 /**
- * Parses the given string for a base64 skylink, or base32 if opts.subdomain is given.
+ * Parses the given string for a base64 skylink, or base32 if opts.fromSubdomain is given.
  * @param skylinkStr - plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
  * @param [opts={}] - Additional settings that can optionally be set.
  * @param [opts.onlyPath=false] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
  * @param [opts.includePath=false] - Whether to include the path after the skylink.
- * @param [opts.subdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
+ * @param [opts.fromSubdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
  */
 export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
 
   if (opts.includePath && opts.onlyPath) throw new Error("The includePath and onlyPath options cannot both be set");
-  if (opts.includePath && opts.subdomain) throw new Error("The includePath and subdomain options cannot both be set");
+  if (opts.includePath && opts.fromSubdomain)
+    throw new Error("The includePath and fromSubdomain options cannot both be set");
 
-  if (opts.subdomain) {
+  if (opts.fromSubdomain) {
     return parseSkylinkBase32(skylinkStr, opts);
   }
 
@@ -127,7 +128,7 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
 
   // Check for skylink passed in an url and extract it.
   // Example: https://siasky.net/XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  // Example: https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net (if opts.subdomain = true)
+  // Example: https://bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g.siasky.net (if opts.fromSubdomain = true)
 
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
