@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.9.0]
+
+### Added
+
+- Support for downloading skylinks with paths (either pre-encoded in the skylink, or with the `path` parameter not encoded).
+- Support for returning skylinks from `getSkylinkUrl` and `downloadFile` in subdomain form.
+- Added `includePath`, `onlyPath`, and `fromSubdomain` options to `parseSkylink`, allowing getting the path with/without the skylink as well as parsing skylinks in base32 subdomain form.
+
+### Changed
+
+- Fixed bug in `getJSON` where fetching an inexistent entry would cause an error.
+
 ## [2.8.0]
 
 ### Added

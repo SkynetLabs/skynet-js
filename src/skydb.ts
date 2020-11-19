@@ -23,14 +23,14 @@ export async function getJSON(
   };
 
   // lookup the registry entry
-  const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey, opts);
+  const { entry }: { entry: RegistryEntry } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
     return null;
   }
 
   // Download the data in that Skylink
   // TODO: Replace with download request method.
-  const skylink = parseSkylink(entry.entry.data);
+  const skylink = parseSkylink(entry.data);
 
   const response = await this.executeRequest({
     ...opts,
@@ -38,7 +38,7 @@ export async function getJSON(
     url: this.getSkylinkUrl(skylink),
   });
 
-  return { data: response.data, revision: entry.entry.revision };
+  return { data: response.data, revision: entry.revision };
 }
 
 /**
