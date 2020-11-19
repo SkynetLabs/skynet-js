@@ -19,10 +19,10 @@ const entryData = {
 };
 
 const portalUrl = defaultSkynetPortalUrl;
-const registryUrl = `${portalUrl}/skynet/registry`;
-const uploadUrl = `${portalUrl}/skynet/skyfile`;
-
 const client = new SkynetClient(portalUrl);
+const registryUrl = `${portalUrl}/skynet/registry`;
+const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
+const uploadUrl = `${portalUrl}/skynet/skyfile`;
 
 describe("getJSON", () => {
   let mock: MockAdapter;
@@ -34,14 +34,19 @@ describe("getJSON", () => {
 
   it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
-    const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
-
     mock.onGet(registryLookupUrl).reply(200, entryData);
     mock.onGet(client.getSkylinkUrl(skylink)).reply(200, json);
 
     const jsonReturned = await client.db.getJSON(publicKey, dataKey);
     expect(jsonReturned.data).toEqual(json);
     expect(mock.history.get.length).toBe(2);
+  });
+
+  it("should return null if no entry is found", async () => {
+    mock.onGet(registryLookupUrl).reply(400);
+
+    const result = await client.db.getJSON(publicKey, dataKey);
+    expect(result).toBeNull();
   });
 });
 
@@ -58,8 +63,6 @@ describe("setJSON", () => {
     mock.onPost(uploadUrl).reply(200, { skylink });
 
     // mock a successful registry lookup
-    const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
-
     mock.onGet(registryLookupUrl).reply(200, entryData);
 
     // mock a successful registry update
