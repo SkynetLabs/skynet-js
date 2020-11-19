@@ -125,6 +125,17 @@ describe("getSkylinkUrl", () => {
 
     expect(url).toEqual(`${expectedBase32}${path}`);
   });
+
+  it("should throw if passing a non-string path", () => {
+    expect(() => client.getSkylinkUrl(skylink, { path: true })).toThrow();
+  });
+
+  const invalidCases = ["123", `${skylink}xxx`, `${skylink}xxx/foo`, `${skylink}xxx?foo`];
+
+  it.each(invalidCases)("should throw on invalid skylink %s", (invalidSkylink) => {
+    expect(() => client.getSkylinkUrl(invalidSkylink)).toThrow();
+    expect(() => client.getSkylinkUrl(invalidSkylink, { subdomain: true })).toThrow();
+  });
 });
 
 describe("getMetadata", () => {

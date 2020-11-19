@@ -85,7 +85,6 @@ export function getSkylinkUrl(this: SkynetClient, skylinkStr: string, customOpti
       .join("/");
   }
 
-  // TODO: fix subdomain + includePath
   let url;
   if (opts.subdomain) {
     // Get the path from the skylink.
