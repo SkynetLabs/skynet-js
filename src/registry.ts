@@ -66,7 +66,7 @@ export async function getEntry(
     return { entry: null, signature: null };
   }
 
-  const entry = {
+  const signedEntry = {
     entry: {
       datakey: dataKey,
       data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
@@ -76,17 +76,17 @@ export async function getEntry(
     signature: Buffer.from(hexToUint8Array(response.data.signature)),
   };
   if (
-    entry &&
+    signedEntry &&
     !pki.ed25519.verify({
-      message: hashRegistryEntry(entry.entry),
-      signature: entry.signature,
+      message: hashRegistryEntry(signedEntry.entry),
+      signature: signedEntry.signature,
       publicKey: publicKeyBuffer,
     })
   ) {
     throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
   }
 
-  return entry;
+  return signedEntry;
 }
 
 export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: string, customOptions = {}): string {
