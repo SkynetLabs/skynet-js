@@ -1,9 +1,15 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
+import { addUrlQuery, BaseCustomOptions, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
+
+export type CustomGetEntryOptions = BaseCustomOptions & {
+  timeout?: number;
+};
+
+export type CustomSetEntryOptions = BaseCustomOptions;
 
 const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
@@ -36,7 +42,7 @@ export async function getEntry(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
-  customOptions = {}
+  customOptions?: CustomGetEntryOptions
 ): Promise<SignedRegistryEntry | null> {
   const opts = {
     ...defaultGetEntryOptions,
@@ -48,7 +54,7 @@ export async function getEntry(
 
   let response: AxiosResponse;
   try {
-    const url = this.registry.getEntryUrl(publicKey, dataKey);
+    const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
     response = await this.executeRequest({
       ...opts,
       url,
@@ -87,7 +93,12 @@ export async function getEntry(
   return signedEntry;
 }
 
-export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: string, customOptions = {}): string {
+export function getEntryUrl(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): string {
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -109,7 +120,7 @@ export async function setEntry(
   this: SkynetClient,
   privateKey: string,
   entry: RegistryEntry,
-  customOptions = {}
+  customOptions?: CustomSetEntryOptions
 ): Promise<void> {
   const opts = {
     ...defaultSetEntryOptions,

@@ -5,6 +5,21 @@ import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
 import { Buffer } from "buffer";
+import { CustomClientOptions } from "./client";
+
+export type BaseCustomOptions = CustomClientOptions & {
+  endpointPath?: string;
+};
+
+export type ParseSkylinkOptions = {
+  fromSubdomain?: boolean;
+  includePath?: boolean;
+  onlyPath?: boolean;
+};
+
+type ParseSkylinkBase32Options = {
+  onlyPath?: boolean;
+};
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
@@ -32,7 +47,7 @@ export function convertSkylinkToBase32(input: string): string {
   return base32Encode(decoded, "RFC4648-HEX", { padding: false }).toLowerCase();
 }
 
-export function defaultOptions(endpointPath: string) {
+export function defaultOptions(endpointPath: string): BaseCustomOptions {
   return {
     endpointPath,
     APIKey: "",
@@ -95,7 +110,9 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
  * @param [opts.includePath=false] - Whether to include the path after the skylink.
  * @param [opts.fromSubdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
  */
-export function parseSkylink(skylinkStr: string, opts: any = {}): string {
+export function parseSkylink(skylinkStr: string, opts?: ParseSkylinkOptions): string {
+  opts = { ...opts };
+
   if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
 
   if (opts.includePath && opts.onlyPath) {
@@ -141,7 +158,9 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
   else return matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
 }
 
-export function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
+export function parseSkylinkBase32(skylinkStr: string, opts?: ParseSkylinkBase32Options): string {
+  opts = { ...opts };
+
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
   const parsed = parse(skylinkStr, {});

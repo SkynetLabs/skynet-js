@@ -1,8 +1,14 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { trimUriPrefix, uriSkynetPrefix, toHexString } from "./utils";
+import { trimUriPrefix, uriSkynetPrefix, toHexString, BaseCustomOptions } from "./utils";
 import { Buffer } from "buffer";
+
+export type CustomGetJSONOptions = BaseCustomOptions & {
+  timeout?: number;
+};
+
+export type CustomSetJSONOptions = BaseCustomOptions;
 
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
@@ -15,7 +21,7 @@ export async function getJSON(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
-  customOptions = {}
+  customOptions?: CustomGetJSONOptions
 ): Promise<{ data: Record<string, unknown>; revision: number } | null> {
   const opts = {
     ...this.customOptions,
@@ -50,7 +56,7 @@ export async function setJSON(
   dataKey: string,
   json: Record<string, unknown>,
   revision?: number,
-  customOptions = {}
+  customOptions?: CustomSetJSONOptions
 ): Promise<void> {
   const opts = {
     ...this.customOptions,

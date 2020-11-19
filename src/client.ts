@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from "axios";
+import type { Method } from "axios";
 import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
 import {
   downloadFile,
@@ -23,6 +24,16 @@ export type CustomClientOptions = {
   customUserAgent?: string;
   /** optional callback to track upload progress */
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
+};
+
+type RequestConfig = CustomClientOptions & {
+  data?: FormData | Record<string, unknown>;
+  endpointPath?: string;
+  url?: string;
+  method?: Method;
+  query?: Record<string, unknown>;
+  timeout?: number; // TODO: remove
+  extraPath?: string;
 };
 
 export class SkynetClient {
@@ -71,7 +82,8 @@ export class SkynetClient {
    * Creates and executes a request.
    * @param {Object} config - Configuration for the request. See docs for constructor for the full list of options.
    */
-  executeRequest(config: any): Promise<AxiosResponse> {
+  protected executeRequest(config: RequestConfig): Promise<AxiosResponse> {
+    // @ts-expect-error we expect this use case in case someone ignores typescript typing
     if (config.skykeyName || config.skykeyId) {
       throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
     }

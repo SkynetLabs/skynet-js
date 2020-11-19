@@ -127,6 +127,7 @@ describe("getSkylinkUrl", () => {
   });
 
   it("should throw if passing a non-string path", () => {
+    // @ts-expect-error we only check this use case in case someone ignores typescript typing
     expect(() => client.getSkylinkUrl(skylink, { path: true })).toThrow();
   });
 

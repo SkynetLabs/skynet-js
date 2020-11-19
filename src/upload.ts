@@ -1,12 +1,16 @@
-import { defaultOptions, uriSkynetPrefix, getFileMimeType } from "./utils";
-import { SkynetClient, CustomClientOptions } from "./client";
+import { defaultOptions, uriSkynetPrefix, getFileMimeType, BaseCustomOptions } from "./utils";
+import { SkynetClient } from "./client";
 
-type CustomUploadOptions = {
+export type CustomUploadOptions = BaseCustomOptions & {
   portalFileFieldname?: string;
   portalDirectoryFileFieldname?: string;
   customFilename?: string;
   query?: Record<string, unknown>;
-} & CustomClientOptions;
+};
+
+export type UploadRequestResponse = {
+  skylink: string;
+};
 
 const defaultUploadOptions = {
   ...defaultOptions("/skynet/skyfile"),
@@ -25,7 +29,7 @@ export async function uploadFileRequest(
   this: SkynetClient,
   file: File,
   customOptions?: CustomUploadOptions
-): Promise<any> {
+): Promise<UploadRequestResponse> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
   const formData = new FormData();
 
@@ -59,7 +63,7 @@ export async function uploadFileRequest(
  */
 export async function uploadDirectory(
   this: SkynetClient,
-  directory: any,
+  directory: Record<string, File>,
   filename: string,
   customOptions?: CustomUploadOptions
 ): Promise<string> {
@@ -70,10 +74,10 @@ export async function uploadDirectory(
 
 export async function uploadDirectoryRequest(
   this: SkynetClient,
-  directory: any,
+  directory: Record<string, File>,
   filename: string,
   customOptions?: CustomUploadOptions
-): Promise<any> {
+): Promise<UploadRequestResponse> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
   const formData = new FormData();
 
