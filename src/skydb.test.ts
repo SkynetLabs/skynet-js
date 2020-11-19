@@ -1,9 +1,8 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { addUrlQuery, defaultSkynetPortalUrl, trimUriPrefix, uriSkynetPrefix } from "./utils";
-import { SkynetClient, genKeyPairFromSeed } from "./index";
-import { RegistryEntry } from "./registry";
+import { addUrlQuery } from "./utils";
+import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
@@ -76,6 +75,30 @@ describe("setJSON", () => {
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
     expect(mock.history.post.length).toBe(2);
+
+    const data = JSON.parse(mock.history.post[1].data);
+    expect(data).toBeDefined();
+    expect(data.revision).toEqual(revision + 1);
+  });
+
+  it("should use the revision if it is passed in", async () => {
+    // mock a successful upload
+    mock.onPost(uploadUrl).reply(200, { skylink });
+
+    // mock a successful registry update
+    mock.onPost(registryUrl).reply(204);
+
+    // set data
+    const updated = await client.db.setJSON(privateKey, dataKey, json, revision + 1);
+
+    expect(updated);
+
+    // assert our request history contains the expected amount of requests
+    expect(mock.history.post.length).toBe(2);
+
+    const data = JSON.parse(mock.history.post[1].data);
+    expect(data).toBeDefined();
+    expect(data.revision).toEqual(revision + 1);
   });
 
   it("should use a revision number of 0 if the lookup failed", async () => {

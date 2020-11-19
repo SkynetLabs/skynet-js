@@ -21,10 +21,8 @@ export function addSubdomain(url: string, subdomain: string): string {
 
 export function addUrlQuery(url: string, query: Record<string, unknown>): string {
   const parsed = parse(url, true);
-  if (parsed.query) {
-    // Combine the desired query params with the already existing ones.
-    query = { ...parsed.query, ...query };
-  }
+  // Combine the desired query params with the already existing ones.
+  query = { ...parsed.query, ...query };
   parsed.set("query", query);
   return parsed.toString();
 }
