@@ -12,6 +12,13 @@ import {
   uriHandshakeResolverPrefix,
 } from "./utils";
 
+/**
+ * Custom download options.
+ * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
+ * @property [path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
+ * @property [query={}] - A query object to convert to a query parameter string and append to the URL.
+ * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
+ */
 export type CustomDownloadOptions = BaseCustomOptions & {
   download?: boolean;
   path?: string;
@@ -19,6 +26,10 @@ export type CustomDownloadOptions = BaseCustomOptions & {
   subdomain?: boolean;
 };
 
+/**
+ * The response for a resolve HNS request.
+ * @property skylink - 46-character skylink.
+ */
 export type ResolveHnsResponse = {
   skylink: string;
 };
@@ -36,12 +47,9 @@ const defaultResolveHnsOptions = {
 
 /**
  * Initiates a download of the content of the skylink within the browser.
- * @param skylink - 46 character skylink, possibly followed by a path or query parameters. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
- * @param {string} [customOptions.path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
- * @param {Object} [customOptions.query={}] - A query object to convert to a query parameter string and append to the URL.
- * @param {boolean} [customOptions.subdomain=false] - Whether to return the final skylink in subdomain format.
+ * @param skylink - 46-character skylink, or a valid skylink URL. Can be followed by a path. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns {string} - The full URL that was used.
  */
 export function downloadFile(this: SkynetClient, skylink: string, customOptions?: CustomDownloadOptions): string {
@@ -57,10 +65,8 @@ export function downloadFile(this: SkynetClient, skylink: string, customOptions?
 /**
  * Initiates a download of the content of the skylink at the Handshake domain.
  * @param domain - Handshake domain.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
- * @param {Object} [customOptions.query] - A query object to convert to a query parameter string and append to the URL.
- * @param {boolean} [customOptions.subdomain=false] - Whether to return the final URL with the HNS domain as a subdomain.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns {string} - The full URL that was used.
  */
 export async function downloadFileHns(
@@ -77,6 +83,13 @@ export async function downloadFileHns(
   return url;
 }
 
+/**
+ * Constructs the full URL for the given skylink.
+ * @param skylink - Skylink. See `downloadFile`.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns {string} - The full URL for the skylink.
+ */
 export function getSkylinkUrl(this: SkynetClient, skylinkStr: string, customOptions?: CustomDownloadOptions): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
@@ -166,9 +179,9 @@ export async function getMetadata(
 
 /**
  * Opens the content of the skylink within the browser.
- * @param skylink - 46 character skylink.
- * @param [customOptions={}] - Additional settings that can optionally be set.. See `downloadFile` for the full list.
- * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param skylink - Skylink. See `downloadFile`.
+ * @param [customOptions] - Additional settings that can optionally be set.. See `downloadFile` for the full list.
+ * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  */
 export function openFile(this: SkynetClient, skylink: string, customOptions?: CustomDownloadOptions): string {
@@ -183,8 +196,8 @@ export function openFile(this: SkynetClient, skylink: string, customOptions?: Cu
 /**
  * Opens the content of the skylink from the given Handshake domain within the browser.
  * @param domain - Handshake domain.
- * @param [customOptions={}] - Additional settings that can optionally be set. See `downloadFileHns` for the full list.
- * @param {string} [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions] - Additional settings that can optionally be set. See `downloadFileHns` for the full list.
+ * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns {string} - The full URL that was used.
  */
 export async function openFileHns(this: SkynetClient, domain: string, customOptions = {}): Promise<string> {

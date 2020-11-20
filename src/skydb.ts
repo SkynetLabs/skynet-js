@@ -1,21 +1,24 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { RegistryEntry, SignedRegistryEntry } from "./registry";
+import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry } from "./registry";
 import { trimUriPrefix, uriSkynetPrefix, toHexString, BaseCustomOptions } from "./utils";
 import { Buffer } from "buffer";
 
-export type CustomGetJSONOptions = BaseCustomOptions & {
-  timeout?: number;
-};
+/**
+ * Custom get JSON options.
+ */
+export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions;
 
+/**
+ * Custom set JSON options.
+ */
 export type CustomSetJSONOptions = BaseCustomOptions;
 
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.timeout=5000] - Timeout in ms for the registry lookup.
+ * @param [customOptions] - Additional settings that can optionally be set.
  */
 export async function getJSON(
   this: SkynetClient,
@@ -49,6 +52,11 @@ export async function getJSON(
 
 /**
  * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ * @param privateKey - The user private key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param json - The JSON data to set.
+ * @param [revision] - The revision number for the data entry.
+ * @param [customOptions] - Additional settings that can optionally be set.
  */
 export async function setJSON(
   this: SkynetClient,

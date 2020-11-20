@@ -7,10 +7,20 @@ import urljoin from "url-join";
 import { Buffer } from "buffer";
 import { CustomClientOptions } from "./client";
 
+/**
+ * Base custom options for methods hitting the API.
+ * @property [endpointPath] - The relative URL path of the portal endpoint to contact.
+ */
 export type BaseCustomOptions = CustomClientOptions & {
   endpointPath?: string;
 };
 
+/**
+ * Parse skylink options.
+ * @property [fromSubdomain] - Whether to parse the skylink as a base32 subdomain in a URL.
+ * @property [includePath] - Whether to include the path after the skylink.
+ * @property [onlyPath] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
+ */
 export type ParseSkylinkOptions = {
   fromSubdomain?: boolean;
   includePath?: boolean;
@@ -104,11 +114,8 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
 
 /**
  * Parses the given string for a base64 skylink, or base32 if opts.fromSubdomain is given.
- * @param skylinkStr - plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
- * @param [opts={}] - Additional settings that can optionally be set.
- * @param [opts.onlyPath=false] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
- * @param [opts.includePath=false] - Whether to include the path after the skylink.
- * @param [opts.fromSubdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
+ * @param skylinkStr - Plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
+ * @param [opts] - Additional settings that can optionally be set.
  */
 export function parseSkylink(skylinkStr: string, opts?: ParseSkylinkOptions): string {
   opts = { ...opts };

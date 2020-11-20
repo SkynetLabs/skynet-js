@@ -13,7 +13,7 @@ export {
 
 // Export types.
 
-export type { CustomClientOptions } from "./client";
+export type { CustomClientOptions, RequestConfig } from "./client";
 export type { PublicKey, SecretKey, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";

@@ -5,10 +5,17 @@ import { addUrlQuery, BaseCustomOptions, defaultOptions, hexToUint8Array, makeUr
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
+/**
+ * Custom get entry options.
+ * @property [timeout=5000] - The custom timeout for getting an entry.
+ */
 export type CustomGetEntryOptions = BaseCustomOptions & {
   timeout?: number;
 };
 
+/**
+ * Custom set entry options.
+ */
 export type CustomSetEntryOptions = BaseCustomOptions;
 
 const defaultGetEntryOptions = {
@@ -20,12 +27,23 @@ const defaultSetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
 
+/**
+ * Registry entry.
+ * @property datakey - The key of the data for the given entry.
+ * @property data - The data stored in the entry.
+ * @property revision - The revision number for the entry.
+ */
 export type RegistryEntry = {
   datakey: string;
   data: string;
   revision: number;
 };
 
+/**
+ * Signed registry entry.
+ * @property entry - The registry entry.
+ * @property signature - The signature of the registry entry.
+ */
 export type SignedRegistryEntry = {
   entry: RegistryEntry;
   signature: Signature;
@@ -35,8 +53,7 @@ export type SignedRegistryEntry = {
  * Gets the registry entry corresponding to the publicKey and dataKey.
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.timeout=5000] - Timeout in ms for the registry lookup.
+ * @param [customOptions] - Additional settings that can optionally be set.
  */
 export async function getEntry(
   this: SkynetClient,
@@ -93,6 +110,12 @@ export async function getEntry(
   return signedEntry;
 }
 
+/**
+ * Gets the registry entry URL corresponding to the publicKey and dataKey.
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ */
 export function getEntryUrl(
   this: SkynetClient,
   publicKey: string,

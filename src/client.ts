@@ -15,35 +15,50 @@ import {
 import { getJSON, setJSON } from "./skydb";
 import { getEntry, getEntryUrl, setEntry } from "./registry";
 
-import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
+import { addUrlQuery, BaseCustomOptions, defaultPortalUrl, makeUrl } from "./utils";
 
+/**
+ * Custom client options.
+ * @property [APIKey] - Authentication password to use.
+ * @property [customUserAgent] - Custom user agent header to set.
+ * @property [onUploadProgress] -Optional callback to track upload progress.
+ */
 export type CustomClientOptions = {
-  /** authentication password to use */
   APIKey?: string;
-  /** custom user agent header to set */
   customUserAgent?: string;
-  /** optional callback to track upload progress */
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
 };
 
-type RequestConfig = CustomClientOptions & {
-  data?: FormData | Record<string, unknown>;
-  endpointPath?: string;
-  url?: string;
-  method?: Method;
-  query?: Record<string, unknown>;
-  timeout?: number; // TODO: remove
-  extraPath?: string;
-};
+/**
+ * Config options for a single request.
+ * @property [data] - The data for a POST request.
+ * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
+ * @property [method] - The request method.
+ * @property [query] - Query parameters.
+ * @property [timeout] - Request timeout. May be deprecated.
+ * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
+ */
+export type RequestConfig = CustomClientOptions &
+  BaseCustomOptions & {
+    data?: FormData | Record<string, unknown>;
+    url?: string;
+    method?: Method;
+    query?: Record<string, unknown>;
+    timeout?: number; // TODO: remove
+    extraPath?: string;
+  };
 
+/**
+ * The Skynet Client which can be used to access Skynet.
+ */
 export class SkynetClient {
   portalUrl: string;
   customOptions: CustomClientOptions;
 
   /**
-   * The Skynet Client which can be used to access Skynet.
+   * @constructor
    * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
-   * @param [customOptions] Configuration for the client
+   * @param [customOptions] Configuration for the client.
    */
   constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
     this.portalUrl = portalUrl;
@@ -80,9 +95,9 @@ export class SkynetClient {
 
   /**
    * Creates and executes a request.
-   * @param {Object} config - Configuration for the request. See docs for constructor for the full list of options.
+   * @param config - Configuration for the request.
    */
-  protected executeRequest(config: RequestConfig): Promise<AxiosResponse> {
+  executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     // @ts-expect-error we expect this use case in case someone ignores typescript typing
     if (config.skykeyName || config.skykeyId) {
       throw new Error("Unimplemented: skykeys have not been implemented in this SDK");

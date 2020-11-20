@@ -1,6 +1,13 @@
 import { defaultOptions, uriSkynetPrefix, getFileMimeType, BaseCustomOptions } from "./utils";
 import { SkynetClient } from "./client";
 
+/**
+ * Custom upload options.
+ * @property [portalFileFieldname="file"] - The file fieldname for uploading files on this portal.
+ * @property [portalDirectoryfilefieldname="files[]"] - The file fieldname for uploading directories on this portal.
+ * @property [customFilename] - The custom filename to use when uploading files.
+ * @property [query] - Query parameters.
+ */
 export type CustomUploadOptions = BaseCustomOptions & {
   portalFileFieldname?: string;
   portalDirectoryFileFieldname?: string;
@@ -8,6 +15,10 @@ export type CustomUploadOptions = BaseCustomOptions & {
   query?: Record<string, unknown>;
 };
 
+/**
+ * The response to an upload request.
+ * @property skylink - 46-character skylink.
+ */
 export type UploadRequestResponse = {
   skylink: string;
 };
@@ -53,12 +64,8 @@ export async function uploadFileRequest(
  * Uploads a local directory to Skynet.
  * @param directory - File objects to upload, indexed by their path strings.
  * @param filename - The name of the directory.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param {string} [config.APIKey] - Authentication password to use.
- * @param {string} [config.customUserAgent=""] - Custom user agent header to set.
- * @param {string} [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
- * @param {Function} [config.onUploadProgress] - Optional callback to track progress.
- * @param {string} [customOptions.portalDirectoryfilefieldname="files[]"] - The fieldName for directory files on the portal.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
  * @returns skylink - The returned skylink.
  */
 export async function uploadDirectory(
