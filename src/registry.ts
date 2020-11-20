@@ -7,6 +7,7 @@ import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
 /**
  * Custom get entry options.
+ *
  * @property [timeout=5000] - The custom timeout for getting an entry.
  */
 export type CustomGetEntryOptions = BaseCustomOptions & {
@@ -29,6 +30,7 @@ const defaultSetEntryOptions = {
 
 /**
  * Registry entry.
+ *
  * @property datakey - The key of the data for the given entry.
  * @property data - The data stored in the entry.
  * @property revision - The revision number for the entry.
@@ -41,6 +43,7 @@ export type RegistryEntry = {
 
 /**
  * Signed registry entry.
+ *
  * @property entry - The registry entry.
  * @property signature - The signature of the registry entry.
  */
@@ -51,9 +54,12 @@ export type SignedRegistryEntry = {
 
 /**
  * Gets the registry entry corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The signed registry entry.
  */
 export async function getEntry(
   this: SkynetClient,
@@ -112,9 +118,12 @@ export async function getEntry(
 
 /**
  * Gets the registry entry URL corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The full get entry URL.
  */
 export function getEntryUrl(
   this: SkynetClient,
@@ -139,6 +148,14 @@ export function getEntryUrl(
   return url;
 }
 
+/**
+ * Sets the registry entry.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param entry - The entry to set.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ */
 export async function setEntry(
   this: SkynetClient,
   privateKey: string,

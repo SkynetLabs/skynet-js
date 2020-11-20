@@ -1,6 +1,6 @@
 {
   "parser": "@typescript-eslint/parser",
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["jsdoc", "@typescript-eslint"],
   "parserOptions": {
     "ecmaVersion": 2020,
     "sourceType": "module"
@@ -9,5 +9,15 @@
     "browser": true,
     "jest": true
   },
-  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:compat/recommended"]
+  "extends": [
+    "eslint:recommended",
+    "plugin:jsdoc/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:compat/recommended"
+  ],
+  "rules": {
+    "jsdoc/require-param-type": 0,
+    "jsdoc/require-property-type": 0,
+    "jsdoc/require-returns-type": 0
+  }
 }

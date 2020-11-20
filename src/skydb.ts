@@ -16,9 +16,12 @@ export type CustomSetJSONOptions = BaseCustomOptions;
 
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The returned JSON and revision number.
  */
 export async function getJSON(
   this: SkynetClient,
@@ -52,6 +55,8 @@ export async function getJSON(
 
 /**
  * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
  * @param privateKey - The user private key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.

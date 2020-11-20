@@ -19,6 +19,7 @@ import { addUrlQuery, BaseCustomOptions, defaultPortalUrl, makeUrl } from "./uti
 
 /**
  * Custom client options.
+ *
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
  * @property [onUploadProgress] -Optional callback to track upload progress.
@@ -31,6 +32,7 @@ export type CustomClientOptions = {
 
 /**
  * Config options for a single request.
+ *
  * @property [data] - The data for a POST request.
  * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
  * @property [method] - The request method.
@@ -56,7 +58,8 @@ export class SkynetClient {
   customOptions: CustomClientOptions;
 
   /**
-   * @constructor
+   * @class
+   *
    * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
    * @param [customOptions] Configuration for the client.
    */
@@ -95,7 +98,9 @@ export class SkynetClient {
 
   /**
    * Creates and executes a request.
+   *
    * @param config - Configuration for the request.
+   * @returns - The response from axios.
    */
   executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     // @ts-expect-error we expect this use case in case someone ignores typescript typing
