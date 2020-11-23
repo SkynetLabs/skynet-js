@@ -44,6 +44,16 @@ Compile with `npx webpack`! You will find the minified `main.js` in the `dist` f
 
 ## Development
 
-- Clone the repository
-- Run `yarn`
-- Run `yarn test` to run the tests
+1. Clone the repository
+1. Run `yarn`
+1. Run `yarn test` to run the tests
+
+### Requirements
+
+We have some automated checks that must pass in order for code to be accepted. These include:
+
+- Type-checking and other code lints must pass.
+- Every function must have a complete JSDoc-style docstring.
+- 100% code coverage is enforced. Every statement and conditional branch must be tested.
+
+Note that the 100% coverage requirement is a _minimum_. Just because a line of code is tested does not mean it is tested _well_, that is, with different values and combinations of values. Tests should be as thorough as possible, within reason.
