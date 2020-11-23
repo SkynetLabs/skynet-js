@@ -17,7 +17,7 @@ const defaultSetEntryOptions = {
 export type RegistryEntry = {
   datakey: string;
   data: string;
-  revision: number;
+  revision: bigint;
 };
 
 export type SignedRegistryEntry = {
@@ -70,8 +70,7 @@ export async function getEntry(
     entry: {
       datakey: dataKey,
       data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
-      // TODO: Handle uint64 properly.
-      revision: parseInt(response.data.revision, 10),
+      revision: BigInt(response.data.revision),
     },
     signature: Buffer.from(hexToUint8Array(response.data.signature)),
   };
@@ -134,7 +133,7 @@ export async function setEntry(
       key: Array.from(publicKeyBuffer),
     },
     datakey: toHexString(hashDataKey(entry.datakey)),
-    revision: entry.revision,
+    revision: entry.revision.toString(),
     data: Array.from(Buffer.from(entry.data)),
     signature: Array.from(signature),
   };

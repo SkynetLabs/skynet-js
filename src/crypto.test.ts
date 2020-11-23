@@ -43,7 +43,7 @@ describe("hashRegistryValue", () => {
     const hash = hashRegistryEntry({
       datakey: "HelloWorld",
       data: "abc",
-      revision: 123456789,
+      revision: BigInt(123456789),
     });
 
     expect(toHexString(hash)).toEqual(h);

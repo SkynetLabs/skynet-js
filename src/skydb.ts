@@ -16,7 +16,7 @@ export async function getJSON(
   publicKey: string,
   dataKey: string,
   customOptions = {}
-): Promise<{ data: Record<string, unknown>; revision: number } | null> {
+): Promise<{ data: Record<string, unknown>; revision: bigint } | null> {
   const opts = {
     ...this.customOptions,
     ...customOptions,
@@ -49,7 +49,7 @@ export async function setJSON(
   privateKey: string,
   dataKey: string,
   json: Record<string, unknown>,
-  revision?: number,
+  revision?: bigint,
   customOptions = {}
 ): Promise<void> {
   const opts = {
@@ -70,9 +70,9 @@ export async function setJSON(
     try {
       const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
       entry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
-      revision = entry.entry.revision + 1;
+      revision = entry.entry.revision + BigInt(1);
     } catch (err) {
-      revision = 0;
+      revision = BigInt(0);
     }
   }
 

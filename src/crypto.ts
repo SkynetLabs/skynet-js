@@ -32,7 +32,7 @@ export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
   return hashAll(
     hashDataKey(registryEntry.datakey),
     encodeString(registryEntry.data),
-    encodeNumber(registryEntry.revision)
+    encodeBigInt(registryEntry.revision)
   );
 }
 
@@ -43,6 +43,22 @@ function encodeNumber(num: number): Uint8Array {
     const byte = num & 0xff;
     encoded[index] = byte;
     num = num >> 8;
+  }
+  return encoded;
+}
+
+/**
+ * Converts the given bigint into a uint8 array.
+ *
+ * @param int - Bigint to encode.
+ * @returns - Bigint encoded as a byte array.
+ */
+function encodeBigInt(int: bigint): Uint8Array {
+  const encoded = new Uint8Array(8);
+  for (let index = 0; index < encoded.length; index++) {
+    const byte = int & BigInt(0xff);
+    encoded[index] = Number(byte);
+    int = int >> BigInt(8);
   }
   return encoded;
 }
