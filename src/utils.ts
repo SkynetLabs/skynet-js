@@ -167,9 +167,7 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
  * @param [opts] - Additional settings that can optionally be set.
  * @returns - The base64 (or base32) skylink, optionally with the path included.
  */
-export function parseSkylink(skylinkStr: string, opts?: ParseSkylinkOptions): string | null {
-  opts = { ...opts };
-
+export function parseSkylink(skylinkStr: string, opts: ParseSkylinkOptions = {}): string | null {
   if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
 
   if (opts.includePath && opts.onlyPath) {
@@ -222,9 +220,7 @@ export function parseSkylink(skylinkStr: string, opts?: ParseSkylinkOptions): st
  * @param [opts] - Additional settings that can optionally be set.
  * @returns - The base32 skylink.
  */
-export function parseSkylinkBase32(skylinkStr: string, opts?: ParseSkylinkBase32Options): string | null {
-  opts = { ...opts };
-
+export function parseSkylinkBase32(skylinkStr: string, opts: ParseSkylinkBase32Options = {}): string | null {
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
   const parsed = parse(skylinkStr, {});
@@ -320,12 +316,12 @@ export function hexToUint8Array(str: string): Uint8Array {
   return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 }
 
-// From https://stackoverflow.com/a/44608819.
 /**
  * Convert a byte array to a hex string.
  *
  * @param byteArray - The byte array to convert.
  * @returns - The hex string.
+ * @see {@link https://stackoverflow.com/a/44608819|Stack Overflow}
  */
 export function toHexString(byteArray: Uint8Array): string {
   let s = "";

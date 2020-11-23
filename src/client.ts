@@ -57,16 +57,7 @@ export class SkynetClient {
   portalUrl: string;
   customOptions: CustomClientOptions;
 
-  /**
-   * @class
-   *
-   * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
-   * @param [customOptions] Configuration for the client.
-   */
-  constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
-    this.portalUrl = portalUrl;
-    this.customOptions = customOptions;
-  }
+  // Set methods (defined in other files).
 
   uploadFile = uploadFile;
   uploadDirectory = uploadDirectory;
@@ -95,6 +86,17 @@ export class SkynetClient {
     getEntryUrl: getEntryUrl.bind(this),
     setEntry: setEntry.bind(this),
   };
+
+  /**
+   * @class
+   *
+   * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
+   * @param [customOptions] Configuration for the client.
+   */
+  constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
+    this.portalUrl = portalUrl;
+    this.customOptions = customOptions;
+  }
 
   /**
    * Creates and executes a request.

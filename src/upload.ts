@@ -141,10 +141,10 @@ export async function uploadDirectoryRequest(
  * reading it after the file has been appended to form data. To overcome this,
  * we recreate the file object using native File constructor with a type defined
  * as a constructor argument.
- * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
  *
  * @param file - The input file.
  * @returns - The processed file.
+ * @see {@link https://github.com/NebulousLabs/skynet-webportal/issues/290| Related Issue}
  */
 function ensureFileObjectConsistency(file: File): File {
   return new File([file], file.name, { type: getFileMimeType(file) });
