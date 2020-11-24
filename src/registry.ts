@@ -121,6 +121,12 @@ export async function setEntry(
   entry: RegistryEntry,
   customOptions = {}
 ): Promise<void> {
+  // Assert the input is 64 bits.
+  const newint = BigInt.asUintN(64, entry.revision);
+  if (newint != entry.revision) {
+    throw new Error("Received revision number > 2^64-1");
+  }
+
   const opts = {
     ...defaultSetEntryOptions,
     ...this.customOptions,

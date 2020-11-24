@@ -74,6 +74,12 @@ export async function setJSON(
     } catch (err) {
       revision = BigInt(0);
     }
+  } else {
+    // Assert the input is 64 bits.
+    const newint = BigInt.asUintN(64, revision);
+    if (newint != revision) {
+      throw new Error("Received revision number > 2^64-1");
+    }
   }
 
   // build the registry value

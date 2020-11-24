@@ -1,13 +1,13 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 
 const { publicKey, privateKey } = genKeyPairAndSeed();
-const client = new SkynetClient("https://siasky.net");
+const client = new SkynetClient("https://siasky.dev");
 
 const dataKey = "HelloWorld";
 const maxint = BigInt("18446744073709551615"); // max uint64
 
 // skip - used to verify end-to-end flow
-describe("siasky.dev end to end integration test", () => {
+describe.skip("siasky.dev end to end integration test", () => {
   // NOTE: These tests must run sequentially.
   // https://jestjs.io/docs/en/setup-teardown.html#order-of-execution-of-describe-and-test-blocks
 
@@ -38,6 +38,8 @@ describe("siasky.dev end to end integration test", () => {
     const json = { data: "testnumber3" };
     const largeint = maxint + BigInt(1);
 
-    await expect(client.db.setJSON(privateKey, dataKey, json, largeint)).rejects.toThrow();
+    await expect(client.db.setJSON(privateKey, dataKey, json, largeint)).rejects.toThrowError(
+      "Received revision number > 2^64-1"
+    );
   });
 });
