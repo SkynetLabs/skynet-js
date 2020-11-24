@@ -75,13 +75,11 @@ export async function getEntry(
     return { entry: null, signature: null };
   }
 
-  // Convert the revision from a string to BigInt.
-  response.data.revision = BigInt(response.data.revision);
-
   const signedEntry = {
     entry: {
       datakey: dataKey,
       data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+      // Convert the revision from a string to bigint.
       revision: BigInt(response.data.revision),
     },
     signature: Buffer.from(hexToUint8Array(response.data.signature)),

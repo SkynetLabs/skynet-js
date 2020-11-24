@@ -107,6 +107,6 @@ describe("setJSON", () => {
 
     const data = JSON.parse(mock.history.post[1].data);
     expect(data).toBeDefined();
-    expect(data.revision).toEqual("0");
+    expect(data.revision).toEqual(0);
   });
 });
