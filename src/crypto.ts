@@ -32,7 +32,7 @@ export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
   return hashAll(
     hashDataKey(registryEntry.datakey),
     encodeString(registryEntry.data),
-    encodeBigInt(registryEntry.revision)
+    encodeBigintAsUint64(registryEntry.revision)
   );
 }
 
@@ -53,7 +53,13 @@ function encodeNumber(num: number): Uint8Array {
  * @param int - Bigint to encode.
  * @returns - Bigint encoded as a byte array.
  */
-function encodeBigInt(int: bigint): Uint8Array {
+export function encodeBigintAsUint64(int: bigint): Uint8Array {
+  // Assert the input is 64 bits.
+  const newint = BigInt.asUintN(64, int);
+  if (newint != int) {
+    throw new Error("Received int > 2^64-1");
+  }
+
   const encoded = new Uint8Array(8);
   for (let index = 0; index < encoded.length; index++) {
     const byte = int & BigInt(0xff);

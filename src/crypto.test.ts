@@ -1,5 +1,14 @@
-import { deriveChildSeed, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
-import { toHexString } from "./utils";
+import { deriveChildSeed, encodeBigintAsUint64, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
+import { areEqualUint8Arrays, toHexString } from "./utils";
+
+describe("areEqualUint8Arrays", () => {
+  it("should correctly check whether uint8arrays are equal", () => {
+    expect(areEqualUint8Arrays(new Uint8Array([0]), new Uint8Array([0]))).toBeTruthy();
+    expect(areEqualUint8Arrays(new Uint8Array([1, 1, 0]), new Uint8Array([1, 1, 0]))).toBeTruthy();
+    expect(areEqualUint8Arrays(new Uint8Array([1, 0, 0]), new Uint8Array([1, 1, 0]))).toBeFalsy();
+    expect(areEqualUint8Arrays(new Uint8Array([1, 1, 0]), new Uint8Array([1, 1, 0, 0]))).toBeFalsy();
+  });
+});
 
 describe("deriveChildSeed", () => {
   it("should correctly derive a child seed", () => {
@@ -17,6 +26,30 @@ describe("deriveChildSeed", () => {
     const seed3 = deriveChildSeed(masterSeed, "ds");
     expect(seed1).not.toEqual(seed2);
     expect(seed2).not.toEqual(seed3);
+  });
+});
+
+describe("encodeBigint", () => {
+  it("should correctly encode bigints", () => {
+    const maxint = "18446744073709551615";
+
+    expect(areEqualUint8Arrays(encodeBigintAsUint64(BigInt(0)), new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]))).toBeTruthy();
+    expect(
+      areEqualUint8Arrays(encodeBigintAsUint64(BigInt(255)), new Uint8Array([255, 0, 0, 0, 0, 0, 0, 0]))
+    ).toBeTruthy();
+    expect(
+      areEqualUint8Arrays(encodeBigintAsUint64(BigInt(256)), new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0]))
+    ).toBeTruthy();
+    expect(
+      areEqualUint8Arrays(encodeBigintAsUint64(BigInt(256)), new Uint8Array([1, 1, 0, 0, 0, 0, 0, 0]))
+    ).toBeFalsy();
+    expect(
+      areEqualUint8Arrays(
+        encodeBigintAsUint64(BigInt(maxint)),
+        new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255])
+      )
+    ).toBeTruthy();
+    expect(() => encodeBigintAsUint64(BigInt(maxint) + BigInt(1))).toThrowError("Received int > 2^64-1");
   });
 });
 

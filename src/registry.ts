@@ -62,8 +62,7 @@ export async function getEntry(
         // Change the revision value from a JSON integer to a string.
         data = data.replace(/"revision":([0-9]+)/, '"revision":"$1"');
         // Convert the JSON data to an object.
-        data = JSON.parse(data);
-        return data;
+        return JSON.parse(data);
       },
     });
   } catch (err: unknown) {
@@ -158,10 +157,9 @@ export async function setEntry(
     // parsed as a uint64 on the Go side.
     transformRequest: function (data: unknown) {
       // Convert the object data to JSON.
-      let json = JSON.stringify(data);
+      const json = JSON.stringify(data);
       // Change the revision value from a string to a JSON integer.
-      json = json.replace(/"revision":"([0-9]+)"/, '"revision":$1');
-      return json;
+      return json.replace(/"revision":"([0-9]+)"/, '"revision":$1');
     },
   });
 }
