@@ -1,12 +1,36 @@
 import { deriveChildSeed, encodeBigintAsUint64, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
-import { areEqualUint8Arrays, toHexString } from "./utils";
+import { toHexString } from "./utils";
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      toEqualUint8Array(argument: Uint8Array): R;
+    }
+  }
+}
+
+expect.extend({
+  // source https://stackoverflow.com/a/60818105/6085242
+  toEqualUint8Array(received: Uint8Array, argument: Uint8Array) {
+    if (received.length !== argument.length) {
+      return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+    }
+    for (let i = 0; i < received.length; i++) {
+      if (received[i] !== argument[i]) {
+        return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+      }
+    }
+    return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
+  },
+});
 
 describe("areEqualUint8Arrays", () => {
   it("should correctly check whether uint8arrays are equal", () => {
-    expect(areEqualUint8Arrays(new Uint8Array([0]), new Uint8Array([0]))).toBeTruthy();
-    expect(areEqualUint8Arrays(new Uint8Array([1, 1, 0]), new Uint8Array([1, 1, 0]))).toBeTruthy();
-    expect(areEqualUint8Arrays(new Uint8Array([1, 0, 0]), new Uint8Array([1, 1, 0]))).toBeFalsy();
-    expect(areEqualUint8Arrays(new Uint8Array([1, 1, 0]), new Uint8Array([1, 1, 0, 0]))).toBeFalsy();
+    expect(new Uint8Array([0])).toEqualUint8Array(new Uint8Array([0]));
+    expect(new Uint8Array([1, 1, 0])).toEqualUint8Array(new Uint8Array([1, 1, 0]));
+    expect(new Uint8Array([1, 0, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0]));
+    expect(new Uint8Array([1, 1, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0, 0]));
   });
 });
 
@@ -33,22 +57,13 @@ describe("encodeBigint", () => {
   it("should correctly encode bigints", () => {
     const maxint = "18446744073709551615";
 
-    expect(areEqualUint8Arrays(encodeBigintAsUint64(BigInt(0)), new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]))).toBeTruthy();
-    expect(
-      areEqualUint8Arrays(encodeBigintAsUint64(BigInt(255)), new Uint8Array([255, 0, 0, 0, 0, 0, 0, 0]))
-    ).toBeTruthy();
-    expect(
-      areEqualUint8Arrays(encodeBigintAsUint64(BigInt(256)), new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0]))
-    ).toBeTruthy();
-    expect(
-      areEqualUint8Arrays(encodeBigintAsUint64(BigInt(256)), new Uint8Array([1, 1, 0, 0, 0, 0, 0, 0]))
-    ).toBeFalsy();
-    expect(
-      areEqualUint8Arrays(
-        encodeBigintAsUint64(BigInt(maxint)),
-        new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255])
-      )
-    ).toBeTruthy();
+    expect(encodeBigintAsUint64(BigInt(0))).toEqualUint8Array(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(BigInt(255))).toEqualUint8Array(new Uint8Array([255, 0, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(BigInt(256))).toEqualUint8Array(new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(BigInt(256))).not.toEqualUint8Array(new Uint8Array([1, 1, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(BigInt(maxint))).toEqualUint8Array(
+      new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255])
+    );
     expect(() => encodeBigintAsUint64(BigInt(maxint) + BigInt(1))).toThrowError("Received int > 2^64-1");
   });
 });
