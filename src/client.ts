@@ -91,8 +91,8 @@ export class SkynetClient {
       url = addUrlQuery(url, config.query);
     }
 
-    // No other headers.
-    const headers = config.customUserAgent && { "User-Agent": config.customUserAgent };
+    let headers = config.customUserAgent && { "User-Agent": config.customUserAgent };
+    headers = { ...config.headers, ...headers };
 
     return axios({
       url,
@@ -108,6 +108,8 @@ export class SkynetClient {
           config.onUploadProgress(progress, event);
         },
       timeout: config.timeout,
+      transformRequest: config.transformRequest,
+      transformResponse: config.transformResponse,
 
       maxContentLength: Infinity,
       maxBodyLength: Infinity,

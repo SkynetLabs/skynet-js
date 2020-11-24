@@ -56,6 +56,15 @@ export async function getEntry(
         datakey: toHexString(hashDataKey(dataKey)),
       },
       timeout: opts.timeout,
+      // Transform the response to add quotes, since uint64 cannot be accurately
+      // read by JS so the revision needs to be parsed as a string.
+      transformResponse: function (data: string) {
+        // Change the revision value from a JSON integer to a string.
+        data = data.replace(/"revision":([0-9]+)/, '"revision":"$1"');
+        // Convert the JSON data to an object.
+        data = JSON.parse(data);
+        return data;
+      },
     });
   } catch (err: unknown) {
     // unfortunately axios rejects anything that's not >= 200 and < 300
@@ -65,6 +74,9 @@ export async function getEntry(
   if (response.status !== 200) {
     return { entry: null, signature: null };
   }
+
+  // Convert the revision from a string to BigInt.
+  response.data.revision = BigInt(response.data.revision);
 
   const signedEntry = {
     entry: {
@@ -133,6 +145,8 @@ export async function setEntry(
       key: Array.from(publicKeyBuffer),
     },
     datakey: toHexString(hashDataKey(entry.datakey)),
+    // Set the revision as a string here since the value may be up to 64 bits.
+    // We remove the quotes later in transformRequest.
     revision: entry.revision.toString(),
     data: Array.from(Buffer.from(entry.data)),
     signature: Array.from(signature),
@@ -142,5 +156,14 @@ export async function setEntry(
     ...opts,
     method: "post",
     data,
+    // Transform the request to remove quotes, since the revision needs to be
+    // parsed as a uint64 on the Go side.
+    transformRequest: function (data: unknown) {
+      // Convert the object data to JSON.
+      let json = JSON.stringify(data);
+      // Change the revision value from a string to a JSON integer.
+      json = json.replace(/"revision":"([0-9]+)"/, '"revision":$1');
+      return json;
+    },
   });
 }
