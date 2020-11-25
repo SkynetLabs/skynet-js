@@ -142,7 +142,7 @@ export function genKeyPairFromSeed(seed: string): KeyPair {
 /**
  * Generates a random seed of the given length in bytes.
  *
- * @param length - Length of th eseed in bytes.
+ * @param length - Length of the seed in bytes.
  * @returns - The generated seed.
  */
 function makeSeed(length: number): string {

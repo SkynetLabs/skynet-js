@@ -12,7 +12,7 @@
     "not OperaMini all"
   ],
   "scripts": {
-    "test": "jest --coverage",
+    "test": "jest --coverage --coverageDirectory .",
     "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
     "lint:eslint": "eslint --ext .ts utils src",
     "lint:tsc": "tsc",
