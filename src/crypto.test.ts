@@ -64,7 +64,9 @@ describe("encodeBigint", () => {
     expect(encodeBigintAsUint64(BigInt(maxint))).toEqualUint8Array(
       new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255])
     );
-    expect(() => encodeBigintAsUint64(BigInt(maxint) + BigInt(1))).toThrowError("Received int > 2^64-1");
+    expect(() => encodeBigintAsUint64(BigInt(maxint) + BigInt(1))).toThrowError(
+      "Argument 18446744073709551616 does not fit in a 64-bit unsigned integer; exceeds 2^64-1"
+    );
   });
 });
 

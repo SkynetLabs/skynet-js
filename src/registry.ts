@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
+import { addUrlQuery, checkUint64, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
@@ -122,10 +122,7 @@ export async function setEntry(
   customOptions = {}
 ): Promise<void> {
   // Assert the input is 64 bits.
-  const newint = BigInt.asUintN(64, entry.revision);
-  if (newint != entry.revision) {
-    throw new Error("Received revision number > 2^64-1");
-  }
+  checkUint64(entry.revision);
 
   const opts = {
     ...defaultSetEntryOptions,

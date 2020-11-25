@@ -1,7 +1,7 @@
 import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
-import { stringToUint8Array, toHexString } from "./utils";
+import { checkUint64, stringToUint8Array, toHexString } from "./utils";
 import randomBytes from "randombytes";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
@@ -55,10 +55,7 @@ function encodeNumber(num: number): Uint8Array {
  */
 export function encodeBigintAsUint64(int: bigint): Uint8Array {
   // Assert the input is 64 bits.
-  const newint = BigInt.asUintN(64, int);
-  if (newint != int) {
-    throw new Error("Received int > 2^64-1");
-  }
+  checkUint64(int);
 
   const encoded = new Uint8Array(8);
   for (let index = 0; index < encoded.length; index++) {

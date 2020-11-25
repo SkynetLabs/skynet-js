@@ -8,6 +8,7 @@ import {
   uriHandshakeResolverPrefix,
   getFileMimeType,
   convertSkylinkToBase32,
+  checkUint64,
 } from "./utils";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
@@ -28,6 +29,17 @@ describe("addUrlQuery", () => {
       `${portalUrl}/?attachment=true&foo=bar`
     );
     expect(addUrlQuery(`${portalUrl}#foobar`, { foo: "bar" })).toEqual(`${portalUrl}?foo=bar#foobar`);
+  });
+});
+
+describe("checkUint64", () => {
+  it("should test the checkUint64 function", () => {
+    const maxint = BigInt("18446744073709551615"); // max uint64
+
+    expect(() => checkUint64(BigInt(0))).not.toThrow();
+    expect(() => checkUint64(BigInt(-1))).toThrow();
+    expect(() => checkUint64(maxint)).not.toThrow();
+    expect(() => checkUint64(maxint + BigInt(1))).toThrow();
   });
 });
 

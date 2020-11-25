@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64 } from "./utils";
 import { Buffer } from "buffer";
 
 /**
@@ -76,10 +76,7 @@ export async function setJSON(
     }
   } else {
     // Assert the input is 64 bits.
-    const newint = BigInt.asUintN(64, revision);
-    if (newint != revision) {
-      throw new Error("Received revision number > 2^64-1");
-    }
+    checkUint64(revision);
   }
 
   // build the registry value

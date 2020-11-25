@@ -33,6 +33,25 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
   return parsed.toString();
 }
 
+/**
+ * Checks if the provided bigint can fit in a 64-bit unsigned integer.
+ *
+ * @param int - The provided integer.
+ * @throws - Will throw if the int does not fit in 64 bits.
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
+ */
+export function checkUint64(int: bigint) {
+  const maxint = BigInt("18446744073709551615"); // max uint64
+
+  if (int < 0) {
+    throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);
+  }
+
+  if (int > maxint) {
+    throw new Error(`Argument ${int} does not fit in a 64-bit unsigned integer; exceeds 2^64-1`);
+  }
+}
+
 export function convertSkylinkToBase32(input: string): string {
   const decoded = base64.toByteArray(input.padEnd(input.length + 4 - (input.length % 4), "="));
   return base32Encode(decoded, "RFC4648-HEX", { padding: false }).toLowerCase();

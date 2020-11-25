@@ -91,8 +91,7 @@ export class SkynetClient {
       url = addUrlQuery(url, config.query);
     }
 
-    let headers = config.customUserAgent && { "User-Agent": config.customUserAgent };
-    headers = { ...config.headers, ...headers };
+    const headers = { ...config.headers, "User-Agent": config.customUserAgent && config.customUserAgent };
 
     return axios({
       url,
