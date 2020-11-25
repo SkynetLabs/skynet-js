@@ -172,6 +172,7 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
  * @param skylinkUrl - Plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
  * @param [opts] - Additional settings that can optionally be set.
  * @returns - The base64 (or base32) skylink, optionally with the path included.
+ * @throws - Will throw on invalid combination of options.
  */
 export function parseSkylink(skylinkUrl: string, opts: ParseSkylinkOptions = {}): string | null {
   if (typeof skylinkUrl !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkUrl} provided`);

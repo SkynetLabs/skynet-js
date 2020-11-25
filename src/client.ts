@@ -88,8 +88,9 @@ export class SkynetClient {
   };
 
   /**
-   * @class
+   * The Skynet Client which can be used to access Skynet.
    *
+   * @class
    * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
    * @param [customOptions] Configuration for the client.
    */
@@ -103,6 +104,7 @@ export class SkynetClient {
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
+   * @throws - Will throw if unimplemented options have been passed in.
    */
   executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     // @ts-expect-error we expect this use case in case someone ignores typescript typing

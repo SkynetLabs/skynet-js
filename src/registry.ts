@@ -60,6 +60,7 @@ export type SignedRegistryEntry = {
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The signed registry entry.
+ * @throws - Will throw if the returned signature does not match the returned entry.
  */
 export async function getEntry(
   this: SkynetClient,

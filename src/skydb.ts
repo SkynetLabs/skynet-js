@@ -22,6 +22,7 @@ export type CustomSetJSONOptions = BaseCustomOptions;
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned JSON and revision number.
+ * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
 export async function getJSON(
   this: SkynetClient,

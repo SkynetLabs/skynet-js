@@ -64,6 +64,7 @@ const defaultResolveHnsOptions = {
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export function downloadFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
@@ -106,6 +107,7 @@ export async function downloadFileHns(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the skylink.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
@@ -203,6 +205,7 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?:
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The metadata in JSON format.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getMetadata(
   this: SkynetClient,
@@ -229,6 +232,7 @@ export async function getMetadata(
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export function openFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
