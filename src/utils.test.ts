@@ -43,29 +43,31 @@ describe("convertSkylinkToBase32", () => {
 });
 
 describe("getRelativeFilePath", () => {
-  // TODO: Is this right?
   const filepaths = [
-    ["abc/def", "abc:def"],
-    ["./abc/def", ".:abc:def"],
-    ["/abc/def.txt", ":abc:def.txt"],
+    ["abc/def", "def"],
+    ["./abc/def", "def"],
+    ["/abc/def.txt", "def.txt"],
   ];
 
   it.each(filepaths)("the relative file path for a file with the path %s should be %s", (filepath, directory) => {
-    const file = new File(["test contents"], filepath);
+    const file = new File(["test contents"], "foo");
+    // @ts-expect-error We spoof the path here which is present in browsers but not in the File standard.
+    file.path = filepath;
     expect(getRelativeFilePath(file)).toEqual(directory);
   });
 });
 
 describe("getRootDirectory", () => {
-  // TODO: Is this right?
   const filepaths = [
-    ["abc/def", "."],
-    ["./abc/def", "."],
-    ["/abc/def", "."],
+    ["abc/def", "abc"],
+    ["./abc/def", "abc"],
+    ["/abc/def", "abc"],
   ];
 
   it.each(filepaths)("the root directory for a file with the path %s should be %s", (filepath, directory) => {
-    const file = new File(["test contents"], filepath);
+    const file = new File(["test contents"], "foo");
+    // @ts-expect-error We spoof the path here which is present in browsers but not in the File standard.
+    file.path = filepath;
     expect(getRootDirectory(file)).toEqual(directory);
   });
 });

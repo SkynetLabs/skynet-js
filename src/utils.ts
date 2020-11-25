@@ -20,7 +20,7 @@ export type BaseCustomOptions = CustomClientOptions & {
  * Parse skylink options.
  *
  * @property [fromSubdomain] - Whether to parse the skylink as a base32 subdomain in a URL.
- * @property [includePath] - Whether to include the path after the skylink.
+ * @property [includePath] - Whether to include the path after the skylink, e.g. /<skylink>/foo/bar.
  * @property [onlyPath] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
  */
 export type ParseSkylinkOptions = {
@@ -121,7 +121,10 @@ function getFilePath(
 }
 
 /**
- * @param file
+ * Gets the file path relative to the root directory of the path, e.g. `bar` in `/foo/bar`.
+ *
+ * @param file - The input file.
+ * @returns - The relative file path.
  */
 export function getRelativeFilePath(file: File): string {
   const filePath = getFilePath(file);
@@ -132,7 +135,10 @@ export function getRelativeFilePath(file: File): string {
 }
 
 /**
- * @param file
+ * Gets the root directory of the file path, e.g. `foo` in `/foo/bar`.
+ *
+ * @param file - The input file.
+ * @returns - The root directory.
  */
 export function getRootDirectory(file: File): string {
   const filePath = getFilePath(file);
@@ -163,12 +169,12 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
 /**
  * Parses the given string for a base64 skylink, or base32 if opts.fromSubdomain is given.
  *
- * @param skylinkStr - Plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
+ * @param skylinkUrl - Plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
  * @param [opts] - Additional settings that can optionally be set.
  * @returns - The base64 (or base32) skylink, optionally with the path included.
  */
-export function parseSkylink(skylinkStr: string, opts: ParseSkylinkOptions = {}): string | null {
-  if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
+export function parseSkylink(skylinkUrl: string, opts: ParseSkylinkOptions = {}): string | null {
+  if (typeof skylinkUrl !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkUrl} provided`);
 
   if (opts.includePath && opts.onlyPath) {
     throw new Error("The includePath and onlyPath options cannot both be set");
@@ -178,16 +184,16 @@ export function parseSkylink(skylinkStr: string, opts: ParseSkylinkOptions = {})
   }
 
   if (opts.fromSubdomain) {
-    return parseSkylinkBase32(skylinkStr, opts);
+    return parseSkylinkBase32(skylinkUrl, opts);
   }
 
   // Check for skylink prefixed with sia: or sia:// and extract it.
   // Example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   // Example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  skylinkStr = trimUriPrefix(skylinkStr, uriSkynetPrefix);
+  skylinkUrl = trimUriPrefix(skylinkUrl, uriSkynetPrefix);
 
   // Check for direct base64 skylink match.
-  const matchDirect = skylinkStr.match(SKYLINK_DIRECT_REGEX);
+  const matchDirect = skylinkUrl.match(SKYLINK_DIRECT_REGEX);
   if (matchDirect) {
     if (opts.onlyPath) {
       return "";
@@ -201,7 +207,7 @@ export function parseSkylink(skylinkStr: string, opts: ParseSkylinkOptions = {})
 
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
-  const parsed = parse(skylinkStr, {});
+  const parsed = parse(skylinkUrl, {});
   const skylinkAndPath = trimSuffix(parsed.pathname, "/");
   const matchPathname = skylinkAndPath.match(SKYLINK_PATHNAME_REGEX);
   if (!matchPathname) return null;
@@ -216,21 +222,20 @@ export function parseSkylink(skylinkStr: string, opts: ParseSkylinkOptions = {})
 /**
  * Parses the given string for a base32 skylink.
  *
- * @param skylinkStr - Base32 skylink.
+ * @param skylinkUrl - Base32 skylink.
  * @param [opts] - Additional settings that can optionally be set.
  * @returns - The base32 skylink.
  */
-export function parseSkylinkBase32(skylinkStr: string, opts: ParseSkylinkBase32Options = {}): string | null {
+export function parseSkylinkBase32(skylinkUrl: string, opts: ParseSkylinkBase32Options = {}): string | null {
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
-  const parsed = parse(skylinkStr, {});
+  const parsed = parse(skylinkUrl, {});
 
   // Check if the hostname contains a skylink subdomain.
   const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
   if (matchHostname) {
     if (opts.onlyPath) {
-      const path = trimSuffix(parsed.pathname, "/");
-      return path;
+      return trimSuffix(parsed.pathname, "/");
     }
     return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];
   }
@@ -342,7 +347,7 @@ export function getFileMimeType(file: File): string {
   if (file.type) return file.type;
   let { ext } = path.parse(file.name);
   ext = trimPrefix(ext, ".");
-  if (ext != "") {
+  if (ext !== "") {
     for (const type in mimeDB) {
       if (mimeDB[type]?.extensions?.includes(ext)) {
         return type;

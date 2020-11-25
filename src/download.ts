@@ -60,14 +60,14 @@ const defaultResolveHnsOptions = {
  * Initiates a download of the content of the skylink within the browser.
  *
  * @param this - SkynetClient
- * @param skylinkStr - 46-character skylink, or a valid skylink URL. Can be followed by a path. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
+ * @param skylinkUrl - 46-character skylink, or a valid skylink URL. Can be followed by a path. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  */
-export function downloadFile(this: SkynetClient, skylinkStr: string, customOptions?: CustomDownloadOptions): string {
+export function downloadFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
-  const url = this.getSkylinkUrl(skylinkStr, opts);
+  const url = this.getSkylinkUrl(skylinkUrl, opts);
 
   // Download the url.
   window.location.assign(url);
@@ -102,12 +102,12 @@ export async function downloadFileHns(
  * Constructs the full URL for the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkStr - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the skylink.
  */
-export function getSkylinkUrl(this: SkynetClient, skylinkStr: string, customOptions?: CustomDownloadOptions): string {
+export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
@@ -134,11 +134,11 @@ export function getSkylinkUrl(this: SkynetClient, skylinkStr: string, customOpti
   let url;
   if (opts.subdomain) {
     // Get the path from the skylink.
-    const skylinkPath = parseSkylink(skylinkStr, { onlyPath: true });
+    const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true });
     // Get just the skylink.
-    let skylink = parseSkylink(skylinkStr);
+    let skylink = parseSkylink(skylinkUrl);
     if (skylink === null) {
-      throw new Error(`Could not get skylink out of input '${skylinkStr}'`);
+      throw new Error(`Could not get skylink out of input '${skylinkUrl}'`);
     }
     // Convert the skylink (without the path) to base32.
     skylink = convertSkylinkToBase32(skylink);
@@ -146,9 +146,9 @@ export function getSkylinkUrl(this: SkynetClient, skylinkStr: string, customOpti
     url = makeUrl(url, skylinkPath, path);
   } else {
     // Get the skylink including the path.
-    const skylink = parseSkylink(skylinkStr, { includePath: true });
+    const skylink = parseSkylink(skylinkUrl, { includePath: true });
     if (skylink === null) {
-      throw new Error(`Could not get skylink out of input '${skylinkStr}'`);
+      throw new Error(`Could not get skylink out of input '${skylinkUrl}'`);
     }
     // Add additional path if passed in.
     url = makeUrl(this.portalUrl, opts.endpointPath, skylink, path);
@@ -199,18 +199,18 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?:
  * Gets only the metadata for the given skylink without the contents.
  *
  * @param this - SkynetClient
- * @param skylinkStr - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The metadata in JSON format.
  */
 export async function getMetadata(
   this: SkynetClient,
-  skylinkStr: string,
+  skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<Record<string, unknown>> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const url = this.getSkylinkUrl(skylinkStr, opts);
+  const url = this.getSkylinkUrl(skylinkUrl, opts);
 
   const response = await this.executeRequest({
     ...opts,
@@ -225,14 +225,14 @@ export async function getMetadata(
  * Opens the content of the skylink within the browser.
  *
  * @param this - SkynetClient
- * @param skylinkStr - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  */
-export function openFile(this: SkynetClient, skylinkStr: string, customOptions?: CustomDownloadOptions): string {
+export function openFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const url = this.getSkylinkUrl(skylinkStr, opts);
+  const url = this.getSkylinkUrl(skylinkUrl, opts);
 
   window.open(url, "_blank");
 
