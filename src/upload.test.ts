@@ -1,7 +1,7 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index.browser";
 import { compareFormData } from "../utils/testing";
 
 const portalUrl = defaultSkynetPortalUrl;

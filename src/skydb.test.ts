@@ -2,7 +2,7 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
 import { addUrlQuery, defaultSkynetPortalUrl } from "./utils";
-import { SkynetClient, genKeyPairAndSeed } from "./index";
+import { SkynetClient, genKeyPairAndSeed } from "./index.browser";
 
 const { publicKey, privateKey } = genKeyPairAndSeed();
 const dataKey = "app";

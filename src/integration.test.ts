@@ -1,4 +1,4 @@
-import { genKeyPairAndSeed, SkynetClient } from "./index";
+import { genKeyPairAndSeed, SkynetClient } from "./index.browser";
 
 const { publicKey, privateKey } = genKeyPairAndSeed();
 const client = new SkynetClient("https://siasky.dev");

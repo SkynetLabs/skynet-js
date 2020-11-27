@@ -1,4 +1,4 @@
-import { SkynetClient, defaultSkynetPortalUrl } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl } from "./index.browser";
 
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);

@@ -2,7 +2,8 @@
   "name": "skynet-js",
   "version": "2.9.0",
   "description": "Sia Skynet Javascript Client",
-  "main": "dist/index.js",
+  "browser": "dist/index.browser.js",
+  "main": "dist/index.node.js",
   "files": [
     "dist/*"
   ],
