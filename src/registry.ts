@@ -14,6 +14,12 @@ const defaultSetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
 
+// Regex for JSON revision value without quotes.
+const regexRevisionNoQuotes = /"revision":\s?([0-9]+)/;
+
+// Regex for JSON revision value with quotes.
+const regexRevisionWithQuotes = /"revision":\s?"([0-9]+)"/;
+
 export type RegistryEntry = {
   datakey: string;
   data: string;
@@ -60,7 +66,7 @@ export async function getEntry(
       // read by JS so the revision needs to be parsed as a string.
       transformResponse: function (data: string) {
         // Change the revision value from a JSON integer to a string.
-        data = data.replace(/"revision":([0-9]+)/, '"revision":"$1"');
+        data = data.replace(regexRevisionNoQuotes, '"revision":"$1"');
         // Convert the JSON data to an object.
         return JSON.parse(data);
       },
@@ -115,6 +121,9 @@ export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: stri
   return url;
 }
 
+/**
+ * @throws - Will throw if the entry revision does not fit in 64 bits.
+ */
 export async function setEntry(
   this: SkynetClient,
   privateKey: string,
@@ -162,7 +171,7 @@ export async function setEntry(
       // Convert the object data to JSON.
       const json = JSON.stringify(data);
       // Change the revision value from a string to a JSON integer.
-      return json.replace(/"revision":"([0-9]+)"/, '"revision":$1');
+      return json.replace(regexRevisionWithQuotes, '"revision":$1');
     },
   });
 }

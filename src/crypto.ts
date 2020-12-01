@@ -52,6 +52,7 @@ function encodeNumber(num: number): Uint8Array {
  *
  * @param int - Bigint to encode.
  * @returns - Bigint encoded as a byte array.
+ * @throws - Will throw if the int does not fit in 64 bits.
  */
 export function encodeBigintAsUint64(int: bigint): Uint8Array {
   // Assert the input is 64 bits.

@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64 } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, maxint } from "./utils";
 import { Buffer } from "buffer";
 
 /**
@@ -43,6 +43,8 @@ export async function getJSON(
 
 /**
  * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ *
+ * @throws - Will throw if the given entry revision does not fit in 64 bits, or if the revision was not given, if the latest revision of the entry is the maximum revision allowed.
  */
 export async function setJSON(
   this: SkynetClient,
@@ -59,11 +61,6 @@ export async function setJSON(
 
   const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
-  // Upload the data to acquire its skylink
-  // TODO: Replace with upload request method.
-  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const { skylink } = await this.uploadFileRequest(file, opts);
-
   if (revision === undefined) {
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
@@ -74,10 +71,20 @@ export async function setJSON(
     } catch (err) {
       revision = BigInt(0);
     }
+
+    // Throw if the revision is already the maximum value.
+    if (revision > maxint) {
+      throw new Error("Current entry already has maximum allowed revision, could not update the entry");
+    }
   } else {
     // Assert the input is 64 bits.
     checkUint64(revision);
   }
+
+  // Upload the data to acquire its skylink
+  // TODO: Replace with upload request method.
+  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
+  const { skylink } = await this.uploadFileRequest(file, opts);
 
   // build the registry value
   const entry: RegistryEntry = {

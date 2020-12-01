@@ -1,5 +1,5 @@
 import { deriveChildSeed, encodeBigintAsUint64, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
-import { toHexString } from "./utils";
+import { maxint, toHexString } from "./utils";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -55,8 +55,6 @@ describe("deriveChildSeed", () => {
 
 describe("encodeBigint", () => {
   it("should correctly encode bigints", () => {
-    const maxint = "18446744073709551615";
-
     expect(encodeBigintAsUint64(BigInt(0))).toEqualUint8Array(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
     expect(encodeBigintAsUint64(BigInt(255))).toEqualUint8Array(new Uint8Array([255, 0, 0, 0, 0, 0, 0, 0]));
     expect(encodeBigintAsUint64(BigInt(256))).toEqualUint8Array(new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0]));

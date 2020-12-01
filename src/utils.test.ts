@@ -1,14 +1,15 @@
 import {
   addUrlQuery,
+  checkUint64,
+  convertSkylinkToBase32,
   defaultSkynetPortalUrl,
+  getFileMimeType,
   makeUrl,
+  maxint,
   parseSkylink,
   trimUriPrefix,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
-  getFileMimeType,
-  convertSkylinkToBase32,
-  checkUint64,
 } from "./utils";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
@@ -34,8 +35,6 @@ describe("addUrlQuery", () => {
 
 describe("checkUint64", () => {
   it("should test the checkUint64 function", () => {
-    const maxint = BigInt("18446744073709551615"); // max uint64
-
     expect(() => checkUint64(BigInt(0))).not.toThrow();
     expect(() => checkUint64(BigInt(-1))).toThrow();
     expect(() => checkUint64(maxint)).not.toThrow();

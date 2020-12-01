@@ -1,9 +1,9 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
+import { maxint } from "./utils";
 
 const client = new SkynetClient("https://siasky.dev");
 
 const dataKey = "HelloWorld";
-const maxint = BigInt("18446744073709551615"); // max uint64
 
 // skip - used to verify end-to-end flow
 describe.skip("siasky.dev end to end integration test", () => {

@@ -12,7 +12,7 @@ export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
 export const uriSkynetPrefix = "sia:";
 
-const maxint = BigInt("18446744073709551615"); // max uint64
+export const maxint = BigInt("18446744073709551615"); // max uint64
 
 // TODO: Use a third-party library to make this more robust.
 export function addSubdomain(url: string, subdomain: string): string {
@@ -43,7 +43,7 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
  */
 export function checkUint64(int: bigint) {
-  if (int < 0) {
+  if (int < BigInt(0)) {
     throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);
   }
 
