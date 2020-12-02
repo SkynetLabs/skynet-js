@@ -5,7 +5,7 @@ import {
   defaultSkynetPortalUrl,
   getFileMimeType,
   makeUrl,
-  maxint,
+  MAX_REVISION,
   parseSkylink,
   trimUriPrefix,
   uriHandshakePrefix,
@@ -37,8 +37,8 @@ describe("checkUint64", () => {
   it("should test the checkUint64 function", () => {
     expect(() => checkUint64(BigInt(0))).not.toThrow();
     expect(() => checkUint64(BigInt(-1))).toThrow();
-    expect(() => checkUint64(maxint)).not.toThrow();
-    expect(() => checkUint64(maxint + BigInt(1))).toThrow();
+    expect(() => checkUint64(MAX_REVISION)).not.toThrow();
+    expect(() => checkUint64(MAX_REVISION + BigInt(1))).toThrow();
   });
 });
 

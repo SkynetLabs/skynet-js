@@ -12,7 +12,10 @@ export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
 export const uriSkynetPrefix = "sia:";
 
-export const maxint = BigInt("18446744073709551615"); // max uint64
+/**
+ * The maximum allowed value for an entry revision. Setting an entry revision to this value prevents it from being updated further.
+ */
+export const MAX_REVISION = BigInt("18446744073709551615"); // max uint64
 
 // TODO: Use a third-party library to make this more robust.
 export function addSubdomain(url: string, subdomain: string): string {
@@ -47,7 +50,7 @@ export function checkUint64(int: bigint) {
     throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);
   }
 
-  if (int > maxint) {
+  if (int > MAX_REVISION) {
     throw new Error(`Argument ${int} does not fit in a 64-bit unsigned integer; exceeds 2^64-1`);
   }
 }

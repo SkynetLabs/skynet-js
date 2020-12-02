@@ -1,12 +1,13 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
-import { maxint } from "./utils";
+import { MAX_REVISION } from "./utils";
 
-const client = new SkynetClient("https://siasky.dev");
+// TODO: Use siasky.dev when available.
+const client = new SkynetClient("https://siasky.net");
 
 const dataKey = "HelloWorld";
 
-// skip - used to verify end-to-end flow
-describe.skip("siasky.dev end to end integration test", () => {
+// Used to verify end-to-end flow.
+describe("siasky.dev end to end integration test", () => {
   it("Should set and get new entries", async () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { data: "thisistext" };
@@ -25,17 +26,17 @@ describe.skip("siasky.dev end to end integration test", () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { data: "testnumber2" };
 
-    await client.db.setJSON(privateKey, dataKey, json, maxint);
+    await client.db.setJSON(privateKey, dataKey, json, MAX_REVISION);
 
     const actual = await client.db.getJSON(publicKey, dataKey);
     expect(actual.data).toEqual(json);
-    expect(actual.revision).toEqual(maxint);
+    expect(actual.revision).toEqual(MAX_REVISION);
   });
 
   it("Try setting the revision higher than the uint64 max", async () => {
     const { privateKey } = genKeyPairAndSeed();
     const json = { data: "testnumber3" };
-    const largeint = maxint + BigInt(1);
+    const largeint = MAX_REVISION + BigInt(1);
 
     await expect(client.db.setJSON(privateKey, dataKey, json, largeint)).rejects.toThrowError(
       "Argument 18446744073709551616 does not fit in a 64-bit unsigned integer; exceeds 2^64-1"

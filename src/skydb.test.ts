@@ -1,7 +1,7 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { addUrlQuery, defaultSkynetPortalUrl, maxint } from "./utils";
+import { addUrlQuery, defaultSkynetPortalUrl, MAX_REVISION } from "./utils";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
@@ -111,7 +111,7 @@ describe("setJSON", () => {
     // mock a successful registry lookup
     const entryData = {
       data,
-      revision: maxint.toString(),
+      revision: MAX_REVISION.toString(),
       signature:
         "18c76e88141c7cc76d8a77abcd91b5d64d8fc3833eae407ab8a5339e5fcf7940e3fa5830a8ad9439a0c0cc72236ed7b096ae05772f81eee120cbd173bfd6600e",
     };

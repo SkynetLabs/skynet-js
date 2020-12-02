@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, maxint } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, MAX_REVISION } from "./utils";
 import { Buffer } from "buffer";
 
 /**
@@ -73,7 +73,7 @@ export async function setJSON(
     }
 
     // Throw if the revision is already the maximum value.
-    if (revision > maxint) {
+    if (revision > MAX_REVISION) {
       throw new Error("Current entry already has maximum allowed revision, could not update the entry");
     }
   } else {
