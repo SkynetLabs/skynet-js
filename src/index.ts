@@ -6,6 +6,8 @@ export type { PublicKey, SecretKey, Signature } from "./crypto";
 
 export type { SignedRegistryEntry, RegistryEntry } from "./registry";
 
+export type { VersionedEntryData } from "./skydb";
+
 export {
   MAX_REVISION,
   defaultPortalUrl,
