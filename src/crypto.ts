@@ -1,7 +1,7 @@
 import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
-import { stringToUint8Array, toHexString } from "./utils";
+import { checkUint64, stringToUint8Array, toHexString } from "./utils";
 import randomBytes from "randombytes";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
@@ -71,7 +71,7 @@ export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
   return hashAll(
     hashDataKey(registryEntry.datakey),
     encodeString(registryEntry.data),
-    encodeNumber(registryEntry.revision)
+    encodeBigintAsUint64(registryEntry.revision)
   );
 }
 
@@ -87,6 +87,26 @@ function encodeNumber(num: number): Uint8Array {
     const byte = num & 0xff;
     encoded[index] = byte;
     num = num >> 8;
+  }
+  return encoded;
+}
+
+/**
+ * Converts the given bigint into a uint8 array.
+ *
+ * @param int - Bigint to encode.
+ * @returns - Bigint encoded as a byte array.
+ * @throws - Will throw if the int does not fit in 64 bits.
+ */
+export function encodeBigintAsUint64(int: bigint): Uint8Array {
+  // Assert the input is 64 bits.
+  checkUint64(int);
+
+  const encoded = new Uint8Array(8);
+  for (let index = 0; index < encoded.length; index++) {
+    const byte = int & BigInt(0xff);
+    encoded[index] = Number(byte);
+    int = int >> BigInt(8);
   }
   return encoded;
 }

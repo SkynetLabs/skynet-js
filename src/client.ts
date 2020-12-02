@@ -8,6 +8,7 @@ import {
   getHnsUrl,
   getHnsresUrl,
   getMetadata,
+  getFileContent,
   openFile,
   openFileHns,
   resolveHns,
@@ -70,6 +71,7 @@ export class SkynetClient {
   getHnsUrl = getHnsUrl;
   getHnsresUrl = getHnsresUrl;
   getMetadata = getMetadata;
+  getFileContent = getFileContent;
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;
@@ -106,8 +108,7 @@ export class SkynetClient {
    * @returns - The response from axios.
    * @throws - Will throw if unimplemented options have been passed in.
    */
-  executeRequest(config: RequestConfig): Promise<AxiosResponse> {
-    // @ts-expect-error we expect this use case in case someone ignores typescript typing
+  protected executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     if (config.skykeyName || config.skykeyId) {
       throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
     }
@@ -120,8 +121,10 @@ export class SkynetClient {
       url = addUrlQuery(url, config.query);
     }
 
-    // No other headers.
-    const headers = config.customUserAgent && { "User-Agent": config.customUserAgent };
+    const headers = { ...config.headers };
+    if (config.customUserAgent) {
+      headers["User-Agent"] = config.customUserAgent;
+    }
 
     return axios({
       url,
@@ -137,6 +140,8 @@ export class SkynetClient {
           config.onUploadProgress(progress, event);
         },
       timeout: config.timeout,
+      transformRequest: config.transformRequest,
+      transformResponse: config.transformResponse,
 
       maxContentLength: Infinity,
       maxBodyLength: Infinity,

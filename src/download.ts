@@ -225,6 +225,26 @@ export async function getMetadata(
 }
 
 /**
+ * Does a GET request of the skylink, returning the data property of the response.
+ * @param {string} skylink - 46 character skylink.
+ * @param {Object} [customOptions={}] - Additional settings that can optionally be set.
+ * @param {string} [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ */
+export async function getFileContent(this: SkynetClient, skylink: string, customOptions: any = {}) {
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const url = this.getSkylinkUrl(skylink, opts);
+
+  // GET request the skylink
+  const response = await this.executeRequest({
+    ...opts,
+    method: "get",
+    url,
+  });
+
+  return response.data;
+}
+
+/**
  * Opens the content of the skylink within the browser.
  *
  * @param this - SkynetClient

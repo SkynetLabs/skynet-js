@@ -1,6 +1,7 @@
 export { SkynetClient } from "./client";
 export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
 export {
+  MAX_REVISION,
   defaultPortalUrl,
   defaultSkynetPortalUrl,
   getRelativeFilePath,
