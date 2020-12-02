@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.10.0]
+
+_Note: this version contains breaking changes: the registry entry `revision` is now a `bigint` instead of `number`, and the `executeRequest` method on the client is no longer available._
+
+### Added
+
+- A `getFileContent` method has been added for getting the content of a file from a skylink without downloading the file in-browser.
+
+### Changed
+
+- Entry revisions are now `bigint` instead of `number`, since `number` did not cover the full range of available revisions. Note that setting a revision to the maximum 64-bit value can be done to prevent changes to the entry; this was not possible by using the SDK before this change.
+
+### Removed
+
+- The `executeRequest` method is no longer available on the client. It was not intended to be exported.
+
 ## [2.9.0]
 
 ### Added
