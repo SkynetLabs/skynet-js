@@ -49,6 +49,11 @@ export type RequestConfig = CustomClientOptions &
     query?: Record<string, unknown>;
     timeout?: number; // TODO: remove
     extraPath?: string;
+    skykeyName?: string;
+    skykeyId?: string;
+    headers?: Record<string, unknown>;
+    transformRequest?: (data: unknown) => string;
+    transformResponse?: (data: string) => Record<string, unknown>;
   };
 
 /**

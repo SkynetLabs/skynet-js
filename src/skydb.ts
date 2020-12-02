@@ -1,15 +1,7 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry } from "./registry";
-import {
-  parseSkylink,
-  trimUriPrefix,
-  uriSkynetPrefix,
-  toHexString,
-  checkUint64,
-  MAX_REVISION,
-  BaseCustomOptions,
-} from "./utils";
+import { trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, MAX_REVISION, BaseCustomOptions } from "./utils";
 import { Buffer } from "buffer";
 
 /**

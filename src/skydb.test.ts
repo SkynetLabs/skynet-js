@@ -88,7 +88,7 @@ describe("setJSON", () => {
     mock.onPost(registryUrl).reply(204);
 
     // set data
-    const updated = await client.db.setJSON(privateKey, dataKey, json, revision + 1);
+    const updated = await client.db.setJSON(privateKey, dataKey, json, BigInt(revision + 1));
 
     expect(updated);
 

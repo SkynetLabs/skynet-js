@@ -36,7 +36,9 @@ describe("getEntry", () => {
 
     mock.onGet(registryLookupUrl).reply(200, entryData);
 
-    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrow();
+    const { entry, signature } = await client.registry.getEntry(publicKey, dataKey);
+    expect(entry).toBeNull();
+    expect(signature).toBeNull();
   });
 });
 
