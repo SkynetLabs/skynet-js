@@ -159,18 +159,14 @@ export async function getFileContent(this: SkynetClient, skylink: string, custom
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
-  try {
-    // GET request the skylink
-    const response = await this.executeRequest({
-      ...opts,
-      method: "get",
-      url,
-    });
+  // GET request the skylink
+  const response = await this.executeRequest({
+    ...opts,
+    method: "get",
+    url,
+  });
 
-    return response.data;
-  } catch (error) {
-    throw new Error("Error requesting file from skylink");
-  }
+  return response.data;
 }
 
 /**
