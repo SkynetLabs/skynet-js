@@ -1,5 +1,38 @@
-import { deriveChildSeed, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
-import { toHexString } from "./utils";
+import { deriveChildSeed, encodeBigintAsUint64, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
+import { MAX_REVISION, toHexString } from "./utils";
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      toEqualUint8Array(argument: Uint8Array): R;
+    }
+  }
+}
+
+expect.extend({
+  // source https://stackoverflow.com/a/60818105/6085242
+  toEqualUint8Array(received: Uint8Array, argument: Uint8Array) {
+    if (received.length !== argument.length) {
+      return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+    }
+    for (let i = 0; i < received.length; i++) {
+      if (received[i] !== argument[i]) {
+        return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+      }
+    }
+    return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
+  },
+});
+
+describe("areEqualUint8Arrays", () => {
+  it("should correctly check whether uint8arrays are equal", () => {
+    expect(new Uint8Array([0])).toEqualUint8Array(new Uint8Array([0]));
+    expect(new Uint8Array([1, 1, 0])).toEqualUint8Array(new Uint8Array([1, 1, 0]));
+    expect(new Uint8Array([1, 0, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0]));
+    expect(new Uint8Array([1, 1, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0, 0]));
+  });
+});
 
 describe("deriveChildSeed", () => {
   it("should correctly derive a child seed", () => {
@@ -17,6 +50,21 @@ describe("deriveChildSeed", () => {
     const seed3 = deriveChildSeed(masterSeed, "ds");
     expect(seed1).not.toEqual(seed2);
     expect(seed2).not.toEqual(seed3);
+  });
+});
+
+describe("encodeBigint", () => {
+  it("should correctly encode bigints", () => {
+    expect(encodeBigintAsUint64(BigInt(0))).toEqualUint8Array(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(BigInt(255))).toEqualUint8Array(new Uint8Array([255, 0, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(BigInt(256))).toEqualUint8Array(new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(BigInt(256))).not.toEqualUint8Array(new Uint8Array([1, 1, 0, 0, 0, 0, 0, 0]));
+    expect(encodeBigintAsUint64(MAX_REVISION)).toEqualUint8Array(
+      new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255])
+    );
+    expect(() => encodeBigintAsUint64(MAX_REVISION + BigInt(1))).toThrowError(
+      "Argument 18446744073709551616 does not fit in a 64-bit unsigned integer; exceeds 2^64-1"
+    );
   });
 });
 
@@ -43,7 +91,7 @@ describe("hashRegistryValue", () => {
     const hash = hashRegistryEntry({
       datakey: "HelloWorld",
       data: "abc",
-      revision: 123456789,
+      revision: BigInt(123456789),
     });
 
     expect(toHexString(hash)).toEqual(h);

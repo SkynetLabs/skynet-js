@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { addUrlQuery, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
+import { addUrlQuery, checkUint64, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
@@ -14,10 +14,16 @@ const defaultSetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
 
+// Regex for JSON revision value without quotes.
+const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
+
+// Regex for JSON revision value with quotes.
+const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
+
 export type RegistryEntry = {
   datakey: string;
   data: string;
-  revision: number;
+  revision: bigint;
 };
 
 export type SignedRegistryEntry = {
@@ -56,6 +62,14 @@ export async function getEntry(
         datakey: toHexString(hashDataKey(dataKey)),
       },
       timeout: opts.timeout,
+      // Transform the response to add quotes, since uint64 cannot be accurately
+      // read by JS so the revision needs to be parsed as a string.
+      transformResponse: function (data: string) {
+        // Change the revision value from a JSON integer to a string.
+        data = data.replace(regexRevisionNoQuotes, '"revision":"$1"');
+        // Convert the JSON data to an object.
+        return JSON.parse(data);
+      },
     });
   } catch (err: unknown) {
     // unfortunately axios rejects anything that's not >= 200 and < 300
@@ -70,8 +84,8 @@ export async function getEntry(
     entry: {
       datakey: dataKey,
       data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
-      // TODO: Handle uint64 properly.
-      revision: parseInt(response.data.revision, 10),
+      // Convert the revision from a string to bigint.
+      revision: BigInt(response.data.revision),
     },
     signature: Buffer.from(hexToUint8Array(response.data.signature)),
   };
@@ -107,12 +121,18 @@ export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: stri
   return url;
 }
 
+/**
+ * @throws - Will throw if the entry revision does not fit in 64 bits.
+ */
 export async function setEntry(
   this: SkynetClient,
   privateKey: string,
   entry: RegistryEntry,
   customOptions = {}
 ): Promise<void> {
+  // Assert the input is 64 bits.
+  checkUint64(entry.revision);
+
   const opts = {
     ...defaultSetEntryOptions,
     ...this.customOptions,
@@ -134,7 +154,9 @@ export async function setEntry(
       key: Array.from(publicKeyBuffer),
     },
     datakey: toHexString(hashDataKey(entry.datakey)),
-    revision: entry.revision,
+    // Set the revision as a string here since the value may be up to 64 bits.
+    // We remove the quotes later in transformRequest.
+    revision: entry.revision.toString(),
     data: Array.from(Buffer.from(entry.data)),
     signature: Array.from(signature),
   };
@@ -143,5 +165,13 @@ export async function setEntry(
     ...opts,
     method: "post",
     data,
+    // Transform the request to remove quotes, since the revision needs to be
+    // parsed as a uint64 on the Go side.
+    transformRequest: function (data: unknown) {
+      // Convert the object data to JSON.
+      const json = JSON.stringify(data);
+      // Change the revision value from a string to a JSON integer.
+      return json.replace(regexRevisionWithQuotes, '"revision":$1');
+    },
   });
 }

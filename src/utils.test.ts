@@ -1,13 +1,15 @@
 import {
   addUrlQuery,
+  checkUint64,
+  convertSkylinkToBase32,
   defaultSkynetPortalUrl,
+  getFileMimeType,
   makeUrl,
+  MAX_REVISION,
   parseSkylink,
   trimUriPrefix,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
-  getFileMimeType,
-  convertSkylinkToBase32,
 } from "./utils";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
@@ -28,6 +30,15 @@ describe("addUrlQuery", () => {
       `${portalUrl}/?attachment=true&foo=bar`
     );
     expect(addUrlQuery(`${portalUrl}#foobar`, { foo: "bar" })).toEqual(`${portalUrl}?foo=bar#foobar`);
+  });
+});
+
+describe("checkUint64", () => {
+  it("should test the checkUint64 function", () => {
+    expect(() => checkUint64(BigInt(0))).not.toThrow();
+    expect(() => checkUint64(BigInt(-1))).toThrow();
+    expect(() => checkUint64(MAX_REVISION)).not.toThrow();
+    expect(() => checkUint64(MAX_REVISION + BigInt(1))).toThrow();
   });
 });
 
