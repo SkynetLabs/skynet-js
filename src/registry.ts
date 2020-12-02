@@ -15,10 +15,10 @@ const defaultSetEntryOptions = {
 };
 
 // Regex for JSON revision value without quotes.
-const regexRevisionNoQuotes = /"revision":\s?([0-9]+)/;
+const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
 
 // Regex for JSON revision value with quotes.
-const regexRevisionWithQuotes = /"revision":\s?"([0-9]+)"/;
+const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
 
 export type RegistryEntry = {
   datakey: string;
