@@ -80,7 +80,7 @@ export class SkynetClient {
    * Creates and executes a request.
    * @param {Object} config - Configuration for the request. See docs for constructor for the full list of options.
    */
-  executeRequest(config: any): Promise<AxiosResponse> {
+  protected executeRequest(config: any): Promise<AxiosResponse> {
     if (config.skykeyName || config.skykeyId) {
       throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
     }
@@ -93,8 +93,10 @@ export class SkynetClient {
       url = addUrlQuery(url, config.query);
     }
 
-    // No other headers.
-    const headers = config.customUserAgent && { "User-Agent": config.customUserAgent };
+    const headers = { ...config.headers };
+    if (config.customUserAgent) {
+      headers["User-Agent"] = config.customUserAgent;
+    }
 
     return axios({
       url,
@@ -110,6 +112,8 @@ export class SkynetClient {
           config.onUploadProgress(progress, event);
         },
       timeout: config.timeout,
+      transformRequest: config.transformRequest,
+      transformResponse: config.transformResponse,
 
       maxContentLength: Infinity,
       maxBodyLength: Infinity,

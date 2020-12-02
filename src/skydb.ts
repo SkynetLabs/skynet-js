@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString } from "./utils";
+import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, MAX_REVISION } from "./utils";
 import { Buffer } from "buffer";
 
 /**
@@ -16,21 +16,21 @@ export async function getJSON(
   publicKey: string,
   dataKey: string,
   customOptions = {}
-): Promise<{ data: Record<string, unknown>; revision: number } | null> {
+): Promise<{ data: Record<string, unknown>; revision: bigint } | null> {
   const opts = {
     ...this.customOptions,
     ...customOptions,
   };
 
   // lookup the registry entry
-  const entry: SignedRegistryEntry = await this.registry.getEntry(publicKey, dataKey, opts);
+  const { entry }: { entry: RegistryEntry } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
     return null;
   }
 
   // Download the data in that Skylink
   // TODO: Replace with download request method.
-  const skylink = parseSkylink(entry.entry.data);
+  const skylink = parseSkylink(entry.data);
 
   const response = await this.executeRequest({
     ...opts,
@@ -38,18 +38,20 @@ export async function getJSON(
     url: this.getSkylinkUrl(skylink),
   });
 
-  return { data: response.data, revision: entry.entry.revision };
+  return { data: response.data, revision: entry.revision };
 }
 
 /**
  * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ *
+ * @throws - Will throw if the given entry revision does not fit in 64 bits, or if the revision was not given, if the latest revision of the entry is the maximum revision allowed.
  */
 export async function setJSON(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
   json: Record<string, unknown>,
-  revision?: number,
+  revision?: bigint,
   customOptions = {}
 ): Promise<void> {
   const opts = {
@@ -59,22 +61,30 @@ export async function setJSON(
 
   const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
-  // Upload the data to acquire its skylink
-  // TODO: Replace with upload request method.
-  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const { skylink } = await this.uploadFileRequest(file, opts);
-
   if (revision === undefined) {
     // fetch the current value to find out the revision.
     let entry: SignedRegistryEntry;
     try {
       const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
       entry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
-      revision = entry.entry.revision + 1;
+      revision = entry.entry.revision + BigInt(1);
     } catch (err) {
-      revision = 0;
+      revision = BigInt(0);
     }
+
+    // Throw if the revision is already the maximum value.
+    if (revision > MAX_REVISION) {
+      throw new Error("Current entry already has maximum allowed revision, could not update the entry");
+    }
+  } else {
+    // Assert the input is 64 bits.
+    checkUint64(revision);
   }
+
+  // Upload the data to acquire its skylink
+  // TODO: Replace with upload request method.
+  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
+  const { skylink } = await this.uploadFileRequest(file, opts);
 
   // build the registry value
   const entry: RegistryEntry = {
