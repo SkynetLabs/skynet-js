@@ -45,8 +45,9 @@ describe("getJSON", () => {
   it("should return null if no entry is found", async () => {
     mock.onGet(registryLookupUrl).reply(400);
 
-    const result = await client.db.getJSON(publicKey, dataKey);
-    expect(result).toBeNull();
+    const { data, revision } = await client.db.getJSON(publicKey, dataKey);
+    expect(data).toBeNull();
+    expect(revision).toBeNull();
   });
 });
 

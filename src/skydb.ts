@@ -16,6 +16,11 @@ export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions & C
  */
 export type CustomSetJSONOptions = BaseCustomOptions & CustomSetEntryOptions & CustomUploadOptions;
 
+export type VersionedEntryData = {
+  data: Record<string, unknown> | null;
+  revision: bigint | null;
+};
+
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
  *
@@ -31,7 +36,7 @@ export async function getJSON(
   publicKey: string,
   dataKey: string,
   customOptions?: CustomGetJSONOptions
-): Promise<{ data: Record<string, unknown>; revision: bigint } | null> {
+): Promise<VersionedEntryData> {
   const opts = {
     ...this.customOptions,
     ...customOptions,
@@ -40,7 +45,7 @@ export async function getJSON(
   // lookup the registry entry
   const { entry }: { entry: RegistryEntry } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
-    return null;
+    return { data: null, revision: null };
   }
 
   // Download the data in that Skylink.
