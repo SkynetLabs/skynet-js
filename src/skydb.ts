@@ -1,18 +1,20 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry } from "./registry";
+import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import { trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, MAX_REVISION, BaseCustomOptions } from "./utils";
 import { Buffer } from "buffer";
+import { CustomUploadOptions } from "./upload";
+import { CustomDownloadOptions } from "./download";
 
 /**
  * Custom get JSON options.
  */
-export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions;
+export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions & CustomDownloadOptions;
 
 /**
  * Custom set JSON options.
  */
-export type CustomSetJSONOptions = BaseCustomOptions;
+export type CustomSetJSONOptions = BaseCustomOptions & CustomSetEntryOptions & CustomUploadOptions;
 
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
@@ -101,7 +103,6 @@ export async function setJSON(
   }
 
   // Upload the data to acquire its skylink
-  // TODO: Replace with upload request method.
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
   const { skylink } = await this.uploadFileRequest(file, opts);
 
