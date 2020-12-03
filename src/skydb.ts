@@ -30,15 +30,10 @@ export async function getJSON(
 
   // Download the data in that Skylink
   // TODO: Replace with download request method.
-  const skylink = parseSkylink(entry.data);
+  const skylink = entry.data;
+  const data = await this.getFileContent(skylink, opts);
 
-  const response = await this.executeRequest({
-    ...opts,
-    method: "get",
-    url: this.getSkylinkUrl(skylink),
-  });
-
-  return { data: response.data, revision: entry.revision };
+  return { data, revision: entry.revision };
 }
 
 /**
@@ -81,8 +76,7 @@ export async function setJSON(
     checkUint64(revision);
   }
 
-  // Upload the data to acquire its skylink
-  // TODO: Replace with upload request method.
+  // Upload the data to acquire its skylink.
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
   const { skylink } = await this.uploadFileRequest(file, opts);
 
