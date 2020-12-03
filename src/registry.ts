@@ -8,7 +8,7 @@ import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 /**
  * Custom get entry options.
  *
- * @property [timeout=5] - The custom timeout for getting an entry, in seconds.
+ * @property [timeout=5] - The custom timeout for getting an entry, in seconds. The maximum value allowed is 300.
  */
 const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
@@ -18,6 +18,8 @@ const defaultGetEntryOptions = {
 const defaultSetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
+
+export const MAX_GET_ENTRY_TIMEOUT = 300; // 5 minutes
 
 // Regex for JSON revision value without quotes.
 const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;

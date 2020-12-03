@@ -1,4 +1,5 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
+import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils";
 
 // TODO: Use siasky.dev when available.
@@ -45,13 +46,38 @@ describe("SkyDB end to end integration tests", () => {
 });
 
 describe("Registry end to end integration tests", () => {
-  it("Should timeout after the given timeout time in ms", async () => {
+  it("Should return null for an inexistent entry", async () => {
     const { publicKey } = genKeyPairAndSeed();
 
     // Try getting an inexistant entry.
     const { entry, signature } = await client.registry.getEntry(publicKey, "foo");
 
     expect(entry).toBeNull();
+    expect(signature).toBeNull();
+  });
+
+  it("Should return an error if the timeout is too large", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+
+    const entry = {
+      datakey: dataKey,
+      data: "foo",
+      revision: BigInt(0),
+    };
+
+    // Try passing minimum timeout, should have no effect in setEntry.
+    await client.registry.setEntry(privateKey, entry, { timeout: 1 });
+
+    const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+
+    expect(returnedEntry).toEqual(entry);
+
+    // Try getting an entry with an excessive timeout.
+    const { entry: returnedEntry2, signature } = await client.registry.getEntry(publicKey, dataKey, {
+      timeout: MAX_GET_ENTRY_TIMEOUT + 1,
+    });
+
+    expect(returnedEntry2).toBeNull();
     expect(signature).toBeNull();
   });
 });
