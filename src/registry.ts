@@ -27,8 +27,8 @@ export type RegistryEntry = {
 };
 
 export type SignedRegistryEntry = {
-  entry: RegistryEntry;
-  signature: Signature;
+  entry: RegistryEntry | null;
+  signature: Signature | null;
 };
 
 /**
@@ -43,7 +43,7 @@ export async function getEntry(
   publicKey: string,
   dataKey: string,
   customOptions = {}
-): Promise<SignedRegistryEntry | null> {
+): Promise<SignedRegistryEntry> {
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,

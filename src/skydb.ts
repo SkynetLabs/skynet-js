@@ -4,6 +4,11 @@ import { RegistryEntry, SignedRegistryEntry } from "./registry";
 import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, MAX_REVISION } from "./utils";
 import { Buffer } from "buffer";
 
+export type VersionedEntryData = {
+  data: Record<string, unknown> | null;
+  revision: bigint | null;
+};
+
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
  * @param publicKey - The user public key.
@@ -16,7 +21,7 @@ export async function getJSON(
   publicKey: string,
   dataKey: string,
   customOptions = {}
-): Promise<{ data: Record<string, unknown>; revision: bigint } | null> {
+): Promise<VersionedEntryData> {
   const opts = {
     ...this.customOptions,
     ...customOptions,
@@ -25,7 +30,7 @@ export async function getJSON(
   // lookup the registry entry
   const { entry }: { entry: RegistryEntry } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
-    return null;
+    return { data: null, revision: null };
   }
 
   // Download the data in that Skylink
