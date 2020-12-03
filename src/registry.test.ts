@@ -12,6 +12,6 @@ describe("getEntryUrl", () => {
     const encodedDK = "7c96a0537ab2aaac9cfe0eca217732f4e10791625b4ab4c17e4d91c8078713b9";
     const url = client.registry.getEntryUrl(publicKey, dataKey);
 
-    expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}`);
+    expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}&timeout=5`);
   });
 });

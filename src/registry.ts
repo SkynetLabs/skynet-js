@@ -7,7 +7,7 @@ import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
 const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
-  timeout: 5_000,
+  timeout: 5,
 };
 
 const defaultSetEntryOptions = {
@@ -113,6 +113,7 @@ export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: stri
   const query = {
     publickey: `ed25519:${publicKey}`,
     datakey: toHexString(hashDataKey(dataKey)),
+    timeout: opts.timeout,
   };
 
   let url = makeUrl(this.portalUrl, opts.endpointPath);
