@@ -5,6 +5,11 @@ import { addUrlQuery, checkUint64, defaultOptions, hexToUint8Array, makeUrl, toH
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
+/**
+ * Custom get entry options.
+ *
+ * @property [timeout=5] - The custom timeout for getting an entry, in seconds.
+ */
 const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
   timeout: 5,
