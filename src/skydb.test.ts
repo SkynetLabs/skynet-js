@@ -3,6 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { addUrlQuery, defaultSkynetPortalUrl, MAX_REVISION } from "./utils";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
+import { regexRevisionNoQuotes } from "./registry";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
@@ -19,7 +20,7 @@ const data = "43414241425f31447430464a73787173755f4a34546f644e436243477674466631
 const revision = 11;
 const entryData = {
   data,
-  revision: revision.toString(),
+  revision,
   signature:
     "33d14d2889cb292142614da0e0ff13a205c4867961276001471d13b779fc9032568ddd292d9e0dff69d7b1f28be07972cc9d86da3cecf3adecb6f9b7311af809",
 };
@@ -135,11 +136,14 @@ describe("setJSON", () => {
     // mock a successful registry lookup
     const entryData = {
       data,
+      // String the bigint since JS doesn't support 64-bit numbers.
       revision: MAX_REVISION.toString(),
       signature:
         "18c76e88141c7cc76d8a77abcd91b5d64d8fc3833eae407ab8a5339e5fcf7940e3fa5830a8ad9439a0c0cc72236ed7b096ae05772f81eee120cbd173bfd6600e",
     };
-    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
+    // Replace the quotes around the stringed bigint.
+    const json = JSON.stringify(entryData).replace(regexRevisionNoQuotes, '"revision":"$1"');
+    mock.onGet(registryLookupUrl).reply(200, json);
 
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);

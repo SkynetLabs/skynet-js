@@ -1,7 +1,7 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
-import { trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, MAX_REVISION, BaseCustomOptions } from "./utils";
+import { trimUriPrefix, uriSkynetPrefix, toHexString, assertUint64, MAX_REVISION, BaseCustomOptions } from "./utils";
 import { Buffer } from "buffer";
 import { CustomUploadOptions } from "./upload";
 import { CustomDownloadOptions } from "./download";
@@ -104,7 +104,7 @@ export async function setJSON(
     }
   } else {
     // Assert the input is 64 bits.
-    checkUint64(revision);
+    assertUint64(revision);
   }
 
   // Upload the data to acquire its skylink

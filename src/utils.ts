@@ -80,7 +80,7 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
  * @throws - Will throw if the int does not fit in 64 bits.
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
  */
-export function checkUint64(int: bigint): void {
+export function assertUint64(int: bigint): void {
   if (int < BigInt(0)) {
     throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);
   }

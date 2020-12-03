@@ -1,6 +1,6 @@
 import {
   addUrlQuery,
-  checkUint64,
+  assertUint64,
   convertSkylinkToBase32,
   defaultSkynetPortalUrl,
   getFileMimeType,
@@ -36,12 +36,12 @@ describe("addUrlQuery", () => {
   });
 });
 
-describe("checkUint64", () => {
-  it("should test the checkUint64 function", () => {
-    expect(() => checkUint64(BigInt(0))).not.toThrow();
-    expect(() => checkUint64(BigInt(-1))).toThrow();
-    expect(() => checkUint64(MAX_REVISION)).not.toThrow();
-    expect(() => checkUint64(MAX_REVISION + BigInt(1))).toThrow();
+describe("assertUint64", () => {
+  it("should test the assertUint64 function", () => {
+    expect(() => assertUint64(BigInt(0))).not.toThrow();
+    expect(() => assertUint64(BigInt(-1))).toThrow();
+    expect(() => assertUint64(MAX_REVISION)).not.toThrow();
+    expect(() => assertUint64(MAX_REVISION + BigInt(1))).toThrow();
   });
 });
 

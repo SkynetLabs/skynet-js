@@ -4,7 +4,7 @@ import { SkynetClient } from "./client";
 import {
   addUrlQuery,
   BaseCustomOptions,
-  checkUint64,
+  assertUint64,
   defaultOptions,
   hexToUint8Array,
   makeUrl,
@@ -39,7 +39,7 @@ const defaultSetEntryOptions = {
 /**
  * Regex for JSON revision value without quotes.
  */
-const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
+export const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
 
 /**
  * Regex for JSON revision value with quotes.
@@ -191,7 +191,7 @@ export async function setEntry(
   customOptions?: CustomSetEntryOptions
 ): Promise<void> {
   // Assert the input is 64 bits.
-  checkUint64(entry.revision);
+  assertUint64(entry.revision);
 
   const opts = {
     ...defaultSetEntryOptions,
