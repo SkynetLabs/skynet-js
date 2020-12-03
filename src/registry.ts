@@ -60,8 +60,8 @@ export async function getEntry(
       query: {
         publickey: `ed25519:${publicKey}`,
         datakey: toHexString(hashDataKey(dataKey)),
+        timeout: opts.timeout,
       },
-      timeout: opts.timeout,
       // Transform the response to add quotes, since uint64 cannot be accurately
       // read by JS so the revision needs to be parsed as a string.
       transformResponse: function (data: string) {

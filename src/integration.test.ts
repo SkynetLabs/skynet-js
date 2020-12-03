@@ -7,7 +7,7 @@ const client = new SkynetClient("https://siasky.net");
 const dataKey = "HelloWorld";
 
 // Used to verify end-to-end flow.
-describe("siasky.dev end to end integration test", () => {
+describe("SkyDB end to end integration tests", () => {
   it("Should set and get new entries", async () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { data: "thisistext" };
@@ -41,5 +41,17 @@ describe("siasky.dev end to end integration test", () => {
     await expect(client.db.setJSON(privateKey, dataKey, json, largeint)).rejects.toThrowError(
       "Argument 18446744073709551616 does not fit in a 64-bit unsigned integer; exceeds 2^64-1"
     );
+  });
+});
+
+describe("Registry end to end integration tests", () => {
+  it("Should timeout after the given timeout time in ms", async () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    // Try getting an inexistant entry.
+    const { entry, signature } = await client.registry.getEntry(publicKey, "foo");
+
+    expect(entry).toBeNull();
+    expect(signature).toBeNull();
   });
 });

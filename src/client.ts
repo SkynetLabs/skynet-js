@@ -111,7 +111,6 @@ export class SkynetClient {
 
           config.onUploadProgress(progress, event);
         },
-      timeout: config.timeout,
       transformRequest: config.transformRequest,
       transformResponse: config.transformResponse,
 
