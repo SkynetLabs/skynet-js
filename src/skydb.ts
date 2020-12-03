@@ -104,7 +104,7 @@ export async function setJSON(
 
   // Upload the data to acquire its skylink
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const { skylink } = await this.uploadFileRequest(file, opts);
+  const skylink = await this.uploadFile(file, opts);
 
   // build the registry value
   const entry: RegistryEntry = {

@@ -238,7 +238,7 @@ export async function getFileContent(
   this: SkynetClient,
   skylink: string,
   customOptions?: CustomDownloadOptions
-): Promise<string> {
+): Promise<Record<string, unknown>> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
