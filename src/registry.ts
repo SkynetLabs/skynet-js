@@ -94,6 +94,10 @@ export async function getEntry(
     ...customOptions,
   };
 
+  if (opts.timeout > MAX_GET_ENTRY_TIMEOUT || opts.timeout < 1) {
+    throw new Error(`Invalid 'timeout' parameter, needs to be between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`);
+  }
+
   const publicKeyBuffer = Buffer.from(publicKey, "hex");
 
   let response: AxiosResponse;

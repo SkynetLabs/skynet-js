@@ -56,7 +56,7 @@ describe("Registry end to end integration tests", () => {
     expect(signature).toBeNull();
   });
 
-  it("Should return an error if the timeout is too large", async () => {
+  it("Should set and get entries correctly", async () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
 
     const entry = {
@@ -65,20 +65,33 @@ describe("Registry end to end integration tests", () => {
       revision: BigInt(0),
     };
 
-    // Try passing minimum timeout, should have no effect in setEntry.
-    await client.registry.setEntry(privateKey, entry, { timeout: 1 });
+    await client.registry.setEntry(privateKey, entry);
 
     const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
 
     expect(returnedEntry).toEqual(entry);
+  });
 
-    // Try getting an entry with an excessive timeout.
-    const { entry: returnedEntry2, signature } = await client.registry.getEntry(publicKey, dataKey, {
-      timeout: MAX_GET_ENTRY_TIMEOUT + 1,
-    });
+  it("setEntry should not be affected by timeout parameter", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
 
-    expect(returnedEntry2).toBeNull();
-    expect(signature).toBeNull();
+    const entry = {
+      datakey: dataKey,
+      data: "bar",
+      revision: BigInt(0),
+    };
+
+    // Use a timeout of 0 (invalid, but should be ignored).
+    await client.registry.setEntry(privateKey, entry, { timeout: 0 });
+    const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+    expect(returnedEntry).toEqual(entry);
+
+    entry.revision = BigInt(1);
+
+    // Use a timeout of 301 (invalid, but should be ignored).
+    await client.registry.setEntry(privateKey, entry, { timeout: MAX_GET_ENTRY_TIMEOUT + 1 });
+    const { entry: returnedEntry2 } = await client.registry.getEntry(publicKey, dataKey);
+    expect(returnedEntry2).toEqual(entry);
   });
 });
 

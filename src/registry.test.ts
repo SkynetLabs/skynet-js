@@ -1,6 +1,8 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
+import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
+import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 
 const { publicKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
@@ -52,6 +54,21 @@ describe("getEntry", () => {
     mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrow();
+  });
+
+  it("Should return an error if the timeout is too large", async () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    // Try getting an entry with an excessive timeout.
+    await expect(
+      client.registry.getEntry(publicKey, dataKey, {
+        timeout: MAX_GET_ENTRY_TIMEOUT + 1,
+      })
+    ).rejects.toThrowError(`Invalid 'timeout' parameter, needs to be between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`);
+
+    // No network calls should have been made.
+    expect(mock.history.get.length).toBe(0);
+    expect(mock.history.post.length).toBe(0);
   });
 });
 
