@@ -122,6 +122,14 @@ describe("uploadFile", () => {
 
     expect(data).toEqual(sialink);
   });
+
+  it("Trying to upload with a skykey should throw an error", async () => {
+    // @ts-expect-error we only check this use case in case someone ignores typescript typing
+    await expect(client.uploadFile(file, { skykeyName: "test" })).rejects.toThrow();
+
+    // @ts-expect-error we only check this use case in case someone ignores typescript typing
+    await expect(client.uploadFile(file, { skykeyId: "test" })).rejects.toThrow();
+  });
 });
 
 describe("uploadDirectory", () => {

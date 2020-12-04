@@ -12,7 +12,7 @@
     "not OperaMini all"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage --coverageDirectory ../coverage",
     "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
     "lint:eslint": "eslint --ext .ts utils src",
     "lint:tsc": "tsc",
@@ -21,6 +21,17 @@
   "jest": {
     "testTimeout": 60000,
     "clearMocks": true,
+    "collectCoverageFrom": [
+      "**/*.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 97,
+        "functions": 98,
+        "lines": 98,
+        "statements": 98
+      }
+    },
     "rootDir": "src"
   },
   "husky": {
@@ -87,6 +98,7 @@
     "babel-plugin-transform-class-properties": "^6.24.1",
     "eslint": "^7.11.0",
     "eslint-plugin-compat": "^3.8.0",
+    "eslint-plugin-jsdoc": "^30.7.8",
     "husky": "^4.3.0",
     "jest": "^26.4.2",
     "lint-staged": "^10.3.0",

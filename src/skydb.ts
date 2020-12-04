@@ -1,8 +1,20 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
-import { RegistryEntry, SignedRegistryEntry } from "./registry";
-import { parseSkylink, trimUriPrefix, uriSkynetPrefix, toHexString, checkUint64, MAX_REVISION } from "./utils";
+import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
+import { trimUriPrefix, uriSkynetPrefix, toHexString, assertUint64, MAX_REVISION, BaseCustomOptions } from "./utils";
 import { Buffer } from "buffer";
+import { CustomUploadOptions } from "./upload";
+import { CustomDownloadOptions } from "./download";
+
+/**
+ * Custom get JSON options.
+ */
+export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions & CustomDownloadOptions;
+
+/**
+ * Custom set JSON options.
+ */
+export type CustomSetJSONOptions = BaseCustomOptions & CustomSetEntryOptions & CustomUploadOptions;
 
 export type VersionedEntryData = {
   data: Record<string, unknown> | null;
@@ -11,16 +23,19 @@ export type VersionedEntryData = {
 
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.timeout=5000] - Timeout in ms for the registry lookup.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The returned JSON and revision number.
+ * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
 export async function getJSON(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
-  customOptions = {}
+  customOptions?: CustomGetJSONOptions
 ): Promise<VersionedEntryData> {
   const opts = {
     ...this.customOptions,
@@ -33,7 +48,7 @@ export async function getJSON(
     return { data: null, revision: null };
   }
 
-  // Download the data in that Skylink
+  // Download the data in that Skylink.
   // TODO: Replace with download request method.
   const skylink = entry.data;
   const data = await this.getFileContent(skylink, opts);
@@ -44,6 +59,12 @@ export async function getJSON(
 /**
  * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
  *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param json - The JSON data to set.
+ * @param [revision] - The revision number for the data entry.
+ * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the given entry revision does not fit in 64 bits, or if the revision was not given, if the latest revision of the entry is the maximum revision allowed.
  */
 export async function setJSON(
@@ -52,7 +73,7 @@ export async function setJSON(
   dataKey: string,
   json: Record<string, unknown>,
   revision?: bigint,
-  customOptions = {}
+  customOptions?: CustomSetJSONOptions
 ): Promise<void> {
   const opts = {
     ...this.customOptions,
@@ -78,12 +99,12 @@ export async function setJSON(
     }
   } else {
     // Assert the input is 64 bits.
-    checkUint64(revision);
+    assertUint64(revision);
   }
 
   // Upload the data to acquire its skylink.
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const { skylink } = await this.uploadFileRequest(file, opts);
+  const skylink = await this.uploadFile(file, opts);
 
   // build the registry value
   const entry: RegistryEntry = {

@@ -13,7 +13,7 @@ const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 const validSkylinkVariations = combineStrings(
   ["", "sia:", "sia://", "https://siasky.net/", "https://foo.siasky.net/", `https://${skylinkBase32}.siasky.net/`],
   [skylink],
-  ["", "/", "//", "/foo", "/foo/", "/foo/bar", "/foo/bar/"],
+  ["", "/", "//", "/foo", "/foo/", "/foo/bar", "/foo/bar/", "/foo/bar//"],
   ["", "?", "?foo=bar", "?foo=bar&bar=baz"],
   ["", "#", "#foo", "#foo?bar"]
 );
@@ -124,6 +124,18 @@ describe("getSkylinkUrl", () => {
     const url = client.getSkylinkUrl(fullSkylink, { subdomain: true });
 
     expect(url).toEqual(`${expectedBase32}${path}`);
+  });
+
+  it("should throw if passing a non-string path", () => {
+    // @ts-expect-error we only check this use case in case someone ignores typescript typing
+    expect(() => client.getSkylinkUrl(skylink, { path: true })).toThrow();
+  });
+
+  const invalidCases = ["123", `${skylink}xxx`, `${skylink}xxx/foo`, `${skylink}xxx?foo`];
+
+  it.each(invalidCases)("should throw on invalid skylink %s", (invalidSkylink) => {
+    expect(() => client.getSkylinkUrl(invalidSkylink)).toThrow();
+    expect(() => client.getSkylinkUrl(invalidSkylink, { subdomain: true })).toThrow();
   });
 });
 

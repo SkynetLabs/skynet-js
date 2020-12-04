@@ -1,12 +1,29 @@
-import { defaultOptions, uriSkynetPrefix, getFileMimeType } from "./utils";
-import { SkynetClient, CustomClientOptions } from "./client";
+import { defaultOptions, uriSkynetPrefix, getFileMimeType, BaseCustomOptions } from "./utils";
+import { SkynetClient } from "./client";
 
-type CustomUploadOptions = {
+/**
+ * Custom upload options.
+ *
+ * @property [portalFileFieldname="file"] - The file fieldname for uploading files on this portal.
+ * @property [portalDirectoryfilefieldname="files[]"] - The file fieldname for uploading directories on this portal.
+ * @property [customFilename] - The custom filename to use when uploading files.
+ * @property [query] - Query parameters.
+ */
+export type CustomUploadOptions = BaseCustomOptions & {
   portalFileFieldname?: string;
   portalDirectoryFileFieldname?: string;
   customFilename?: string;
   query?: Record<string, unknown>;
-} & CustomClientOptions;
+};
+
+/**
+ * The response to an upload request.
+ *
+ * @property skylink - 46-character skylink.
+ */
+export type UploadRequestResponse = {
+  skylink: string;
+};
 
 const defaultUploadOptions = {
   ...defaultOptions("/skynet/skyfile"),
@@ -15,17 +32,35 @@ const defaultUploadOptions = {
   customFilename: "",
 };
 
+/**
+ * Uploads a file to Skynet.
+ *
+ * @param this - SkynetClient
+ * @param file - The file to upload.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The returned skylink.
+ */
 export async function uploadFile(this: SkynetClient, file: File, customOptions?: CustomUploadOptions): Promise<string> {
   const response = await this.uploadFileRequest(file, customOptions);
 
   return `${uriSkynetPrefix}${response.skylink}`;
 }
 
+/**
+ * Makes a request to upload a file to Skynet.
+ *
+ * @param this - SkynetClient
+ * @param file - The file to upload.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The upload response.
+ */
 export async function uploadFileRequest(
   this: SkynetClient,
   file: File,
   customOptions?: CustomUploadOptions
-): Promise<any> {
+): Promise<UploadRequestResponse> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
   const formData = new FormData();
 
@@ -46,20 +81,18 @@ export async function uploadFileRequest(
 }
 
 /**
- * Uploads a local directory to Skynet.
+ * Uploads a directory to Skynet.
+ *
+ * @param this - SkynetClient
  * @param directory - File objects to upload, indexed by their path strings.
  * @param filename - The name of the directory.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param {string} [config.APIKey] - Authentication password to use.
- * @param {string} [config.customUserAgent=""] - Custom user agent header to set.
- * @param {string} [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
- * @param {Function} [config.onUploadProgress] - Optional callback to track progress.
- * @param {string} [customOptions.portalDirectoryfilefieldname="files[]"] - The fieldName for directory files on the portal.
- * @returns skylink - The returned skylink.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The returned skylink.
  */
 export async function uploadDirectory(
   this: SkynetClient,
-  directory: any,
+  directory: Record<string, File>,
   filename: string,
   customOptions?: CustomUploadOptions
 ): Promise<string> {
@@ -68,12 +101,22 @@ export async function uploadDirectory(
   return `${uriSkynetPrefix}${response.skylink}`;
 }
 
+/**
+ * Makes a request to upload a directory to Skynet.
+ *
+ * @param this - SkynetClient
+ * @param directory - File objects to upload, indexed by their path strings.
+ * @param filename - The name of the directory.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The upload response.
+ */
 export async function uploadDirectoryRequest(
   this: SkynetClient,
-  directory: any,
+  directory: Record<string, File>,
   filename: string,
   customOptions?: CustomUploadOptions
-): Promise<any> {
+): Promise<UploadRequestResponse> {
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
   const formData = new FormData();
 
@@ -98,7 +141,10 @@ export async function uploadDirectoryRequest(
  * reading it after the file has been appended to form data. To overcome this,
  * we recreate the file object using native File constructor with a type defined
  * as a constructor argument.
- * Related issue: https://github.com/NebulousLabs/skynet-webportal/issues/290
+ *
+ * @param file - The input file.
+ * @returns - The processed file.
+ * @see {@link https://github.com/NebulousLabs/skynet-webportal/issues/290| Related Issue}
  */
 function ensureFileObjectConsistency(file: File): File {
   return new File([file], file.name, { type: getFileMimeType(file) });

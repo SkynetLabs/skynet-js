@@ -5,6 +5,33 @@ import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
 import { Buffer } from "buffer";
+import { CustomClientOptions } from "./client";
+
+/**
+ * Base custom options for methods hitting the API.
+ *
+ * @property [endpointPath] - The relative URL path of the portal endpoint to contact.
+ */
+export type BaseCustomOptions = CustomClientOptions & {
+  endpointPath?: string;
+};
+
+/**
+ * Parse skylink options.
+ *
+ * @property [fromSubdomain] - Whether to parse the skylink as a base32 subdomain in a URL.
+ * @property [includePath] - Whether to include the path after the skylink, e.g. /<skylink>/foo/bar.
+ * @property [onlyPath] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
+ */
+export type ParseSkylinkOptions = {
+  fromSubdomain?: boolean;
+  includePath?: boolean;
+  onlyPath?: boolean;
+};
+
+type ParseSkylinkBase32Options = {
+  onlyPath?: boolean;
+};
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
@@ -17,23 +44,31 @@ export const uriSkynetPrefix = "sia:";
  */
 export const MAX_REVISION = BigInt("18446744073709551615"); // max uint64
 
-// TODO: Use a third-party library to make this more robust.
+/**
+ * Adds a subdomain to the given URL.
+ *
+ * @param url - The URL.
+ * @param subdomain - The subdomain to add.
+ * @returns - The final URL.
+ */
 export function addSubdomain(url: string, subdomain: string): string {
   const urlObj = new URL(url);
   urlObj.hostname = `${subdomain}.${urlObj.hostname}`;
   const str = urlObj.toString();
-  if (str.endsWith("/")) {
-    return str.substring(0, str.length - 1);
-  }
-  return str;
+  return trimSuffix(str, "/");
 }
 
+/**
+ * Adds a query to the given URL.
+ *
+ * @param url - The URL.
+ * @param query - The query parameters.
+ * @returns - The final URL.
+ */
 export function addUrlQuery(url: string, query: Record<string, unknown>): string {
   const parsed = parse(url, true);
-  if (parsed.query) {
-    // Combine the desired query params with the already existing ones.
-    query = { ...parsed.query, ...query };
-  }
+  // Combine the desired query params with the already existing ones.
+  query = { ...parsed.query, ...query };
   parsed.set("query", query);
   return parsed.toString();
 }
@@ -45,7 +80,7 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
  * @throws - Will throw if the int does not fit in 64 bits.
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
  */
-export function checkUint64(int: bigint) {
+export function assertUint64(int: bigint): void {
   if (int < BigInt(0)) {
     throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);
   }
@@ -55,12 +90,24 @@ export function checkUint64(int: bigint) {
   }
 }
 
-export function convertSkylinkToBase32(input: string): string {
-  const decoded = base64.toByteArray(input.padEnd(input.length + 4 - (input.length % 4), "="));
+/**
+ * Converts the given base64 skylink to base32.
+ *
+ * @param skylink - The base64 skylink.
+ * @returns - The converted base32 skylink.
+ */
+export function convertSkylinkToBase32(skylink: string): string {
+  const decoded = base64.toByteArray(skylink.padEnd(skylink.length + 4 - (skylink.length % 4), "="));
   return base32Encode(decoded, "RFC4648-HEX", { padding: false }).toLowerCase();
 }
 
-export function defaultOptions(endpointPath: string) {
+/**
+ * Returns the default base custom options for the given endpoint path.
+ *
+ * @param endpointPath - The endpoint path.
+ * @returns - The base custom options.
+ */
+export function defaultOptions(endpointPath: string): BaseCustomOptions {
   return {
     endpointPath,
     APIKey: "",
@@ -70,11 +117,22 @@ export function defaultOptions(endpointPath: string) {
 
 // TODO: This will be smarter. See
 // https://github.com/NebulousLabs/skynet-docs/issues/21.
+/**
+ * Returns the default portal URL.
+ *
+ * @returns - The portal URL.
+ */
 export function defaultPortalUrl(): string {
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   return window.location.origin;
 }
 
+/**
+ * Gets the path for the file.
+ *
+ * @param file - The file.
+ * @returns - The path.
+ */
 function getFilePath(
   file: File & {
     webkitRelativePath?: string;
@@ -84,6 +142,12 @@ function getFilePath(
   return file.webkitRelativePath || file.path || file.name;
 }
 
+/**
+ * Gets the file path relative to the root directory of the path, e.g. `bar` in `/foo/bar`.
+ *
+ * @param file - The input file.
+ * @returns - The relative file path.
+ */
 export function getRelativeFilePath(file: File): string {
   const filePath = getFilePath(file);
   const { root, dir, base } = path.parse(filePath);
@@ -92,6 +156,12 @@ export function getRelativeFilePath(file: File): string {
   return path.join(...relative, base);
 }
 
+/**
+ * Gets the root directory of the file path, e.g. `foo` in `/foo/bar`.
+ *
+ * @param file - The input file.
+ * @returns - The root directory.
+ */
 export function getRootDirectory(file: File): string {
   const filePath = getFilePath(file);
   const { root, dir } = path.parse(filePath);
@@ -102,6 +172,9 @@ export function getRootDirectory(file: File): string {
 /**
  * Properly joins paths together to create a URL. Takes a variable number of
  * arguments.
+ *
+ * @param args - Array of URL parts to join.
+ * @returns - Final URL constructed from the input parts.
  */
 export function makeUrl(...args: string[]): string {
   return args.reduce((acc, cur) => urljoin(acc, cur));
@@ -117,30 +190,33 @@ const SKYLINK_PATH_MATCH_POSITION = 2;
 
 /**
  * Parses the given string for a base64 skylink, or base32 if opts.fromSubdomain is given.
- * @param skylinkStr - plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
- * @param [opts={}] - Additional settings that can optionally be set.
- * @param [opts.onlyPath=false] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
- * @param [opts.includePath=false] - Whether to include the path after the skylink.
- * @param [opts.fromSubdomain=false] - Whether to parse the skylink as a base32 subdomain in a URL.
+ *
+ * @param skylinkUrl - Plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
+ * @param [opts] - Additional settings that can optionally be set.
+ * @returns - The base64 (or base32) skylink, optionally with the path included.
+ * @throws - Will throw on invalid combination of options.
  */
-export function parseSkylink(skylinkStr: string, opts: any = {}): string {
-  if (typeof skylinkStr !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkStr} provided`);
+export function parseSkylink(skylinkUrl: string, opts: ParseSkylinkOptions = {}): string | null {
+  if (typeof skylinkUrl !== "string") throw new Error(`Skylink has to be a string, ${typeof skylinkUrl} provided`);
 
-  if (opts.includePath && opts.onlyPath) throw new Error("The includePath and onlyPath options cannot both be set");
-  if (opts.includePath && opts.fromSubdomain)
+  if (opts.includePath && opts.onlyPath) {
+    throw new Error("The includePath and onlyPath options cannot both be set");
+  }
+  if (opts.includePath && opts.fromSubdomain) {
     throw new Error("The includePath and fromSubdomain options cannot both be set");
+  }
 
   if (opts.fromSubdomain) {
-    return parseSkylinkBase32(skylinkStr, opts);
+    return parseSkylinkBase32(skylinkUrl, opts);
   }
 
   // Check for skylink prefixed with sia: or sia:// and extract it.
   // Example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   // Example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  skylinkStr = trimUriPrefix(skylinkStr, uriSkynetPrefix);
+  skylinkUrl = trimUriPrefix(skylinkUrl, uriSkynetPrefix);
 
   // Check for direct base64 skylink match.
-  const matchDirect = skylinkStr.match(SKYLINK_DIRECT_REGEX);
+  const matchDirect = skylinkUrl.match(SKYLINK_DIRECT_REGEX);
   if (matchDirect) {
     if (opts.onlyPath) {
       return "";
@@ -154,29 +230,35 @@ export function parseSkylink(skylinkStr: string, opts: any = {}): string {
 
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
-  const parsed = parse(skylinkStr, {});
+  const parsed = parse(skylinkUrl, {});
   const skylinkAndPath = trimSuffix(parsed.pathname, "/");
   const matchPathname = skylinkAndPath.match(SKYLINK_PATHNAME_REGEX);
   if (!matchPathname) return null;
 
-  let path = matchPathname[SKYLINK_PATH_MATCH_POSITION];
-  if (path == "/") path = "";
+  const path = matchPathname[SKYLINK_PATH_MATCH_POSITION];
 
   if (opts.includePath) return trimForwardSlash(skylinkAndPath);
   else if (opts.onlyPath) return path;
   else return matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
 }
 
-function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
+/**
+ * Parses the given string for a base32 skylink.
+ *
+ * @param skylinkUrl - Base32 skylink.
+ * @param [opts] - Additional settings that can optionally be set.
+ * @returns - The base32 skylink.
+ */
+export function parseSkylinkBase32(skylinkUrl: string, opts: ParseSkylinkBase32Options = {}): string | null {
   // Pass empty object as second param to disable using location as base url
   // when parsing in browser.
-  const parsed = parse(skylinkStr, {});
+  const parsed = parse(skylinkUrl, {});
 
   // Check if the hostname contains a skylink subdomain.
   const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
   if (matchHostname) {
     if (opts.onlyPath) {
-      return parsed.pathname;
+      return trimSuffix(parsed.pathname, "/");
     }
     return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];
   }
@@ -184,10 +266,23 @@ function parseSkylinkBase32(skylinkStr: string, opts: any = {}): string {
   return null;
 }
 
+/**
+ * Removes a prefix from the beginning of the string.
+ *
+ * @param str - The string to process.
+ * @returns - The processed string.
+ */
 export function trimForwardSlash(str: string): string {
   return trimPrefix(trimSuffix(str, "/"), "/");
 }
 
+/**
+ * Removes a prefix from the beginning of the string.
+ *
+ * @param str - The string to process.
+ * @param prefix - The prefix to remove.
+ * @returns - The processed string.
+ */
 function trimPrefix(str: string, prefix: string): string {
   while (str.startsWith(prefix)) {
     str = str.slice(prefix.length);
@@ -195,6 +290,13 @@ function trimPrefix(str: string, prefix: string): string {
   return str;
 }
 
+/**
+ * Removes a suffix from the end of the string.
+ *
+ * @param str - The string to process.
+ * @param suffix - The suffix to remove.
+ * @returns - The processed string.
+ */
 function trimSuffix(str: string, suffix: string): string {
   while (str.endsWith(suffix)) {
     str = str.substring(0, str.length - suffix.length);
@@ -202,6 +304,13 @@ function trimSuffix(str: string, suffix: string): string {
   return str;
 }
 
+/**
+ * Removes a URI prefix from the beginning of the string.
+ *
+ * @param str - The string to process.
+ * @param prefix - The prefix to remove.
+ * @returns - The processed string.
+ */
 export function trimUriPrefix(str: string, prefix: string): string {
   const longPrefix = `${prefix}//`;
   if (str.startsWith(longPrefix)) {
@@ -215,23 +324,32 @@ export function trimUriPrefix(str: string, prefix: string): string {
   return str;
 }
 
-export function randomNumber(low: number, high: number): number {
-  return Math.random() * (high - low) + low;
-}
-
-// Converts a string to a uint8 array
+/**
+ * Converts a string to a uint8 array.
+ *
+ * @param str - The string to convert.
+ * @returns - The uint8 array.
+ */
 export function stringToUint8Array(str: string): Uint8Array {
   return Uint8Array.from(Buffer.from(str));
 }
 
-// Converts a hex encoded string to a uint8 array
+/**
+ * Converts a hex encoded string to a uint8 array
+ *
+ * @param str - The string to convert.
+ * @returns - The uint8 array.
+ */
 export function hexToUint8Array(str: string): Uint8Array {
   return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 }
 
 /**
  * Convert a byte array to a hex string.
- * From https://stackoverflow.com/a/44608819.
+ *
+ * @param byteArray - The byte array to convert.
+ * @returns - The hex string.
+ * @see {@link https://stackoverflow.com/a/44608819|Stack Overflow}
  */
 export function toHexString(byteArray: Uint8Array): string {
   let s = "";
@@ -241,27 +359,20 @@ export function toHexString(byteArray: Uint8Array): string {
   return s;
 }
 
-// A helper function that uses a FileReader to read the contents of the given
-// file
-export function readData(file: File): Promise<string | ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-}
-
 /**
  * Get the file mime type. In case the type is not provided, use mime-db and try
  * to guess the file type based on the extension.
+ *
+ * @param file - The file.
+ * @returns - The mime type.
  */
 export function getFileMimeType(file: File): string {
   if (file.type) return file.type;
-  const extension = file.name.slice(file.name.lastIndexOf(".") + 1);
-  if (extension) {
+  let { ext } = path.parse(file.name);
+  ext = trimPrefix(ext, ".");
+  if (ext !== "") {
     for (const type in mimeDB) {
-      if (mimeDB[type]?.extensions?.includes(extension)) {
+      if (mimeDB[type]?.extensions?.includes(ext)) {
         return type;
       }
     }

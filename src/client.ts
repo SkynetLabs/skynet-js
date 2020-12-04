@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
+import type { Method } from "axios";
 import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
-import { addSkykey, createSkykey, getSkykeyById, getSkykeyByName, getSkykeys } from "./encryption";
 import {
   downloadFile,
   downloadFileHns,
@@ -16,41 +16,59 @@ import {
 import { getJSON, setJSON } from "./skydb";
 import { getEntry, getEntryUrl, setEntry } from "./registry";
 
-import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
+import { addUrlQuery, BaseCustomOptions, defaultPortalUrl, makeUrl } from "./utils";
 
+/**
+ * Custom client options.
+ *
+ * @property [APIKey] - Authentication password to use.
+ * @property [customUserAgent] - Custom user agent header to set.
+ * @property [onUploadProgress] -Optional callback to track upload progress.
+ */
 export type CustomClientOptions = {
-  /** authentication password to use */
   APIKey?: string;
-  /** custom user agent header to set */
   customUserAgent?: string;
-  /** optional callback to track upload progress */
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
 };
 
+/**
+ * Config options for a single request.
+ *
+ * @property [data] - The data for a POST request.
+ * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
+ * @property [method] - The request method.
+ * @property [query] - Query parameters.
+ * @property [timeout] - Request timeout. May be deprecated.
+ * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
+ */
+export type RequestConfig = CustomClientOptions &
+  BaseCustomOptions & {
+    data?: FormData | Record<string, unknown>;
+    url?: string;
+    method?: Method;
+    query?: Record<string, unknown>;
+    timeout?: number; // TODO: remove
+    extraPath?: string;
+    skykeyName?: string;
+    skykeyId?: string;
+    headers?: Record<string, unknown>;
+    transformRequest?: (data: unknown) => string;
+    transformResponse?: (data: string) => Record<string, unknown>;
+  };
+
+/**
+ * The Skynet Client which can be used to access Skynet.
+ */
 export class SkynetClient {
   portalUrl: string;
   customOptions: CustomClientOptions;
 
-  /**
-   * The Skynet Client which can be used to access Skynet.
-   * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
-   * @param [customOptions] Configuration for the client
-   */
-  constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
-    this.portalUrl = portalUrl;
-    this.customOptions = customOptions;
-  }
+  // Set methods (defined in other files).
 
   uploadFile = uploadFile;
   uploadDirectory = uploadDirectory;
   uploadDirectoryRequest = uploadDirectoryRequest;
   uploadFileRequest = uploadFileRequest;
-
-  addSkykey = addSkykey;
-  createSkykey = createSkykey;
-  getSkykeyById = getSkykeyById;
-  getSkykeyByName = getSkykeyByName;
-  getSkykeys = getSkykeys;
 
   downloadFile = downloadFile;
   downloadFileHns = downloadFileHns;
@@ -77,10 +95,25 @@ export class SkynetClient {
   };
 
   /**
-   * Creates and executes a request.
-   * @param {Object} config - Configuration for the request. See docs for constructor for the full list of options.
+   * The Skynet Client which can be used to access Skynet.
+   *
+   * @class
+   * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
+   * @param [customOptions] Configuration for the client.
    */
-  protected executeRequest(config: any): Promise<AxiosResponse> {
+  constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
+    this.portalUrl = portalUrl;
+    this.customOptions = customOptions;
+  }
+
+  /**
+   * Creates and executes a request.
+   *
+   * @param config - Configuration for the request.
+   * @returns - The response from axios.
+   * @throws - Will throw if unimplemented options have been passed in.
+   */
+  protected executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     if (config.skykeyName || config.skykeyId) {
       throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
     }

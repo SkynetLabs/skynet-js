@@ -3,7 +3,10 @@ import { trimForwardSlash } from "../src/utils";
 import parse from "url-parse";
 
 /**
- * Returns an array of strings of all possible permutations of the input strings.
+ * Returns an array of strings of all possible permutations by picking one string out of each of the input string arrays.
+ *
+ * @param arrays - Array of string arrays.
+ * @returns - Array of strings of all possible permutations.
  */
 export function combineStrings(...arrays: Array<Array<string>>): Array<string> {
   return arrays.reduce((acc, array) => {
@@ -13,11 +16,13 @@ export function combineStrings(...arrays: Array<Array<string>>): Array<string> {
 
 /**
  * Compares the provided FormData with the expected array of entries.
- * @param {Object} formData - opaque FormData to compare.
- * @param {array} entries - array of expected entries.
+ *
+ * @param formData - opaque FormData to compare.
+ * @param entries - array of expected entries.
  */
-export async function compareFormData(formData: Record<string, any>, entries: Array<any>) {
+export async function compareFormData(formData: Record<string, unknown>, entries: Array<Array<string>>): Promise<void> {
   let i = 0;
+  // @ts-expect-error the following line complains no matter what type I give formData...
   for (const [fieldName, file] of formData.entries()) {
     const entry = entries[i];
     const expectedFieldName = entry[0];
@@ -47,6 +52,13 @@ export async function compareFormData(formData: Record<string, any>, entries: Ar
   expect(i).toEqual(entries.length);
 }
 
+/**
+ * Extracts the non-skylink part of the path from the url.
+ *
+ * @param url - The input URL.
+ * @param skylink - The skylink to remove, if it is present.
+ * @returns - The non-skylink part of the path.
+ */
 export function extractNonSkylinkPath(url: string, skylink: string): string {
   const parsed = parse(url, {});
   let path = parsed.pathname.replace(skylink, ""); // Remove skylink to get the path.
