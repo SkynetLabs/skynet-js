@@ -1,19 +1,48 @@
 import { pki, pkcs5, md } from "node-forge";
 import blake from "blakejs";
 import { RegistryEntry } from "./registry";
-import { checkUint64, stringToUint8Array, toHexString } from "./utils";
+import { assertUint64, stringToUint8Array, toHexString } from "./utils";
 import randomBytes from "randombytes";
 
 export type PublicKey = pki.ed25519.NativeBuffer;
 export type SecretKey = pki.ed25519.NativeBuffer;
 export type Signature = pki.ed25519.NativeBuffer;
 
-// Returns a blake2b 256bit hasher. See `NewHash` in Sia.
+/**
+ * Key pair.
+ *
+ * @property publicKey - The public key.
+ * @property privateKey - The private key.
+ */
+export type KeyPair = {
+  publicKey: string;
+  privateKey: string;
+};
+
+/**
+ * Key pair and seed.
+ *
+ * @property seed - The secure seed.
+ */
+export type KeyPairAndSeed = KeyPair & {
+  seed: string;
+};
+
+/**
+ * Returns a blake2b 256bit hasher. See `NewHash` in Sia.
+ *
+ * @returns - blake2b 256bit hasher.
+ */
 function newHash() {
   return blake.blake2bInit(32, null);
 }
 
-// Takes all given arguments and hashes them.
+/**
+ * Takes all given arguments and hashes them.
+ *
+ * @param args - Byte arrays to hash.
+ * @returns - The final hash as a byte array.
+ */
 export function hashAll(...args: Uint8Array[]): Uint8Array {
   const hasher = newHash();
   for (let i = 0; i < args.length; i++) {
@@ -22,12 +51,22 @@ export function hashAll(...args: Uint8Array[]): Uint8Array {
   return blake.blake2bFinal(hasher);
 }
 
-// Hash the given data key.
+/**
+ * Hash the given data key.
+ *
+ * @param datakey - Datakey to hash.
+ * @returns - Hash of the datakey.
+ */
 export function hashDataKey(datakey: string): Uint8Array {
   return hashAll(encodeString(datakey));
 }
 
-// Hashes the given registry entry.
+/**
+ * Hashes the given registry entry.
+ *
+ * @param registryEntry - Registry entry to hash.
+ * @returns - Hash of the registry entry.
+ */
 export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
   return hashAll(
     hashDataKey(registryEntry.datakey),
@@ -36,7 +75,12 @@ export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
   );
 }
 
-// Converts the given number into a uint8 array
+/**
+ * Converts the given number into a uint8 array
+ *
+ * @param num - Number to encode.
+ * @returns - Number encoded as a byte array.
+ */
 function encodeNumber(num: number): Uint8Array {
   const encoded = new Uint8Array(8);
   for (let index = 0; index < encoded.length; index++) {
@@ -56,7 +100,7 @@ function encodeNumber(num: number): Uint8Array {
  */
 export function encodeBigintAsUint64(int: bigint): Uint8Array {
   // Assert the input is 64 bits.
-  checkUint64(int);
+  assertUint64(int);
 
   const encoded = new Uint8Array(8);
   for (let index = 0; index < encoded.length; index++) {
@@ -67,7 +111,12 @@ export function encodeBigintAsUint64(int: bigint): Uint8Array {
   return encoded;
 }
 
-// Converts the given string into a uint8 array
+/**
+ * Converts the given string into a uint8 array.
+ *
+ * @param str - String to encode.
+ * @returns - String encoded as a byte array.
+ */
 function encodeString(str: string): Uint8Array {
   const encoded = new Uint8Array(8 + str.length);
   encoded.set(encodeNumber(str.length));
@@ -75,30 +124,47 @@ function encodeString(str: string): Uint8Array {
   return encoded;
 }
 
+/**
+ * Derives a child seed from the given master seed and sub seed.
+ *
+ * @param masterSeed - The master seed to derive from.
+ * @param seed - The sub seed for the derivation.
+ * @returns - The child seed derived from `masterSeed` using `seed`.
+ */
 export function deriveChildSeed(masterSeed: string, seed: string): string {
   return toHexString(hashAll(encodeString(masterSeed), encodeString(seed)));
 }
 
 /**
  * Generates a master key pair and seed.
+ *
  * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
+ * @returns -The generated key pair and seed.
  */
-export function genKeyPairAndSeed(length = 64): { publicKey: string; privateKey: string; seed: string } {
+export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
   const seed = makeSeed(length);
   return { ...genKeyPairFromSeed(seed), seed };
 }
 
 /**
  * Generates a public and private key from a provided, secure seed.
+ *
  * @param seed - A secure seed.
+ * @returns - The generated key pair.
  */
-export function genKeyPairFromSeed(seed: string): { publicKey: string; privateKey: string } {
+export function genKeyPairFromSeed(seed: string): KeyPair {
   // Get a 32-byte seed.
   seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
   const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
   return { publicKey: toHexString(publicKey), privateKey: toHexString(privateKey) };
 }
 
+/**
+ * Generates a random seed of the given length in bytes.
+ *
+ * @param length - Length of the seed in bytes.
+ * @returns - The generated seed.
+ */
 function makeSeed(length: number): string {
   // Cryptographically-secure random number generator. It should use the
   // built-in crypto.getRandomValues in the browser.

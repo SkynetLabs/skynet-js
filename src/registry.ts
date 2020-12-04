@@ -1,7 +1,15 @@
 import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
-import { addUrlQuery, checkUint64, defaultOptions, hexToUint8Array, makeUrl, toHexString } from "./utils";
+import {
+  addUrlQuery,
+  BaseCustomOptions,
+  assertUint64,
+  defaultOptions,
+  hexToUint8Array,
+  makeUrl,
+  toHexString,
+} from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
@@ -10,6 +18,15 @@ import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
  *
  * @property [timeout=5] - The custom timeout for getting an entry, in seconds. The maximum value allowed is 300.
  */
+export type CustomGetEntryOptions = BaseCustomOptions & {
+  timeout?: number;
+};
+
+/**
+ * Custom set entry options.
+ */
+export type CustomSetEntryOptions = BaseCustomOptions;
+
 const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
   timeout: 5,
@@ -21,36 +38,56 @@ const defaultSetEntryOptions = {
 
 export const MAX_GET_ENTRY_TIMEOUT = 300; // 5 minutes
 
-// Regex for JSON revision value without quotes.
-const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
+/**
+ * Regex for JSON revision value without quotes.
+ */
+export const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
 
-// Regex for JSON revision value with quotes.
+/**
+ * Regex for JSON revision value with quotes.
+ */
 const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
 
+/**
+ * Registry entry.
+ *
+ * @property datakey - The key of the data for the given entry.
+ * @property data - The data stored in the entry.
+ * @property revision - The revision number for the entry.
+ */
 export type RegistryEntry = {
   datakey: string;
   data: string;
   revision: bigint;
 };
 
+/**
+ * Signed registry entry.
+ *
+ * @property entry - The registry entry.
+ * @property signature - The signature of the registry entry.
+ */
 export type SignedRegistryEntry = {
-  entry: RegistryEntry;
-  signature: Signature;
+  entry: RegistryEntry | null;
+  signature: Signature | null;
 };
 
 /**
  * Gets the registry entry corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
- * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.timeout=5000] - Timeout in ms for the registry lookup.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The signed registry entry.
+ * @throws - Will throw if the returned signature does not match the returned entry.
  */
 export async function getEntry(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
-  customOptions = {}
-): Promise<SignedRegistryEntry | null> {
+  customOptions?: CustomGetEntryOptions
+): Promise<SignedRegistryEntry> {
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -61,14 +98,11 @@ export async function getEntry(
 
   let response: AxiosResponse;
   try {
+    const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
     response = await this.executeRequest({
       ...opts,
+      url,
       method: "get",
-      query: {
-        publickey: `ed25519:${publicKey}`,
-        datakey: toHexString(hashDataKey(dataKey)),
-        timeout: opts.timeout,
-      },
       // Transform the response to add quotes, since uint64 cannot be accurately
       // read by JS so the revision needs to be parsed as a string.
       transformResponse: function (data: string) {
@@ -110,7 +144,21 @@ export async function getEntry(
   return signedEntry;
 }
 
-export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: string, customOptions = {}): string {
+/**
+ * Gets the registry entry URL corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The full get entry URL.
+ */
+export function getEntryUrl(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): string {
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -130,16 +178,22 @@ export function getEntryUrl(this: SkynetClient, publicKey: string, dataKey: stri
 }
 
 /**
+ * Sets the registry entry.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param entry - The entry to set.
+ * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the entry revision does not fit in 64 bits.
  */
 export async function setEntry(
   this: SkynetClient,
   privateKey: string,
   entry: RegistryEntry,
-  customOptions = {}
+  customOptions?: CustomSetEntryOptions
 ): Promise<void> {
   // Assert the input is 64 bits.
-  checkUint64(entry.revision);
+  assertUint64(entry.revision);
 
   const opts = {
     ...defaultSetEntryOptions,

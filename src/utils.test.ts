@@ -1,12 +1,15 @@
 import {
   addUrlQuery,
-  checkUint64,
+  assertUint64,
   convertSkylinkToBase32,
   defaultSkynetPortalUrl,
   getFileMimeType,
+  getRelativeFilePath,
+  getRootDirectory,
   makeUrl,
   MAX_REVISION,
   parseSkylink,
+  parseSkylinkBase32,
   trimUriPrefix,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
@@ -33,12 +36,12 @@ describe("addUrlQuery", () => {
   });
 });
 
-describe("checkUint64", () => {
-  it("should test the checkUint64 function", () => {
-    expect(() => checkUint64(BigInt(0))).not.toThrow();
-    expect(() => checkUint64(BigInt(-1))).toThrow();
-    expect(() => checkUint64(MAX_REVISION)).not.toThrow();
-    expect(() => checkUint64(MAX_REVISION + BigInt(1))).toThrow();
+describe("assertUint64", () => {
+  it("should test the assertUint64 function", () => {
+    expect(() => assertUint64(BigInt(0))).not.toThrow();
+    expect(() => assertUint64(BigInt(-1))).toThrow();
+    expect(() => assertUint64(MAX_REVISION)).not.toThrow();
+    expect(() => assertUint64(MAX_REVISION + BigInt(1))).toThrow();
   });
 });
 
@@ -47,6 +50,36 @@ describe("convertSkylinkToBase32", () => {
     const encoded = convertSkylinkToBase32(skylink);
 
     expect(encoded).toEqual(skylinkBase32);
+  });
+});
+
+describe("getRelativeFilePath", () => {
+  const filepaths = [
+    ["abc/def", "def"],
+    ["./abc/def", "def"],
+    ["/abc/def.txt", "def.txt"],
+  ];
+
+  it.each(filepaths)("the relative file path for a file with the path %s should be %s", (filepath, directory) => {
+    const file = new File(["test contents"], "foo");
+    // @ts-expect-error We spoof the path here which is present in browsers but not in the File standard.
+    file.path = filepath;
+    expect(getRelativeFilePath(file)).toEqual(directory);
+  });
+});
+
+describe("getRootDirectory", () => {
+  const filepaths = [
+    ["abc/def", "abc"],
+    ["./abc/def", "abc"],
+    ["/abc/def", "abc"],
+  ];
+
+  it.each(filepaths)("the root directory for a file with the path %s should be %s", (filepath, directory) => {
+    const file = new File(["test contents"], "foo");
+    // @ts-expect-error We spoof the path here which is present in browsers but not in the File standard.
+    file.path = filepath;
+    expect(getRootDirectory(file)).toEqual(directory);
   });
 });
 
@@ -110,6 +143,11 @@ describe("parseSkylink", () => {
 
   it.each(subdomainCases)("should extract base32 skylink from %s", (fullSkylink) => {
     expect(parseSkylink(fullSkylink, { fromSubdomain: true })).toEqual(skylinkBase32);
+    expect(parseSkylinkBase32(fullSkylink)).toEqual(skylinkBase32);
+
+    // Test the fromSubdomain and onlyPath options together.
+    const path = extractNonSkylinkPath(fullSkylink, ""); // Don't need to remove the skylink from the path portion here.
+    expect(parseSkylink(fullSkylink, { fromSubdomain: true, onlyPath: true })).toEqual(path);
   });
 
   it("should return null on invalid skylink", () => {
@@ -128,6 +166,15 @@ describe("parseSkylink", () => {
   it("should return null on invalid base32 subdomain", () => {
     const badUrl = `https://${skylinkBase32}xxx.siasky.net`;
     expect(parseSkylink(badUrl, { fromSubdomain: true })).toBeNull();
+  });
+
+  it("should reject invalid combinations of options", () => {
+    expect(() => {
+      parseSkylink("test", { includePath: true, onlyPath: true });
+    }).toThrow();
+    expect(() => {
+      parseSkylink("test", { includePath: true, fromSubdomain: true });
+    }).toThrow();
   });
 });
 
