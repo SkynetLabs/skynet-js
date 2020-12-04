@@ -120,7 +120,7 @@ describe("hexToUint8Array", () => {
     expect(byteArray).toEqualUint8Array(new Uint8Array(array));
   });
 
-  const invalidHexStrings = ["xyz", "aabbzz"];
+  const invalidHexStrings = ["xyz", "aabbzz", ""];
 
   it.each(invalidHexStrings)("should throw on invalid input '%s'", (str) => {
     expect(() => hexToUint8Array(str)).toThrowError(`Input string '${str}' is not a valid hex-encoded string`);
