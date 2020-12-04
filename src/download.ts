@@ -136,7 +136,7 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
   let url;
   if (opts.subdomain) {
     // Get the path from the skylink.
-    const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true });
+    const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true }) ?? "";
     // Get just the skylink.
     let skylink = parseSkylink(skylinkUrl);
     if (skylink === null) {
@@ -153,7 +153,7 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
       throw new Error(`Could not get skylink out of input '${skylinkUrl}'`);
     }
     // Add additional path if passed in.
-    url = makeUrl(this.portalUrl, opts.endpointPath, skylink, path);
+    url = makeUrl(this.portalUrl, opts.endpointPath ?? "", skylink, path);
   }
   return addUrlQuery(url, query);
 }
@@ -177,7 +177,7 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: Cu
   domain = trimUriPrefix(domain, uriHandshakePrefix);
   const url = opts.subdomain
     ? addSubdomain(addSubdomain(this.portalUrl, opts.hnsSubdomain), domain)
-    : makeUrl(this.portalUrl, opts.endpointPath, domain);
+    : makeUrl(this.portalUrl, opts.endpointPath ?? "", domain);
   return addUrlQuery(url, query);
 }
 
@@ -194,7 +194,7 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?:
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
-  return makeUrl(this.portalUrl, opts.endpointPath, domain);
+  return makeUrl(this.portalUrl, opts.endpointPath ?? "", domain);
 }
 
 /**

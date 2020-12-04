@@ -339,9 +339,17 @@ export function stringToUint8Array(str: string): Uint8Array {
  *
  * @param str - The string to convert.
  * @returns - The uint8 array.
+ * @throws - Will throw if the input is not a valid hex-encoded string.
  */
 export function hexToUint8Array(str: string): Uint8Array {
-  return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  if (!/^[0-9A-Fa-f]*$/g.test(str)) {
+    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
+  }
+  const matches = str.match(/.{1,2}/g);
+  if (matches === null) {
+    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
+  }
+  return new Uint8Array(matches.map((byte) => parseInt(byte, 16)));
 }
 
 /**

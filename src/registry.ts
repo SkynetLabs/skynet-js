@@ -169,7 +169,7 @@ export function getEntryUrl(
     datakey: toHexString(hashDataKey(dataKey)),
   };
 
-  let url = makeUrl(this.portalUrl, opts.endpointPath);
+  let url = makeUrl(this.portalUrl, opts.endpointPath ?? "");
   url = addUrlQuery(url, query);
 
   return url;

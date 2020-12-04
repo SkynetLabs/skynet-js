@@ -88,6 +88,9 @@ export async function setJSON(
     try {
       const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
       entry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+      if (entry.entry === null) {
+        throw new Error("Entry not found, using revision 0");
+      }
       revision = entry.entry.revision + BigInt(1);
     } catch (err) {
       revision = BigInt(0);
