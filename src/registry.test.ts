@@ -4,7 +4,7 @@ import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 
-const { publicKey } = genKeyPairFromSeed("insecure test seed");
+const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const dataKey = "app";
@@ -74,6 +74,12 @@ describe("getEntry", () => {
     expect(mock.history.get.length).toBe(0);
     expect(mock.history.post.length).toBe(0);
   });
+
+  it("should throw when key is not hex-encoded", async () => {
+    await expect(client.registry.getEntry(`${publicKey}x`, dataKey)).rejects.toThrowError(
+      `Given public key '${publicKey}x' is not a valid hex-encoded string or contains an invalid prefix`
+    );
+  });
 });
 
 describe("getEntryUrl", () => {
@@ -99,6 +105,21 @@ describe("getEntryUrl", () => {
   it("should trim the prefix if it is provided", () => {
     const url = client.registry.getEntryUrl(`ed25519:${publicKey}`, dataKey);
 
-    expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}`);
+    expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}&timeout=5`);
+  });
+});
+
+describe("setEntry", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+    mock.resetHistory();
+  });
+
+  it("should throw when key is not hex-encoded", async () => {
+    await expect(client.registry.setEntry(`${privateKey}x`, {})).rejects.toThrowError(
+      `Given private key '${privateKey}x' is not a valid hex-encoded string`
+    );
   });
 });
