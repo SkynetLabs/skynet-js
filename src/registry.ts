@@ -10,6 +10,7 @@ import {
   makeUrl,
   toHexString,
   trimPrefix,
+  isHexString,
 } from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
@@ -177,6 +178,9 @@ export function getEntryUrl(
 
   // Trim the prefix if it was passed in.
   publicKey = trimPrefix(publicKey, "ed25519:");
+  if (!isHexString(publicKey)) {
+    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
+  }
 
   const query = {
     publickey: `ed25519:${publicKey}`,
