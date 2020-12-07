@@ -1,7 +1,7 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { addUrlQuery, defaultSkynetPortalUrl, MAX_REVISION } from "./utils";
+import { defaultSkynetPortalUrl, MAX_REVISION } from "./utils";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { regexRevisionNoQuotes } from "./registry";
 
@@ -105,12 +105,6 @@ describe("setJSON", () => {
   it("should use a revision number of 0 if the lookup failed", async () => {
     // mock a successful upload
     mock.onPost(uploadUrl).reply(200, { skylink });
-
-    // mock a failed registry lookup
-    const registryLookupUrl = addUrlQuery(registryUrl, {
-      publickey: `ed25519:${publicKey}`,
-      datakey: dataKey,
-    });
 
     mock.onGet(registryLookupUrl).reply(400);
 
