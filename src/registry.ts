@@ -9,6 +9,7 @@ import {
   hexToUint8Array,
   makeUrl,
   toHexString,
+  trimPrefix,
 } from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
@@ -163,6 +164,9 @@ export function getEntryUrl(
     ...this.customOptions,
     ...customOptions,
   };
+
+  // Trim the prefix if it was passed in.
+  publicKey = trimPrefix(publicKey, "ed25519:");
 
   const query = {
     publickey: `ed25519:${publicKey}`,

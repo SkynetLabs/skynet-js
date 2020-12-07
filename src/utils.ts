@@ -283,7 +283,7 @@ export function trimForwardSlash(str: string): string {
  * @param prefix - The prefix to remove.
  * @returns - The processed string.
  */
-function trimPrefix(str: string, prefix: string): string {
+export function trimPrefix(str: string, prefix: string): string {
   while (str.startsWith(prefix)) {
     str = str.slice(prefix.length);
   }
