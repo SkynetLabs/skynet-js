@@ -17,7 +17,7 @@ import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 /**
  * Custom get entry options.
  *
- * @property [timeout=5000] - The custom timeout for getting an entry.
+ * @property [timeout=5] - The custom timeout for getting an entry, in seconds. The maximum value allowed is 300.
  */
 export type CustomGetEntryOptions = BaseCustomOptions & {
   timeout?: number;
@@ -30,12 +30,14 @@ export type CustomSetEntryOptions = BaseCustomOptions;
 
 const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
-  timeout: 5_000,
+  timeout: 5,
 };
 
 const defaultSetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
+
+export const MAX_GET_ENTRY_TIMEOUT = 300; // 5 minutes
 
 /**
  * Regex for JSON revision value without quotes.
@@ -79,7 +81,7 @@ export type SignedRegistryEntry = {
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The signed registry entry.
- * @throws - Will throw if the returned signature does not match the returned entry.
+ * @throws - Will throw if the returned signature does not match the returned entry or the provided timeout is invalid.
  */
 export async function getEntry(
   this: SkynetClient,
@@ -94,15 +96,14 @@ export async function getEntry(
   };
 
   const publicKeyBuffer = Buffer.from(publicKey, "hex");
+  const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
 
   let response: AxiosResponse;
   try {
-    const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
     response = await this.executeRequest({
       ...opts,
       url,
       method: "get",
-      timeout: opts.timeout,
       // Transform the response to add quotes, since uint64 cannot be accurately
       // read by JS so the revision needs to be parsed as a string.
       transformResponse: function (data: string) {
@@ -152,6 +153,7 @@ export async function getEntry(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The full get entry URL.
+ * @throws - Will throw if the provided timeout is invalid.
  */
 export function getEntryUrl(
   this: SkynetClient,
@@ -165,12 +167,21 @@ export function getEntryUrl(
     ...customOptions,
   };
 
+  const timeout = opts.timeout;
+
+  if (!Number.isInteger(timeout) || timeout > MAX_GET_ENTRY_TIMEOUT || timeout < 1) {
+    throw new Error(
+      `Invalid 'timeout' parameter '${timeout}', needs to be an integer between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`
+    );
+  }
+
   // Trim the prefix if it was passed in.
   publicKey = trimPrefix(publicKey, "ed25519:");
 
   const query = {
     publickey: `ed25519:${publicKey}`,
     datakey: toHexString(hashDataKey(dataKey)),
+    timeout,
   };
 
   let url = makeUrl(this.portalUrl, opts.endpointPath);

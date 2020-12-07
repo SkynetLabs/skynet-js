@@ -1,4 +1,5 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
+import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils";
 
 // TODO: Use siasky.dev when available.
@@ -7,7 +8,7 @@ const client = new SkynetClient("https://siasky.net");
 const dataKey = "HelloWorld";
 
 // Used to verify end-to-end flow.
-describe("siasky.dev end to end integration test", () => {
+describe("SkyDB end to end integration tests", () => {
   it("Should set and get new entries", async () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { data: "thisistext" };
@@ -41,6 +42,56 @@ describe("siasky.dev end to end integration test", () => {
     await expect(client.db.setJSON(privateKey, dataKey, json, largeint)).rejects.toThrowError(
       "Argument 18446744073709551616 does not fit in a 64-bit unsigned integer; exceeds 2^64-1"
     );
+  });
+});
+
+describe("Registry end to end integration tests", () => {
+  it("Should return null for an inexistent entry", async () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    // Try getting an inexistant entry.
+    const { entry, signature } = await client.registry.getEntry(publicKey, "foo");
+
+    expect(entry).toBeNull();
+    expect(signature).toBeNull();
+  });
+
+  it("Should set and get entries correctly", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+
+    const entry = {
+      datakey: dataKey,
+      data: "foo",
+      revision: BigInt(0),
+    };
+
+    await client.registry.setEntry(privateKey, entry);
+
+    const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+
+    expect(returnedEntry).toEqual(entry);
+  });
+
+  it("setEntry should not be affected by timeout parameter", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+
+    const entry = {
+      datakey: dataKey,
+      data: "bar",
+      revision: BigInt(0),
+    };
+
+    // Use a timeout of 0 (invalid, but should be ignored).
+    await client.registry.setEntry(privateKey, entry, { timeout: 0 });
+    const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+    expect(returnedEntry).toEqual(entry);
+
+    entry.revision = BigInt(1);
+
+    // Use a timeout of 301 (invalid, but should be ignored).
+    await client.registry.setEntry(privateKey, entry, { timeout: MAX_GET_ENTRY_TIMEOUT + 1 });
+    const { entry: returnedEntry2 } = await client.registry.getEntry(publicKey, dataKey);
+    expect(returnedEntry2).toEqual(entry);
   });
 });
 

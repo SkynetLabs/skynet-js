@@ -1,6 +1,8 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
+import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
+import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 
 const { publicKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
@@ -53,6 +55,25 @@ describe("getEntry", () => {
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrow();
   });
+
+  it("Should return an error if the timeout is too large", async () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    // Try getting an entry with an excessive timeout.
+    await expect(
+      client.registry.getEntry(publicKey, dataKey, {
+        timeout: MAX_GET_ENTRY_TIMEOUT + 1,
+      })
+    ).rejects.toThrowError(
+      `Invalid 'timeout' parameter '${
+        MAX_GET_ENTRY_TIMEOUT + 1
+      }', needs to be an integer between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`
+    );
+
+    // No network calls should have been made.
+    expect(mock.history.get.length).toBe(0);
+    expect(mock.history.post.length).toBe(0);
+  });
 });
 
 describe("getEntryUrl", () => {
@@ -64,7 +85,15 @@ describe("getEntryUrl", () => {
   it("should generate the correct registry url for the given entry", () => {
     const url = client.registry.getEntryUrl(publicKey, dataKey);
 
-    expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}`);
+    expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}&timeout=5`);
+  });
+
+  it("Should throw if the timeout is not an integer", () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    expect(() => client.registry.getEntryUrl(publicKey, dataKey, { timeout: 1.5 })).toThrowError(
+      "Invalid 'timeout' parameter '1.5', needs to be an integer between 1s and 300s"
+    );
   });
 
   it("should trim the prefix if it is provided", () => {
