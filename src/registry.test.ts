@@ -64,7 +64,11 @@ describe("getEntry", () => {
       client.registry.getEntry(publicKey, dataKey, {
         timeout: MAX_GET_ENTRY_TIMEOUT + 1,
       })
-    ).rejects.toThrowError(`Invalid 'timeout' parameter, needs to be between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`);
+    ).rejects.toThrowError(
+      `Invalid 'timeout' parameter '${
+        MAX_GET_ENTRY_TIMEOUT + 1
+      }', needs to be an integer between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`
+    );
 
     // No network calls should have been made.
     expect(mock.history.get.length).toBe(0);
@@ -81,5 +85,13 @@ describe("getEntryUrl", () => {
     const url = client.registry.getEntryUrl(publicKey, dataKey);
 
     expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}&timeout=5`);
+  });
+
+  it("Should throw if the timeout is not an integer", () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    expect(() => client.registry.getEntryUrl(publicKey, dataKey, { timeout: 1.5 })).toThrowError(
+      "Invalid 'timeout' parameter '1.5', needs to be an integer between 1s and 300s"
+    );
   });
 });

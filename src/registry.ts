@@ -80,7 +80,7 @@ export type SignedRegistryEntry = {
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The signed registry entry.
- * @throws - Will throw if the returned signature does not match the returned entry.
+ * @throws - Will throw if the returned signature does not match the returned entry or the provided timeout is invalid.
  */
 export async function getEntry(
   this: SkynetClient,
@@ -94,15 +94,11 @@ export async function getEntry(
     ...customOptions,
   };
 
-  if (opts.timeout > MAX_GET_ENTRY_TIMEOUT || opts.timeout < 1) {
-    throw new Error(`Invalid 'timeout' parameter, needs to be between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`);
-  }
-
   const publicKeyBuffer = Buffer.from(publicKey, "hex");
+  const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
 
   let response: AxiosResponse;
   try {
-    const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
     response = await this.executeRequest({
       ...opts,
       url,
@@ -156,6 +152,7 @@ export async function getEntry(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The full get entry URL.
+ * @throws - Will throw if the provided timeout is invalid.
  */
 export function getEntryUrl(
   this: SkynetClient,
@@ -169,10 +166,18 @@ export function getEntryUrl(
     ...customOptions,
   };
 
+  const timeout = opts.timeout;
+
+  if (!Number.isInteger(timeout) || timeout > MAX_GET_ENTRY_TIMEOUT || timeout < 1) {
+    throw new Error(
+      `Invalid 'timeout' parameter '${timeout}', needs to be an integer between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`
+    );
+  }
+
   const query = {
     publickey: `ed25519:${publicKey}`,
     datakey: toHexString(hashDataKey(dataKey)),
-    timeout: opts.timeout,
+    timeout,
   };
 
   let url = makeUrl(this.portalUrl, opts.endpointPath);
