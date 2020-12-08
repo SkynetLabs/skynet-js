@@ -106,6 +106,9 @@ export async function getEntry(
       // Transform the response to add quotes, since uint64 cannot be accurately
       // read by JS so the revision needs to be parsed as a string.
       transformResponse: function (data: string) {
+        if (data === undefined) {
+          return {};
+        }
         // Change the revision value from a JSON integer to a string.
         data = data.replace(regexRevisionNoQuotes, '"revision":"$1"');
         // Convert the JSON data to an object.
@@ -113,12 +116,15 @@ export async function getEntry(
       },
     });
   } catch (err: unknown) {
-    // unfortunately axios rejects anything that's not >= 200 and < 300
-    return { entry: null, signature: null };
-  }
-
-  if (response.status !== 200) {
-    return { entry: null, signature: null };
+    if (!Object.prototype.hasOwnProperty.call(err, "response")) {
+      throw err;
+    }
+    // @ts-expect-error TS complains about err.response
+    if (err.response.status === 404) {
+      return { entry: null, signature: null };
+    }
+    // @ts-expect-error TS complains about err.response
+    throw new Error(err.response.data.message);
   }
 
   const signedEntry = {

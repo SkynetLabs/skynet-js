@@ -44,7 +44,7 @@ describe("getJSON", () => {
   });
 
   it("should return null if no entry is found", async () => {
-    mock.onGet(registryLookupUrl).reply(400);
+    mock.onGet(registryLookupUrl).reply(404);
 
     const { data, revision } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toBeNull();
@@ -106,7 +106,7 @@ describe("setJSON", () => {
     // mock a successful upload
     mock.onPost(uploadUrl).reply(200, { skylink });
 
-    mock.onGet(registryLookupUrl).reply(400);
+    mock.onGet(registryLookupUrl).reply(404);
 
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);

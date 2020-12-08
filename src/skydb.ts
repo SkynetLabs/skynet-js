@@ -84,13 +84,12 @@ export async function setJSON(
 
   if (revision === undefined) {
     // fetch the current value to find out the revision.
-    let entry: SignedRegistryEntry;
-    try {
-      const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
-      entry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
-      revision = entry.entry.revision + BigInt(1);
-    } catch (err) {
+    const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
+    const entry: SignedRegistryEntry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+    if (entry.entry === null) {
       revision = BigInt(0);
+    } else {
+      revision = entry.entry.revision + BigInt(1);
     }
 
     // Throw if the revision is already the maximum value.

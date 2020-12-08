@@ -9,6 +9,15 @@ const dataKey = "HelloWorld";
 
 // Used to verify end-to-end flow.
 describe("SkyDB end to end integration tests", () => {
+  it("Should return null for an inexistent entry", async () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    // Try getting an inexistent entry.
+    const { data, revision } = await client.db.getJSON(publicKey, "foo");
+    expect(data).toBeNull();
+    expect(revision).toBeNull();
+  });
+
   it("Should set and get new entries", async () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { data: "thisistext" };
