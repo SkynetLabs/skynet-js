@@ -1,7 +1,15 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
-import { trimUriPrefix, uriSkynetPrefix, toHexString, assertUint64, MAX_REVISION, BaseCustomOptions } from "./utils";
+import {
+  trimUriPrefix,
+  uriSkynetPrefix,
+  toHexString,
+  assertUint64,
+  MAX_REVISION,
+  BaseCustomOptions,
+  isHexString,
+} from "./utils";
 import { Buffer } from "buffer";
 import { CustomUploadOptions } from "./upload";
 import { CustomDownloadOptions } from "./download";
@@ -75,6 +83,18 @@ export async function setJSON(
   revision?: bigint,
   customOptions?: CustomSetJSONOptions
 ): Promise<void> {
+  /* istanbul ignore next */
+  if (typeof privateKey !== "string") {
+    throw new Error(`Expected parameter privateKey to be type string, was type ${typeof privateKey}`);
+  }
+  /* istanbul ignore next */
+  if (typeof dataKey !== "string") {
+    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
+  }
+  if (!isHexString(privateKey)) {
+    throw new Error("Expected parameter privateKey to be a hex-encoded string");
+  }
+
   const opts = {
     ...this.customOptions,
     ...customOptions,

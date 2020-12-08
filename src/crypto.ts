@@ -134,7 +134,7 @@ function encodeString(str: string): Uint8Array {
 export function deriveChildSeed(masterSeed: string, seed: string): string {
   /* istanbul ignore next */
   if (typeof masterSeed !== "string") {
-    throw new Error(`Expected parameter masterSeed to be type string, was type ${typeof seed}`);
+    throw new Error(`Expected parameter masterSeed to be type string, was type ${typeof masterSeed}`);
   }
   /* istanbul ignore next */
   if (typeof seed !== "string") {

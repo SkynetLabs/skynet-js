@@ -147,4 +147,10 @@ describe("setJSON", () => {
       "Current entry already has maximum allowed revision, could not update the entry"
     );
   });
+
+  it("Should throw an error if the private key is not hex-encoded", async () => {
+    await expect(client.db.setJSON("foo", dataKey, {})).rejects.toThrowError(
+      "Expected parameter privateKey to be a hex-encoded string"
+    );
+  });
 });
