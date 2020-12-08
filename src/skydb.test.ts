@@ -143,7 +143,7 @@ describe("setJSON", () => {
     mock.onPost(registryUrl).reply(204);
 
     // Try to set data, should fail.
-    await expect(client.db.setJSON(privateKey, dataKey, json)).rejects.toThrowError(
+    await expect(client.db.setJSON(privateKey, dataKey, entryData)).rejects.toThrowError(
       "Current entry already has maximum allowed revision, could not update the entry"
     );
   });
@@ -152,5 +152,9 @@ describe("setJSON", () => {
     await expect(client.db.setJSON("foo", dataKey, {})).rejects.toThrowError(
       "Expected parameter privateKey to be a hex-encoded string"
     );
+  });
+
+  it("Should throw an error if the json is not an object", async () => {
+    await expect(client.registry.setEntry(privateKey)).rejects.toThrowError("Expected parameter entry to be an object");
   });
 });

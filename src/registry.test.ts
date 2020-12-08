@@ -4,7 +4,7 @@ import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 
-const { publicKey } = genKeyPairFromSeed("insecure test seed");
+const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const dataKey = "app";
@@ -98,5 +98,9 @@ describe("setEntry", () => {
     await expect(client.registry.setEntry("foo", {})).rejects.toThrowError(
       "Expected parameter privateKey to be a hex-encoded string"
     );
+  });
+
+  it("Should throw an error if the entry is not an object", async () => {
+    await expect(client.registry.setEntry(privateKey)).rejects.toThrowError("Expected parameter entry to be an object");
   });
 });

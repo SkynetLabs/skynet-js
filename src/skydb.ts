@@ -94,6 +94,9 @@ export async function setJSON(
   if (!isHexString(privateKey)) {
     throw new Error("Expected parameter privateKey to be a hex-encoded string");
   }
+  if (typeof json !== "object" || json === null) {
+    throw new Error("Expected parameter json to be an object");
+  }
 
   const opts = {
     ...this.customOptions,

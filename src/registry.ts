@@ -232,6 +232,9 @@ export async function setEntry(
   if (!isHexString(privateKey)) {
     throw new Error("Expected parameter privateKey to be a hex-encoded string");
   }
+  if (typeof entry !== "object" || entry === null) {
+    throw new Error("Expected parameter entry to be an object");
+  }
 
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
