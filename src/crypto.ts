@@ -132,6 +132,15 @@ function encodeString(str: string): Uint8Array {
  * @returns - The child seed derived from `masterSeed` using `seed`.
  */
 export function deriveChildSeed(masterSeed: string, seed: string): string {
+  /* istanbul ignore next */
+  if (typeof masterSeed !== "string") {
+    throw new Error(`Expected parameter masterSeed to be type string, was type ${typeof seed}`);
+  }
+  /* istanbul ignore next */
+  if (typeof seed !== "string") {
+    throw new Error(`Expected parameter seed to be type string, was type ${typeof seed}`);
+  }
+
   return toHexString(hashAll(encodeString(masterSeed), encodeString(seed)));
 }
 
@@ -153,6 +162,11 @@ export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
  * @returns - The generated key pair.
  */
 export function genKeyPairFromSeed(seed: string): KeyPair {
+  /* istanbul ignore next */
+  if (typeof seed !== "string") {
+    throw new Error(`Expected parameter seed to be type string, was type ${typeof seed}`);
+  }
+
   // Get a 32-byte seed.
   seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
   const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });

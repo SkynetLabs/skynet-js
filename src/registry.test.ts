@@ -20,7 +20,7 @@ describe("getEntry", () => {
   });
 
   it("should throw if the response status is not in the 200s and not 404", async () => {
-    mock.onGet(registryLookupUrl).reply(400, JSON.stringify({ message: "foo error" }));
+    mock.onGet(registryLookupUrl).replyOnce(400, JSON.stringify({ message: "foo error" }));
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError("foo error");
   });
@@ -34,12 +34,12 @@ describe("getEntry", () => {
         "33d14d2889cb292142614da0e0ff13a205c4867961276001471d13b779fc9032568ddd292d9e0dff69d7b1f28be07972cc9d86da3cecf3adecb6f9b7311af808",
     };
 
-    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrow();
   });
 
-  it("Should return an error if the timeout is too large", async () => {
+  it("Should throw an error if the timeout is too large", async () => {
     const { publicKey } = genKeyPairAndSeed();
 
     // Try getting an entry with an excessive timeout.
@@ -56,6 +56,20 @@ describe("getEntry", () => {
     // No network calls should have been made.
     expect(mock.history.get.length).toBe(0);
     expect(mock.history.post.length).toBe(0);
+  });
+
+  it("Should throw an error if the public key is not hex-encoded", async () => {
+    await expect(client.registry.getEntry("foo", dataKey)).rejects.toThrowError(
+      "Expected parameter publicKey to be a hex-encoded string"
+    );
+  });
+
+  it("Should throw on incomplete response from registry GET", async () => {
+    mock.onGet(registryLookupUrl).replyOnce(200, "{}");
+
+    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError(
+      "Did not get a complete entry response"
+    );
   });
 });
 
@@ -75,6 +89,14 @@ describe("getEntryUrl", () => {
 
     expect(() => client.registry.getEntryUrl(publicKey, dataKey, { timeout: 1.5 })).toThrowError(
       "Invalid 'timeout' parameter '1.5', needs to be an integer between 1s and 300s"
+    );
+  });
+});
+
+describe("setEntry", () => {
+  it("Should throw an error if the private key is not hex-encoded", async () => {
+    await expect(client.registry.setEntry("foo", {})).rejects.toThrowError(
+      "Expected parameter privateKey to be a hex-encoded string"
     );
   });
 });

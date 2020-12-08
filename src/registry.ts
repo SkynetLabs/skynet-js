@@ -9,6 +9,7 @@ import {
   hexToUint8Array,
   makeUrl,
   toHexString,
+  isHexString,
 } from "./utils";
 import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
@@ -88,6 +89,18 @@ export async function getEntry(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<SignedRegistryEntry> {
+  /* istanbul ignore next */
+  if (typeof publicKey !== "string") {
+    throw new Error(`Expected parameter publicKey to be type string, was type ${typeof publicKey}`);
+  }
+  /* istanbul ignore next */
+  if (typeof dataKey !== "string") {
+    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
+  }
+  if (!isHexString(publicKey)) {
+    throw new Error("Expected parameter publicKey to be a hex-encoded string");
+  }
+
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -116,15 +129,20 @@ export async function getEntry(
       },
     });
   } catch (err: unknown) {
-    if (!Object.prototype.hasOwnProperty.call(err, "response")) {
-      throw err;
-    }
     // @ts-expect-error TS complains about err.response
     if (err.response.status === 404) {
       return { entry: null, signature: null };
     }
     // @ts-expect-error TS complains about err.response
     throw new Error(err.response.data.message);
+  }
+
+  if (
+    typeof response.data.data != "string" ||
+    typeof response.data.revision != "string" ||
+    typeof response.data.signature != "string"
+  ) {
+    throw new Error("Did not get a complete entry response");
   }
 
   const signedEntry = {
@@ -207,6 +225,14 @@ export async function setEntry(
   entry: RegistryEntry,
   customOptions?: CustomSetEntryOptions
 ): Promise<void> {
+  /* istanbul ignore next */
+  if (typeof privateKey !== "string") {
+    throw new Error(`Expected parameter privateKey to be type string, was type ${typeof privateKey}`);
+  }
+  if (!isHexString(privateKey)) {
+    throw new Error("Expected parameter privateKey to be a hex-encoded string");
+  }
+
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
 
