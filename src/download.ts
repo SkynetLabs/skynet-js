@@ -238,18 +238,28 @@ export async function getFileContent(
   this: SkynetClient,
   skylink: string,
   customOptions?: CustomDownloadOptions
-): Promise<Record<string, unknown>> {
+): Promise<string> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
   // GET request the skylink
-  const response = await this.executeRequest({
+  let { data } = await this.executeRequest({
     ...opts,
     method: "get",
     url,
   });
 
-  return response.data;
+  if (typeof data !== "string") {
+    if (typeof data === "object" && data !== null) {
+      data = JSON.stringify(data);
+    } else {
+      throw new Error(
+        "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      );
+    }
+  }
+
+  return data;
 }
 
 /**

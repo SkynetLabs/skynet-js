@@ -193,8 +193,16 @@ describe("getFileContent", () => {
 
       const fileData = await client.getFileContent(input);
 
-      expect(fileData).toEqual(skynetFileContents);
+      expect(fileData).toEqual(JSON.stringify(skynetFileContents));
     });
+  });
+
+  it("should throw if data is not returned", async () => {
+    mock.onGet(expectedUrl).reply(200);
+
+    await expect(client.getFileContent(skylink)).rejects.toThrowError(
+      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
   });
 });
 

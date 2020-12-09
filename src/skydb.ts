@@ -53,7 +53,11 @@ export async function getJSON(
   const skylink = entry.data;
   const data = await this.getFileContent(skylink, opts);
 
-  return { data, revision: entry.revision };
+  try {
+    return { data: JSON.parse(data), revision: entry.revision };
+  } catch (err) {
+    throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
+  }
 }
 
 /**
