@@ -137,12 +137,15 @@ export async function getEntry(
     throw new Error(err.response.data.message);
   }
 
+  // Sanity check.
   if (
-    typeof response.data.data != "string" ||
-    typeof response.data.revision != "string" ||
-    typeof response.data.signature != "string"
+    typeof response.data.data !== "string" ||
+    typeof response.data.revision !== "string" ||
+    typeof response.data.signature !== "string"
   ) {
-    throw new Error("Did not get a complete entry response");
+    throw new Error(
+      "Did not get a complete entry response despite a successful request. Please try again and report this issue to the devs if it persists"
+    );
   }
 
   const signedEntry = {

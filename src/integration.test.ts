@@ -26,10 +26,10 @@ describe("SkyDB end to end integration tests", () => {
     await client.db.setJSON(privateKey, dataKey, json);
 
     // get the file in the SkyDB
-    const actual = await client.db.getJSON(publicKey, dataKey);
-    expect(actual.data).toEqual(json);
+    const { data, revision } = await client.db.getJSON(publicKey, dataKey);
+    expect(data).toEqual(json);
     // Revision should be 0.
-    expect(actual.revision).toEqual(BigInt(0));
+    expect(revision).toEqual(BigInt(0));
   });
 
   it("Should set and get entries with the revision at the max allowed", async () => {
