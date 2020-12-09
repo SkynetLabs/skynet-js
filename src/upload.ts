@@ -45,7 +45,9 @@ export async function uploadFile(this: SkynetClient, file: File, customOptions?:
   const response = await this.uploadFileRequest(file, customOptions);
 
   if (typeof response.skylink !== "string") {
-    throw new Error("Did not get expected skylink response");
+    throw new Error(
+      "Did not get expected skylink response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
   }
 
   return `${uriSkynetPrefix}${response.skylink}`;

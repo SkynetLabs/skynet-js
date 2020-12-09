@@ -144,7 +144,7 @@ export async function getEntry(
     typeof response.data.signature !== "string"
   ) {
     throw new Error(
-      "Did not get a complete entry response despite a successful request. Please try again and report this issue to the devs if it persists"
+      "Did not get a complete entry response despite a successful request. Please try again and report this issue to the devs if it persists."
     );
   }
 
