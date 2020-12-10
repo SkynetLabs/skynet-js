@@ -234,29 +234,25 @@ export async function getMetadata(
  * @returns - The content of the file.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
-export async function getFileContent(
+export async function getFileContent<T = unknown>(
   this: SkynetClient,
   skylink: string,
   customOptions?: CustomDownloadOptions
-): Promise<string> {
+): Promise<T> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
   // GET request the skylink
-  let { data } = await this.executeRequest({
+  const { data } = await this.executeRequest({
     ...opts,
     method: "get",
     url,
   });
 
-  if (typeof data !== "string") {
-    if (typeof data === "object" && data !== null) {
-      data = JSON.stringify(data);
-    } else {
-      throw new Error(
-        "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-      );
-    }
+  if (typeof data === "undefined") {
+    throw new Error(
+      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
   }
 
   return data;

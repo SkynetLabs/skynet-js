@@ -193,7 +193,7 @@ describe("getFileContent", () => {
 
       const fileData = await client.getFileContent(input);
 
-      expect(fileData).toEqual(JSON.stringify(skynetFileContents));
+      expect(fileData).toEqual(skynetFileContents);
     });
   });
 

@@ -116,7 +116,7 @@ describe("Upload and download integration tests", () => {
     const skylink = await client.uploadFile(file);
 
     const content = await client.getFileContent(skylink);
-    expect(content).toEqual(expect.any(String));
-    expect(content).toEqual(JSON.stringify(json));
+    expect(content).toEqual(expect.any(Object));
+    expect(content).toEqual(json);
   });
 });
