@@ -36,9 +36,8 @@ export async function compareFormData(formData: Record<string, unknown>, entries
     // Read the file asynchronously.
     const reader = new FileReader();
     reader.onload = function (e) {
-      if (e.target === null) {
-        throw new Error("e.target === null");
-      }
+      expect(e.target).not.toBeNull();
+      if (e.target === null) return; // Make the null-check happy.
       // Check that the file contents equal expected entry.
       expect(e.target.result).toEqual(expectedData);
     };
