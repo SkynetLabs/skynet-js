@@ -154,7 +154,15 @@ describe("setJSON", () => {
     );
   });
 
-  it("Should throw an error if the json is not an object", async () => {
-    await expect(client.registry.setEntry(privateKey)).rejects.toThrowError("Expected parameter entry to be an object");
+  it("Should throw an error if the data key is not provided", async () => {
+    await expect(client.db.setJSON(privateKey)).rejects.toThrowError(
+      "Expected parameter dataKey to be type string, was type undefined"
+    );
+  });
+
+  it("Should throw an error if the json is not provided", async () => {
+    await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
+      "Expected parameter json to be an object"
+    );
   });
 });

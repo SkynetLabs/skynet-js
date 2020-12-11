@@ -60,7 +60,7 @@ describe("getEntry", () => {
 
   it("Should throw an error if the public key is not hex-encoded", async () => {
     await expect(client.registry.getEntry("foo", dataKey)).rejects.toThrowError(
-      "Expected parameter publicKey to be a hex-encoded string"
+      "Given public key 'foo' is not a valid hex-encoded string or contains an invalid prefix"
     );
   });
 
@@ -110,7 +110,7 @@ describe("setEntry", () => {
 
   it("should throw when key is not hex-encoded", async () => {
     await expect(client.registry.setEntry(`${privateKey}x`, {})).rejects.toThrowError(
-      `Given private key '${privateKey}x' is not a valid hex-encoded string`
+      "Expected parameter privateKey to be a hex-encoded string"
     );
   });
 });

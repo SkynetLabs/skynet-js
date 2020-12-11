@@ -90,17 +90,7 @@ export async function getEntry(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<SignedRegistryEntry> {
-  /* istanbul ignore next */
-  if (typeof publicKey !== "string") {
-    throw new Error(`Expected parameter publicKey to be type string, was type ${typeof publicKey}`);
-  }
-  /* istanbul ignore next */
-  if (typeof dataKey !== "string") {
-    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
-  }
-  if (!isHexString(publicKey)) {
-    throw new Error("Expected parameter publicKey to be a hex-encoded string");
-  }
+  // Validation is done in `getEntryUrl`.
 
   const opts = {
     ...defaultGetEntryOptions,
@@ -108,8 +98,8 @@ export async function getEntry(
     ...customOptions,
   };
 
-  const publicKeyBuffer = Buffer.from(publicKey, "hex");
   const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
+  const publicKeyBuffer = Buffer.from(publicKey, "hex");
 
   let response: AxiosResponse;
   try {
@@ -188,6 +178,15 @@ export function getEntryUrl(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): string {
+  /* istanbul ignore next */
+  if (typeof publicKey !== "string") {
+    throw new Error(`Expected parameter publicKey to be type string, was type ${typeof publicKey}`);
+  }
+  /* istanbul ignore next */
+  if (typeof dataKey !== "string") {
+    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
+  }
+
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -248,10 +247,6 @@ export async function setEntry(
 
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
-
-  if (!isHexString(privateKey)) {
-    throw new Error(`Given private key '${privateKey}' is not a valid hex-encoded string`);
-  }
 
   const opts = {
     ...defaultSetEntryOptions,
