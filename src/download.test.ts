@@ -191,9 +191,9 @@ describe("getFileContent", () => {
       const skylinkUrl = client.getSkylinkUrl(input);
       mock.onGet(skylinkUrl).reply(200, skynetFileContents, headers);
 
-      const fileData = await client.getFileContent(input);
+      const { data } = await client.getFileContent(input);
 
-      expect(fileData).toEqual(skynetFileContents);
+      expect(data).toEqual(skynetFileContents);
     });
   });
 

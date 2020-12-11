@@ -37,6 +37,21 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
 };
 
 /**
+ * The response for a get file content request.
+ *
+ * @property data - The returned file content. Its type is stored in contentType.
+ * @property contentType - The type of the content.
+ * @property metadata - The metadata in JSON format.
+ * @property skylink - 46-character skylink.
+ */
+export type GetFileContentResponse<T = unknown> = {
+  data: T;
+  contentType: string;
+  metadata: Record<string, unknown>;
+  skylink: string;
+};
+
+/**
  * The response for a resolve HNS request.
  *
  * @property skylink - 46-character skylink.
@@ -204,7 +219,7 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?:
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - The metadata in JSON format.
+ * @returns - The metadata in JSON format. Empty if no metadata was found.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getMetadata(
@@ -221,6 +236,12 @@ export async function getMetadata(
     url,
   });
 
+  if (typeof response.headers === "undefined") {
+    throw new Error(
+      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  }
+
   return response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
 }
 
@@ -231,31 +252,41 @@ export async function getMetadata(
  * @param skylink - 46 character skylink.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - The content of the file.
+ * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getFileContent<T = unknown>(
   this: SkynetClient,
   skylink: string,
   customOptions?: CustomDownloadOptions
-): Promise<T> {
+): Promise<GetFileContentResponse<T>> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylink, opts);
 
-  // GET request the skylink
-  const { data } = await this.executeRequest({
+  // GET request the data at the skylink.
+  const response = await this.executeRequest({
     ...opts,
     method: "get",
     url,
   });
 
-  if (typeof data === "undefined") {
+  if (typeof response.data === "undefined") {
     throw new Error(
       "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
     );
   }
+  if (typeof response.headers === "undefined") {
+    throw new Error(
+      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  }
 
-  return data;
+  // TODO: Return null instead if header not found?
+  const contentType = response.headers["content-type"] ?? "";
+  const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
+  const responseSkylink = response.headers["skynet-skylink"] ?? "";
+
+  return { data: response.data, contentType, metadata, skylink: responseSkylink };
 }
 
 /**

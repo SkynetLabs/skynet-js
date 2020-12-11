@@ -97,15 +97,15 @@ describe("Registry end to end integration tests", () => {
 
 describe("Upload and download integration tests", () => {
   it("Should get plaintext file contents", async () => {
-    const data = "testing";
+    const fileData = "testing";
 
     // Upload the data to acquire its skylink
-    const file = new File([data], dataKey, { type: "text/plain" });
+    const file = new File([fileData], dataKey, { type: "text/plain" });
     const skylink = await client.uploadFile(file);
 
-    const content = await client.getFileContent(skylink);
-    expect(content).toEqual(expect.any(String));
-    expect(content).toEqual(data);
+    const { data } = await client.getFileContent(skylink);
+    expect(data).toEqual(expect.any(String));
+    expect(data).toEqual(data);
   });
 
   it("Should get JSON file contents", async () => {
@@ -115,8 +115,8 @@ describe("Upload and download integration tests", () => {
     const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
     const skylink = await client.uploadFile(file);
 
-    const content = await client.getFileContent(skylink);
-    expect(content).toEqual(expect.any(Object));
-    expect(content).toEqual(json);
+    const { data } = await client.getFileContent(skylink);
+    expect(data).toEqual(expect.any(Object));
+    expect(data).toEqual(json);
   });
 });

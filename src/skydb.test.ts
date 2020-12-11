@@ -37,7 +37,7 @@ describe("getJSON", () => {
   it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).reply(200, json);
+    mock.onGet(skylinkUrl).reply(200, json, {});
 
     const jsonReturned = await client.db.getJSON(publicKey, dataKey);
     expect(jsonReturned.data).toEqual(json);
@@ -55,7 +55,7 @@ describe("getJSON", () => {
   it("should throw if the returned file data is not JSON", async () => {
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).reply(200, "thisistext");
+    mock.onGet(skylinkUrl).reply(200, "thisistext", {});
 
     await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
       `File data for the entry at data key '${dataKey}' is not JSON.`
