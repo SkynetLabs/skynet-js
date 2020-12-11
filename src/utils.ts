@@ -283,7 +283,7 @@ export function trimForwardSlash(str: string): string {
  * @param prefix - The prefix to remove.
  * @returns - The processed string.
  */
-function trimPrefix(str: string, prefix: string): string {
+export function trimPrefix(str: string, prefix: string): string {
   while (str.startsWith(prefix)) {
     str = str.slice(prefix.length);
   }
@@ -339,9 +339,27 @@ export function stringToUint8Array(str: string): Uint8Array {
  *
  * @param str - The string to convert.
  * @returns - The uint8 array.
+ * @throws - Will throw if the input is not a valid hex-encoded string.
  */
 export function hexToUint8Array(str: string): Uint8Array {
-  return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  if (!isHexString(str)) {
+    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
+  }
+  const matches = str.match(/.{1,2}/g);
+  if (matches === null) {
+    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
+  }
+  return new Uint8Array(matches.map((byte) => parseInt(byte, 16)));
+}
+
+/**
+ * Returns true if the input is a valid hex-encoded string.
+ *
+ * @param str - The input string.
+ * @returns - True if the input is hex-encoded.
+ */
+export function isHexString(str: string): boolean {
+  return /^[0-9A-Fa-f]*$/g.test(str);
 }
 
 /**
