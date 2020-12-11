@@ -9,6 +9,7 @@ import {
   hexToUint8Array,
   makeUrl,
   toHexString,
+  trimPrefix,
   isHexString,
 } from "./utils";
 import { Buffer } from "buffer";
@@ -81,7 +82,7 @@ export type SignedRegistryEntry = {
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The signed registry entry.
- * @throws - Will throw if the returned signature does not match the returned entry or the provided timeout is invalid.
+ * @throws - Will throw if the returned signature does not match the returned entry or the provided timeout is invalid or the given key is not valid.
  */
 export async function getEntry(
   this: SkynetClient,
@@ -179,7 +180,7 @@ export async function getEntry(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The full get entry URL.
- * @throws - Will throw if the provided timeout is invalid.
+ * @throws - Will throw if the provided timeout is invalid or the given key is not valid.
  */
 export function getEntryUrl(
   this: SkynetClient,
@@ -201,6 +202,12 @@ export function getEntryUrl(
     );
   }
 
+  // Trim the prefix if it was passed in.
+  publicKey = trimPrefix(publicKey, "ed25519:");
+  if (!isHexString(publicKey)) {
+    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
+  }
+
   const query = {
     publickey: `ed25519:${publicKey}`,
     datakey: toHexString(hashDataKey(dataKey)),
@@ -220,7 +227,7 @@ export function getEntryUrl(
  * @param privateKey - The user private key.
  * @param entry - The entry to set.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @throws - Will throw if the entry revision does not fit in 64 bits.
+ * @throws - Will throw if the entry revision does not fit in 64 bits or the given key is not valid.
  */
 export async function setEntry(
   this: SkynetClient,
@@ -242,12 +249,15 @@ export async function setEntry(
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
 
+  if (!isHexString(privateKey)) {
+    throw new Error(`Given private key '${privateKey}' is not a valid hex-encoded string`);
+  }
+
   const opts = {
     ...defaultSetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
-
   const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
   // Sign the entry.
