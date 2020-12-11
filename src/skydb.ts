@@ -42,7 +42,7 @@ export async function getJSON(
     ...customOptions,
   };
 
-  // lookup the registry entry
+  // Lookup the registry entry.
   const { entry }: { entry: RegistryEntry } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
     return { data: null, revision: null };
@@ -116,6 +116,6 @@ export async function setJSON(
     revision,
   };
 
-  // update the registry
+  // Update the registry.
   await this.registry.setEntry(privateKey, entry);
 }

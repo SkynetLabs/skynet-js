@@ -52,6 +52,17 @@ export type GetFileContentResponse<T = unknown> = {
 };
 
 /**
+ * The response for a get metadata request.
+ *
+ * @property metadata - The metadata in JSON format.
+ * @property skylink - 46-character skylink.
+ */
+export type GetMetadataResponse = {
+  metadata: Record<string, unknown>;
+  skylink: string;
+};
+
+/**
  * The response for a resolve HNS request.
  *
  * @property skylink - 46-character skylink.
@@ -226,7 +237,7 @@ export async function getMetadata(
   this: SkynetClient,
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
-): Promise<Record<string, unknown>> {
+): Promise<GetMetadataResponse> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -242,14 +253,17 @@ export async function getMetadata(
     );
   }
 
-  return response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
+  const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
+  const skylink = response.headers["skynet-skylink"] ?? "";
+
+  return { metadata, skylink };
 }
 
 /**
  * Does a GET request of the skylink, returning the data property of the response.
  *
  * @param this - SkynetClient
- * @param skylink - 46 character skylink.
+ * @param skylinkStr - 46 character skylink.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
@@ -257,11 +271,11 @@ export async function getMetadata(
  */
 export async function getFileContent<T = unknown>(
   this: SkynetClient,
-  skylink: string,
+  skylinkStr: string,
   customOptions?: CustomDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const url = this.getSkylinkUrl(skylink, opts);
+  const url = this.getSkylinkUrl(skylinkStr, opts);
 
   // GET request the data at the skylink.
   const response = await this.executeRequest({
@@ -284,9 +298,9 @@ export async function getFileContent<T = unknown>(
   // TODO: Return null instead if header not found?
   const contentType = response.headers["content-type"] ?? "";
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
-  const responseSkylink = response.headers["skynet-skylink"] ?? "";
+  const skylink = response.headers["skynet-skylink"] ?? "";
 
-  return { data: response.data, contentType, metadata, skylink: responseSkylink };
+  return { data: response.data, contentType, metadata, skylink };
 }
 
 /**
