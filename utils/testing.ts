@@ -37,7 +37,7 @@ export async function compareFormData(formData: Record<string, unknown>, entries
     const reader = new FileReader();
     reader.onload = function (e) {
       // Check that the file contents equal expected entry.
-      expect(e.target.result).toEqual(expectedData);
+      expect(e.target?.result).toEqual(expectedData);
     };
     reader.readAsText(file);
     while (reader.readyState !== 2) {

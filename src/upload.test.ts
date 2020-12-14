@@ -130,6 +130,13 @@ describe("uploadFile", () => {
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     await expect(client.uploadFile(file, { skykeyId: "test" })).rejects.toThrow();
   });
+
+  it("should throw if a skylink was not returned", async () => {
+    mock.resetHandlers();
+    mock.onPost(url).replyOnce(200, {});
+
+    await expect(client.uploadFile(file)).rejects.toThrowError("Did not get expected skylink response");
+  });
 });
 
 describe("uploadDirectory", () => {

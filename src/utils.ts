@@ -81,6 +81,11 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
  */
 export function assertUint64(int: bigint): void {
+  /* istanbul ignore next */
+  if (typeof int !== "bigint") {
+    throw new Error(`Expected parameter int to be type bigint, was type ${typeof int}`);
+  }
+
   if (int < BigInt(0)) {
     throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);
   }
@@ -107,7 +112,7 @@ export function convertSkylinkToBase32(skylink: string): string {
  * @param endpointPath - The endpoint path.
  * @returns - The base custom options.
  */
-export function defaultOptions(endpointPath: string): BaseCustomOptions {
+export function defaultOptions(endpointPath: string): CustomClientOptions & { endpointPath: string } {
   return {
     endpointPath,
     APIKey: "",
@@ -123,6 +128,7 @@ export function defaultOptions(endpointPath: string): BaseCustomOptions {
  * @returns - The portal URL.
  */
 export function defaultPortalUrl(): string {
+  /* istanbul ignore next */
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   return window.location.origin;
 }
@@ -152,6 +158,7 @@ function getFilePath(
     path?: string;
   }
 ): string {
+  /* istanbul ignore next */
   return file.webkitRelativePath || file.path || file.name;
 }
 
@@ -296,7 +303,7 @@ export function trimForwardSlash(str: string): string {
  * @param prefix - The prefix to remove.
  * @returns - The processed string.
  */
-function trimPrefix(str: string, prefix: string): string {
+export function trimPrefix(str: string, prefix: string): string {
   while (str.startsWith(prefix)) {
     str = str.slice(prefix.length);
   }
@@ -344,6 +351,11 @@ export function trimUriPrefix(str: string, prefix: string): string {
  * @returns - The uint8 array.
  */
 export function stringToUint8Array(str: string): Uint8Array {
+  /* istanbul ignore next */
+  if (typeof str !== "string") {
+    throw new Error(`Expected parameter str to be type string, was type ${typeof str}`);
+  }
+
   return Uint8Array.from(Buffer.from(str));
 }
 
@@ -352,9 +364,32 @@ export function stringToUint8Array(str: string): Uint8Array {
  *
  * @param str - The string to convert.
  * @returns - The uint8 array.
+ * @throws - Will throw if the input is not a valid hex-encoded string.
  */
 export function hexToUint8Array(str: string): Uint8Array {
-  return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  if (!isHexString(str)) {
+    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
+  }
+  const matches = str.match(/.{1,2}/g);
+  if (matches === null) {
+    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
+  }
+  return new Uint8Array(matches.map((byte) => parseInt(byte, 16)));
+}
+
+/**
+ * Returns true if the input is a valid hex-encoded string.
+ *
+ * @param str - The input string.
+ * @returns - True if the input is hex-encoded.
+ */
+export function isHexString(str: string): boolean {
+  /* istanbul ignore next */
+  if (typeof str !== "string") {
+    throw new Error(`Expected parameter str to be type string, was type ${typeof str}`);
+  }
+
+  return /^[0-9A-Fa-f]*$/g.test(str);
 }
 
 /**

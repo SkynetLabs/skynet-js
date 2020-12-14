@@ -44,6 +44,12 @@ const defaultUploadOptions = {
 export async function uploadFile(this: SkynetClient, file: File, customOptions?: CustomUploadOptions): Promise<string> {
   const data = await this.uploadFileRequest(file, customOptions);
 
+  if (typeof data.skylink !== "string") {
+    throw new Error(
+      "Did not get expected 'skylink' response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  }
+
   return formatSkylink(data.skylink);
 }
 
@@ -117,6 +123,11 @@ export async function uploadDirectoryRequest(
   filename: string,
   customOptions?: CustomUploadOptions
 ): Promise<UploadRequestResponse> {
+  /* istanbul ignore next */
+  if (typeof filename !== "string") {
+    throw new Error(`Expected parameter filename to be type string, was type ${typeof filename}`);
+  }
+
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
   const formData = new FormData();
 
