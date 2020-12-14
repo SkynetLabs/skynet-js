@@ -67,6 +67,11 @@ const defaultResolveHnsOptions = {
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export function downloadFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
+  /* istanbul ignore next */
+  if (typeof skylinkUrl !== "string") {
+    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
+  }
+
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -90,6 +95,11 @@ export async function downloadFileHns(
   domain: string,
   customOptions?: CustomDownloadOptions
 ): Promise<string> {
+  /* istanbul ignore next */
+  if (typeof domain !== "string") {
+    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
+  }
+
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
   const url = this.getHnsUrl(domain, opts);
 
@@ -110,6 +120,11 @@ export async function downloadFileHns(
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
+  /* istanbul ignore next */
+  if (typeof skylinkUrl !== "string") {
+    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
+  }
+
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
@@ -168,6 +183,11 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
  * @returns - The full URL for the HNS domain.
  */
 export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: CustomHnsDownloadOptions): string {
+  /* istanbul ignore next */
+  if (typeof domain !== "string") {
+    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
+  }
+
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
@@ -191,6 +211,11 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: Cu
  * @returns - The full URL for the resolver for the HNS domain.
  */
 export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?: BaseCustomOptions): string {
+  /* istanbul ignore next */
+  if (typeof domain !== "string") {
+    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
+  }
+
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
@@ -212,6 +237,11 @@ export async function getMetadata(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<Record<string, unknown>> {
+  /* istanbul ignore next */
+  if (typeof skylinkUrl !== "string") {
+    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
+  }
+
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -228,7 +258,7 @@ export async function getMetadata(
  * Does a GET request of the skylink, returning the data property of the response.
  *
  * @param this - SkynetClient
- * @param skylink - 46 character skylink.
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The content of the file.
@@ -236,13 +266,18 @@ export async function getMetadata(
  */
 export async function getFileContent(
   this: SkynetClient,
-  skylink: string,
+  skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<Record<string, unknown>> {
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const url = this.getSkylinkUrl(skylink, opts);
+  /* istanbul ignore next */
+  if (typeof skylinkUrl !== "string") {
+    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
+  }
 
-  // GET request the skylink
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const url = this.getSkylinkUrl(skylinkUrl, opts);
+
+  // GET request the skylink.
   const response = await this.executeRequest({
     ...opts,
     method: "get",
@@ -263,6 +298,11 @@ export async function getFileContent(
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export function openFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
+  /* istanbul ignore next */
+  if (typeof skylinkUrl !== "string") {
+    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
+  }
+
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -285,6 +325,11 @@ export async function openFileHns(
   domain: string,
   customOptions?: CustomHnsDownloadOptions
 ): Promise<string> {
+  /* istanbul ignore next */
+  if (typeof domain !== "string") {
+    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
+  }
+
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsUrl(domain, opts);
 
@@ -308,6 +353,11 @@ export async function resolveHns(
   domain: string,
   customOptions?: BaseCustomOptions
 ): Promise<ResolveHnsResponse> {
+  /* istanbul ignore next */
+  if (typeof domain !== "string") {
+    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
+  }
+
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsresUrl(domain, opts);
 

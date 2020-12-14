@@ -90,14 +90,16 @@ export async function getEntry(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<SignedRegistryEntry> {
+  // Validation is done in `getEntryUrl`.
+
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
-  const publicKeyBuffer = Buffer.from(publicKey, "hex");
   const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
+  const publicKeyBuffer = Buffer.from(publicKey, "hex");
 
   let response: AxiosResponse;
   try {
@@ -108,6 +110,9 @@ export async function getEntry(
       // Transform the response to add quotes, since uint64 cannot be accurately
       // read by JS so the revision needs to be parsed as a string.
       transformResponse: function (data: string) {
+        if (data === undefined) {
+          return {};
+        }
         // Change the revision value from a JSON integer to a string.
         data = data.replace(regexRevisionNoQuotes, '"revision":"$1"');
         // Convert the JSON data to an object.
@@ -115,12 +120,23 @@ export async function getEntry(
       },
     });
   } catch (err: unknown) {
-    // unfortunately axios rejects anything that's not >= 200 and < 300
-    return { entry: null, signature: null };
+    // @ts-expect-error TS complains about err.response
+    if (err.response.status === 404) {
+      return { entry: null, signature: null };
+    }
+    // @ts-expect-error TS complains about err.response
+    throw new Error(err.response.data.message);
   }
 
-  if (response.status !== 200) {
-    return { entry: null, signature: null };
+  // Sanity check.
+  if (
+    typeof response.data.data !== "string" ||
+    typeof response.data.revision !== "string" ||
+    typeof response.data.signature !== "string"
+  ) {
+    throw new Error(
+      "Did not get a complete entry response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
   }
 
   const signedEntry = {
@@ -162,6 +178,15 @@ export function getEntryUrl(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): string {
+  /* istanbul ignore next */
+  if (typeof publicKey !== "string") {
+    throw new Error(`Expected parameter publicKey to be type string, was type ${typeof publicKey}`);
+  }
+  /* istanbul ignore next */
+  if (typeof dataKey !== "string") {
+    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
+  }
+
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -209,12 +234,19 @@ export async function setEntry(
   entry: RegistryEntry,
   customOptions?: CustomSetEntryOptions
 ): Promise<void> {
+  /* istanbul ignore next */
+  if (typeof privateKey !== "string") {
+    throw new Error(`Expected parameter privateKey to be type string, was type ${typeof privateKey}`);
+  }
+  if (!isHexString(privateKey)) {
+    throw new Error("Expected parameter privateKey to be a hex-encoded string");
+  }
+  if (typeof entry !== "object" || entry === null) {
+    throw new Error("Expected parameter entry to be an object");
+  }
+
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
-
-  if (!isHexString(privateKey)) {
-    throw new Error(`Given private key '${privateKey}' is not a valid hex-encoded string`);
-  }
 
   const opts = {
     ...defaultSetEntryOptions,

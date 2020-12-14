@@ -81,6 +81,11 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
  */
 export function assertUint64(int: bigint): void {
+  /* istanbul ignore next */
+  if (typeof int !== "bigint") {
+    throw new Error(`Expected parameter int to be type bigint, was type ${typeof int}`);
+  }
+
   if (int < BigInt(0)) {
     throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);
   }
@@ -333,6 +338,11 @@ export function trimUriPrefix(str: string, prefix: string): string {
  * @returns - The uint8 array.
  */
 export function stringToUint8Array(str: string): Uint8Array {
+  /* istanbul ignore next */
+  if (typeof str !== "string") {
+    throw new Error(`Expected parameter str to be type string, was type ${typeof str}`);
+  }
+
   return Uint8Array.from(Buffer.from(str));
 }
 
@@ -361,6 +371,11 @@ export function hexToUint8Array(str: string): Uint8Array {
  * @returns - True if the input is hex-encoded.
  */
 export function isHexString(str: string): boolean {
+  /* istanbul ignore next */
+  if (typeof str !== "string") {
+    throw new Error(`Expected parameter str to be type string, was type ${typeof str}`);
+  }
+
   return /^[0-9A-Fa-f]*$/g.test(str);
 }
 
