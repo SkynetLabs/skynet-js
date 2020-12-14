@@ -261,7 +261,7 @@ export async function getMetadata(
 }
 
 /**
- * Does a GET request of the skylink, returning the data property of the response.
+ * Gets the contents of the file at the given skylink.
  *
  * @param this - SkynetClient
  * @param skylinkStr - 46 character skylink.
@@ -277,6 +277,47 @@ export async function getFileContent<T = unknown>(
 ): Promise<GetFileContentResponse<T>> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = this.getSkylinkUrl(skylinkStr, opts);
+
+  return this.getFileContentRequest<T>(url, opts);
+}
+
+/**
+ * Gets the contents of the file at the given Handshake domain.
+ *
+ * @param this - SkynetClient
+ * @param domain - Handshake domain.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @throws - Will throw if the domain does not contain a skylink.
+ */
+export async function getFileContentHns<T = unknown>(
+  this: SkynetClient,
+  domain: string,
+  customOptions?: CustomDownloadOptions
+): Promise<GetFileContentResponse<T>> {
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const url = this.getHnsUrl(domain, opts);
+
+  return this.getFileContentRequest<T>(url, opts);
+}
+
+/**
+ * Does a GET request of the skylink, returning the data property of the response.
+ *
+ * @param this - SkynetClient
+ * @param url - URL.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @throws - Will throw if the request does not succeed or the response is missing data.
+ */
+export async function getFileContentRequest<T = unknown>(
+  this: SkynetClient,
+  url: string,
+  customOptions?: CustomDownloadOptions
+): Promise<GetFileContentResponse<T>> {
+  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   // GET request the data at the skylink.
   const response = await this.executeRequest({
