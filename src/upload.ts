@@ -1,4 +1,4 @@
-import { defaultOptions, uriSkynetPrefix, getFileMimeType, BaseCustomOptions } from "./utils";
+import { defaultOptions, uriSkynetPrefix, getFileMimeType, BaseCustomOptions, formatSkylink } from "./utils";
 import { SkynetClient } from "./client";
 
 /**
@@ -42,9 +42,9 @@ const defaultUploadOptions = {
  * @returns - The returned skylink.
  */
 export async function uploadFile(this: SkynetClient, file: File, customOptions?: CustomUploadOptions): Promise<string> {
-  const response = await this.uploadFileRequest(file, customOptions);
+  const data = await this.uploadFileRequest(file, customOptions);
 
-  return `${uriSkynetPrefix}${response.skylink}`;
+  return formatSkylink(data.skylink);
 }
 
 /**
@@ -98,7 +98,7 @@ export async function uploadDirectory(
 ): Promise<string> {
   const response = await this.uploadDirectoryRequest(directory, filename, customOptions);
 
-  return `${uriSkynetPrefix}${response.skylink}`;
+  return formatSkylink(response.skylink);
 }
 
 /**

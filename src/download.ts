@@ -5,6 +5,7 @@ import {
   BaseCustomOptions,
   convertSkylinkToBase32,
   defaultOptions,
+  formatSkylink,
   makeUrl,
   parseSkylink,
   trimUriPrefix,
@@ -298,7 +299,7 @@ export async function getFileContent<T = unknown>(
   // TODO: Return null instead if header not found?
   const contentType = response.headers["content-type"] ?? "";
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
-  const skylink = response.headers["skynet-skylink"] ?? "";
+  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
 
   return { data: response.data, contentType, metadata, skylink };
 }

@@ -155,9 +155,9 @@ describe("getMetadata", () => {
       const skylinkUrl = client.getSkylinkUrl(fullSkylink);
       mock.onHead(skylinkUrl).reply(200, {}, headersFull);
 
-      const responseMetadata = await client.getMetadata(fullSkylink);
+      const { metadata } = await client.getMetadata(fullSkylink);
 
-      expect(responseMetadata).toEqual(skynetFileMetadata);
+      expect(metadata).toEqual(skynetFileMetadata);
     }
   );
 
@@ -169,9 +169,9 @@ describe("getMetadata", () => {
       const skylinkUrl = client.getSkylinkUrl(fullSkylink);
       mock.onHead(skylinkUrl).reply(200, {}, headersEmpty);
 
-      const responseMetadata = await client.getMetadata(fullSkylink);
+      const { metadata } = await client.getMetadata(fullSkylink);
 
-      expect(responseMetadata).toEqual({});
+      expect(metadata).toEqual({});
     }
   );
 });
