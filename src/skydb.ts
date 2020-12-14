@@ -1,7 +1,15 @@
 import { pki } from "node-forge";
 import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
-import { trimUriPrefix, uriSkynetPrefix, toHexString, assertUint64, MAX_REVISION, BaseCustomOptions } from "./utils";
+import {
+  trimUriPrefix,
+  uriSkynetPrefix,
+  toHexString,
+  assertUint64,
+  MAX_REVISION,
+  BaseCustomOptions,
+  isHexString,
+} from "./utils";
 import { Buffer } from "buffer";
 import { CustomUploadOptions } from "./upload";
 import { CustomDownloadOptions } from "./download";
@@ -75,6 +83,21 @@ export async function setJSON(
   revision?: bigint,
   customOptions?: CustomSetJSONOptions
 ): Promise<void> {
+  /* istanbul ignore next */
+  if (typeof privateKey !== "string") {
+    throw new Error(`Expected parameter privateKey to be type string, was type ${typeof privateKey}`);
+  }
+  /* istanbul ignore next */
+  if (typeof dataKey !== "string") {
+    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
+  }
+  if (!isHexString(privateKey)) {
+    throw new Error("Expected parameter privateKey to be a hex-encoded string");
+  }
+  if (typeof json !== "object" || json === null) {
+    throw new Error("Expected parameter json to be an object");
+  }
+
   const opts = {
     ...this.customOptions,
     ...customOptions,
@@ -84,13 +107,12 @@ export async function setJSON(
 
   if (revision === undefined) {
     // fetch the current value to find out the revision.
-    let entry: SignedRegistryEntry;
-    try {
-      const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
-      entry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
-      revision = entry.entry.revision + BigInt(1);
-    } catch (err) {
+    const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
+    const entry: SignedRegistryEntry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+    if (entry.entry === null) {
       revision = BigInt(0);
+    } else {
+      revision = entry.entry.revision + BigInt(1);
     }
 
     // Throw if the revision is already the maximum value.
