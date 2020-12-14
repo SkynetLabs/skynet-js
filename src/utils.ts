@@ -112,7 +112,7 @@ export function convertSkylinkToBase32(skylink: string): string {
  * @param endpointPath - The endpoint path.
  * @returns - The base custom options.
  */
-export function defaultOptions(endpointPath: string): BaseCustomOptions {
+export function defaultOptions(endpointPath: string): CustomClientOptions & { endpointPath: string } {
   return {
     endpointPath,
     APIKey: "",
@@ -128,6 +128,7 @@ export function defaultOptions(endpointPath: string): BaseCustomOptions {
  * @returns - The portal URL.
  */
 export function defaultPortalUrl(): string {
+  /* istanbul ignore next */
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   return window.location.origin;
 }
@@ -144,6 +145,7 @@ function getFilePath(
     path?: string;
   }
 ): string {
+  /* istanbul ignore next */
   return file.webkitRelativePath || file.path || file.name;
 }
 

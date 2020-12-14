@@ -41,20 +41,20 @@ export type CustomClientOptions = {
  * @property [timeout] - Request timeout. May be deprecated.
  * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
  */
-export type RequestConfig = CustomClientOptions &
-  BaseCustomOptions & {
-    data?: FormData | Record<string, unknown>;
-    url?: string;
-    method?: Method;
-    query?: Record<string, unknown>;
-    timeout?: number; // TODO: remove
-    extraPath?: string;
-    skykeyName?: string;
-    skykeyId?: string;
-    headers?: Record<string, unknown>;
-    transformRequest?: (data: unknown) => string;
-    transformResponse?: (data: string) => Record<string, unknown>;
-  };
+export type RequestConfig = CustomClientOptions & {
+  endpointPath: string;
+  data?: FormData | Record<string, unknown>;
+  url?: string;
+  method?: Method;
+  query?: Record<string, unknown>;
+  timeout?: number; // TODO: remove
+  extraPath?: string;
+  skykeyName?: string;
+  skykeyId?: string;
+  headers?: Record<string, unknown>;
+  transformRequest?: (data: unknown) => string;
+  transformResponse?: (data: string) => Record<string, unknown>;
+};
 
 /**
  * The Skynet Client which can be used to access Skynet.
@@ -118,6 +118,7 @@ export class SkynetClient {
       throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
     }
 
+    // Build the URL.
     let url = config.url;
     if (!url) {
       url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
@@ -126,24 +127,31 @@ export class SkynetClient {
       url = addUrlQuery(url, config.query);
     }
 
+    // Build headers.
     const headers = { ...config.headers };
     if (config.customUserAgent) {
       headers["User-Agent"] = config.customUserAgent;
     }
+
+    const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
+
+    /* istanbul ignore next */
+    const onUploadProgress =
+      config.onUploadProgress &&
+      function (event: ProgressEvent) {
+        const progress = event.loaded / event.total;
+
+        // Need the if-statement or TS complains.
+        if (config.onUploadProgress) config.onUploadProgress(progress, event);
+      };
 
     return axios({
       url,
       method: config.method,
       data: config.data,
       headers,
-      auth: config.APIKey && { username: "", password: config.APIKey },
-      onUploadProgress:
-        config.onUploadProgress &&
-        function (event: ProgressEvent) {
-          const progress = event.loaded / event.total;
-
-          config.onUploadProgress(progress, event);
-        },
+      auth,
+      onUploadProgress,
       transformRequest: config.transformRequest,
       transformResponse: config.transformResponse,
 

@@ -150,8 +150,8 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
 
   let url;
   if (opts.subdomain) {
-    // Get the path from the skylink.
-    const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true });
+    // Get the path from the skylink. Use the empty string if not found.
+    const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true }) ?? "";
     // Get just the skylink.
     let skylink = parseSkylink(skylinkUrl);
     if (skylink === null) {
@@ -165,7 +165,7 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
     // Get the skylink including the path.
     const skylink = parseSkylink(skylinkUrl, { includePath: true });
     if (skylink === null) {
-      throw new Error(`Could not get skylink out of input '${skylinkUrl}'`);
+      throw new Error(`Could not get skylink with path out of input '${skylinkUrl}'`);
     }
     // Add additional path if passed in.
     url = makeUrl(this.portalUrl, opts.endpointPath, skylink, path);
