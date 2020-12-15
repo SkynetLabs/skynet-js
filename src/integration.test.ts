@@ -110,7 +110,7 @@ describe("Upload and download integration tests", () => {
 
     // Upload the data to acquire its skylink
     const file = new File([fileData], dataKey, { type: "text/plain" });
-    const skylink = await client.uploadFile(file);
+    const { skylink } = await client.uploadFile(file);
 
     const { data } = await client.getFileContent(skylink);
     expect(data).toEqual(expect.any(String));
@@ -122,7 +122,7 @@ describe("Upload and download integration tests", () => {
 
     // Upload the data to acquire its skylink
     const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-    const skylink = await client.uploadFile(file);
+    const { skylink } = await client.uploadFile(file);
 
     const { data } = await client.getFileContent(skylink);
     expect(data).toEqual(expect.any(Object));

@@ -7,6 +7,8 @@ describe("SkynetClient", () => {
     // Download
     expect(client).toHaveProperty("downloadFile");
     expect(client).toHaveProperty("downloadFileHns");
+    expect(client).toHaveProperty("getFileContent");
+    expect(client).toHaveProperty("getFileContentHns");
     expect(client).toHaveProperty("getHnsUrl");
     expect(client).toHaveProperty("getHnsresUrl");
     expect(client).toHaveProperty("getSkylinkUrl");
@@ -17,9 +19,7 @@ describe("SkynetClient", () => {
 
     // Upload
     expect(client).toHaveProperty("uploadFile");
-    expect(client).toHaveProperty("uploadFileRequest");
     expect(client).toHaveProperty("uploadDirectory");
-    expect(client).toHaveProperty("uploadDirectoryRequest");
 
     // SkyDB
     expect(client).toHaveProperty("db");

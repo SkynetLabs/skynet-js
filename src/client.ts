@@ -67,11 +67,13 @@ export class SkynetClient {
 
   // Set methods (defined in other files).
 
+  // Upload
   uploadFile = uploadFile;
+  protected uploadFileRequest = uploadFileRequest;
   uploadDirectory = uploadDirectory;
-  uploadDirectoryRequest = uploadDirectoryRequest;
-  uploadFileRequest = uploadFileRequest;
+  protected uploadDirectoryRequest = uploadDirectoryRequest;
 
+  // Download
   downloadFile = downloadFile;
   downloadFileHns = downloadFileHns;
   getSkylinkUrl = getSkylinkUrl;
