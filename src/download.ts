@@ -285,7 +285,7 @@ export async function getMetadata(
   }
 
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
-  const skylink = response.headers["skynet-skylink"] ?? "";
+  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
 
   return { metadata, skylink };
 }
@@ -322,16 +322,16 @@ export async function getFileContent<T = unknown>(
  * @param this - SkynetClient
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
  * @throws - Will throw if the domain does not contain a skylink.
  */
 export async function getFileContentHns<T = unknown>(
   this: SkynetClient,
   domain: string,
-  customOptions?: CustomDownloadOptions
+  customOptions?: CustomHnsDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
   const url = this.getHnsUrl(domain, opts);
 
   return this.getFileContentRequest<T>(url, opts);
@@ -343,7 +343,6 @@ export async function getFileContentHns<T = unknown>(
  * @param this - SkynetClient
  * @param url - URL.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
  * @throws - Will throw if the request does not succeed or the response is missing data.
  */

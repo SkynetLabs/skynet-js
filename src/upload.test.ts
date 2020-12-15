@@ -198,4 +198,13 @@ describe("uploadDirectory", () => {
 
     expect(response.skylink).toEqual(sialink);
   });
+
+  it("should throw if a skylink was not returned", async () => {
+    mock.resetHandlers();
+    mock.onPost(url).replyOnce(200, {});
+
+    await expect(client.uploadDirectory(directory, filename)).rejects.toThrowError(
+      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  });
 });

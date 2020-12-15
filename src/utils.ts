@@ -140,6 +140,9 @@ export function defaultPortalUrl(): string {
  * @returns - The formatted skylink.
  */
 export function formatSkylink(skylink: string): string {
+  if (skylink == "") {
+    return skylink;
+  }
   if (!skylink.startsWith(uriSkynetPrefix)) {
     skylink = `${uriSkynetPrefix}${skylink}`;
   }

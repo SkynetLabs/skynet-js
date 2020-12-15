@@ -2,13 +2,15 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
-import { SkynetClient, defaultSkynetPortalUrl } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
+const skylinkUrl = client.getSkylinkUrl(skylink);
+const sialink = `${uriSkynetPrefix}${skylink}`;
 
 const validSkylinkVariations = combineStrings(
   ["", "sia:", "sia://", "https://siasky.net/", "https://foo.siasky.net/", `https://${skylinkBase32}.siasky.net/`],
@@ -161,19 +163,25 @@ describe("getMetadata", () => {
     }
   );
 
-  const headersEmpty = { "skynet-skylink": skylink };
-
   it.each(validSkylinkVariations)(
-    "should fail quietly when skynet headers not present using skylink %s",
+    "should quietly return nothing when skynet metadata headers not present for skylink %s",
     async (fullSkylink) => {
       const skylinkUrl = client.getSkylinkUrl(fullSkylink);
-      mock.onHead(skylinkUrl).reply(200, {}, headersEmpty);
+      mock.onHead(skylinkUrl).reply(200, {}, {});
 
       const { metadata } = await client.getMetadata(fullSkylink);
 
       expect(metadata).toEqual({});
     }
   );
+
+  it("should throw if no headers were returned", async () => {
+    mock.onHead(skylinkUrl).reply(200, {});
+
+    await expect(client.getMetadata(skylink)).rejects.toThrowError(
+      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  });
 });
 
 describe("getFileContent", () => {
@@ -182,20 +190,42 @@ describe("getFileContent", () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
   });
+  const skynetFileMetadata = { filename: "sia.pdf" };
+  const skynetFileContents = { arbitrary: "json string" };
+  const fullHeaders = {
+    "skynet-skylink": skylink,
+    "content-type": "application/json",
+    "skynet-file-metadata": JSON.stringify(skynetFileMetadata),
+  };
 
-  it("should fetch successfully skynet file", () => {
-    const skynetFileContents = { arbitrary: "json string" };
-    const headers = { "content-type": "application/json" };
+  it.each(validSkylinkVariations)("should successfully fetch skynet file content for %s", async (input) => {
+    const skylinkUrl = client.getSkylinkUrl(input);
+    mock.onGet(skylinkUrl).reply(200, skynetFileContents, fullHeaders);
 
-    validSkylinkVariations.forEach(async (input: string) => {
+    const { data, contentType, metadata, skylink: skylink2 } = await client.getFileContent(input);
+
+    expect(data).toEqual(skynetFileContents);
+    expect(contentType).toEqual("application/json");
+    expect(metadata).toEqual(skynetFileMetadata);
+    expect(skylink2).toEqual(sialink);
+  });
+
+  const headers = {};
+
+  it.each(validSkylinkVariations)(
+    "should successfully fetch skynet file content even when headers are missing for %s",
+    async (input) => {
       const skylinkUrl = client.getSkylinkUrl(input);
       mock.onGet(skylinkUrl).reply(200, skynetFileContents, headers);
 
-      const { data } = await client.getFileContent(input);
+      const { data, contentType, metadata, skylink: skylink2 } = await client.getFileContent(input);
 
       expect(data).toEqual(skynetFileContents);
-    });
-  });
+      expect(contentType).toEqual("");
+      expect(metadata).toEqual({});
+      expect(skylink2).toEqual("");
+    }
+  );
 
   it("should throw if data is not returned", async () => {
     mock.onGet(expectedUrl).reply(200);
@@ -203,6 +233,34 @@ describe("getFileContent", () => {
     await expect(client.getFileContent(skylink)).rejects.toThrowError(
       "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
     );
+  });
+
+  it("should throw if headers are not returned", async () => {
+    mock.onGet(expectedUrl).reply(200, {});
+
+    await expect(client.getFileContent(skylink)).rejects.toThrowError(
+      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  });
+});
+
+describe("getFileContentHns", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
+  const skynetFileContents = { arbitrary: "json string" };
+  const headers = { "content-type": "application/json" };
+
+  it.each(validHnsLinkVariations)("should successfully fetch skynet file content", async (input) => {
+    const hnsUrl = client.getHnsUrl(input);
+    mock.onGet(hnsUrl).reply(200, skynetFileContents, headers);
+
+    const { data } = await client.getFileContentHns(input);
+
+    expect(data).toEqual(skynetFileContents);
   });
 });
 
@@ -224,15 +282,16 @@ describe("openFile", () => {
 });
 
 describe("downloadFileHns", () => {
-  it("should set domain with the portal and hns link and then call window.openFile with attachment set", async () => {
-    for (const input of validHnsLinkVariations) {
+  it.each(validHnsLinkVariations)(
+    "should set domain %s with the portal and hns link and then call window.openFile with attachment set",
+    async (input) => {
       mockLocationAssign.mockClear();
 
       await client.downloadFileHns(input);
 
       expect(mockLocationAssign).toHaveBeenCalledWith("https://siasky.net/hns/foo?attachment=true");
     }
-  });
+  );
 });
 
 describe("openFileHns", () => {
@@ -265,7 +324,7 @@ describe("resolveHns", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onGet(expectedHnsresUrl).reply(200, { skylink: skylink });
+    mock.onGet(expectedHnsresUrl).reply(200, { skylink });
   });
 
   it("should call axios.get with the portal and hnsres link and return the json body", async () => {
