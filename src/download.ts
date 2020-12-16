@@ -55,10 +55,12 @@ export type GetFileContentResponse<T = unknown> = {
 /**
  * The response for a get metadata request.
  *
+ * @property contentType - The type of the content.
  * @property metadata - The metadata in JSON format.
  * @property skylink - 46-character skylink.
  */
 export type GetMetadataResponse = {
+  contentType: string;
   metadata: Record<string, unknown>;
   skylink: string;
 };
@@ -284,10 +286,11 @@ export async function getMetadata(
     );
   }
 
+  const contentType = response.headers["content-type"] ?? "";
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
   const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
 
-  return { metadata, skylink };
+  return { contentType, metadata, skylink };
 }
 
 /**
