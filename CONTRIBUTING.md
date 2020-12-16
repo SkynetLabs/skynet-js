@@ -4,20 +4,20 @@ Want to contribute? Great! There are many ways to give back to the project, whet
 
 ## Reporting issues
 
-Notice something amiss? Have an idea for a new feature? Feel free to to write an Issue on the [GitHub repository](https://github.com/NebulousLabs/skynet-js/issues) about anything that you feel could be fixed or improved. Examples include:
+Notice something amiss? Have an idea for a new feature? Feel free to to write an [Issue](https://docs.github.com/en/free-pro-team@latest/github/managing-your-work-on-github/about-issues) on the GitHub repository about anything that you feel could be fixed or improved. Examples include:
 
 - Unclear documentation
 - Bugs, crashes
 - Enhancement ideas
 - ... and more
 
-Please try to be as descriptive as possible. Provide as much information as you are able to (e.g. browser version, operating system, SDK version). If you are seeing an error, paste as much of the log as you can.
+Please try to be as descriptive as possible. Provide as much information as you are able to (e.g. browser version, operating system, project version). If you are seeing an error, paste as much of the log as you can.
 
 Of course, after submitting an Issue you are free to tackle the problem yourself (see "Submitting changes" below), and encouraged to do so.
 
 ## Choosing an Issue
 
-If you want to contribute code but don't know what to work on, we try to always keep some Issues marked [`help-wanted`](https://github.com/NebulousLabs/skynet-js/labels/help%20wanted) or [`good-first-issue`](https://github.com/NebulousLabs/skynet-js/labels/good%20first%20issue) We want everyone to be able to contribute!
+If you want to contribute code but don't know what to work on, we try to always keep some Issues marked `help-wanted` or `good-first-issue`. We want everyone to be able to contribute!
 
 ## Development
 
@@ -38,7 +38,7 @@ We follow the standard procedure for submitting Pull Requests. Please refer to t
 
 ### Code Style
 
-We try to follow standard best practices for Javascript and Typescript. These best practices are enforced by CI (see below) and code review (also see below).
+We try to follow standard best practices for every language and framework we use. These best practices are enforced by CI (see below) and code review (also see below).
 
 ### Format
 
@@ -50,6 +50,8 @@ Submitted PRs are expected to pass continuous integration (CI), which, among oth
 
 Please refer to the README of this repo for instructions on running the CI and test suites locally.
 
+We require that every piece of code is _covered_, meaning tested. If you aren't familiar with writing tests for the language, make your PR anyway and we'll help you from there.
+
 ### Code review
 
 Your PR will be assigned to a team member and reviewed promptly. More often than not, a code submission will be met with review comments and changes requested. Keep in mind that it's nothing personal -- we leave each other review comments all the time.
@@ -58,4 +60,4 @@ After addressing review comments, it is up to your discretion whether you make a
 
 ### Deployment
 
-Your changes will go live with the next version of the SDK, whenever that is released, and the change will be mentioned in the changelog.
+Your changes will go live with the next version/release, whenever that happens, and the change will be mentioned in the changelog.
