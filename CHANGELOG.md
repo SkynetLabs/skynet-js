@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.0.0-beta]
+
+[Updating Guide](https://siasky.net/docs/v3-beta/#updating-from-v2)
+
+### Added
+
+- `getFileContent` and `getFileContentHns` methods have been added for getting the content of a file from a skylink or Handshake domain without downloading the file in-browser.
+
+### Changed
+
+- **[Breaking change]** Entry revisions are now `bigint` instead of `number`.
+- **[Breaking change]** Upload methods return full objects instead of just a skylink string.
+- **[Breaking change]** Upload request methods were removed.
+- **[Breaking change]** `getMetadata` returns a full object containing the metadata in a subfield.
+- **[Breaking change]** The registry timeout has changed to take seconds instead of milliseconds.
+- **[Breaking change]** `db.getJSON` can return destructured nulls instead of null
+- **[Breaking change]** `registry.getEntry` only returns `null` on entry-not-found.
+- Almost every API method now has the potential to throw. A common cause would be wrongly-typed inputs to a method, which are now checked.
+
+### Removed
+
+- **[Breaking change]** `executeRequest` was removed.
+
 ## [2.9.0]
 
 ### Added
@@ -29,7 +52,7 @@ _Note: this version contains breaking changes to `deriveChildSeed`._
 
 ### Changed
 
-- Fix `deriveChildSeed` bugs. It will now return hex-encoded strings. Note that it will now return different values than before these bugs were fixed.
+- **[Breaking change]** Fix `deriveChildSeed` bugs. It will now return hex-encoded strings. Note that it will now return different values than before these bugs were fixed.
 - Fix `setJSON` function not using hex-encoded publickeys when making its request.
 - Do not use a timeout for `setEntry` by default (was 5s previously).
 - Fix a bug when calling `setJSON` with `revision = 0` where `setJSON` would fetch the latest revision anyway.
@@ -50,10 +73,10 @@ _Note: this version contains breaking changes in the SkyDB and Registry APIs._
 
 ### Changed
 
-- Rename `keyPairFromSeed` to `genKeyPairFromSeed` and have it return keys in the form of hex strings.
-- Rename `generateKeyPairAndSeed` to `genKeyPairAndSeed` and have it return keys in the form of hex strings.
-- Use hex strings as keys as inputs to `getJSON`, `setJSON`, `getEntry`, and `setEntry`.
-- `setEntry` no longer takes a `datakey` argument as it is already in `entry`.
+- **[Breaking change]** Rename `keyPairFromSeed` to `genKeyPairFromSeed` and have it return keys in the form of hex strings.
+- **[Breaking change]** Rename `generateKeyPairAndSeed` to `genKeyPairAndSeed` and have it return keys in the form of hex strings.
+- **[Breaking change]** Use hex strings as keys as inputs to `getJSON`, `setJSON`, `getEntry`, and `setEntry`.
+- **[Breaking change]** `setEntry` no longer takes a `datakey` argument as it is already in `entry`.
 
 ## [2.4.0]
 
