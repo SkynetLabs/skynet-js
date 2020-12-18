@@ -3,6 +3,7 @@ import {
   assertUint64,
   convertSkylinkToBase32,
   defaultSkynetPortalUrl,
+  formatSkylink,
   getFileMimeType,
   getRelativeFilePath,
   getRootDirectory,
@@ -75,6 +76,19 @@ describe("convertSkylinkToBase32", () => {
     const encoded = convertSkylinkToBase32(skylink);
 
     expect(encoded).toEqual(skylinkBase32);
+  });
+});
+
+describe("formatSkylink", () => {
+  it("should ensure the skylink starts with the prefix", () => {
+    const prefixedSkylink = `sia:${skylink}`;
+
+    expect(formatSkylink(skylink)).toEqual(prefixedSkylink);
+    expect(formatSkylink(prefixedSkylink)).toEqual(prefixedSkylink);
+  });
+
+  it("should not prepend a prefix for the empty string", () => {
+    expect(formatSkylink("")).toEqual("");
   });
 });
 

@@ -134,6 +134,22 @@ export function defaultPortalUrl(): string {
 }
 
 /**
+ * Formats the skylink by adding the sia: prefix.
+ *
+ * @param skylink - The skylink.
+ * @returns - The formatted skylink.
+ */
+export function formatSkylink(skylink: string): string {
+  if (skylink == "") {
+    return skylink;
+  }
+  if (!skylink.startsWith(uriSkynetPrefix)) {
+    skylink = `${uriSkynetPrefix}${skylink}`;
+  }
+  return skylink;
+}
+
+/**
  * Gets the path for the file.
  *
  * @param file - The file.

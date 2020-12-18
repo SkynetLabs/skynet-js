@@ -50,16 +50,19 @@ export async function getJSON(
     ...customOptions,
   };
 
-  // lookup the registry entry
+  // Lookup the registry entry.
   const { entry }: { entry: RegistryEntry } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
     return { data: null, revision: null };
   }
 
   // Download the data in that Skylink.
-  // TODO: Replace with download request method.
   const skylink = entry.data;
-  const data = await this.getFileContent(skylink, opts);
+  const { data } = await this.getFileContent<Record<string, unknown>>(skylink, opts);
+
+  if (typeof data !== "object" || data === null) {
+    throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
+  }
 
   return { data, revision: entry.revision };
 }
@@ -126,7 +129,7 @@ export async function setJSON(
 
   // Upload the data to acquire its skylink.
   const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const skylink = await this.uploadFile(file, opts);
+  const { skylink } = await this.uploadFile(file, opts);
 
   // build the registry value
   const entry: RegistryEntry = {
@@ -135,6 +138,6 @@ export async function setJSON(
     revision,
   };
 
-  // update the registry
+  // Update the registry.
   await this.registry.setEntry(privateKey, entry);
 }

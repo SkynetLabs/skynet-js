@@ -9,6 +9,8 @@ import {
   getHnsresUrl,
   getMetadata,
   getFileContent,
+  getFileContentHns,
+  getFileContentRequest,
   openFile,
   openFileHns,
   resolveHns,
@@ -65,11 +67,13 @@ export class SkynetClient {
 
   // Set methods (defined in other files).
 
+  // Upload
   uploadFile = uploadFile;
+  protected uploadFileRequest = uploadFileRequest;
   uploadDirectory = uploadDirectory;
-  uploadDirectoryRequest = uploadDirectoryRequest;
-  uploadFileRequest = uploadFileRequest;
+  protected uploadDirectoryRequest = uploadDirectoryRequest;
 
+  // Download
   downloadFile = downloadFile;
   downloadFileHns = downloadFileHns;
   getSkylinkUrl = getSkylinkUrl;
@@ -77,6 +81,8 @@ export class SkynetClient {
   getHnsresUrl = getHnsresUrl;
   getMetadata = getMetadata;
   getFileContent = getFileContent;
+  getFileContentHns = getFileContentHns;
+  protected getFileContentRequest = getFileContentRequest;
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;

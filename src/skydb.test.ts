@@ -9,12 +9,15 @@ const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
 const json = { data: "thisistext" };
+const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
+const bitfield = 2048;
 
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const registryUrl = `${portalUrl}/skynet/registry`;
 const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
 const uploadUrl = `${portalUrl}/skynet/skyfile`;
+const skylinkUrl = client.getSkylinkUrl(skylink);
 
 const data = "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367";
 const revision = 11;
@@ -36,7 +39,7 @@ describe("getJSON", () => {
   it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
-    mock.onGet(client.getSkylinkUrl(skylink)).reply(200, json);
+    mock.onGet(skylinkUrl).reply(200, json, {});
 
     const jsonReturned = await client.db.getJSON(publicKey, dataKey);
     expect(jsonReturned.data).toEqual(json);
@@ -50,6 +53,16 @@ describe("getJSON", () => {
     expect(data).toBeNull();
     expect(revision).toBeNull();
   });
+
+  it("should throw if the returned file data is not JSON", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).reply(200, "thisistext", {});
+
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      `File data for the entry at data key '${dataKey}' is not JSON.`
+    );
+  });
 });
 
 describe("setJSON", () => {
@@ -58,12 +71,11 @@ describe("setJSON", () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
     mock.resetHistory();
+    // mock a successful upload
+    mock.onPost(uploadUrl).reply(200, { skylink, merkleroot, bitfield });
   });
 
   it("should perform an upload, lookup and registry update", async () => {
-    // mock a successful upload
-    mock.onPost(uploadUrl).reply(200, { skylink });
-
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
 
@@ -83,9 +95,6 @@ describe("setJSON", () => {
   });
 
   it("should use the revision if it is passed in", async () => {
-    // mock a successful upload
-    mock.onPost(uploadUrl).reply(200, { skylink });
-
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
 
@@ -103,9 +112,6 @@ describe("setJSON", () => {
   });
 
   it("should use a revision number of 0 if the lookup failed", async () => {
-    // mock a successful upload
-    mock.onPost(uploadUrl).reply(200, { skylink });
-
     mock.onGet(registryLookupUrl).reply(404);
 
     // mock a successful registry update
@@ -124,9 +130,6 @@ describe("setJSON", () => {
   });
 
   it("should fail if the entry has the maximum allowed revision", async () => {
-    // mock a successful upload
-    mock.onPost(uploadUrl).reply(200, { skylink });
-
     // mock a successful registry lookup
     const entryData = {
       data,
