@@ -4,6 +4,8 @@
 
 [Updating Guide](https://siasky.net/docs/v3-beta/#updating-from-v2)
 
+_This beta version is released on the `beta` stream. It can be installed with `npm install skynet-js@beta`._
+
 ### Added
 
 - `getFileContent` and `getFileContentHns` methods have been added for getting the content of a file from a skylink or Handshake domain without downloading the file in-browser.
