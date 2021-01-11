@@ -1242,9 +1242,9 @@
   integrity sha512-nCqnKWfvDzTVRh8NS9Zn+rnZYs5+iw5hx3G0nFgKM/R2mJQwPChin4DQ4zXlXnxTtc/3Ys5FnWweKW6NW+d2aw==
 
 "@types/node-forge@^0.9.5":
-  version "0.9.5"
-  resolved "https://registry.yarnpkg.com/@types/node-forge/-/node-forge-0.9.5.tgz#648231d79da197216290429020698d4e767365a0"
-  integrity sha512-rrN3xfA/oZIzwOnO3d2wRQz7UdeVkmMMPjWUCfpPTPuKFVb3D6G10LuiVHYYmvrivBBLMx4m0P/FICoDbNZUMA==
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/@types/node-forge/-/node-forge-0.9.6.tgz#efd348f99778158a163bd7bb10fa60b2dc9d3bb9"
+  integrity sha512-lSy1BQxXQno8EzlCA9RATMzO6iIuBrlDrzB/GFC2yyObcLKDpwxY2YEivvSHdpLizeY9QLW7I4CadZx5ryV3bg==
   dependencies:
     "@types/node" "*"
 
