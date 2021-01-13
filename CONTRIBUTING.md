@@ -44,6 +44,18 @@ We try to follow standard best practices for every language and framework we use
 
 We don't have any hard-and-fast rules for styling git commits or branch names, but try to look at existing PRs first to get a sense of how they are structured.
 
+#### Examples
+
+Branches:
+
+- `user/issue`
+- `sevey/fix-readme-typo`
+
+Commits:
+
+- `module: description`
+- `api: updated documentation for download endpoint`
+
 ### Running tests (CI script)
 
 Submitted PRs are expected to pass continuous integration (CI), which, among other things, runs a test suite on your PR to make sure that your code doesn't have any bugs.
