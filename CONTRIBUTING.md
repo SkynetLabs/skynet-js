@@ -56,7 +56,7 @@ We require that every piece of code is _covered_, meaning tested. If you aren't 
 
 Your PR will be assigned to a team member and reviewed promptly. More often than not, a code submission will be met with review comments and changes requested. Keep in mind that it's nothing personal -- we leave each other review comments all the time.
 
-After addressing review comments, it is up to your discretion whether you make a new commit or amend the previous one and do a [force-push](https://estl.tech/a-gentler-force-push-on-git-force-with-lease-fb15701218df) to the PR branch. We encourage amending the last commit if there are only minor changes to be made. GitHub now shows diffs for force-pushed commits, making them easy to review, and it keeps the final commit history clean.
+After addressing review comments, it is up to your discretion whether you make a new commit, or amend the previous one and do a [force-push](https://estl.tech/a-gentler-force-push-on-git-force-with-lease-fb15701218df) to the PR branch. It is common practice to amend the last commit, and do a force-push, if there are only minor changes to be made. GitHub now shows diffs for force-pushed commits, making them easy to review.
 
 ### Deployment
 
