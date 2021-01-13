@@ -1,4 +1,12 @@
-import { deriveChildSeed, encodeBigintAsUint64, genKeyPairFromSeed, hashRegistryEntry } from "./crypto";
+import {
+  deriveChildSeed,
+  encodeBigintAsUint64,
+  encodeNumber,
+  encodeString,
+  genKeyPairFromSeed,
+  hashDataKey,
+  hashRegistryEntry,
+} from "./crypto";
 import { MAX_REVISION, toHexString } from "./utils";
 
 declare global {
@@ -54,17 +62,45 @@ describe("deriveChildSeed", () => {
 });
 
 describe("encodeBigint", () => {
-  it("should correctly encode bigints", () => {
-    expect(encodeBigintAsUint64(BigInt(0))).toEqualUint8Array(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0]));
-    expect(encodeBigintAsUint64(BigInt(255))).toEqualUint8Array(new Uint8Array([255, 0, 0, 0, 0, 0, 0, 0]));
-    expect(encodeBigintAsUint64(BigInt(256))).toEqualUint8Array(new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0]));
-    expect(encodeBigintAsUint64(BigInt(256))).not.toEqualUint8Array(new Uint8Array([1, 1, 0, 0, 0, 0, 0, 0]));
-    expect(encodeBigintAsUint64(MAX_REVISION)).toEqualUint8Array(
-      new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255])
-    );
+  const bigints = [
+    [BigInt(0), [0, 0, 0, 0, 0, 0, 0, 0]],
+    [BigInt(255), [255, 0, 0, 0, 0, 0, 0, 0]],
+    [BigInt(256), [0, 1, 0, 0, 0, 0, 0, 0]],
+    [MAX_REVISION, [255, 255, 255, 255, 255, 255, 255, 255]],
+  ];
+
+  it.each(bigints)("should correctly encode bigint %s as %s", (input: bigint, encoding: Array<number>) => {
+    expect(encodeBigintAsUint64(input)).toEqualUint8Array(new Uint8Array(encoding));
+  });
+
+  it("should throw if the bigint is beyond the max revision allowed", () => {
     expect(() => encodeBigintAsUint64(MAX_REVISION + BigInt(1))).toThrowError(
       "Argument 18446744073709551616 does not fit in a 64-bit unsigned integer; exceeds 2^64-1"
     );
+  });
+});
+
+describe("encodeNumber", () => {
+  const numbers = [
+    [0, [0, 0, 0, 0, 0, 0, 0, 0]],
+    [1, [1, 0, 0, 0, 0, 0, 0, 0]],
+    [255, [255, 0, 0, 0, 0, 0, 0, 0]],
+    [256, [0, 1, 0, 0, 0, 0, 0, 0]],
+  ];
+
+  it.each(numbers)("should correctly encode number %s as %s", (input: number, encoding: Array<number>) => {
+    expect(encodeNumber(input)).toEqualUint8Array(new Uint8Array(encoding));
+  });
+});
+
+describe("encodeString", () => {
+  const strings = [
+    ["", [0, 0, 0, 0, 0, 0, 0, 0]],
+    ["skynet", [6, 0, 0, 0, 0, 0, 0, 0, 115, 107, 121, 110, 101, 116]],
+  ];
+
+  it.each(strings)("should correctly encode string %s as %s", (input: string, encoding: Array<number>) => {
+    expect(encodeString(input)).toEqualUint8Array(new Uint8Array(encoding));
   });
 });
 
@@ -79,6 +115,17 @@ describe("genKeyPairFromSeed", () => {
     const { publicKey, privateKey } = genKeyPairFromSeed(seed);
     expect(publicKey).toEqual(expectedPublicKey);
     expect(privateKey).toEqual(expectedPrivateKey);
+  });
+});
+
+describe("hashDataKey", () => {
+  const keys = [
+    ["", "81e47a19e6b29b0a65b9591762ce5143ed30d0261e5d24a3201752506b20f15c"],
+    ["skynet", "31c7a4d53ef7bb4c7531181645a0037b9e75c8b1d1285b468ad58bad6262c777"],
+  ];
+
+  it.each(keys)("should correctly hash key %s as %s", (input: string, hash: string) => {
+    expect(toHexString(hashDataKey(input))).toEqual(hash);
   });
 });
 
