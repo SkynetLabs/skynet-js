@@ -25,7 +25,7 @@ import { addUrlQuery, BaseCustomOptions, defaultPortalUrl, makeUrl } from "./uti
  *
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
- * @property [onUploadProgress] -Optional callback to track upload progress.
+ * @property [onUploadProgress] - Optional callback to track upload progress.
  */
 export type CustomClientOptions = {
   APIKey?: string;
