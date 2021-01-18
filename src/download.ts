@@ -159,9 +159,11 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
+    // Set the "attachment" parameter.
     query.attachment = true;
   }
   if (opts.noResponseMetadata) {
+    // Set the "no-response-metadata" parameter.
     query["no-response-metadata"] = true;
   }
 

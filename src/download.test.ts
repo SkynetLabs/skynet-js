@@ -131,6 +131,12 @@ describe("getSkylinkUrl", () => {
     expect(url).toEqual(`${expectedUrl}?no-response-metadata=true`);
   });
 
+  it("should return correctly formed URLs with no-response-metadata set and with forced download", () => {
+    const url = client.getSkylinkUrl(skylink, { download: true, noResponseMetadata: true });
+
+    expect(url).toEqual(`${expectedUrl}?attachment=true&no-response-metadata=true`);
+  });
+
   const expectedBase32 = `https://${skylinkBase32}.siasky.net`;
 
   it.each(validSkylinkVariations)("should convert base64 skylink to base32 using skylink %s", (fullSkylink) => {
