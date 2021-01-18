@@ -1,4 +1,4 @@
-import { defaultOptions, uriSkynetPrefix, getFileMimeType, BaseCustomOptions, formatSkylink } from "./utils";
+import { defaultOptions, getFileMimeType, BaseCustomOptions, formatSkylink } from "./utils";
 import { SkynetClient } from "./client";
 import { AxiosResponse } from "axios";
 
@@ -46,6 +46,7 @@ const defaultUploadOptions = {
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
  * @returns - The returned skylink.
+ * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
  */
 export async function uploadFile(
   this: SkynetClient,
@@ -113,6 +114,7 @@ export async function uploadFileRequest(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
  * @returns - The returned skylink.
+ * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
  */
 export async function uploadDirectory(
   this: SkynetClient,
@@ -148,6 +150,7 @@ export async function uploadDirectory(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
  * @returns - The upload response.
+ * @throws - Will throw if the input filename is not a string.
  */
 export async function uploadDirectoryRequest(
   this: SkynetClient,

@@ -118,6 +118,7 @@ export function downloadFile(this: SkynetClient, skylinkUrl: string, customOptio
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
+ * @throws - Will throw if the input domain is not a string.
  */
 export async function downloadFileHns(
   this: SkynetClient,
@@ -210,6 +211,7 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
  * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the HNS domain.
+ * @throws - Will throw if the input domain is not a string.
  */
 export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: CustomHnsDownloadOptions): string {
   /* istanbul ignore next */
@@ -238,6 +240,7 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: Cu
  * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the resolver for the HNS domain.
+ * @throws - Will throw if the input domain is not a string.
  */
 export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?: BaseCustomOptions): string {
   /* istanbul ignore next */
@@ -414,6 +417,7 @@ export function openFile(this: SkynetClient, skylinkUrl: string, customOptions?:
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFileHns` for the full list.
  * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
+ * @throws - Will throw if the input domain is not a string.
  */
 export async function openFileHns(
   this: SkynetClient,
@@ -442,6 +446,7 @@ export async function openFileHns(
  * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
  * @returns - The data for the TXT record.
+ * @throws - Will throw if the input domain is not a string.
  */
 export async function resolveHns(
   this: SkynetClient,
