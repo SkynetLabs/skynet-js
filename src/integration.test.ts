@@ -3,7 +3,7 @@ import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils";
 
 // TODO: Use siasky.dev when available.
-const client = new SkynetClient("https://siasky.net");
+const client = new SkynetClient("https://siasky.dev");
 
 const dataKey = "HelloWorld";
 
@@ -106,6 +106,7 @@ describe("Registry end to end integration tests", () => {
 
 describe("Upload and download end-to-end tests", () => {
   const fileData = "testing";
+  const json = { key: "testdownload" };
   const plaintextType = "text/plain";
   const plaintextMetadata = {
     filename: dataKey,
@@ -150,15 +151,30 @@ describe("Upload and download end-to-end tests", () => {
   });
 
   it("Should get JSON file contents", async () => {
-    const json = { key: "testdownload" };
-
     // Upload the data to acquire its skylink
     const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
     const { skylink } = await client.uploadFile(file);
 
-    const { data } = await client.getFileContent(skylink);
+    const { data, contentType } = await client.getFileContent(skylink);
 
     expect(data).toEqual(expect.any(Object));
     expect(data).toEqual(json);
+    expect(contentType).toEqual("application/json");
+  });
+
+  it("Should get file contents when content type is not specified", async () => {
+    // Upload the data to acquire its skylink. Don't specify a content type.
+
+    const file = new File([JSON.stringify(json)], dataKey);
+    const { skylink } = await client.uploadFile(file);
+    expect(skylink).not.toEqual("");
+
+    // Get file content and check returned values.
+
+    const { data, contentType } = await client.getFileContent(skylink);
+
+    expect(data).toEqual(expect.any(Object));
+    expect(data).toEqual(json);
+    expect(contentType).toEqual("application/octet-stream");
   });
 });
