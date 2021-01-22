@@ -1,0 +1,17 @@
+# This workflow will run integrations tests daily at midnight.
+
+name: Daily CI
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Daily CI
+        uses: actions/setup-node@v1
+      - run: ./test-all-servers

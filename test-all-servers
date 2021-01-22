@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# declare an array with all servers
+array=( eu-ger-1 eu-ger-2 eu-fin-1 us-or-1 us-or-2 us-pa-1 us-pa-2 us-va-1 )
+
+for i in "${array[@]}"
+do
+	SKYNET_JS_INTEGRATION_TEST_SERVER=$i yarn test src/integration.test.ts
+done

@@ -2,12 +2,18 @@ import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils";
 
-// TODO: Use siasky.dev when available.
-const client = new SkynetClient("https://siasky.net");
+let portal = "https://siasky.net";
+
+// To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=eu-fin-1 yarn test src/integration.test.ts
+const testServer = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER;
+if (testServer) {
+  portal = `https://${testServer}.siasky.net`;
+}
+console.log(`Running integration tests with portal ${portal}`);
+const client = new SkynetClient(portal);
 
 const dataKey = "HelloWorld";
 
-// Used to verify end-to-end flow.
 describe("SkyDB end to end integration tests", () => {
   it("Should return null for an inexistent entry", async () => {
     const { publicKey } = genKeyPairAndSeed();
