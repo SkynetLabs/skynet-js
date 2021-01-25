@@ -85,6 +85,12 @@ describe("getHnsUrl", () => {
 
     expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
   });
+
+  it("should return correctly formed hns URL with no-response-metadata set", () => {
+    const url = client.getHnsUrl(hnsLink, { noResponseMetadata: true });
+
+    expect(url).toEqual(`${expectedHnsUrl}?no-response-metadata=true`);
+  });
 });
 
 describe("getHnsresUrl", () => {
@@ -114,9 +120,21 @@ describe("getSkylinkUrl", () => {
   });
 
   it("should return correctly formed URLs with forced download and path", () => {
-    expect(client.getSkylinkUrl(skylink, { download: true, path: "foo?bar" })).toEqual(
-      `${expectedUrl}/foo%3Fbar${attachment}`
-    );
+    const url = client.getSkylinkUrl(skylink, { download: true, path: "foo?bar" });
+
+    expect(url).toEqual(`${expectedUrl}/foo%3Fbar${attachment}`);
+  });
+
+  it("should return correctly formed URLs with no-response-metadata set", () => {
+    const url = client.getSkylinkUrl(skylink, { noResponseMetadata: true });
+
+    expect(url).toEqual(`${expectedUrl}?no-response-metadata=true`);
+  });
+
+  it("should return correctly formed URLs with no-response-metadata set and with forced download", () => {
+    const url = client.getSkylinkUrl(skylink, { download: true, noResponseMetadata: true });
+
+    expect(url).toEqual(`${expectedUrl}?attachment=true&no-response-metadata=true`);
   });
 
   const expectedBase32 = `https://${skylinkBase32}.siasky.net`;

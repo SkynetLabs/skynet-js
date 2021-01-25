@@ -17,12 +17,14 @@ import {
  * Custom download options.
  *
  * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
+ * @property [noResponseMetadata=false] - Download without metadata in the response.
  * @property [path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
  * @property [query={}] - A query object to convert to a query parameter string and append to the URL.
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
  */
 export type CustomDownloadOptions = BaseCustomOptions & {
   download?: boolean;
+  noResponseMetadata?: boolean;
   path?: string;
   query?: Record<string, unknown>;
   subdomain?: boolean;
@@ -158,7 +160,12 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const query = opts.query ?? {};
   if (opts.download) {
+    // Set the "attachment" parameter.
     query.attachment = true;
+  }
+  if (opts.noResponseMetadata) {
+    // Set the "no-response-metadata" parameter.
+    query["no-response-metadata"] = true;
   }
 
   // URL-encode the path.
@@ -167,6 +174,7 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
     if (typeof opts.path !== "string") {
       throw new Error(`opts.path has to be a string, ${typeof opts.path} provided`);
     }
+
     // Encode each element of the path separately and join them.
     //
     // Don't use encodeURI because it does not encode characters such as '?'
@@ -223,6 +231,9 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: Cu
   const query = opts.query ?? {};
   if (opts.download) {
     query.attachment = true;
+  }
+  if (opts.noResponseMetadata) {
+    query["no-response-metadata"] = true;
   }
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);

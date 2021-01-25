@@ -23,7 +23,6 @@ export type CustomUploadOptions = BaseCustomOptions & {
  * @property skylink - 46-character skylink.
  * @property merkleroot - The hash that is encoded into the skylink.
  * @property bitfield - The bitfield that gets encoded into the skylink. The bitfield contains a version, an offset and a length in a heavily compressed and optimized format.
- * @property metadata -
  */
 export type UploadRequestResponse = {
   skylink: string;
