@@ -2,7 +2,7 @@ import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils";
 
-let portal = "https://siasky.dev";
+let portal = "https://siasky.net";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const testServer = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER;
