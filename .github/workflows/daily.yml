@@ -3,15 +3,23 @@
 name: Daily CI
 
 on:
+  # JUST FOR TESTING THE WORKFLOW
+  pull_request:
+    branches: [master]
   schedule:
     - cron: "0 0 * * *"
 
 jobs:
   test:
+    name: Daily Server Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        server: [eu-ger-1, eu-ger-2, eu-fin-1, us-or-1, us-or-2, us-pa-1, us-pa-2, us-va-1]
 
     steps:
       - uses: actions/checkout@v2
       - name: Daily CI
         uses: actions/setup-node@v1
-      - run: ./test-all-servers
+      - run: yarn
+      - run: SKYNET_JS_INTEGRATION_TEST_SERVER="https://${{ matrix.server }}.siasky.net" yarn test src/integration.test.ts
