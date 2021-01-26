@@ -3,9 +3,6 @@
 name: Daily CI
 
 on:
-  # JUST FOR TESTING THE WORKFLOW
-  pull_request:
-    branches: [master]
   schedule:
     - cron: "0 0 * * *"
 
