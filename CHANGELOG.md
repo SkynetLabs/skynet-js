@@ -7,6 +7,7 @@
 ### Added
 
 - `getFileContent` and `getFileContentHns` methods have been added for getting the content of a file from a skylink or Handshake domain without downloading the file in-browser.
+- `noResponseMetadata` option was added to the download options.
 
 ### Changed
 
