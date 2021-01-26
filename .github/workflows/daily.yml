@@ -19,7 +19,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Daily CI
+      - name: Use Node.js
         uses: actions/setup-node@v1
-      - run: yarn
-      - run: SKYNET_JS_INTEGRATION_TEST_SERVER="https://${{ matrix.server }}.siasky.net" yarn run jest src/integration.test.ts
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Integration test on server
+        run: yarn run jest src/integration.test.ts
+        env:
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.server }}.siasky.net"
