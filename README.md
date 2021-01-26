@@ -11,7 +11,7 @@ A Javascript module made to simplify communication with Sia Skynet portals from 
 
 The latest stable major version is `v3`. There are many breaking changes from `v2`.
 
-Please consult [the update guide](https://siasky.net/docs/v3-beta/?javascript--browser#updating-from-v2) for help migrating your code.
+Please consult [the update guide](https://siasky.net/docs/v3/?javascript--browser#updating-from-v2) for help migrating your code.
 
 ## Documentation
 
