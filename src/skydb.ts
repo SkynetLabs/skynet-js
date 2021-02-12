@@ -11,7 +11,7 @@ import {
   isHexString,
 } from "./utils";
 import { Buffer } from "buffer";
-import { CustomUploadOptions } from "./upload";
+import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 
 /**
@@ -106,12 +106,28 @@ export async function setJSON(
     ...customOptions,
   };
 
+  // Create the data to upload to acquire its skylink.
+  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
+
+  // Start file upload, do not block.
+  const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFile(file, opts);
+  let skylink: string;
+
   const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
   if (revision === undefined) {
     // fetch the current value to find out the revision.
     const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
-    const entry: SignedRegistryEntry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+    // start getEntry, do not block.
+    const entryPromise: Promise<SignedRegistryEntry> = this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+
+    // Block until both getEntry and Skyfile upload are finished.
+    const [entry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
+      entryPromise,
+      skyfilePromise,
+    ]);
+    skylink = skyfile.skylink;
+
     if (entry.entry === null) {
       revision = BigInt(0);
     } else {
@@ -124,12 +140,10 @@ export async function setJSON(
     }
   } else {
     // Assert the input is 64 bits.
+    const [skyfile] = await Promise.all<UploadRequestResponse>([skyfilePromise]);
+    skylink = skyfile.skylink;
     assertUint64(revision);
   }
-
-  // Upload the data to acquire its skylink.
-  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const { skylink } = await this.uploadFile(file, opts);
 
   // build the registry value
   const entry: RegistryEntry = {
