@@ -139,11 +139,12 @@ export async function setJSON(
       throw new Error("Current entry already has maximum allowed revision, could not update the entry");
     }
   } else {
-    // Assert the input is 64 bits.
-    const [skyfile] = await Promise.all<UploadRequestResponse>([skyfilePromise]);
+    const skyfile = await skyfilePromise;
     skylink = skyfile.skylink;
-    assertUint64(revision);
   }
+
+  // Assert the input is 64 bits.
+  assertUint64(revision);
 
   // build the registry value
   const entry: RegistryEntry = {
