@@ -111,7 +111,7 @@ export async function setJSON(
 
   // Start file upload, do not block.
   const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFile(file, opts);
-  let skylink: string;
+  let skyfile: UploadRequestResponse;
 
   const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
@@ -120,13 +120,10 @@ export async function setJSON(
     const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
     // start getEntry, do not block.
     const entryPromise: Promise<SignedRegistryEntry> = this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+    let entry: SignedRegistryEntry;
 
     // Block until both getEntry and Skyfile upload are finished.
-    const [entry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
-      entryPromise,
-      skyfilePromise,
-    ]);
-    skylink = skyfile.skylink;
+    [entry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([entryPromise, skyfilePromise]);
 
     if (entry.entry === null) {
       revision = BigInt(0);
@@ -139,8 +136,7 @@ export async function setJSON(
       throw new Error("Current entry already has maximum allowed revision, could not update the entry");
     }
   } else {
-    const skyfile = await skyfilePromise;
-    skylink = skyfile.skylink;
+    skyfile = await skyfilePromise;
   }
 
   // Assert the input is 64 bits.
@@ -149,7 +145,7 @@ export async function setJSON(
   // build the registry value
   const entry: RegistryEntry = {
     datakey: dataKey,
-    data: trimUriPrefix(skylink, uriSkynetPrefix),
+    data: trimUriPrefix(skyfile.skylink, uriSkynetPrefix),
     revision,
   };
 
