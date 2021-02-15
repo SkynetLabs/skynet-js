@@ -157,7 +157,6 @@ export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
   return { ...genKeyPairFromSeed(seed), seed };
 }
 
-// TODO: Add async version of this function that uses pbkdf2.pbkdf2 instead of pbkdf2.pbkdf2Sync.
 /**
  * Generates a public and private key from a provided, secure seed.
  *
