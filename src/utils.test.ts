@@ -123,13 +123,13 @@ describe("getRootDirectory", () => {
 });
 
 describe("hexToUint8Array", () => {
-  const hexStrings = [
+  const hexStrings: Array<[string, number[]]> = [
     ["ff", [255]],
     ["a", [10]],
     ["ff0a", [255, 10]],
   ];
 
-  it.each(hexStrings)("the hex string '%s' should be decoded to %s", (str: string, array: number[]) => {
+  it.each(hexStrings)("the hex string '%s' should be decoded to %s", (str, array) => {
     const byteArray = hexToUint8Array(str);
     expect(byteArray).toEqualUint8Array(new Uint8Array(array));
   });

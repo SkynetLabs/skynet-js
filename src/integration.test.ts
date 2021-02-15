@@ -92,6 +92,7 @@ describe(`Integration test for portal ${portal}`, () => {
       };
 
       // Use a timeout of 0 (invalid, but should be ignored).
+      // @ts-expect-error We pass an invalid parameter on purpose.
       await client.registry.setEntry(privateKey, entry, { timeout: 0 });
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
       expect(returnedEntry).toEqual(entry);
@@ -99,6 +100,7 @@ describe(`Integration test for portal ${portal}`, () => {
       entry.revision = BigInt(1);
 
       // Use a timeout of 301 (invalid, but should be ignored).
+      // @ts-expect-error We pass an invalid parameter on purpose.
       await client.registry.setEntry(privateKey, entry, { timeout: MAX_GET_ENTRY_TIMEOUT + 1 });
       const { entry: returnedEntry2 } = await client.registry.getEntry(publicKey, dataKey);
       expect(returnedEntry2).toEqual(entry);
