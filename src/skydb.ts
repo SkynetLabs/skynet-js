@@ -1,4 +1,5 @@
-import { pki } from "node-forge";
+import { sign } from "tweetnacl";
+
 import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import {
@@ -9,8 +10,8 @@ import {
   MAX_REVISION,
   BaseCustomOptions,
   isHexString,
+  hexToUint8Array,
 } from "./utils";
-import { Buffer } from "buffer";
 import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 
@@ -51,7 +52,7 @@ export async function getJSON(
   };
 
   // Lookup the registry entry.
-  const { entry }: { entry: RegistryEntry } = await this.registry.getEntry(publicKey, dataKey, opts);
+  const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
     return { data: null, revision: null };
   }
@@ -113,11 +114,9 @@ export async function setJSON(
   const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFile(file, opts);
   let skyfile: UploadRequestResponse;
 
-  const privateKeyBuffer = Buffer.from(privateKey, "hex");
-
   if (revision === undefined) {
     // fetch the current value to find out the revision.
-    const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
+    const { publicKey } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
     // start getEntry, do not block.
     const entryPromise: Promise<SignedRegistryEntry> = this.registry.getEntry(toHexString(publicKey), dataKey, opts);
     let entry: SignedRegistryEntry;
