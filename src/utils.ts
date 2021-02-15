@@ -212,7 +212,7 @@ const SKYLINK_DIRECT_MATCH_POSITION = 1;
 const SKYLINK_PATH_MATCH_POSITION = 2;
 
 /**
- * Parses the given string for a base64 skylink, or base32 if opts.fromSubdomain is given.
+ * Parses the given string for a base64 skylink, or base32 if opts.fromSubdomain is given. If the given string is prefixed with sia:, sia://, or a portal URL, those will be removed and the raw skylink returned.
  *
  * @param skylinkUrl - Plain skylink, skylink with URI prefix, or URL with skylink as the first path element.
  * @param [opts] - Additional settings that can optionally be set.
