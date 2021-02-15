@@ -11,7 +11,7 @@ import {
   isHexString,
 } from "./utils";
 import { Buffer } from "buffer";
-import { CustomUploadOptions } from "./upload";
+import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 
 /**
@@ -106,12 +106,25 @@ export async function setJSON(
     ...customOptions,
   };
 
+  // Create the data to upload to acquire its skylink.
+  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
+
+  // Start file upload, do not block.
+  const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFile(file, opts);
+  let skyfile: UploadRequestResponse;
+
   const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
   if (revision === undefined) {
     // fetch the current value to find out the revision.
     const publicKey = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
-    const entry: SignedRegistryEntry = await this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+    // start getEntry, do not block.
+    const entryPromise: Promise<SignedRegistryEntry> = this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+    let entry: SignedRegistryEntry;
+
+    // Block until both getEntry and Skyfile upload are finished.
+    [entry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([entryPromise, skyfilePromise]);
+
     if (entry.entry === null) {
       revision = BigInt(0);
     } else {
@@ -123,18 +136,16 @@ export async function setJSON(
       throw new Error("Current entry already has maximum allowed revision, could not update the entry");
     }
   } else {
-    // Assert the input is 64 bits.
-    assertUint64(revision);
+    skyfile = await skyfilePromise;
   }
 
-  // Upload the data to acquire its skylink.
-  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-  const { skylink } = await this.uploadFile(file, opts);
+  // Assert the input is 64 bits.
+  assertUint64(revision);
 
   // build the registry value
   const entry: RegistryEntry = {
     datakey: dataKey,
-    data: trimUriPrefix(skylink, uriSkynetPrefix),
+    data: trimUriPrefix(skyfile.skylink, uriSkynetPrefix),
     revision,
   };
 

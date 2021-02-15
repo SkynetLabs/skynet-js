@@ -352,6 +352,7 @@ export function trimUriPrefix(str: string, prefix: string): string {
  *
  * @param str - The string to convert.
  * @returns - The uint8 array.
+ * @throws - Will throw if the input is not a string.
  */
 export function stringToUint8Array(str: string): Uint8Array {
   /* istanbul ignore next */
@@ -385,6 +386,7 @@ export function hexToUint8Array(str: string): Uint8Array {
  *
  * @param str - The input string.
  * @returns - True if the input is hex-encoded.
+ * @throws - Will throw if the input is not a string.
  */
 export function isHexString(str: string): boolean {
   /* istanbul ignore next */

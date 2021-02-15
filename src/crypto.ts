@@ -130,6 +130,7 @@ function encodeString(str: string): Uint8Array {
  * @param masterSeed - The master seed to derive from.
  * @param seed - The sub seed for the derivation.
  * @returns - The child seed derived from `masterSeed` using `seed`.
+ * @throws - Will throw if the inputs are not strings.
  */
 export function deriveChildSeed(masterSeed: string, seed: string): string {
   /* istanbul ignore next */
@@ -148,7 +149,7 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
  * Generates a master key pair and seed.
  *
  * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
- * @returns -The generated key pair and seed.
+ * @returns - The generated key pair and seed.
  */
 export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
   const seed = makeSeed(length);
@@ -160,6 +161,7 @@ export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
  *
  * @param seed - A secure seed.
  * @returns - The generated key pair.
+ * @throws - Will throw if the input is not a string.
  */
 export function genKeyPairFromSeed(seed: string): KeyPair {
   /* istanbul ignore next */
