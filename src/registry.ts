@@ -1,5 +1,7 @@
-import { pki } from "node-forge";
 import { AxiosResponse } from "axios";
+import { Buffer } from "buffer";
+import { sign } from "tweetnacl";
+
 import { SkynetClient } from "./client";
 import {
   addUrlQuery,
@@ -12,7 +14,6 @@ import {
   trimPrefix,
   isHexString,
 } from "./utils";
-import { Buffer } from "buffer";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
 /**
@@ -99,7 +100,6 @@ export async function getEntry(
   };
 
   const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
-  const publicKeyBuffer = Buffer.from(publicKey, "hex");
 
   let response: AxiosResponse;
   try {
@@ -150,11 +150,11 @@ export async function getEntry(
   };
   if (
     signedEntry &&
-    !pki.ed25519.verify({
-      message: hashRegistryEntry(signedEntry.entry),
-      signature: signedEntry.signature,
-      publicKey: publicKeyBuffer,
-    })
+    !sign.detached.verify(
+      hashRegistryEntry(signedEntry.entry),
+      new Uint8Array(signedEntry.signature),
+      hexToUint8Array(publicKey)
+    )
   ) {
     throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
   }
@@ -253,19 +253,16 @@ export async function setEntry(
     ...this.customOptions,
     ...customOptions,
   };
-  const privateKeyBuffer = Buffer.from(privateKey, "hex");
+  const privateKeyArray = hexToUint8Array(privateKey);
 
   // Sign the entry.
-  const signature = pki.ed25519.sign({
-    message: hashRegistryEntry(entry),
-    privateKey: privateKeyBuffer,
-  });
+  const signature = sign(hashRegistryEntry(entry), privateKeyArray);
 
-  const publicKeyBuffer = pki.ed25519.publicKeyFromPrivateKey({ privateKey: privateKeyBuffer });
+  const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(privateKeyArray);
   const data = {
     publickey: {
       algorithm: "ed25519",
-      key: Array.from(publicKeyBuffer),
+      key: Array.from(publicKeyArray),
     },
     datakey: toHexString(hashDataKey(entry.datakey)),
     // Set the revision as a string here since the value may be up to 64 bits.

@@ -1,12 +1,13 @@
-import { pki, pkcs5, md } from "node-forge";
-import blake from "blakejs";
-import { RegistryEntry } from "./registry";
-import { assertUint64, stringToUint8Array, toHexString } from "./utils";
+import { misc, codec } from "sjcl";
+import type { Buffer } from "buffer";
+import { blake2bFinal, blake2bInit, blake2bUpdate } from "blakejs";
 import randomBytes from "randombytes";
+import { sign } from "tweetnacl";
 
-export type PublicKey = pki.ed25519.NativeBuffer;
-export type SecretKey = pki.ed25519.NativeBuffer;
-export type Signature = pki.ed25519.NativeBuffer;
+import { RegistryEntry } from "./registry";
+import { assertUint64, hexToUint8Array, stringToUint8Array, toHexString } from "./utils";
+
+export type Signature = Buffer;
 
 /**
  * Key pair.
@@ -34,7 +35,7 @@ export type KeyPairAndSeed = KeyPair & {
  * @returns - blake2b 256bit hasher.
  */
 function newHash() {
-  return blake.blake2bInit(32, null);
+  return blake2bInit(32, null);
 }
 
 /**
@@ -46,9 +47,9 @@ function newHash() {
 export function hashAll(...args: Uint8Array[]): Uint8Array {
   const hasher = newHash();
   for (let i = 0; i < args.length; i++) {
-    blake.blake2bUpdate(hasher, args[i]);
+    blake2bUpdate(hasher, args[i]);
   }
-  return blake.blake2bFinal(hasher);
+  return blake2bFinal(hasher);
 }
 
 /**
@@ -169,10 +170,11 @@ export function genKeyPairFromSeed(seed: string): KeyPair {
     throw new Error(`Expected parameter seed to be type string, was type ${typeof seed}`);
   }
 
-  // Get a 32-byte seed.
-  seed = pkcs5.pbkdf2(seed, "", 1000, 32, md.sha256.create());
-  const { publicKey, privateKey } = pki.ed25519.generateKeyPair({ seed });
-  return { publicKey: toHexString(publicKey), privateKey: toHexString(privateKey) };
+  // Get a 32-byte key.
+  const derivedKey = misc.pbkdf2(seed, "", 1000, 32 * 8);
+  const derivedKeyHex = codec.hex.fromBits(derivedKey);
+  const { publicKey, secretKey } = sign.keyPair.fromSeed(hexToUint8Array(derivedKeyHex));
+  return { publicKey: toHexString(publicKey), privateKey: toHexString(secretKey) };
 }
 
 /**
