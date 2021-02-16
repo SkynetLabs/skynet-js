@@ -62,14 +62,14 @@ describe("deriveChildSeed", () => {
 });
 
 describe("encodeBigint", () => {
-  const bigints = [
+  const bigints: Array<[bigint, number[]]> = [
     [BigInt(0), [0, 0, 0, 0, 0, 0, 0, 0]],
     [BigInt(255), [255, 0, 0, 0, 0, 0, 0, 0]],
     [BigInt(256), [0, 1, 0, 0, 0, 0, 0, 0]],
     [MAX_REVISION, [255, 255, 255, 255, 255, 255, 255, 255]],
   ];
 
-  it.each(bigints)("should correctly encode bigint %s as %s", (input: bigint, encoding: Array<number>) => {
+  it.each(bigints)("should correctly encode bigint %s as %s", (input, encoding) => {
     expect(encodeBigintAsUint64(input)).toEqualUint8Array(new Uint8Array(encoding));
   });
 
@@ -81,25 +81,25 @@ describe("encodeBigint", () => {
 });
 
 describe("encodeNumber", () => {
-  const numbers = [
+  const numbers: Array<[number, number[]]> = [
     [0, [0, 0, 0, 0, 0, 0, 0, 0]],
     [1, [1, 0, 0, 0, 0, 0, 0, 0]],
     [255, [255, 0, 0, 0, 0, 0, 0, 0]],
     [256, [0, 1, 0, 0, 0, 0, 0, 0]],
   ];
 
-  it.each(numbers)("should correctly encode number %s as %s", (input: number, encoding: Array<number>) => {
+  it.each(numbers)("should correctly encode number %s as %s", (input, encoding) => {
     expect(encodeNumber(input)).toEqualUint8Array(new Uint8Array(encoding));
   });
 });
 
 describe("encodeString", () => {
-  const strings = [
+  const strings: Array<[string, number[]]> = [
     ["", [0, 0, 0, 0, 0, 0, 0, 0]],
     ["skynet", [6, 0, 0, 0, 0, 0, 0, 0, 115, 107, 121, 110, 101, 116]],
   ];
 
-  it.each(strings)("should correctly encode string %s as %s", (input: string, encoding: Array<number>) => {
+  it.each(strings)("should correctly encode string %s as %s", (input, encoding) => {
     expect(encodeString(input)).toEqualUint8Array(new Uint8Array(encoding));
   });
 });
