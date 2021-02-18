@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.0.1-beta]
+
+_This beta version is released on the `beta` stream. It can be installed with `npm install skynet-js@beta`._
+
+### Changed
+
+- A new optimization causes `db.setJSON` to complete significantly faster.
+- The size of the bundled SDK has been reduced by more than 60% by changing crypto dependencies.
+
 ## [3.0.0]
 
 [Updating Guide](https://siasky.net/docs/v3/#updating-from-v2)
