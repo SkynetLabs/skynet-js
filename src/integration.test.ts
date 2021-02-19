@@ -107,29 +107,91 @@ describe(`Integration test for portal ${portal}`, () => {
     });
   });
 
-  describe("Upload and download integration tests", () => {
+  describe("Upload and download end-to-end tests", () => {
+    const fileData = "testing";
+    const json = { key: "testdownload" };
+    const plaintextType = "text/plain";
+    const plaintextMetadata = {
+      filename: dataKey,
+      length: fileData.length,
+      subfiles: {
+        HelloWorld: { filename: dataKey, contenttype: plaintextType, len: fileData.length },
+      },
+    };
+
     it("Should get plaintext file contents", async () => {
-      const fileData = "testing";
-
-      // Upload the data to acquire its skylink
-      const file = new File([fileData], dataKey, { type: "text/plain" });
+      // Upload the data to acquire its skylink.
+      const file = new File([fileData], dataKey, { type: plaintextType });
       const { skylink } = await client.uploadFile(file);
+      expect(skylink).not.toEqual("");
 
-      const { data } = await client.getFileContent(skylink);
+      // Get file content and check returned values.
+
+      const { data, contentType, metadata, skylink: returnedSkylink } = await client.getFileContent(skylink);
       expect(data).toEqual(expect.any(String));
       expect(data).toEqual(data);
+      expect(contentType).toEqual("text/plain");
+      expect(metadata).toEqual(plaintextMetadata);
+      expect(skylink).toEqual(returnedSkylink);
+    });
+
+    it("Should get plaintext file metadata", async () => {
+      // Upload the data to acquire its skylink.
+
+      const file = new File([fileData], dataKey, { type: plaintextType });
+      const { skylink } = await client.uploadFile(file);
+      expect(skylink).not.toEqual("");
+
+      // Get file metadata and check returned values.
+
+      const { contentType, metadata, skylink: returnedSkylink } = await client.getMetadata(skylink);
+
+      expect(contentType).toEqual("text/plain");
+      expect(metadata).toEqual(plaintextMetadata);
+      expect(skylink).toEqual(returnedSkylink);
     });
 
     it("Should get JSON file contents", async () => {
-      const json = { key: "testdownload" };
-
-      // Upload the data to acquire its skylink
+      // Upload the data to acquire its skylink.
       const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
       const { skylink } = await client.uploadFile(file);
 
-      const { data } = await client.getFileContent(skylink);
+      const { data, contentType } = await client.getFileContent(skylink);
       expect(data).toEqual(expect.any(Object));
       expect(data).toEqual(json);
+      expect(contentType).toEqual("application/json");
+    });
+
+    it("Should get file contents when content type is not specified but inferred from filename", async () => {
+      // Upload the data to acquire its skylink. Content type is inferred from filename.
+
+      const file = new File([JSON.stringify(json)], `${dataKey}.json`);
+      const { skylink } = await client.uploadFile(file);
+      expect(skylink).not.toEqual("");
+
+      // Get file content and check returned values.
+
+      const { data, contentType } = await client.getFileContent(skylink);
+
+      expect(data).toEqual(expect.any(Object));
+      expect(data).toEqual(json);
+      expect(contentType).toEqual("application/json");
+    });
+
+    it("Should get file contents when content type is not specified", async () => {
+      // Upload the data to acquire its skylink. Don't specify a content type.
+
+      const file = new File([JSON.stringify(json)], dataKey);
+      const { skylink } = await client.uploadFile(file);
+      expect(skylink).not.toEqual("");
+
+      // Get file content and check returned values.
+
+      const { data, contentType } = await client.getFileContent(skylink);
+
+      expect(data).toEqual(expect.any(Object));
+      expect(data).toEqual(json);
+      expect(contentType).toEqual("application/octet-stream");
     });
   });
 });
