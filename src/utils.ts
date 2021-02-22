@@ -1,6 +1,6 @@
 import base64 from "base64-js";
 import base32Encode from "base32-encode";
-import mimeDB from "mime-db";
+import mime from "mime/lite";
 import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
@@ -424,10 +424,9 @@ export function getFileMimeType(file: File): string {
   let { ext } = path.parse(file.name);
   ext = trimPrefix(ext, ".");
   if (ext !== "") {
-    for (const type in mimeDB) {
-      if (mimeDB[type]?.extensions?.includes(ext)) {
-        return type;
-      }
+    const mimeType = mime.getType(ext);
+    if (mimeType) {
+      return mimeType;
     }
   }
   return "";
