@@ -48,7 +48,7 @@ Compile with `npx webpack`! You will find the minified `main.js` in the `dist` f
 1. Run `yarn`
 1. Run `yarn test` to run the tests
 
-Also see our [guide to contributing](./CONTRIBUTING).
+Also see our [guide to contributing](https://github.com/NebulousLabs/.github/blob/master/CONTRIBUTING.md).
 
 ### Requirements
 
