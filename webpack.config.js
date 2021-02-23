@@ -1,6 +1,7 @@
 const path = require('path');
+const { merge } = require('webpack-merge');
 
-module.exports = {
+var baseConfig = {
   entry: './src/index.ts',
   mode: "production",
 
@@ -12,12 +13,6 @@ module.exports = {
         use: {
           loader: 'babel-loader',
         }
-      },
-      {
-        test: /\.tsx?$/,
-        loader: "ts-loader",
-        exclude: /node_modules/,
-        options: { configFile: "tsconfig.build.json" },
       },
     ],
   },
@@ -31,3 +26,31 @@ module.exports = {
     libraryTarget: "umd",
   },
 };
+
+let targets = ['web', 'node'].map((target) => {
+  let base = merge(baseConfig, {
+    target: target,
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          loader: "ts-loader",
+          exclude: /node_modules/,
+          options: {
+            configFile: "tsconfig.build.json",
+            compilerOptions: {
+              outDir: path.resolve(__dirname, './dist/' + target),
+            },
+          },
+        },
+      ],
+    },
+    output: {
+      path: path.resolve(__dirname, './dist/' + target),
+      filename: 'index.js'
+    }
+  });
+  return base;
+});
+
+module.exports = targets;
