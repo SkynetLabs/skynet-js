@@ -1,4 +1,4 @@
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { Buffer } from "buffer";
 import { sign } from "tweetnacl";
 
@@ -119,12 +119,29 @@ export async function getEntry(
         return JSON.parse(data);
       },
     });
-  } catch (err: unknown) {
-    // @ts-expect-error TS complains about err.response
+  } catch (err) {
+    // Check if status was 404 "not found" and return null if so.
+    /* istanbul ignore next */
+    if (!err.response) {
+      throw new Error("Error response not found");
+    }
+    /* istanbul ignore next */
+    if (!err.response.status) {
+      throw new Error("Error response did not contain expected field 'status'");
+    }
     if (err.response.status === 404) {
       return { entry: null, signature: null };
     }
-    // @ts-expect-error TS complains about err.response
+
+    // Else return the error message from the response.
+    /* istanbul ignore next */
+    if (!err.response.data) {
+      throw new Error("Error response did not contain expected field 'data'");
+    }
+    /* istanbul ignore next */
+    if (!err.response.data.message) {
+      throw new Error("Error response did not contained expected fields 'data.message'");
+    }
     throw new Error(err.response.data.message);
   }
 
