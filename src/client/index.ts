@@ -1,9 +1,7 @@
 import axios, { AxiosResponse } from "axios";
 import type { Method } from "axios";
-import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
+
 import {
-  downloadFile,
-  downloadFileHns,
   getSkylinkUrl,
   getHnsUrl,
   getHnsresUrl,
@@ -11,14 +9,13 @@ import {
   getFileContent,
   getFileContentHns,
   getFileContentRequest,
-  openFile,
-  openFileHns,
   resolveHns,
-} from "./download";
-import { getJSON, setJSON } from "./skydb";
-import { getEntry, getEntryUrl, setEntry } from "./registry";
-
-import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
+} from "../download/index";
+import { getJSON, setJSON } from "../skydb";
+import { getEntry, getEntryUrl, setEntry } from "../registry";
+import { uploadFileContent, uploadFileContentRequest } from "../upload/index";
+import { defaultPortalUrl } from "../utils";
+import { addUrlQuery, makeUrl } from "../utils";
 
 /**
  * Custom client options.
@@ -59,7 +56,7 @@ export type RequestConfig = CustomClientOptions & {
 };
 
 /**
- * The Skynet Client which can be used to access Skynet.
+ * The base Skynet Client which can be used to access Skynet.
  */
 export class SkynetClient {
   portalUrl: string;
@@ -67,15 +64,7 @@ export class SkynetClient {
 
   // Set methods (defined in other files).
 
-  // Upload
-  uploadFile = uploadFile;
-  protected uploadFileRequest = uploadFileRequest;
-  uploadDirectory = uploadDirectory;
-  protected uploadDirectoryRequest = uploadDirectoryRequest;
-
   // Download
-  downloadFile = downloadFile;
-  downloadFileHns = downloadFileHns;
   getSkylinkUrl = getSkylinkUrl;
   getHnsUrl = getHnsUrl;
   getHnsresUrl = getHnsresUrl;
@@ -83,9 +72,11 @@ export class SkynetClient {
   getFileContent = getFileContent;
   getFileContentHns = getFileContentHns;
   protected getFileContentRequest = getFileContentRequest;
-  openFile = openFile;
-  openFileHns = openFileHns;
   resolveHns = resolveHns;
+
+  // Upload
+  uploadFileContent = uploadFileContent;
+  protected uploadFileContentRequest = uploadFileContentRequest;
 
   // SkyDB
   db = {

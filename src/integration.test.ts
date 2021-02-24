@@ -1,4 +1,4 @@
-import { genKeyPairAndSeed, SkynetClient } from "./index";
+import { genKeyPairAndSeed, SkynetClient } from "./index.web";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils";
 

@@ -1,7 +1,8 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
+
 import { genKeyPairAndSeed } from "./crypto";
-import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
+import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index.web";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");

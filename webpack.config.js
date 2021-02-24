@@ -2,7 +2,6 @@ const path = require('path');
 const { merge } = require('webpack-merge');
 
 var baseConfig = {
-  entry: './src/index.ts',
   mode: "production",
 
   module: {
@@ -10,9 +9,10 @@ var baseConfig = {
       {
         test: /\.tsx?$/,
         exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-        }
+        loader: 'babel-loader',
+        options: {
+          ignore: ["src/**/*.test.ts"],
+        },
       },
     ],
   },
@@ -29,6 +29,7 @@ var baseConfig = {
 
 let targets = ['web', 'node'].map((target) => {
   let base = merge(baseConfig, {
+    entry: './src/index.'+target+'.ts',
     target: target,
     module: {
       rules: [

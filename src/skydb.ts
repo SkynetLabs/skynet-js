@@ -1,6 +1,6 @@
 import { sign } from "tweetnacl";
 
-import { SkynetClient } from "./client";
+import { SkynetClient } from "./client/index";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import {
   trimUriPrefix,
@@ -12,8 +12,8 @@ import {
   isHexString,
   hexToUint8Array,
 } from "./utils";
-import { CustomUploadOptions, UploadRequestResponse } from "./upload";
-import { CustomDownloadOptions } from "./download";
+import { CustomUploadOptions, UploadRequestResponse } from "./upload/index";
+import { CustomDownloadOptions } from "./download/index";
 
 /**
  * Custom get JSON options.
@@ -108,10 +108,10 @@ export async function setJSON(
   };
 
   // Create the data to upload to acquire its skylink.
-  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
+  const contents = JSON.stringify(json);
 
   // Start file upload, do not block.
-  const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFile(file, opts);
+  const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFileContent(contents, dataKey, opts);
   let skyfile: UploadRequestResponse;
 
   if (revision === undefined) {

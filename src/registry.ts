@@ -2,7 +2,7 @@ import { AxiosResponse } from "axios";
 import { Buffer } from "buffer";
 import { sign } from "tweetnacl";
 
-import { SkynetClient } from "./client";
+import { SkynetClient } from "./client/index";
 import {
   addUrlQuery,
   BaseCustomOptions,

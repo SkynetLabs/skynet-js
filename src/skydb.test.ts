@@ -2,7 +2,7 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
 import { defaultSkynetPortalUrl, MAX_REVISION } from "./utils";
-import { SkynetClient, genKeyPairFromSeed } from "./index";
+import { SkynetClient, genKeyPairFromSeed } from "./index.web";
 import { regexRevisionNoQuotes } from "./registry";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");

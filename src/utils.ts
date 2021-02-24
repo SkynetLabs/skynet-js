@@ -5,7 +5,8 @@ import path from "path-browserify";
 import parse from "url-parse";
 import urljoin from "url-join";
 import { Buffer } from "buffer";
-import { CustomClientOptions } from "./client";
+
+import { CustomClientOptions } from "./client/index";
 
 /**
  * Base custom options for methods hitting the API.

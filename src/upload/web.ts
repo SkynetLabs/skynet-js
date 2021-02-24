@@ -1,41 +1,8 @@
-import { defaultOptions, getFileMimeType, BaseCustomOptions, formatSkylink } from "./utils";
-import { SkynetClient } from "./client";
 import { AxiosResponse } from "axios";
 
-/**
- * Custom upload options.
- *
- * @property [portalFileFieldname="file"] - The file fieldname for uploading files on this portal.
- * @property [portalDirectoryfilefieldname="files[]"] - The file fieldname for uploading directories on this portal.
- * @property [customFilename] - The custom filename to use when uploading files.
- * @property [query] - Query parameters.
- */
-export type CustomUploadOptions = BaseCustomOptions & {
-  portalFileFieldname?: string;
-  portalDirectoryFileFieldname?: string;
-  customFilename?: string;
-  query?: Record<string, unknown>;
-};
-
-/**
- * The response to an upload request.
- *
- * @property skylink - 46-character skylink.
- * @property merkleroot - The hash that is encoded into the skylink.
- * @property bitfield - The bitfield that gets encoded into the skylink. The bitfield contains a version, an offset and a length in a heavily compressed and optimized format.
- */
-export type UploadRequestResponse = {
-  skylink: string;
-  merkleroot: string;
-  bitfield: number;
-};
-
-const defaultUploadOptions = {
-  ...defaultOptions("/skynet/skyfile"),
-  portalFileFieldname: "file",
-  portalDirectoryFileFieldname: "files[]",
-  customFilename: "",
-};
+import { getFileMimeType, formatSkylink } from "../utils";
+import { SkynetClient } from "../client/web";
+import { CustomUploadOptions, defaultUploadOptions, UploadRequestResponse } from "./index";
 
 /**
  * Uploads a file to Skynet.
@@ -95,13 +62,11 @@ export async function uploadFileRequest(
     formData.append(opts.portalFileFieldname, file);
   }
 
-  const response = await this.executeRequest({
+  return this.executeRequest({
     ...opts,
     method: "post",
     data: formData,
   });
-
-  return response;
 }
 
 /**
