@@ -20,8 +20,6 @@ var baseConfig = {
     extensions: [".tsx", ".ts", ".js"],
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'index.js',
     library: "skynet",
     libraryTarget: "umd",
   },
@@ -48,7 +46,7 @@ let targets = ['web', 'node'].map((target) => {
     },
     output: {
       path: path.resolve(__dirname, './dist/' + target),
-      filename: 'index.js'
+      filename: 'index.'+target+'.js'
     }
   });
   return base;
