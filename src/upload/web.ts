@@ -135,14 +135,12 @@ export async function uploadDirectoryRequest(
     formData.append(opts.portalDirectoryFileFieldname, file as File, path);
   });
 
-  const response = await this.executeRequest({
+  return this.executeRequest({
     ...opts,
     method: "post",
     data: formData,
     query: { filename },
   });
-
-  return response;
 }
 
 /**

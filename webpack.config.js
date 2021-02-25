@@ -1,5 +1,5 @@
-const path = require('path');
-const { merge } = require('webpack-merge');
+const path = require("path");
+const { merge } = require("webpack-merge");
 
 var baseConfig = {
   mode: "production",
@@ -9,7 +9,7 @@ var baseConfig = {
       {
         test: /\.tsx?$/,
         exclude: /(node_modules|bower_components)/,
-        loader: 'babel-loader',
+        loader: "babel-loader",
         options: {
           ignore: ["src/**/*.test.ts"],
         },
@@ -25,9 +25,9 @@ var baseConfig = {
   },
 };
 
-let targets = ['web', 'node'].map((target) => {
+let targets = ["web", "node"].map((target) => {
   let base = merge(baseConfig, {
-    entry: './src/index.'+target+'.ts',
+    entry: "./src/index." + target + ".ts",
     target: target,
     module: {
       rules: [
@@ -38,16 +38,16 @@ let targets = ['web', 'node'].map((target) => {
           options: {
             configFile: "tsconfig.build.json",
             compilerOptions: {
-              outDir: path.resolve(__dirname, './dist/' + target),
+              outDir: path.resolve(__dirname, "./dist/" + target),
             },
           },
         },
       ],
     },
     output: {
-      path: path.resolve(__dirname, './dist/' + target),
-      filename: 'index.'+target+'.js'
-    }
+      path: path.resolve(__dirname, "./dist/" + target),
+      filename: "index." + target + ".js",
+    },
   });
   return base;
 });

@@ -208,11 +208,13 @@ describe("getFileContent", () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
   });
-  const skynetFileMetadata = { filename: "sia.pdf" };
+
+  const skynetfileContentType = "application/json";
   const skynetFileContents = { arbitrary: "json string" };
+  const skynetFileMetadata = { filename: "sia.pdf" };
   const fullHeaders = {
     "skynet-skylink": skylink,
-    "content-type": "application/json",
+    "content-type": skynetfileContentType,
     "skynet-file-metadata": JSON.stringify(skynetFileMetadata),
   };
 
@@ -223,7 +225,7 @@ describe("getFileContent", () => {
     const { data, contentType, metadata, skylink: skylink2 } = await client.getFileContent(input);
 
     expect(data).toEqual(skynetFileContents);
-    expect(contentType).toEqual("application/json");
+    expect(contentType).toEqual(skynetfileContentType);
     expect(metadata).toEqual(skynetFileMetadata);
     expect(skylink2).toEqual(sialink);
   });

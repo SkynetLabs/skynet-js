@@ -99,6 +99,9 @@ export class SkynetClient {
    * @param [customOptions] Configuration for the client.
    */
   constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
+    if (!portalUrl) {
+      portalUrl = defaultPortalUrl();
+    }
     this.portalUrl = portalUrl;
     this.customOptions = customOptions;
   }

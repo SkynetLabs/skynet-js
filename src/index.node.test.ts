@@ -17,6 +17,7 @@ describe("SkynetClient", () => {
 
     // Upload
     expect(client).toHaveProperty("uploadFileContent");
+    expect(client).toHaveProperty("uploadDirectoryFromPath");
     expect(client).toHaveProperty("uploadFileFromPath");
 
     // SkyDB

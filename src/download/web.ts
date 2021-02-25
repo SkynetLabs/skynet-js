@@ -1,5 +1,10 @@
 import { SkynetClient } from "../client/index";
-import { CustomDownloadOptions, defaultDownloadOptions, defaultDownloadHnsOptions, CustomHnsDownloadOptions } from "./index";
+import {
+  CustomDownloadOptions,
+  defaultDownloadOptions,
+  defaultDownloadHnsOptions,
+  CustomHnsDownloadOptions,
+} from "./index";
 
 /**
  * Initiates a download of the content of the skylink within the browser.

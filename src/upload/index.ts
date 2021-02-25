@@ -46,6 +46,7 @@ export async function uploadFileContent(
 ): Promise<UploadRequestResponse> {
   const response = await this.uploadFileContentRequest(fileContents, fileName, customOptions);
 
+  /* istanbul ignore next */
   if (
     typeof response.data.skylink !== "string" ||
     typeof response.data.merkleroot !== "string" ||
