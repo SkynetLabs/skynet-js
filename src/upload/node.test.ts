@@ -18,7 +18,7 @@ describe("uploadFile", () => {
   const filename = "testdata/file1.txt";
 
   beforeEach(() => {
-    // @ts-ignore
+    // @ts-expect-error TS complaining.
     axios.mockResolvedValue({ data });
   });
 
@@ -136,7 +136,7 @@ describe("uploadDirectoryFromPath", () => {
   const filename = `${dirname}/${directory[0]}`;
 
   beforeEach(() => {
-    // @ts-ignore
+    // @ts-expect-error TS complaining.
     axios.mockResolvedValue({ data });
   });
 

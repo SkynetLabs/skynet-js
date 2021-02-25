@@ -11,7 +11,7 @@ import { CustomUploadOptions, defaultUploadOptions, UploadRequestResponse } from
  * @param file - The file to upload.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
- * @returns - The returned skylink.
+ * @returns - The returned skyfile information including skylink, merkleroot and bitfield.
  * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
  */
 export async function uploadFile(

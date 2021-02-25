@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "rimraf dist && yarn run webpack",
-    "lint:eslint": "eslint --ext .ts scripts src utils --max-warnings 0",
+    "lint:eslint": "eslint --ext .ts src utils --max-warnings 0",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",
     "test": "jest --coverage --coverageDirectory ../coverage"

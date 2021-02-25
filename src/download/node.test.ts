@@ -21,8 +21,8 @@ const body = "asdf";
 
 describe("downloadFileToPath", () => {
   beforeEach(() => {
-    // @ts-ignore
-    axios.mockResolvedValue({ data: { body, pipe: function () {} }, headers: fullHeaders });
+    // @ts-expect-error TS complaining.
+    axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: fullHeaders });
   });
 
   it("should send get request to default portal", () => {
@@ -44,7 +44,10 @@ describe("downloadFileToPath", () => {
     const tmpFile = tmp.fileSync();
     const client = new SkynetClient("", { APIKey: "foobar", customUserAgent: "Sia-Agent" });
 
-    const {contentType, metadata, skylink: skylink2} = await client.downloadFileToPath(skylink, tmpFile.name, { APIKey: "barfoo", customUserAgent: "Sia-Agent-2" });
+    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileToPath(skylink, tmpFile.name, {
+      APIKey: "barfoo",
+      customUserAgent: "Sia-Agent-2",
+    });
 
     expect(contentType).toEqual(skynetfileContentType);
     expect(metadata).toEqual(skynetFileMetadata);
@@ -62,12 +65,12 @@ describe("downloadFileToPath", () => {
   });
 
   it("should fetch info even when headers are missing", async () => {
-    // @ts-ignore
-    axios.mockResolvedValue({ data: { body, pipe: function () {} }, headers: {} });
+    // @ts-expect-error TS complaining.
+    axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: {} });
 
     const tmpFile = tmp.fileSync();
 
-    const {contentType, metadata, skylink: skylink2} = await client.downloadFileToPath(skylink, tmpFile.name);
+    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileToPath(skylink, tmpFile.name);
 
     expect(contentType).toEqual("");
     expect(metadata).toEqual({});
@@ -81,8 +84,8 @@ describe("downloadFileHnsToPath", () => {
   const domain = "foo";
 
   beforeEach(() => {
-    // @ts-ignore
-    axios.mockResolvedValue({ data: { body, pipe: function () {} }, headers: fullHeaders });
+    // @ts-expect-error TS complaining.
+    axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: fullHeaders });
   });
 
   it("should send get request to default portal", async () => {
@@ -105,8 +108,8 @@ describe("downloadFileHnsToPath", () => {
   });
 
   it("should get info when headers are missing", async () => {
-    // @ts-ignore
-    axios.mockResolvedValue({ data: { body, pipe: function () {} }, headers: {} });
+    // @ts-expect-error TS complaining.
+    axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: {} });
 
     const tmpFile = tmp.fileSync();
 

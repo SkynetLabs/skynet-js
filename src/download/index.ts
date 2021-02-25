@@ -218,7 +218,7 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?:
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - The metadata in JSON format. Empty if no metadata was found.
+ * @returns - The metadata in JSON format. Each field will be empty if no metadata was found.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getMetadata(

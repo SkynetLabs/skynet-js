@@ -10,6 +10,17 @@ import {
   GetMetadataResponse,
 } from "./index";
 
+/**
+ * Initiates a download of the content of the skylink to the given file.
+ *
+ * @param this - SkynetClient
+ * @param skylinkUrl - 46-character skylink, or a valid skylink URL. Can be followed by a path. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
+ * @param path - Path to create the local file at.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The metadata in JSON format. Each field will be empty if no metadata was found.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path custom option is not a string.
+ */
 export async function downloadFileToPath(
   this: SkynetClient,
   skylinkUrl: string,
@@ -50,6 +61,17 @@ export async function downloadFileToPath(
   return { contentType, metadata, skylink };
 }
 
+/**
+ * Initiates a download of the content of the skylink to the given file.
+ *
+ * @param this - SkynetClient
+ * @param domain - Handshake domain.
+ * @param path - Path to create the local file at.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The metadata in JSON format. Each field will be empty if no metadata was found.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path custom option is not a string.
+ */
 export async function downloadFileHnsToPath(
   this: SkynetClient,
   domain: string,
