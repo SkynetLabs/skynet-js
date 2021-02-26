@@ -1,4 +1,4 @@
-import { SkynetClient } from "../client/index";
+import { SkynetClient } from "../client";
 import {
   addSubdomain,
   addUrlQuery,

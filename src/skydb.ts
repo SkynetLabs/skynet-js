@@ -1,6 +1,6 @@
 import { sign } from "tweetnacl";
 
-import { SkynetClient } from "./client/index";
+import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import {
   trimUriPrefix,
@@ -12,8 +12,8 @@ import {
   isHexString,
   hexToUint8Array,
 } from "./utils";
-import { CustomUploadOptions, UploadRequestResponse } from "./upload/index";
-import { CustomDownloadOptions } from "./download/index";
+import { CustomUploadOptions, UploadRequestResponse } from "./upload";
+import { CustomDownloadOptions } from "./download";
 
 /**
  * Custom get JSON options.

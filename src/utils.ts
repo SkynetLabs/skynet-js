@@ -6,7 +6,7 @@ import parse from "url-parse";
 import urljoin from "url-join";
 import { Buffer } from "buffer";
 
-import { CustomClientOptions } from "./client/index";
+import { CustomClientOptions } from "./client";
 
 /**
  * Base custom options for methods hitting the API.
@@ -15,6 +15,7 @@ import { CustomClientOptions } from "./client/index";
  */
 export type BaseCustomOptions = CustomClientOptions & {
   endpointPath?: string;
+  query?: Record<string, unknown>;
 };
 
 /**

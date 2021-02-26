@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import { SkynetClient } from "../client/index";
+import { SkynetClient } from "../client";
 import { formatSkylink } from "../utils";
 import {
   CustomDownloadOptions,
@@ -37,6 +37,7 @@ export async function downloadFileToPath(
     ...opts,
     method: "get",
     url,
+    responseType: "stream",
   });
 
   /* istanbul ignore next */
@@ -52,7 +53,11 @@ export async function downloadFileToPath(
     );
   }
 
-  response.data.pipe(writer);
+  await new Promise((resolve, reject) => {
+    response.data.pipe(writer);
+    writer.on("finish", resolve);
+    writer.on("error", reject);
+  });
 
   const contentType = response.headers["content-type"] ?? "";
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
@@ -88,6 +93,7 @@ export async function downloadFileHnsToPath(
     ...opts,
     method: "get",
     url,
+    responseType: "stream",
   });
 
   /* istanbul ignore next */
@@ -103,7 +109,11 @@ export async function downloadFileHnsToPath(
     );
   }
 
-  response.data.pipe(writer);
+  await new Promise((resolve, reject) => {
+    response.data.pipe(writer);
+    writer.on("finish", resolve);
+    writer.on("error", reject);
+  });
 
   const contentType = response.headers["content-type"] ?? "";
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};

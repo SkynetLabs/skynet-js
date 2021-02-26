@@ -4,6 +4,8 @@ import {
   uploadDirectoryFromPathRequest,
   uploadFileFromPath,
   uploadFileFromPathRequest,
+  uploadFileContent,
+  uploadFileContentRequest,
 } from "../upload/node";
 import { SkynetClient as Client } from "./index";
 
@@ -17,4 +19,6 @@ export class SkynetClient extends Client {
   protected uploadDirectoryFromPathRequest = uploadDirectoryFromPathRequest;
   uploadFileFromPath = uploadFileFromPath;
   protected uploadFileFromPathRequest = uploadFileFromPathRequest;
+  uploadFileContent = uploadFileContent;
+  protected uploadFileContentRequest = uploadFileContentRequest;
 }

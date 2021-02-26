@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosResponse, ResponseType } from "axios";
 import type { Method } from "axios";
 
 import {
@@ -13,9 +13,9 @@ import {
 } from "../download/index";
 import { getJSON, setJSON } from "../skydb";
 import { getEntry, getEntryUrl, setEntry } from "../registry";
-import { uploadFileContent, uploadFileContentRequest } from "../upload/index";
 import { defaultPortalUrl } from "../utils";
 import { addUrlQuery, makeUrl } from "../utils";
+import { CustomUploadOptions, UploadRequestResponse } from "../upload";
 
 /**
  * Custom client options.
@@ -51,6 +51,7 @@ export type RequestConfig = CustomClientOptions & {
   skykeyName?: string;
   skykeyId?: string;
   headers?: Record<string, unknown>;
+  responseType?: ResponseType;
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;
 };
@@ -58,7 +59,7 @@ export type RequestConfig = CustomClientOptions & {
 /**
  * The base Skynet Client which can be used to access Skynet.
  */
-export class SkynetClient {
+export abstract class SkynetClient {
   portalUrl: string;
   customOptions: CustomClientOptions;
 
@@ -75,8 +76,18 @@ export class SkynetClient {
   resolveHns = resolveHns;
 
   // Upload
-  uploadFileContent = uploadFileContent;
-  protected uploadFileContentRequest = uploadFileContentRequest;
+  abstract uploadFileContent(
+    this: SkynetClient,
+    fileContents: string,
+    fileName: string,
+    customOptions?: CustomUploadOptions
+  ): Promise<UploadRequestResponse>;
+  protected abstract uploadFileContentRequest(
+    this: SkynetClient,
+    fileContents: string,
+    fileName: string,
+    customOptions?: CustomUploadOptions
+  ): Promise<AxiosResponse>;
 
   // SkyDB
   db = {
@@ -152,6 +163,7 @@ export class SkynetClient {
       headers,
       auth,
       onUploadProgress,
+      responseType: config.responseType,
       transformRequest: config.transformRequest,
       transformResponse: config.transformResponse,
 

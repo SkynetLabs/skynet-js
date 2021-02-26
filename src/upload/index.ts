@@ -1,7 +1,4 @@
-import { AxiosResponse } from "axios";
-
-import { SkynetClient } from "../client/index";
-import { defaultOptions, BaseCustomOptions, formatSkylink } from "../utils";
+import { defaultOptions, BaseCustomOptions } from "../utils";
 
 /**
  * Custom upload options.
@@ -15,7 +12,6 @@ export type CustomUploadOptions = BaseCustomOptions & {
   portalFileFieldname?: string;
   portalDirectoryFileFieldname?: string;
   customFilename?: string;
-  query?: Record<string, unknown>;
 };
 
 /**
@@ -37,68 +33,3 @@ export const defaultUploadOptions = {
   portalDirectoryFileFieldname: "files[]",
   customFilename: "",
 };
-
-/**
- * Uploads a file to Skynet.
- *
- * @param this - SkynetClient
- * @param fileContents - The file contents to upload.
- * @param fileName - The desired name for the file.
- * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
- * @returns - The returned skyfile information including skylink, merkleroot and bitfield.
- * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
- */
-export async function uploadFileContent(
-  this: SkynetClient,
-  fileContents: string,
-  fileName: string,
-  customOptions?: CustomUploadOptions
-): Promise<UploadRequestResponse> {
-  const response = await this.uploadFileContentRequest(fileContents, fileName, customOptions);
-
-  /* istanbul ignore next */
-  if (
-    typeof response.data.skylink !== "string" ||
-    typeof response.data.merkleroot !== "string" ||
-    typeof response.data.bitfield !== "number"
-  ) {
-    throw new Error(
-      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-
-  const skylink = formatSkylink(response.data.skylink);
-  const merkleroot = response.data.merkleroot;
-  const bitfield = response.data.bitfield;
-
-  return { skylink, merkleroot, bitfield };
-}
-
-/**
- * Makes a request to upload a file to Skynet.
- *
- * @param this - SkynetClient
- * @param fileContents - The file contents to upload.
- * @param fileName - The desired name for the file.
- * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
- * @returns - The upload response.
- */
-export async function uploadFileContentRequest(
-  this: SkynetClient,
-  fileContents: string,
-  fileName: string,
-  customOptions?: CustomUploadOptions
-): Promise<AxiosResponse> {
-  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
-
-  const formData = new FormData();
-  formData.append(opts.portalFileFieldname, new Blob([fileContents]), fileName);
-
-  return this.executeRequest({
-    ...opts,
-    method: "post",
-    data: formData,
-  });
-}

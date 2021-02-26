@@ -44,7 +44,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --ext .ts --fix",
-      "tsc --esModuleInterop --noemit",
+      "tsc",
       "prettier --write"
     ],
     "*.{json,yml,md}": [
