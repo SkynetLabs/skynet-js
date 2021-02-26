@@ -4,7 +4,7 @@
   "description": "Sia Skynet Javascript Client",
   "browser": "dist/web/index.web.js",
   "main": "dist/node/index.node.js",
-  "module": "src/index.web.js",
+  "module": "dist/web/index.web.js",
   "files": [
     "dist/*"
   ],
@@ -14,7 +14,10 @@
     "not OperaMini all"
   ],
   "scripts": {
-    "build": "rimraf dist && yarn run webpack",
+    "build": "rimraf dist && yarn build-bundle && yarn build-node && yarn build-web",
+    "build-bundle": "yarn run webpack",
+    "build-node": "babel src --out-dir dist/node --extensions .ts && tsc --project tsconfig.build.json --outDir dist/node && rimraf dist/node/**/web* && rimraf dist/node/**/*web*",
+    "build-web": "babel src --out-dir dist/web --extensions .ts && tsc --project tsconfig.build.json --outDir dist/web && rimraf dist/web/**/node* && rimraf dist/web/**/*node*",
     "lint:eslint": "eslint --ext .ts src utils --max-warnings 0",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",
