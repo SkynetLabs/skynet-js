@@ -39,7 +39,7 @@ export const defaultSkynetPortalUrl = "https://siasky.net";
 
 export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
-export const uriSkynetPrefix = "sia:";
+export const uriSkynetPrefix = "sia://";
 
 /**
  * The maximum allowed value for an entry revision. Setting an entry revision to this value prevents it from being updated further.
@@ -136,7 +136,7 @@ export function defaultPortalUrl(): string {
 }
 
 /**
- * Formats the skylink by adding the sia: prefix.
+ * Formats the skylink by adding the sia:// prefix.
  *
  * @param skylink - The skylink.
  * @returns - The formatted skylink.
