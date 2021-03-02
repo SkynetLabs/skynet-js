@@ -148,6 +148,8 @@ export async function getEntry(
     },
     signature: Buffer.from(hexToUint8Array(response.data.signature)),
   };
+
+  // Verify the signature.
   if (
     signedEntry &&
     !sign.detached.verify(

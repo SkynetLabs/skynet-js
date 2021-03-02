@@ -18,9 +18,11 @@
     "build-bundle": "yarn run webpack",
     "build-node": "babel src --out-dir dist/node --extensions .ts && tsc --project tsconfig.build.json --outDir dist/node && rimraf dist/node/**/web* && rimraf dist/node/**/*web*",
     "build-web": "babel src --out-dir dist/web --extensions .ts && tsc --project tsconfig.build.json --outDir dist/web && rimraf dist/web/**/node* && rimraf dist/web/**/*node*",
+
+    "deploy": "node scripts/deploy.js",
     "lint:eslint": "eslint --ext .ts src utils --max-warnings 0",
     "lint:tsc": "tsc",
-    "prepublishOnly": "yarn build",
+    "prepublishOnly": "yarn build && yarn deploy",
     "test": "jest --coverage --coverageDirectory ../coverage"
   },
   "jest": {
@@ -112,6 +114,7 @@
     "lint-staged": "^10.3.0",
     "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
+    "tar-fs": "^2.1.1",
     "tmp": "^0.2.1",
     "ts-loader": "^8.0.17",
     "typescript": "^4.0.3",
