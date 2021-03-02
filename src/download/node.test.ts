@@ -1,9 +1,11 @@
+import { PassThrough } from "stream";
 import axios from "axios";
-import tmp from "tmp";
+import fs from "fs";
 
 import { SkynetClient, defaultPortalUrl, uriSkynetPrefix } from "../index.node";
 
 jest.mock("axios");
+jest.mock("fs");
 
 const portalUrl = defaultPortalUrl();
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
@@ -18,17 +20,22 @@ const fullHeaders = {
   "skynet-file-metadata": JSON.stringify(skynetFileMetadata),
 };
 const body = "asdf";
+const filename = "foo";
 
 describe("downloadFileToPath", () => {
   beforeEach(() => {
     // @ts-expect-error TS complaining.
     axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: fullHeaders });
+    const mockWriteable = new PassThrough();
+    // @ts-expect-error TS complaining.
+    fs.createWriteStream.mockReturnValueOnce(mockWriteable);
+    setTimeout(() => {
+      mockWriteable.emit("finish");
+    }, 100);
   });
 
-  it("should send get request to default portal", () => {
-    const tmpFile = tmp.fileSync();
-
-    client.downloadFileToPath(skylink, tmpFile.name);
+  it("should send get request to default portal", async () => {
+    await client.downloadFileToPath(skylink, filename);
 
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -36,15 +43,12 @@ describe("downloadFileToPath", () => {
         method: "get",
       })
     );
-
-    tmpFile.removeCallback();
   });
 
   it("should use custom connection options if defined on the client", async () => {
-    const tmpFile = tmp.fileSync();
     const client = new SkynetClient("", { APIKey: "foobar", customUserAgent: "Sia-Agent" });
 
-    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileToPath(skylink, tmpFile.name, {
+    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileToPath(skylink, filename, {
       APIKey: "barfoo",
       customUserAgent: "Sia-Agent-2",
     });
@@ -60,23 +64,17 @@ describe("downloadFileToPath", () => {
         headers: expect.objectContaining({ "User-Agent": "Sia-Agent-2" }),
       })
     );
-
-    tmpFile.removeCallback();
   });
 
   it("should fetch info even when headers are missing", async () => {
     // @ts-expect-error TS complaining.
     axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: {} });
 
-    const tmpFile = tmp.fileSync();
-
-    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileToPath(skylink, tmpFile.name);
+    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileToPath(skylink, filename);
 
     expect(contentType).toEqual("");
     expect(metadata).toEqual({});
     expect(skylink2).toEqual("");
-
-    tmpFile.removeCallback();
   });
 });
 
@@ -86,12 +84,16 @@ describe("downloadFileHnsToPath", () => {
   beforeEach(() => {
     // @ts-expect-error TS complaining.
     axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: fullHeaders });
+    const mockWriteable = new PassThrough();
+    // @ts-expect-error TS complaining.
+    fs.createWriteStream.mockReturnValueOnce(mockWriteable);
+    setTimeout(() => {
+      mockWriteable.emit("finish");
+    }, 100);
   });
 
-  it("should send get request to default portal", async () => {
-    const tmpFile = tmp.fileSync();
-
-    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileHnsToPath(domain, tmpFile.name);
+  it("should send get request for HNS to default portal", async () => {
+    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileHnsToPath(domain, filename);
 
     expect(contentType).toEqual(skynetfileContentType);
     expect(metadata).toEqual(skynetFileMetadata);
@@ -103,22 +105,16 @@ describe("downloadFileHnsToPath", () => {
         method: "get",
       })
     );
-
-    tmpFile.removeCallback();
   });
 
   it("should get info when headers are missing", async () => {
     // @ts-expect-error TS complaining.
     axios.mockResolvedValue({ data: { body, pipe: jest.fn() }, headers: {} });
 
-    const tmpFile = tmp.fileSync();
-
-    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileHnsToPath(domain, tmpFile.name);
+    const { contentType, metadata, skylink: skylink2 } = await client.downloadFileHnsToPath(domain, filename);
 
     expect(contentType).toEqual("");
     expect(metadata).toEqual({});
     expect(skylink2).toEqual("");
-
-    tmpFile.removeCallback();
   });
 });

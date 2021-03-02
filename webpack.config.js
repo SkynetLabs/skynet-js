@@ -12,6 +12,9 @@ module.exports = {
         test: /\.tsx?$/,
         exclude: /(node_modules|bower_components)/,
         loader: "babel-loader",
+        options: {
+          ignore: ["src/**/*.test.ts"],
+        },
       },
     ],
   },

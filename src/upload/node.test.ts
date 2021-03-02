@@ -121,6 +121,8 @@ describe("uploadFile", () => {
     const { skylink } = await client.uploadFileFromPath(file.name);
 
     expect(skylink).toEqual(sialink);
+
+    file.removeCallback();
   });
 
   it("should return skylink on success", async () => {

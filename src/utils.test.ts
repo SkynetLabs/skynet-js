@@ -81,7 +81,7 @@ describe("convertSkylinkToBase32", () => {
 
 describe("formatSkylink", () => {
   it("should ensure the skylink starts with the prefix", () => {
-    const prefixedSkylink = `sia:${skylink}`;
+    const prefixedSkylink = `sia://${skylink}`;
 
     expect(formatSkylink(skylink)).toEqual(prefixedSkylink);
     expect(formatSkylink(prefixedSkylink)).toEqual(prefixedSkylink);
