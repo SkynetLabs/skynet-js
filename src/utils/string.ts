@@ -13,11 +13,18 @@ export function trimForwardSlash(str: string): string {
  *
  * @param str - The string to process.
  * @param prefix - The prefix to remove.
+ * @param [limit] - Maximum amount of times to trim. No limit by default.
  * @returns - The processed string.
  */
-export function trimPrefix(str: string, prefix: string): string {
+export function trimPrefix(str: string, prefix: string, limit?: number): string {
   while (str.startsWith(prefix)) {
+    if (limit === 0) {
+      break;
+    }
     str = str.slice(prefix.length);
+    if (limit) {
+      limit -= 1;
+    }
   }
   return str;
 }
@@ -27,11 +34,18 @@ export function trimPrefix(str: string, prefix: string): string {
  *
  * @param str - The string to process.
  * @param suffix - The suffix to remove.
+ * @param [limit] - Maximum amount of times to trim. No limit by default.
  * @returns - The processed string.
  */
-export function trimSuffix(str: string, suffix: string): string {
+export function trimSuffix(str: string, suffix: string, limit?: number): string {
   while (str.endsWith(suffix)) {
+    if (limit === 0) {
+      break;
+    }
     str = str.substring(0, str.length - suffix.length);
+    if (limit) {
+      limit -= 1;
+    }
   }
   return str;
 }

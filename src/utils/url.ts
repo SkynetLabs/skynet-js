@@ -199,3 +199,31 @@ export function getSkylinkUrlForPortal(
   }
   return addUrlQuery(url, query);
 }
+
+/**
+ * Constructs the full URL for the given domain,
+ * e.g. "dac.hns" => "https://dac.hns.siasky.net"
+ *
+ * @param portalUrl - The portal URL.
+ * @param domain - Domain.
+ * @returns - The full URL for the given domain.
+ */
+export function getFullDomainUrlForPortal(portalUrl: string, domain: string): string {
+  return addSubdomain(portalUrl, domain);
+}
+
+/**
+ * Extracts the domain from the given full URL,
+ * e.g. "https://dac.hns.siasky.net" => "dac.hns"
+ *
+ * @param portalUrl - The portal URL.
+ * @param fullUrl - Full URL.
+ * @returns - The extracted domain.
+ */
+export function extractDomainForPortal(portalUrl: string, fullUrl: string): string {
+  const portalUrlObj = new URL(portalUrl);
+  const fullUrlObj = new URL(fullUrl);
+
+  const domain = trimSuffix(fullUrlObj.hostname, portalUrlObj.hostname, 1);
+  return trimSuffix(domain, ".");
+}

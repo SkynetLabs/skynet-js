@@ -22,14 +22,37 @@ describe(`Integration test for portal ${portal}`, () => {
     it("Should set and get new entries", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
       const json = { data: "thisistext" };
+      const json2 = { data: "foo2" };
 
-      // Set the file in the SkyDB.
+      // Set the file in SkyDB.
       await client.db.setJSON(privateKey, dataKey, json);
 
-      // get the file in the SkyDB
+      // Get the file in SkyDB.
       const { data, revision } = await client.db.getJSON(publicKey, dataKey);
       expect(data).toEqual(json);
       // Revision should be 0.
+      expect(revision).toEqual(BigInt(0));
+
+      // Set the file again.
+      await client.db.setJSON(privateKey, dataKey, json2);
+
+      const { data: data2, revision: revision2 } = await client.db.getJSON(publicKey, dataKey);
+      expect(data2).toEqual(json2);
+      // Revision should be 1.
+      expect(revision2).toEqual(BigInt(1));
+    });
+
+    // Regression test: Use some strange data keys that have failed in previous versions.
+    const dataKeys = [".", "..", "http://localhost:8000/", ""];
+
+    it.each(dataKeys)("Should set and get new entry with dataKey %s", async (dk) => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const json = { data: "thisistext" };
+
+      await client.db.setJSON(privateKey, dk, json);
+
+      const { data, revision } = await client.db.getJSON(publicKey, dk);
+      expect(data).toEqual(json);
       expect(revision).toEqual(BigInt(0));
     });
 

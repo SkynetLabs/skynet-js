@@ -17,8 +17,9 @@ import {
 } from "./download";
 import { getJSON, setJSON } from "./skydb";
 import { getEntry, getEntryUrl, setEntry } from "./registry";
-
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
+import { loadMySky } from "./connector";
+import { extractDomain, getFullDomainUrl } from "./connector/utils";
 
 /**
  * Custom client options.
@@ -69,12 +70,14 @@ export class SkynetClient {
   // Set methods (defined in other files).
 
   // Upload
+
   uploadFile = uploadFile;
   protected uploadFileRequest = uploadFileRequest;
   uploadDirectory = uploadDirectory;
   protected uploadDirectoryRequest = uploadDirectoryRequest;
 
   // Download
+
   downloadFile = downloadFile;
   downloadFileHns = downloadFileHns;
   getSkylinkUrl = getSkylinkUrl;
@@ -88,13 +91,21 @@ export class SkynetClient {
   openFileHns = openFileHns;
   resolveHns = resolveHns;
 
+  // MySky
+
+  extractDomain = extractDomain;
+  getFullDomainUrl = getFullDomainUrl;
+  loadMySky = loadMySky;
+
   // SkyDB
+
   db = {
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
   };
 
   // SkyDB helpers
+
   registry = {
     getEntry: getEntry.bind(this),
     getEntryUrl: getEntryUrl.bind(this),

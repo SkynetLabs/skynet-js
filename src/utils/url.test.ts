@@ -1,7 +1,12 @@
-import { addUrlQuery, defaultSkynetPortalUrl, makeUrl } from "./url";
+import { addUrlQuery, defaultSkynetPortalUrl, getFullDomainUrlForPortal, getDomainForPortal, makeUrl } from "./url";
 
 const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
+const domains = [
+  ["dac.hns", "https://dac.hns.siasky.net"],
+  [skylinkBase32, `https://${skylinkBase32}.siasky.net`],
+];
 
 describe("addUrlQuery", () => {
   it("should return correctly formed URLs with query parameters", () => {
@@ -14,6 +19,20 @@ describe("addUrlQuery", () => {
       `${portalUrl}/?attachment=true&foo=bar`
     );
     expect(addUrlQuery(`${portalUrl}#foobar`, { foo: "bar" })).toEqual(`${portalUrl}?foo=bar#foobar`);
+  });
+});
+
+describe("getFullDomainUrlForPortal", () => {
+  it.each(domains)("domain %s should return correctly formed full URL %s", (domain, fullUrl) => {
+    const url = getFullDomainUrlForPortal(portalUrl, domain);
+    expect(url).toEqual(fullUrl);
+  });
+});
+
+describe("getDomainForPortal", () => {
+  it.each(domains)("should extract domain %s out of full url %s", (domain, fullUrl) => {
+    const receivedDomain = getDomainForPortal(portalUrl, fullUrl);
+    expect(receivedDomain).toEqual(domain);
   });
 });
 
