@@ -1,11 +1,11 @@
-# skynet-js - Javascript Sia Skynet Client
+# skynet-js - Javascript Sia Skynet SDK
 
 [![Version](https://img.shields.io/github/package-json/v/NebulousLabs/skynet-js)](https://www.npmjs.com/package/skynet-js)
 [![Build Status](https://img.shields.io/github/workflow/status/NebulousLabs/skynet-js/Node.js%20CI)](https://github.com/NebulousLabs/skynet-js/actions)
 [![Contributors](https://img.shields.io/github/contributors/NebulousLabs/skynet-js)](https://github.com/NebulousLabs/skynet-js/graphs/contributors)
 [![License](https://img.shields.io/github/license/NebulousLabs/skynet-js)](https://github.com/NebulousLabs/skynet-js)
 
-A Javascript module made to simplify communication with Sia Skynet portals from the browser.
+A Javascript module made to simplify communication with Sia Skynet portals from the browser. Now with support for Node.js!
 
 ## Updating to v3 from v2
 
