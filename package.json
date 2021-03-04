@@ -58,7 +58,7 @@
     "skynet"
   ],
   "author": "Karol Wypchlo",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/NebulousLabs/skynet-js/issues"
   },
