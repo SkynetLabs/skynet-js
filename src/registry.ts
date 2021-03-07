@@ -120,28 +120,34 @@ export async function getEntry(
       },
     });
   } catch (err) {
-    // Check if status was 404 "not found" and return null if so.
     /* istanbul ignore next */
     if (!err.response) {
+      console.log(`Full error: ${err}`);
       throw new Error("Error response not found");
     }
     /* istanbul ignore next */
     if (!err.response.status) {
+      console.log(`Full error: ${err}`);
       throw new Error("Error response did not contain expected field 'status'");
     }
+    // Check if status was 404 "not found" and return null if so.
     if (err.response.status === 404) {
       return { entry: null, signature: null };
     }
 
-    // Else return the error message from the response.
     /* istanbul ignore next */
     if (!err.response.data) {
-      throw new Error("Error response did not contain expected field 'data'");
+      console.log(`Full error: ${err}`);
+      throw new Error(`Error response did not contain expected field 'data'. Status code: ${err.response.status}`);
     }
     /* istanbul ignore next */
     if (!err.response.data.message) {
-      throw new Error("Error response did not contained expected fields 'data.message'");
+      console.log(`Full error: ${err}`);
+      throw new Error(
+        `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}`
+      );
     }
+    // Return the error message from the response.
     throw new Error(err.response.data.message);
   }
 
