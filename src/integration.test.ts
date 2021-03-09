@@ -82,6 +82,22 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(returnedEntry).toEqual(entry);
     });
 
+    it("Should set and get an entry with empty data correctly", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      const entry = {
+        datakey: dataKey,
+        data: "",
+        revision: BigInt(0),
+      };
+
+      await client.registry.setEntry(privateKey, entry);
+
+      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+
+      expect(returnedEntry).toEqual(entry);
+    });
+
     it("setEntry should not be affected by timeout parameter", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
 

@@ -139,10 +139,16 @@ export async function getEntry(
     );
   }
 
+  let data;
+  if (response.data.data === "") {
+    data = "";
+  } else {
+    data = Buffer.from(hexToUint8Array(response.data.data)).toString();
+  }
   const signedEntry = {
     entry: {
       datakey: dataKey,
-      data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+      data,
       // Convert the revision from a string to bigint.
       revision: BigInt(response.data.revision),
     },
