@@ -139,10 +139,9 @@ export async function getEntry(
     );
   }
 
-  let data;
-  if (response.data.data === "") {
-    data = "";
-  } else {
+  // Use empty string if the data is empty.
+  let data = "";
+  if (response.data.data) {
     data = Buffer.from(hexToUint8Array(response.data.data)).toString();
   }
   const signedEntry = {
