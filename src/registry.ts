@@ -1,4 +1,4 @@
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { Buffer } from "buffer";
 import { sign } from "tweetnacl";
 
@@ -119,12 +119,35 @@ export async function getEntry(
         return JSON.parse(data);
       },
     });
-  } catch (err: unknown) {
-    // @ts-expect-error TS complains about err.response
+  } catch (err) {
+    /* istanbul ignore next */
+    if (!err.response) {
+      console.log(`Full error: ${err}`);
+      throw new Error("Error response not found");
+    }
+    /* istanbul ignore next */
+    if (!err.response.status) {
+      console.log(`Full error: ${err}`);
+      throw new Error("Error response did not contain expected field 'status'");
+    }
+    // Check if status was 404 "not found" and return null if so.
     if (err.response.status === 404) {
       return { entry: null, signature: null };
     }
-    // @ts-expect-error TS complains about err.response
+
+    /* istanbul ignore next */
+    if (!err.response.data) {
+      console.log(`Full error: ${err}`);
+      throw new Error(`Error response did not contain expected field 'data'. Status code: ${err.response.status}`);
+    }
+    /* istanbul ignore next */
+    if (!err.response.data.message) {
+      console.log(`Full error: ${err}`);
+      throw new Error(
+        `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}`
+      );
+    }
+    // Return the error message from the response.
     throw new Error(err.response.data.message);
   }
 
