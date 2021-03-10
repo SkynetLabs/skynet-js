@@ -364,11 +364,11 @@ export function stringToUint8Array(str: string): Uint8Array {
 }
 
 /**
- * Converts a hex encoded string to a uint8 array
+ * Converts a hex encoded string to a uint8 array.
  *
  * @param str - The string to convert.
  * @returns - The uint8 array.
- * @throws - Will throw if the input is not a valid hex-encoded string.
+ * @throws - Will throw if the input is not a valid hex-encoded string or is an empty string.
  */
 export function hexToUint8Array(str: string): Uint8Array {
   if (!isHexString(str)) {
