@@ -3,17 +3,10 @@ import { Buffer } from "buffer";
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
-import {
-  addUrlQuery,
-  BaseCustomOptions,
-  assertUint64,
-  defaultOptions,
-  hexToUint8Array,
-  makeUrl,
-  toHexString,
-  trimPrefix,
-  isHexString,
-} from "./utils";
+import { assertUint64 } from "./utils/number";
+import { BaseCustomOptions, defaultOptions } from "./utils/skylink";
+import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
+import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
 /**

@@ -1,22 +1,20 @@
 import {
-  addUrlQuery,
-  assertUint64,
-  convertSkylinkToBase32,
-  defaultSkynetPortalUrl,
-  formatSkylink,
   getFileMimeType,
   getRelativeFilePath,
   getRootDirectory,
-  hexToUint8Array,
-  makeUrl,
-  MAX_REVISION,
+} from "./file";
+import { assertUint64, MAX_REVISION } from "./number";
+import {
+  convertSkylinkToBase32,
+  formatSkylink,
   parseSkylink,
   parseSkylinkBase32,
-  trimUriPrefix,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
-} from "./utils";
-import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
+} from "./skylink";
+import { hexToUint8Array, trimUriPrefix } from "./string";
+import { addUrlQuery, defaultSkynetPortalUrl, makeUrl } from "./url";
+import { combineStrings, extractNonSkylinkPath } from "../../utils/testing";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

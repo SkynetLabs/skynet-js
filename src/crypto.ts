@@ -5,7 +5,8 @@ import randomBytes from "randombytes";
 import { sign } from "tweetnacl";
 
 import { RegistryEntry } from "./registry";
-import { assertUint64, hexToUint8Array, stringToUint8Array, toHexString } from "./utils";
+import { assertUint64 } from "./utils/number";
+import { hexToUint8Array, stringToUint8Array, toHexString } from "./utils/string";
 
 export type Signature = Buffer;
 

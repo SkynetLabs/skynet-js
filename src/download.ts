@@ -1,17 +1,19 @@
 import { SkynetClient } from "./client";
 import {
-  addSubdomain,
-  addUrlQuery,
   BaseCustomOptions,
   convertSkylinkToBase32,
   defaultOptions,
   formatSkylink,
-  makeUrl,
   parseSkylink,
-  trimUriPrefix,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
-} from "./utils";
+} from "./utils/skylink";
+import { trimUriPrefix } from "./utils/string";
+import {
+  addSubdomain,
+  addUrlQuery,
+  makeUrl,
+} from "./utils/url";
 
 /**
  * Custom download options.
