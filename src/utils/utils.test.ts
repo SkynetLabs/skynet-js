@@ -1,8 +1,4 @@
-import {
-  getFileMimeType,
-  getRelativeFilePath,
-  getRootDirectory,
-} from "./file";
+import { getFileMimeType, getRelativeFilePath, getRootDirectory } from "./file";
 import { assertUint64, MAX_REVISION } from "./number";
 import {
   convertSkylinkToBase32,

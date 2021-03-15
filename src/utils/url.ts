@@ -1,6 +1,6 @@
 import parse from "url-parse";
 import urljoin from "url-join";
-import { trimSuffix } from './string';
+import { trimSuffix } from "./string";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
@@ -11,7 +11,7 @@ export const defaultSkynetPortalUrl = "https://siasky.net";
  * @param subdomain - The subdomain to add.
  * @returns - The final URL.
  */
- export function addSubdomain(url: string, subdomain: string): string {
+export function addSubdomain(url: string, subdomain: string): string {
   const urlObj = new URL(url);
   urlObj.hostname = `${subdomain}.${urlObj.hostname}`;
   const str = urlObj.toString();
@@ -25,7 +25,7 @@ export const defaultSkynetPortalUrl = "https://siasky.net";
  * @param query - The query parameters.
  * @returns - The final URL.
  */
- export function addUrlQuery(url: string, query: Record<string, unknown>): string {
+export function addUrlQuery(url: string, query: Record<string, unknown>): string {
   const parsed = parse(url, true);
   // Combine the desired query params with the already existing ones.
   query = { ...parsed.query, ...query };
@@ -40,6 +40,6 @@ export const defaultSkynetPortalUrl = "https://siasky.net";
  * @param args - Array of URL parts to join.
  * @returns - Final URL constructed from the input parts.
  */
- export function makeUrl(...args: string[]): string {
+export function makeUrl(...args: string[]): string {
   return args.reduce((acc, cur) => urljoin(acc, cur));
 }

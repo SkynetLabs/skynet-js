@@ -1,7 +1,7 @@
 /**
  * The maximum allowed value for an entry revision. Setting an entry revision to this value prevents it from being updated further.
  */
- export const MAX_REVISION = BigInt("18446744073709551615"); // max uint64
+export const MAX_REVISION = BigInt("18446744073709551615"); // max uint64
 
 /**
  * Checks if the provided bigint can fit in a 64-bit unsigned integer.
@@ -10,7 +10,7 @@
  * @throws - Will throw if the int does not fit in 64 bits.
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
  */
- export function assertUint64(int: bigint): void {
+export function assertUint64(int: bigint): void {
   /* istanbul ignore next */
   if (typeof int !== "bigint") {
     throw new Error(`Expected parameter int to be type bigint, was type ${typeof int}`);

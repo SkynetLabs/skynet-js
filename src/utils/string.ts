@@ -4,7 +4,7 @@
  * @param str - The string to process.
  * @returns - The processed string.
  */
- export function trimForwardSlash(str: string): string {
+export function trimForwardSlash(str: string): string {
   return trimPrefix(trimSuffix(str, "/"), "/");
 }
 

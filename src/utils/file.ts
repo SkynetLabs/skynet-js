@@ -8,7 +8,7 @@ import { trimPrefix } from "./string";
  * @param file - The file.
  * @returns - The path.
  */
- function getFilePath(
+function getFilePath(
   file: File & {
     webkitRelativePath?: string;
     path?: string;
@@ -52,7 +52,7 @@ export function getRootDirectory(file: File): string {
  * @param file - The file.
  * @returns - The mime type.
  */
- export function getFileMimeType(file: File): string {
+export function getFileMimeType(file: File): string {
   if (file.type) return file.type;
   let { ext } = path.parse(file.name);
   ext = trimPrefix(ext, ".");

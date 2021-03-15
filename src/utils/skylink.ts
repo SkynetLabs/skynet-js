@@ -9,7 +9,7 @@ import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
  *
  * @property [endpointPath] - The relative URL path of the portal endpoint to contact.
  */
- export type BaseCustomOptions = CustomClientOptions & {
+export type BaseCustomOptions = CustomClientOptions & {
   endpointPath?: string;
 };
 
@@ -20,7 +20,7 @@ import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
  * @property [includePath] - Whether to include the path after the skylink, e.g. /<skylink>/foo/bar.
  * @property [onlyPath] - Whether to parse out just the path, e.g. /foo/bar. Will still return null if the string does not contain a skylink.
  */
- export type ParseSkylinkOptions = {
+export type ParseSkylinkOptions = {
   fromSubdomain?: boolean;
   includePath?: boolean;
   onlyPath?: boolean;
@@ -40,7 +40,7 @@ export const uriSkynetPrefix = "sia:";
  * @param skylink - The base64 skylink.
  * @returns - The converted base32 skylink.
  */
- export function convertSkylinkToBase32(skylink: string): string {
+export function convertSkylinkToBase32(skylink: string): string {
   const decoded = base64.toByteArray(skylink.padEnd(skylink.length + 4 - (skylink.length % 4), "="));
   return base32Encode(decoded, "RFC4648-HEX", { padding: false }).toLowerCase();
 }

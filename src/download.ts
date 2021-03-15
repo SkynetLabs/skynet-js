@@ -9,11 +9,7 @@ import {
   uriHandshakeResolverPrefix,
 } from "./utils/skylink";
 import { trimUriPrefix } from "./utils/string";
-import {
-  addSubdomain,
-  addUrlQuery,
-  makeUrl,
-} from "./utils/url";
+import { addSubdomain, addUrlQuery, makeUrl } from "./utils/url";
 
 /**
  * Custom download options.
