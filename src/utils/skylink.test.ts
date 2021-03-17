@@ -1,9 +1,4 @@
-import {
-  convertSkylinkToBase32,
-  formatSkylink,
-  parseSkylink,
-  parseSkylinkBase32,
-} from "./skylink";
+import { convertSkylinkToBase32, formatSkylink, parseSkylink, parseSkylinkBase32 } from "./skylink";
 import { combineStrings, extractNonSkylinkPath } from "../../utils/testing";
 
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";

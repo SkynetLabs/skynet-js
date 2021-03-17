@@ -11,7 +11,7 @@ export const defaultSkynetPortalUrl = "https://siasky.net";
  *
  * @returns - The portal URL.
  */
- export function defaultPortalUrl(): string {
+export function defaultPortalUrl(): string {
   /* istanbul ignore next */
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   return window.location.origin;
