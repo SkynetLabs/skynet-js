@@ -4,6 +4,19 @@ import { trimSuffix } from "./string";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
+// TODO: This will be smarter. See
+// https://github.com/NebulousLabs/skynet-docs/issues/21.
+/**
+ * Returns the default portal URL.
+ *
+ * @returns - The portal URL.
+ */
+ export function defaultPortalUrl(): string {
+  /* istanbul ignore next */
+  if (typeof window === "undefined") return "/"; // default to path root on ssr
+  return window.location.origin;
+}
+
 /**
  * Adds a subdomain to the given URL.
  *

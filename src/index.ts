@@ -3,13 +3,12 @@ export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto
 export { getRelativeFilePath, getRootDirectory } from "./utils/file";
 export { MAX_REVISION } from "./utils/number";
 export {
-  defaultPortalUrl,
   parseSkylink,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
   uriSkynetPrefix,
 } from "./utils/skylink";
-export { defaultSkynetPortalUrl } from "./utils/url";
+export { defaultPortalUrl, defaultSkynetPortalUrl } from "./utils/url";
 
 // Export types.
 
