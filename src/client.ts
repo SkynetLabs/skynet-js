@@ -163,6 +163,8 @@ export class SkynetClient {
 
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
+      // Allow cross-site cookies.
+      withCredentials: true,
     });
   }
 }

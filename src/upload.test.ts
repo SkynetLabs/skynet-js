@@ -37,6 +37,14 @@ describe("uploadFile", () => {
     expect(data.skylink).toEqual(sialink);
   });
 
+  it("should set 'credentials' to 'include'", async () => {
+    await client.uploadFile(file);
+
+    expect(mock.history.post.length).toBe(1);
+    const request = mock.history.post[0];
+    expect(request.withCredentials).toBeTruthy();
+  });
+
   it("should send register onUploadProgress callback if defined", async () => {
     const newPortal = "https://my-portal.net";
     const url = `${newPortal}/skynet/skyfile`;
