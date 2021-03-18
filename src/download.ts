@@ -45,12 +45,14 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
  * @property data - The returned file content. Its type is stored in contentType.
  * @property contentType - The type of the content.
  * @property metadata - The metadata in JSON format.
+ * @property portalUrl - The URL of the portal.
  * @property skylink - 46-character skylink.
  */
 export type GetFileContentResponse<T = unknown> = {
   data: T;
   contentType: string;
   metadata: Record<string, unknown>;
+  portalUrl: string;
   skylink: string;
 };
 
@@ -59,11 +61,13 @@ export type GetFileContentResponse<T = unknown> = {
  *
  * @property contentType - The type of the content.
  * @property metadata - The metadata in JSON format.
+ * @property portalUrl - The URL of the portal.
  * @property skylink - 46-character skylink.
  */
 export type GetMetadataResponse = {
   contentType: string;
   metadata: Record<string, unknown>;
+  portalUrl: string;
   skylink: string;
 };
 
@@ -302,9 +306,10 @@ export async function getMetadata(
 
   const contentType = response.headers["content-type"] ?? "";
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
+  const portalUrl = response.headers["skynet-portal-api"] ?? "";
   const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
 
-  return { contentType, metadata, skylink };
+  return { contentType, metadata, portalUrl, skylink };
 }
 
 /**
@@ -390,9 +395,10 @@ export async function getFileContentRequest<T = unknown>(
 
   const contentType = response.headers["content-type"] ?? "";
   const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
+  const portalUrl = response.headers["skynet-portal-api"] ?? "";
   const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
 
-  return { data: response.data, contentType, metadata, skylink };
+  return { data: response.data, contentType, portalUrl, metadata, skylink };
 }
 
 /**

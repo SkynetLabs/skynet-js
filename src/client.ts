@@ -62,6 +62,7 @@ export type RequestConfig = CustomClientOptions & {
  * The Skynet Client which can be used to access Skynet.
  */
 export class SkynetClient {
+  // TODO: This is currently the url of the skapp and not the portal. It should be the value of 'skynet-portal-api' header. This will be a promise, which will be a breaking change.
   portalUrl: string;
   customOptions: CustomClientOptions;
 
