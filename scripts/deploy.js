@@ -6,6 +6,7 @@ const hns = "skynet-js";
 const dataKey = "skynet-js";
 const bundlePath = "dist/bundle/index.js";
 const scriptName = "index.js";
+const packageJson = "../package.json";
 
 const versionsDir = "versions";
 const versionsTarFile = `${versionsDir}.tar`;
@@ -15,7 +16,7 @@ const versionsTarFile = `${versionsDir}.tar`;
 
   // Get the latest version from package.json.
 
-  const pjson = require("../package.json");
+  const pjson = require(packageJson);
   const version = pjson.version;
   console.log(`Version: ${version}`);
 
