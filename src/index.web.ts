@@ -10,6 +10,7 @@ export {
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
   uriSkynetPrefix,
+  uriSkynsPrefix,
 } from "./utils";
 
 // Export types.

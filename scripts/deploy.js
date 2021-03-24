@@ -7,6 +7,7 @@ const dataKey = "skynet-js";
 const bundlePath = "dist/bundle/index.js";
 const scriptName = "index.js";
 const packageJson = "../package.json";
+const skipDownload = false;
 
 const versionsDir = "versions";
 const versionsTarFile = `${versionsDir}.tar`;
@@ -25,27 +26,33 @@ const versionsTarFile = `${versionsDir}.tar`;
   if (fs.existsSync(versionsDir)) {
     fs.rmdirSync(versionsDir, { recursive: true });
   }
-  try {
-    console.log(`Downloading HNS domain '${hns}' to ${versionsTarFile}`);
-    const { contentType } = await client.downloadFileHnsToPath(hns, versionsTarFile, { query: { format: "tar" } });
-    if (!contentType || !contentType.includes("application/x-tar")) {
-      throw new Error(`Downloaded file is not tar, content-type: ${contentType}`);
-    }
-    // Untar to versions dir.
-    console.log(`Untarring ${versionsTarFile}`);
-    const writer = tar.extract(versionsDir);
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(versionsTarFile).pipe(writer);
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
+  if (fs.existsSync(versionsTarFile)) {
+    fs.rmSync(versionsTarFile);
+  }
 
-    // Delete tar file.
-    fs.unlinkSync(versionsTarFile);
-  } catch (error) {
-    // If there was any error, stop. The initial directory should be uploaded manually.
-    console.log(error);
-    return;
+  if (!skipDownload) {
+    try {
+      console.log(`Downloading HNS domain '${hns}' to ${versionsTarFile}`);
+      const { contentType } = await client.downloadFileHnsToPath(hns, versionsTarFile, { query: { format: "tar" } });
+      if (!contentType || !contentType.includes("application/x-tar")) {
+        throw new Error(`Downloaded file is not tar, content-type: ${contentType}`);
+      }
+      // Untar to versions dir.
+      console.log(`Untarring ${versionsTarFile}`);
+      const writer = tar.extract(versionsDir);
+      await new Promise((resolve, reject) => {
+        fs.createReadStream(versionsTarFile).pipe(writer);
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+
+      // Delete tar file.
+      fs.unlinkSync(versionsTarFile);
+    } catch (error) {
+      // If there was any error, stop. The initial directory should be uploaded manually.
+      console.log(error);
+      return;
+    }
   }
 
   // Copy the web bundle to the appropriate version dir.
@@ -86,13 +93,14 @@ const versionsTarFile = `${versionsDir}.tar`;
   }
   const { publicKey, privateKey } = genKeyPairFromSeed(seed);
   const { entry } = await client.registry.getEntry(publicKey, dataKey);
-  await client.registry.setEntry(privateKey, { datakey: dataKey, data: skylink, revision: entry.revision });
+  await client.registry.setEntry(privateKey, { datakey: dataKey, data: skylink, revision: entry.revision+BigInt(1) });
 
   // Print the registry URL.
 
   const registryUrl = client.registry.getEntryUrl(publicKey, dataKey);
   console.log(`Registry URL: ${registryUrl}`);
+  const skynsUrl = client.registry.getSkynsUrl(publicKey, dataKey);
+  console.log(`Skyns URL: ${skynsUrl}`);
 })().catch((e) => {
   console.log(e);
-  // TODO: Print skyns:// link as well.
 });

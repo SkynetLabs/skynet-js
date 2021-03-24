@@ -37,9 +37,10 @@ type ParseSkylinkBase32Options = {
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
-export const uriHandshakePrefix = "hns:";
-export const uriHandshakeResolverPrefix = "hnsres:";
+export const uriHandshakePrefix = "hns://";
+export const uriHandshakeResolverPrefix = "hnsres://";
 export const uriSkynetPrefix = "sia://";
+export const uriSkynsPrefix = "skyns://";
 
 /**
  * The maximum allowed value for an entry revision. Setting an entry revision to this value prevents it from being updated further.
@@ -337,14 +338,15 @@ function trimSuffix(str: string, suffix: string): string {
  * @returns - The processed string.
  */
 export function trimUriPrefix(str: string, prefix: string): string {
-  const longPrefix = `${prefix}//`;
+  const longPrefix = prefix;
+  const shortPrefix = trimSuffix(prefix, "//");
   if (str.startsWith(longPrefix)) {
     // longPrefix is exactly at the beginning
     return str.slice(longPrefix.length);
   }
-  if (str.startsWith(prefix)) {
+  if (str.startsWith(shortPrefix)) {
     // else prefix is exactly at the beginning
-    return str.slice(prefix.length);
+    return str.slice(shortPrefix.length);
   }
   return str;
 }

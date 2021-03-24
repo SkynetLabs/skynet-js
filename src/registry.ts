@@ -13,6 +13,7 @@ import {
   toHexString,
   trimPrefix,
   isHexString,
+  uriSkynsPrefix,
 } from "./utils";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
@@ -180,15 +181,6 @@ export function getEntryUrl(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): string {
-  /* istanbul ignore next */
-  if (typeof publicKey !== "string") {
-    throw new Error(`Expected parameter publicKey to be type string, was type ${typeof publicKey}`);
-  }
-  /* istanbul ignore next */
-  if (typeof dataKey !== "string") {
-    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
-  }
-
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -203,15 +195,11 @@ export function getEntryUrl(
     );
   }
 
-  // Trim the prefix if it was passed in.
-  publicKey = trimPrefix(publicKey, "ed25519:");
-  if (!isHexString(publicKey)) {
-    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
-  }
+  const { publicKey: formattedPublicKey, dataKey: formattedDataKey } = getRegistryUrlComponents(publicKey, dataKey);
 
   const query = {
-    publickey: `ed25519:${publicKey}`,
-    datakey: toHexString(hashDataKey(dataKey)),
+    publickey: formattedPublicKey,
+    datakey: formattedDataKey,
     timeout,
   };
 
@@ -219,6 +207,37 @@ export function getEntryUrl(
   url = addUrlQuery(url, query);
 
   return url;
+}
+
+export function getSkynsUrl(this: SkynetClient, publicKey: string, dataKey: string): string {
+  const components = getRegistryUrlComponents(publicKey, dataKey);
+  let { publicKey: formattedPublicKey } = components;
+  formattedPublicKey = encodeURIComponent(formattedPublicKey);
+  const { dataKey: formattedDataKey } = components;
+
+  return `${uriSkynsPrefix}${formattedPublicKey}/${formattedDataKey}`;
+}
+
+function getRegistryUrlComponents(publicKey: string, dataKey: string) {
+  /* istanbul ignore next */
+  if (typeof publicKey !== "string") {
+    throw new Error(`Expected parameter publicKey to be type string, was type ${typeof publicKey}`);
+  }
+  /* istanbul ignore next */
+  if (typeof dataKey !== "string") {
+    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
+  }
+
+  // Trim the prefix if it was passed in.
+  publicKey = trimPrefix(publicKey, "ed25519:");
+  if (!isHexString(publicKey)) {
+    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
+  }
+
+  publicKey = `ed25519:${publicKey}`;
+  dataKey = toHexString(hashDataKey(dataKey));
+
+  return { publicKey, dataKey };
 }
 
 /**
