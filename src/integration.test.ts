@@ -143,11 +143,12 @@ describe(`Integration test for portal ${portal}`, () => {
 
       // Get file content and check returned values.
 
-      const { data, contentType, metadata, skylink: returnedSkylink } = await client.getFileContent(skylink);
+      const { data, contentType, metadata, portalUrl, skylink: returnedSkylink } = await client.getFileContent(skylink);
       expect(data).toEqual(expect.any(String));
       expect(data).toEqual(data);
       expect(contentType).toEqual("text/plain");
       expect(metadata).toEqual(plaintextMetadata);
+      expect(portalUrl).toEqual(portal);
       expect(skylink).toEqual(returnedSkylink);
     });
 
@@ -160,10 +161,11 @@ describe(`Integration test for portal ${portal}`, () => {
 
       // Get file metadata and check returned values.
 
-      const { contentType, metadata, skylink: returnedSkylink } = await client.getMetadata(skylink);
+      const { contentType, metadata, portalUrl, skylink: returnedSkylink } = await client.getMetadata(skylink);
 
       expect(contentType).toEqual("text/plain");
       expect(metadata).toEqual(plaintextMetadata);
+      expect(portalUrl).toEqual(portal);
       expect(skylink).toEqual(returnedSkylink);
     });
 
