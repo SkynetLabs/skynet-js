@@ -1,6 +1,5 @@
-import { trimForwardSlash } from "../src/utils";
-
 import parse from "url-parse";
+import { trimForwardSlash } from "../src/utils/string";
 
 /**
  * Returns an array of strings of all possible permutations by picking one string out of each of the input string arrays.

@@ -18,7 +18,7 @@ import {
 import { getJSON, setJSON } from "./skydb";
 import { getEntry, getEntryUrl, setEntry } from "./registry";
 
-import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils";
+import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 
 /**
  * Custom client options.

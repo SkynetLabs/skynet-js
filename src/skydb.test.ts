@@ -1,7 +1,8 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { defaultSkynetPortalUrl, MAX_REVISION } from "./utils";
+import { MAX_REVISION } from "./utils/number";
+import { defaultSkynetPortalUrl } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { regexRevisionNoQuotes } from "./registry";
 

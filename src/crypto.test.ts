@@ -7,7 +7,8 @@ import {
   hashDataKey,
   hashRegistryEntry,
 } from "./crypto";
-import { MAX_REVISION, toHexString } from "./utils";
+import { MAX_REVISION } from "./utils/number";
+import { toHexString } from "./utils/string";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
