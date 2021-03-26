@@ -1,14 +1,8 @@
 import { SkynetClient } from "./client";
-import {
-  BaseCustomOptions,
-  convertSkylinkToBase32,
-  defaultOptions,
-  formatSkylink,
-  parseSkylink,
-  uriHandshakePrefix,
-  uriHandshakeResolverPrefix,
-} from "./utils/skylink";
+import { BaseCustomOptions, defaultOptions } from "./utils/options";
+import { convertSkylinkToBase32, formatSkylink, parseSkylink } from "./utils/skylink";
 import { trimUriPrefix } from "./utils/string";
+import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/url";
 import { addSubdomain, addUrlQuery, makeUrl } from "./utils/url";
 
 /**

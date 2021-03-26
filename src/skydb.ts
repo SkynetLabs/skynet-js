@@ -3,8 +3,9 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
-import { BaseCustomOptions, uriSkynetPrefix } from "./utils/skylink";
+import { BaseCustomOptions } from "./utils/options";
 import { hexToUint8Array, isHexString, trimUriPrefix, toHexString } from "./utils/string";
+import { uriSkynetPrefix } from "./utils/url";
 import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 

@@ -4,7 +4,7 @@ import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
-import { BaseCustomOptions, defaultOptions } from "./utils/skylink";
+import { BaseCustomOptions, defaultOptions } from "./utils/options";
 import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";

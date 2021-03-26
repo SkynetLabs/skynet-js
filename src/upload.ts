@@ -1,7 +1,9 @@
-import { getFileMimeType } from "./utils/file";
-import { BaseCustomOptions, defaultOptions, formatSkylink } from "./utils/skylink";
-import { SkynetClient } from "./client";
 import { AxiosResponse } from "axios";
+
+import { getFileMimeType } from "./utils/file";
+import { BaseCustomOptions, defaultOptions } from "./utils/options";
+import { formatSkylink } from "./utils/skylink";
+import { SkynetClient } from "./client";
 
 /**
  * Custom upload options.

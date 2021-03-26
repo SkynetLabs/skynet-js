@@ -1,4 +1,4 @@
-import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./skylink";
+import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./url";
 import { hexToUint8Array, trimUriPrefix } from "./string";
 
 const hnsLink = "doesn";

@@ -1,17 +1,9 @@
 import base64 from "base64-js";
 import base32Encode from "base32-encode";
 import parse from "url-parse";
-import { CustomClientOptions } from "../client";
-import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
 
-/**
- * Base custom options for methods hitting the API.
- *
- * @property [endpointPath] - The relative URL path of the portal endpoint to contact.
- */
-export type BaseCustomOptions = CustomClientOptions & {
-  endpointPath?: string;
-};
+import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
+import { uriSkynetPrefix } from "./url";
 
 /**
  * Parse skylink options.
@@ -30,10 +22,6 @@ type ParseSkylinkBase32Options = {
   onlyPath?: boolean;
 };
 
-export const uriHandshakePrefix = "hns:";
-export const uriHandshakeResolverPrefix = "hnsres:";
-export const uriSkynetPrefix = "sia:";
-
 /**
  * Converts the given base64 skylink to base32.
  *
@@ -43,20 +31,6 @@ export const uriSkynetPrefix = "sia:";
 export function convertSkylinkToBase32(skylink: string): string {
   const decoded = base64.toByteArray(skylink.padEnd(skylink.length + 4 - (skylink.length % 4), "="));
   return base32Encode(decoded, "RFC4648-HEX", { padding: false }).toLowerCase();
-}
-
-/**
- * Returns the default base custom options for the given endpoint path.
- *
- * @param endpointPath - The endpoint path.
- * @returns - The base custom options.
- */
-export function defaultOptions(endpointPath: string): CustomClientOptions & { endpointPath: string } {
-  return {
-    endpointPath,
-    APIKey: "",
-    customUserAgent: "",
-  };
 }
 
 /**
