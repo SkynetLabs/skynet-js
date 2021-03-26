@@ -93,7 +93,7 @@ describe(`Integration test for portal ${portal}`, () => {
       // Trying to set an existing revision should be an error.
 
       await expect(client.registry.setEntry(privateKey, entry)).rejects.toThrowError(
-        "Unable to update the registry: [provided revision number is already registered; all registry updates failed]"
+        "Unable to update the registry: [provided revision number is already registered"
       );
     });
 
