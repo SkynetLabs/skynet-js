@@ -2,7 +2,8 @@ import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils/number";
 
-// To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
+// To test a specific server, e.g.
+// SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
 const client = new SkynetClient(portal);
 
@@ -59,7 +60,7 @@ describe(`Integration test for portal ${portal}`, () => {
     it("Should return null for an inexistent entry", async () => {
       const { publicKey } = genKeyPairAndSeed();
 
-      // Try getting an inexistant entry.
+      // Try getting an inexistent entry.
       const { entry, signature } = await client.registry.getEntry(publicKey, "foo");
 
       expect(entry).toBeNull();
@@ -69,6 +70,8 @@ describe(`Integration test for portal ${portal}`, () => {
     it("Should set and get entries correctly", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
 
+      // Set the revision to 0.
+
       const entry = {
         datakey: dataKey,
         data: "foo",
@@ -76,10 +79,22 @@ describe(`Integration test for portal ${portal}`, () => {
       };
 
       await client.registry.setEntry(privateKey, entry);
-
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
-
       expect(returnedEntry).toEqual(entry);
+
+      // Increment the revision.
+
+      entry.revision = BigInt(1);
+
+      await client.registry.setEntry(privateKey, entry);
+      const { entry: returnedEntry2 } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry2).toEqual(entry);
+
+      // Trying to set an existing revision should be an error.
+
+      await expect(client.registry.setEntry(privateKey, entry)).rejects.toThrowError(
+        "Unable to update the registry: [provided revision number is already registered; all registry updates failed]"
+      );
     });
 
     it("Should set and get an entry with empty data correctly", async () => {

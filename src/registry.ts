@@ -8,6 +8,7 @@ import { BaseCustomOptions, defaultOptions } from "./utils/skylink";
 import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
+import { extractResponseError } from "./utils/error";
 
 /**
  * Custom get entry options.
@@ -128,20 +129,7 @@ export async function getEntry(
       return { entry: null, signature: null };
     }
 
-    /* istanbul ignore next */
-    if (!err.response.data) {
-      console.log(`Full error: ${err}`);
-      throw new Error(`Error response did not contain expected field 'data'. Status code: ${err.response.status}`);
-    }
-    /* istanbul ignore next */
-    if (!err.response.data.message) {
-      console.log(`Full error: ${err}`);
-      throw new Error(
-        `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}`
-      );
-    }
-    // Return the error message from the response.
-    throw new Error(err.response.data.message);
+    throw extractResponseError(err);
   }
 
   // Sanity check.
@@ -293,17 +281,21 @@ export async function setEntry(
     signature: Array.from(signature),
   };
 
-  await this.executeRequest({
-    ...opts,
-    method: "post",
-    data,
-    // Transform the request to remove quotes, since the revision needs to be
-    // parsed as a uint64 on the Go side.
-    transformRequest: function (data: unknown) {
-      // Convert the object data to JSON.
-      const json = JSON.stringify(data);
-      // Change the revision value from a string to a JSON integer.
-      return json.replace(regexRevisionWithQuotes, '"revision":$1');
-    },
-  });
+  try {
+    await this.executeRequest({
+      ...opts,
+      method: "post",
+      data,
+      // Transform the request to remove quotes, since the revision needs to be
+      // parsed as a uint64 on the Go side.
+      transformRequest: function (data: unknown) {
+        // Convert the object data to JSON.
+        const json = JSON.stringify(data);
+        // Change the revision value from a string to a JSON integer.
+        return json.replace(regexRevisionWithQuotes, '"revision":$1');
+      },
+    });
+  } catch (err) {
+    throw extractResponseError(err);
+  }
 }
