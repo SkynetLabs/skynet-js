@@ -1,8 +1,17 @@
-export function extractResponseError(err: any): Error {
+/**
+ * Extract an error from an Axios error response.
+ *
+ * @param err - The error from Axios.
+ * @returns - The extracted response error.
+ */
+export function extractResponseError(
+  // eslint-disable-next-line
+  err: any
+): Error {
   /* istanbul ignore next */
   if (!err.response) {
     console.log(`Full error: ${err}`);
-    throw new Error("Error response not found");
+    return err;
   }
   /* istanbul ignore next */
   if (!err.response.data) {
