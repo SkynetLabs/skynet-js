@@ -9,6 +9,10 @@ export function extractResponseError(
   err: any
 ): Error {
   /* istanbul ignore next */
+  if (!err) {
+    return new Error("Invalid response error");
+  }
+  /* istanbul ignore next */
   if (!err.response) {
     console.log(`Full error: ${err}`);
     return err;
