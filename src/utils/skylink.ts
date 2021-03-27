@@ -32,7 +32,7 @@ type ParseSkylinkBase32Options = {
 
 export const uriHandshakePrefix = "hns:";
 export const uriHandshakeResolverPrefix = "hnsres:";
-export const uriSkynetPrefix = "sia:";
+export const uriSkynetPrefix = "sia://";
 
 /**
  * Converts the given base64 skylink to base32.
@@ -60,7 +60,7 @@ export function defaultOptions(endpointPath: string): CustomClientOptions & { en
 }
 
 /**
- * Formats the skylink by adding the sia: prefix.
+ * Formats the skylink by adding the sia prefix.
  *
  * @param skylink - The skylink.
  * @returns - The formatted skylink.
