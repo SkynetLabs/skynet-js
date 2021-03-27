@@ -1,4 +1,4 @@
-import { SkynetClient } from "../client";
+import { SkynetClient } from "../client/web";
 import {
   CustomDownloadOptions,
   defaultDownloadOptions,

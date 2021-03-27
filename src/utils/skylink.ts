@@ -8,9 +8,11 @@ import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
  * Base custom options for methods hitting the API.
  *
  * @property [endpointPath] - The relative URL path of the portal endpoint to contact.
+ * @property [query] - Query parameters.
  */
 export type BaseCustomOptions = CustomClientOptions & {
   endpointPath?: string;
+  query?: Record<string, unknown>;
 };
 
 /**

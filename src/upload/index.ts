@@ -1,4 +1,4 @@
-import { defaultOptions, BaseCustomOptions } from "../utils";
+import { defaultOptions, BaseCustomOptions } from "../utils/skylink";
 
 /**
  * Custom upload options.
@@ -6,7 +6,6 @@ import { defaultOptions, BaseCustomOptions } from "../utils";
  * @property [portalFileFieldname="file"] - The file fieldname for uploading files on this portal.
  * @property [portalDirectoryfilefieldname="files[]"] - The file fieldname for uploading directories on this portal.
  * @property [customFilename] - The custom filename to use when uploading files.
- * @property [query] - Query parameters.
  */
 export type CustomUploadOptions = BaseCustomOptions & {
   portalFileFieldname?: string;

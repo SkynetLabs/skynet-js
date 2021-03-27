@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import { SkynetClient } from "../client";
+import { SkynetClient } from "../client/node";
 import {
   CustomDownloadOptions,
   defaultDownloadOptions,
@@ -76,6 +76,27 @@ export async function downloadFileHnsToPath(
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 
   const url = this.getHnsUrl(domain, opts);
+
+  return this.downloadFileToPathRequest(url, path, opts);
+}
+
+/**
+ * Makes a request to download a file to a path from Skynet.
+ *
+ * @param this - SkynetClient
+ * @param url - URL.
+ * @param path - Path to create the local file at.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The metadata in JSON format. Each field will be empty if no metadata was found.
+ * @throws - Will throw if the request does not succeed or the response is missing data.
+ */
+export async function downloadFileToPathRequest(
+  this: SkynetClient,
+  url: string,
+  path: string,
+  customOptions?: CustomDownloadOptions
+): Promise<GetMetadataResponse> {
+  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 
   const writer = fs.createWriteStream(path);
 
