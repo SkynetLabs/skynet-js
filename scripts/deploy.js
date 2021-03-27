@@ -1,7 +1,9 @@
 const { genKeyPairFromSeed, SkynetClient, uriSkynetPrefix } = require("..");
+
 const fs = require("fs");
 const tar = require("tar-fs");
 
+const deploySeed = "SKYNET_JS_DEPLOY_SEED";
 const hns = "skynet-js";
 const dataKey = "skynet-js";
 const bundlePath = "dist/bundle/index.js";
@@ -39,7 +41,10 @@ const versionsTarFile = `${versionsDir}.tar`;
       }
       // Untar to versions dir.
       console.log(`Untarring ${versionsTarFile}`);
-      const writer = tar.extract(versionsDir);
+      const writer = tar.extract(versionsDir, {
+        // Make sure all existing subfiles are readable.
+        readable: true,
+      });
       await new Promise((resolve, reject) => {
         fs.createReadStream(versionsTarFile).pipe(writer);
         writer.on("finish", resolve);
@@ -61,15 +66,11 @@ const versionsTarFile = `${versionsDir}.tar`;
   // TODO: Index by major version?
   let versionSubdir = version.split(".").slice(0, 2).join(".");
   const suffix = version.split("-").slice(1);
-  if (suffix) {
+  if (suffix.length > 0) {
     versionSubdir = `${versionSubdir}-${suffix}`;
   }
   const destinationDir = `${versionsDir}/${versionSubdir}`;
   const destination = `${destinationDir}/${scriptName}`;
-  // Make sure the destination has permissions.
-  if (fs.existsSync(destination)) {
-    fs.chmodSync(destination, "777");
-  }
   // Copy the bundle. destination will be created or overwritten.
   console.log(`Copying ${bundlePath} -> ${destination}`);
   fs.mkdirSync(destinationDir, { recursive: true });
@@ -87,7 +88,7 @@ const versionsTarFile = `${versionsDir}.tar`;
   // Update the registry entry.
 
   console.log(`Updating '${dataKey}' registry entry with skylink ${skylink}`);
-  const seed = process.env.SKYNET_JS_DEPLOY_SEED;
+  const seed = process.env[deploySeed];
   if (!seed) {
     throw new Error(`Seed not found, make sure SKYNET_JS_DEPLOY_SEED is set`);
   }
