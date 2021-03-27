@@ -1,16 +1,9 @@
 export { SkynetClient } from "./client/web";
 export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
-export {
-  MAX_REVISION,
-  defaultPortalUrl,
-  defaultSkynetPortalUrl,
-  getRelativeFilePath,
-  getRootDirectory,
-  parseSkylink,
-  uriHandshakePrefix,
-  uriHandshakeResolverPrefix,
-  uriSkynetPrefix,
-} from "./utils";
+export { getRelativeFilePath, getRootDirectory } from "./utils/file";
+export { MAX_REVISION } from "./utils/number";
+export { parseSkylink, uriHandshakePrefix, uriHandshakeResolverPrefix, uriSkynetPrefix } from "./utils/skylink";
+export { defaultPortalUrl, defaultSkynetPortalUrl } from "./utils/url";
 
 // Export types.
 
@@ -19,5 +12,5 @@ export type { Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";
 export type { CustomGetJSONOptions, CustomSetJSONOptions, VersionedEntryData } from "./skydb";
-export type { CustomUploadOptions, UploadRequestResponse } from "./upload/index";
-export type { ParseSkylinkOptions } from "./utils";
+export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
+export type { ParseSkylinkOptions } from "./utils/skylink";

@@ -1,13 +1,18 @@
 # Changelog
 
-## [3.0.1-beta]
+For the latest beta changes, see [CHANGELOG-BETA.md](./CHANGELOG-BETA.md).
 
-_This beta version is released on the `beta` stream. It can be installed with `npm install skynet-js@beta`._
+## [3.0.2]
+
+### Added
+
+- Add portalUrl response field to `getFileContents` and `getMetadata`.
 
 ### Changed
 
 - A new optimization causes `db.setJSON` to complete significantly faster.
 - The size of the bundled SDK has been reduced by more than 60% by changing crypto dependencies.
+- Fix a bug where registry entries with empty data were rejected.
 
 ## [3.0.0]
 

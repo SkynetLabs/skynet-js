@@ -1,6 +1,6 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index.web";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
-import { MAX_REVISION } from "./utils";
+import { MAX_REVISION } from "./utils/number";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
@@ -82,6 +82,22 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(returnedEntry).toEqual(entry);
     });
 
+    it("Should set and get an entry with empty data correctly", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      const entry = {
+        datakey: dataKey,
+        data: "",
+        revision: BigInt(0),
+      };
+
+      await client.registry.setEntry(privateKey, entry);
+
+      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+
+      expect(returnedEntry).toEqual(entry);
+    });
+
     it("setEntry should not be affected by timeout parameter", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
 
@@ -127,11 +143,12 @@ describe(`Integration test for portal ${portal}`, () => {
 
       // Get file content and check returned values.
 
-      const { data, contentType, metadata, skylink: returnedSkylink } = await client.getFileContent(skylink);
+      const { data, contentType, metadata, portalUrl, skylink: returnedSkylink } = await client.getFileContent(skylink);
       expect(data).toEqual(expect.any(String));
       expect(data).toEqual(data);
       expect(contentType).toEqual("text/plain");
       expect(metadata).toEqual(plaintextMetadata);
+      expect(portalUrl).toEqual(portal);
       expect(skylink).toEqual(returnedSkylink);
     });
 
@@ -144,10 +161,11 @@ describe(`Integration test for portal ${portal}`, () => {
 
       // Get file metadata and check returned values.
 
-      const { contentType, metadata, skylink: returnedSkylink } = await client.getMetadata(skylink);
+      const { contentType, metadata, portalUrl, skylink: returnedSkylink } = await client.getMetadata(skylink);
 
       expect(contentType).toEqual("text/plain");
       expect(metadata).toEqual(plaintextMetadata);
+      expect(portalUrl).toEqual(portal);
       expect(skylink).toEqual(returnedSkylink);
     });
 

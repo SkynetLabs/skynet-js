@@ -1,13 +1,13 @@
 import fs from "fs";
 
 import { SkynetClient } from "../client";
-import { formatSkylink } from "../utils";
 import {
   CustomDownloadOptions,
   defaultDownloadOptions,
   defaultDownloadHnsOptions,
   CustomHnsDownloadOptions,
   GetMetadataResponse,
+  getDownloadHeaders,
 } from "./index";
 
 /**
@@ -46,12 +46,6 @@ export async function downloadFileToPath(
       "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
     );
   }
-  /* istanbul ignore next */
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
 
   await new Promise((resolve, reject) => {
     response.data.pipe(writer);
@@ -59,11 +53,7 @@ export async function downloadFileToPath(
     writer.on("error", reject);
   });
 
-  const contentType = response.headers["content-type"] ?? "";
-  const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
-
-  return { contentType, metadata, skylink };
+  return getDownloadHeaders(response);
 }
 
 /**
@@ -102,12 +92,6 @@ export async function downloadFileHnsToPath(
       "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
     );
   }
-  /* istanbul ignore next */
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
 
   await new Promise((resolve, reject) => {
     response.data.pipe(writer);
@@ -115,9 +99,5 @@ export async function downloadFileHnsToPath(
     writer.on("error", reject);
   });
 
-  const contentType = response.headers["content-type"] ?? "";
-  const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
-
-  return { contentType, metadata, skylink };
+  return getDownloadHeaders(response);
 }

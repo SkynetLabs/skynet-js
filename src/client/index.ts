@@ -10,11 +10,11 @@ import {
   getFileContentHns,
   getFileContentRequest,
   resolveHns,
-} from "../download/index";
+} from "../download";
 import { getJSON, setJSON } from "../skydb";
 import { getEntry, getEntryUrl, setEntry } from "../registry";
-import { defaultPortalUrl } from "../utils";
-import { addUrlQuery, makeUrl } from "../utils";
+
+import { addUrlQuery, defaultPortalUrl, makeUrl } from "../utils/url";
 import { CustomUploadOptions, UploadRequestResponse } from "../upload";
 
 /**
@@ -60,6 +60,7 @@ export type RequestConfig = CustomClientOptions & {
  * The base Skynet Client which can be used to access Skynet.
  */
 export abstract class SkynetClient {
+  // TODO: This is currently the url of the skapp and not the portal. It should be the value of 'skynet-portal-api' header. This will be a promise, which will be a breaking change.
   portalUrl: string;
   customOptions: CustomClientOptions;
 
