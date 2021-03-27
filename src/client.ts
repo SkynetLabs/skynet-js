@@ -62,8 +62,8 @@ export type RequestConfig = CustomClientOptions & {
  * The Skynet Client which can be used to access Skynet.
  */
 export class SkynetClient {
-  // TODO: This is currently the url of the skapp and not the portal. It should be the value of 'skynet-portal-api' header. This will be a promise, which will be a breaking change.
-  portalUrl: string;
+  // The value of the 'skynet-portal-api' header.
+  portalUrl: Promise<string>;
   customOptions: CustomClientOptions;
 
   // Set methods (defined in other files).
@@ -105,11 +105,29 @@ export class SkynetClient {
    * The Skynet Client which can be used to access Skynet.
    *
    * @class
-   * @param [portalUrl] The portal URL to use to access Skynet, if specified. To use the default portal while passing custom options, use ""
+   * @param [initialPortalUrl] The initial portal URL to use to access Skynet, if specified. A request will be made to this URL to get the actual portal URL. To use the default portal while passing custom options, pass "".
    * @param [customOptions] Configuration for the client.
    */
-  constructor(portalUrl: string = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
-    this.portalUrl = portalUrl;
+  constructor(initialPortalUrl = "", customOptions: CustomClientOptions = {}) {
+    // Get the initial portal URL, if not provided.
+    if (initialPortalUrl == "") {
+      initialPortalUrl = defaultPortalUrl();
+    }
+    // Kick off async request for the portal URL.
+    this.portalUrl = this.executeRequest({
+      ...customOptions,
+      method: "head",
+      url: initialPortalUrl,
+      endpointPath: "/",
+    }).then((response) => {
+      if (typeof response.headers === "undefined") {
+        throw new Error(
+          "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+        );
+      }
+      return response.headers["skynet-portal-api"] ?? "";
+    });
+
     this.customOptions = customOptions;
   }
 
@@ -120,7 +138,7 @@ export class SkynetClient {
    * @returns - The response from axios.
    * @throws - Will throw if unimplemented options have been passed in.
    */
-  protected executeRequest(config: RequestConfig): Promise<AxiosResponse> {
+  protected async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     if (config.skykeyName || config.skykeyId) {
       throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
     }
@@ -128,7 +146,8 @@ export class SkynetClient {
     // Build the URL.
     let url = config.url;
     if (!url) {
-      url = makeUrl(this.portalUrl, config.endpointPath, config.extraPath ?? "");
+      const portalUrl = await this.portalUrl;
+      url = makeUrl(portalUrl, config.endpointPath, config.extraPath ?? "");
     }
     if (config.query) {
       url = addUrlQuery(url, config.query);

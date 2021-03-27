@@ -23,6 +23,7 @@ describe("uploadFile", () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
     mock.onPost(url).replyOnce(200, data);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
     mock.resetHistory();
   });
 
@@ -37,10 +38,11 @@ describe("uploadFile", () => {
     expect(data.skylink).toEqual(sialink);
   });
 
-  it("should send register onUploadProgress callback if defined", async () => {
+  it("should register onUploadProgress callback if defined", async () => {
     const newPortal = "https://my-portal.net";
     const url = `${newPortal}/skynet/skyfile`;
     const client = new SkynetClient(newPortal);
+    mock.onHead(newPortal).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
 
     // Use replyOnce to catch a single request with the new URL.
     mock.onPost(url).replyOnce(200, data);
@@ -117,6 +119,7 @@ describe("uploadFile", () => {
     const portalUrl = "https://portal.net";
     const url = `${portalUrl}/skynet/skyfile`;
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
 
     mock.onPost(`${url}?file=test`).replyOnce(200, data);
 
@@ -157,6 +160,7 @@ describe("uploadDirectory", () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
     mock.onPost(url).replyOnce(200, data);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
     mock.resetHistory();
   });
 

@@ -2,7 +2,7 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
 import { MAX_REVISION } from "./utils/number";
-import { defaultSkynetPortalUrl } from "./utils/url";
+import { defaultSkynetPortalUrl, getEntryUrlForPortal, getSkylinkUrlForPortal } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { regexRevisionNoQuotes } from "./registry";
 
@@ -16,9 +16,9 @@ const bitfield = 2048;
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const registryUrl = `${portalUrl}/skynet/registry`;
-const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
+const registryLookupUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
 const uploadUrl = `${portalUrl}/skynet/skyfile`;
-const skylinkUrl = client.getSkylinkUrl(skylink);
+const skylinkUrl = getSkylinkUrlForPortal(portalUrl, skylink);
 
 const data = "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367";
 const revision = 11;
@@ -34,13 +34,14 @@ describe("getJSON", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
     mock.resetHistory();
   });
 
   it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).reply(200, json, {});
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).replyOnce(200, json, {});
 
     const jsonReturned = await client.db.getJSON(publicKey, dataKey);
     expect(jsonReturned.data).toEqual(json);
@@ -71,6 +72,7 @@ describe("setJSON", () => {
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
     mock.resetHistory();
     // mock a successful upload
     mock.onPost(uploadUrl).reply(200, { skylink, merkleroot, bitfield });
@@ -78,10 +80,10 @@ describe("setJSON", () => {
 
   it("should perform an upload, lookup and registry update", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
 
     // mock a successful registry update
-    mock.onPost(registryUrl).reply(204);
+    mock.onPost(registryUrl).replyOnce(204);
 
     // set data
     await client.db.setJSON(privateKey, dataKey, json);
@@ -97,7 +99,7 @@ describe("setJSON", () => {
 
   it("should use the revision if it is passed in", async () => {
     // mock a successful registry update
-    mock.onPost(registryUrl).reply(204);
+    mock.onPost(registryUrl).replyOnce(204);
 
     // set data
     const updated = await client.db.setJSON(privateKey, dataKey, json, BigInt(revision + 1));

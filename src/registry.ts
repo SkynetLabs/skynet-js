@@ -5,8 +5,8 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultOptions } from "./utils/skylink";
-import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
-import { addUrlQuery, makeUrl } from "./utils/url";
+import { hexToUint8Array, isHexString, toHexString } from "./utils/string";
+import { getEntryUrlForPortal } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
 /**
@@ -23,7 +23,7 @@ export type CustomGetEntryOptions = BaseCustomOptions & {
  */
 export type CustomSetEntryOptions = BaseCustomOptions;
 
-const defaultGetEntryOptions = {
+export const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
   timeout: 5,
 };
@@ -92,7 +92,7 @@ export async function getEntry(
     ...customOptions,
   };
 
-  const url = this.registry.getEntryUrl(publicKey, dataKey, opts);
+  const url = await this.registry.getEntryUrl(publicKey, dataKey, opts);
 
   let response: AxiosResponse;
   try {
@@ -193,51 +193,21 @@ export async function getEntry(
  * @returns - The full get entry URL.
  * @throws - Will throw if the provided timeout is invalid or the given key is not valid.
  */
-export function getEntryUrl(
+export async function getEntryUrl(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
   customOptions?: CustomGetEntryOptions
-): string {
-  /* istanbul ignore next */
-  if (typeof publicKey !== "string") {
-    throw new Error(`Expected parameter publicKey to be type string, was type ${typeof publicKey}`);
-  }
-  /* istanbul ignore next */
-  if (typeof dataKey !== "string") {
-    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
-  }
-
+): Promise<string> {
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
-  const timeout = opts.timeout;
+  const portalUrl = await this.portalUrl;
 
-  if (!Number.isInteger(timeout) || timeout > MAX_GET_ENTRY_TIMEOUT || timeout < 1) {
-    throw new Error(
-      `Invalid 'timeout' parameter '${timeout}', needs to be an integer between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`
-    );
-  }
-
-  // Trim the prefix if it was passed in.
-  publicKey = trimPrefix(publicKey, "ed25519:");
-  if (!isHexString(publicKey)) {
-    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
-  }
-
-  const query = {
-    publickey: `ed25519:${publicKey}`,
-    datakey: toHexString(hashDataKey(dataKey)),
-    timeout,
-  };
-
-  let url = makeUrl(this.portalUrl, opts.endpointPath);
-  url = addUrlQuery(url, query);
-
-  return url;
+  return getEntryUrlForPortal(portalUrl, publicKey, dataKey, opts);
 }
 
 /**
