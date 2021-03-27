@@ -192,8 +192,8 @@ export async function getEntry(
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The full get entry URL.
- * @throws - Will throw if the provided timeout is invalid or the given key is not valid.
+ * @returns - The full registry entry URL.
+ * @throws - Will throw if the provided timeout is invalid or the given keys are not valid.
  */
 export function getEntryUrl(
   this: SkynetClient,
@@ -229,6 +229,15 @@ export function getEntryUrl(
   return url;
 }
 
+/**
+ * Gets the skyns URL corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @returns - The skyns URL.
+ * @throws - Will throw if the given keys are not valid.
+ */
 export function getSkynsUrl(this: SkynetClient, publicKey: string, dataKey: string): string {
   const components = getRegistryUrlComponents(publicKey, dataKey);
   let { publicKey: formattedPublicKey } = components;
@@ -238,6 +247,14 @@ export function getSkynsUrl(this: SkynetClient, publicKey: string, dataKey: stri
   return `${uriSkynsPrefix}${formattedPublicKey}/${formattedDataKey}`;
 }
 
+/**
+ * Gets the registry entry URL components corresponding to the publicKey and dataKey.
+ *
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @returns - The registry entry URL components.
+ * @throws - Will throw if the given keys are not valid.
+ */
 function getRegistryUrlComponents(publicKey: string, dataKey: string) {
   /* istanbul ignore next */
   if (typeof publicKey !== "string") {
