@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "3.0.1-beta",
+  "version": "3.0.2",
   "description": "Sia Skynet Javascript Client",
   "browser": "dist/web/index.web.js",
   "main": "dist/node/index.node.js",
@@ -65,7 +65,7 @@
     "skynet"
   ],
   "author": "Karol Wypchlo",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/NebulousLabs/skynet-js/issues"
   },

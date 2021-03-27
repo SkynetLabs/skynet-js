@@ -9,7 +9,7 @@ import p from "path";
 
 import { SkynetClient } from "../client/node";
 import { CustomUploadOptions, defaultUploadOptions, UploadRequestResponse } from "./index";
-import { formatSkylink } from "../utils";
+import { formatSkylink } from "../utils/skylink";
 
 /**
  * Uploads a file from the given local path to Skynet.

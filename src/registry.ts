@@ -1,20 +1,12 @@
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { Buffer } from "buffer";
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
-import {
-  addUrlQuery,
-  BaseCustomOptions,
-  assertUint64,
-  defaultOptions,
-  hexToUint8Array,
-  makeUrl,
-  toHexString,
-  trimPrefix,
-  isHexString,
-  uriSkynsPrefix,
-} from "./utils";
+import { assertUint64 } from "./utils/number";
+import { BaseCustomOptions, defaultOptions, uriSkynsPrefix } from "./utils/skylink";
+import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
+import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
 /**
@@ -120,12 +112,35 @@ export async function getEntry(
         return JSON.parse(data);
       },
     });
-  } catch (err: unknown) {
-    // @ts-expect-error TS complains about err.response
+  } catch (err) {
+    /* istanbul ignore next */
+    if (!err.response) {
+      console.log(`Full error: ${err}`);
+      throw new Error("Error response not found");
+    }
+    /* istanbul ignore next */
+    if (!err.response.status) {
+      console.log(`Full error: ${err}`);
+      throw new Error("Error response did not contain expected field 'status'");
+    }
+    // Check if status was 404 "not found" and return null if so.
     if (err.response.status === 404) {
       return { entry: null, signature: null };
     }
-    // @ts-expect-error TS complains about err.response
+
+    /* istanbul ignore next */
+    if (!err.response.data) {
+      console.log(`Full error: ${err}`);
+      throw new Error(`Error response did not contain expected field 'data'. Status code: ${err.response.status}`);
+    }
+    /* istanbul ignore next */
+    if (!err.response.data.message) {
+      console.log(`Full error: ${err}`);
+      throw new Error(
+        `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}`
+      );
+    }
+    // Return the error message from the response.
     throw new Error(err.response.data.message);
   }
 
@@ -140,10 +155,15 @@ export async function getEntry(
     );
   }
 
+  // Use empty string if the data is empty.
+  let data = "";
+  if (response.data.data) {
+    data = Buffer.from(hexToUint8Array(response.data.data)).toString();
+  }
   const signedEntry = {
     entry: {
       datakey: dataKey,
-      data: Buffer.from(hexToUint8Array(response.data.data)).toString(),
+      data,
       // Convert the revision from a string to bigint.
       revision: BigInt(response.data.revision),
     },

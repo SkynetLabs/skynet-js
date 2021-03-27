@@ -1,4 +1,4 @@
-import { downloadFileHnsToPath, downloadFileToPath } from "../download/node";
+import { downloadFileHnsToPath, downloadFileToPath, downloadFileToPathRequest } from "../download/node";
 import {
   uploadDirectoryFromPath,
   uploadDirectoryFromPathRequest,
@@ -13,6 +13,7 @@ export class SkynetClient extends Client {
   // Download
   downloadFileToPath = downloadFileToPath;
   downloadFileHnsToPath = downloadFileHnsToPath;
+  protected downloadFileToPathRequest = downloadFileToPathRequest;
 
   // Upload
   uploadDirectoryFromPath = uploadDirectoryFromPath;

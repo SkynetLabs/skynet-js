@@ -1,7 +1,8 @@
 import { AxiosResponse } from "axios";
 
-import { getFileMimeType, formatSkylink } from "../utils";
 import { SkynetClient } from "../client/web";
+import { getFileMimeType } from "../utils/file";
+import { formatSkylink } from "../utils/skylink";
 import { CustomUploadOptions, defaultUploadOptions, UploadRequestResponse } from "./index";
 
 /**

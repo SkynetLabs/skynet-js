@@ -65,3 +65,8 @@ We have some automated checks that must pass in order for code to be accepted. T
 - 100% code coverage is enforced. Every statement and conditional branch must be tested.
 
 Note that the 100% coverage requirement is a _minimum_. Just because a line of code is tested does not mean it is tested _well_, that is, with different values and combinations of values. Tests should be as thorough as possible, within reason.
+
+## Changelogs
+
+- [Stable](./CHANGELOG.md)
+- [Beta](./CHANGELOG-BETA.md)

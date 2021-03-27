@@ -93,7 +93,7 @@ const versionsTarFile = `${versionsDir}.tar`;
   }
   const { publicKey, privateKey } = genKeyPairFromSeed(seed);
   const { entry } = await client.registry.getEntry(publicKey, dataKey);
-  await client.registry.setEntry(privateKey, { datakey: dataKey, data: skylink, revision: entry.revision+BigInt(1) });
+  await client.registry.setEntry(privateKey, { datakey: dataKey, data: skylink, revision: entry.revision + BigInt(1) });
 
   // Print the registry URL.
 

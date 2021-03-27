@@ -2,16 +2,9 @@ import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
-import {
-  trimUriPrefix,
-  uriSkynetPrefix,
-  toHexString,
-  assertUint64,
-  MAX_REVISION,
-  BaseCustomOptions,
-  isHexString,
-  hexToUint8Array,
-} from "./utils";
+import { assertUint64, MAX_REVISION } from "./utils/number";
+import { BaseCustomOptions, uriSkynetPrefix } from "./utils/skylink";
+import { hexToUint8Array, isHexString, trimUriPrefix, toHexString } from "./utils/string";
 import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 
