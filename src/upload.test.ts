@@ -11,6 +11,7 @@ const sialink = `${uriSkynetPrefix}${skylink}`;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 const data = { skylink, merkleroot, bitfield };
+let mock: MockAdapter;
 
 describe("uploadFile", () => {
   const url = `${portalUrl}/skynet/skyfile`;
@@ -18,7 +19,6 @@ describe("uploadFile", () => {
   const file = new File(["foo"], filename, {
     type: "text/plain",
   });
-  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -155,7 +155,6 @@ describe("uploadDirectory", () => {
     "i-am-not/me-neither/file3.jpeg": new File(["foo3"], "i-am-not/me-neither/file3.jpeg"),
   };
   const url = `${portalUrl}/skynet/skyfile?filename=${filename}`;
-  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);

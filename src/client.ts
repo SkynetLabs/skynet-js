@@ -120,12 +120,17 @@ export class SkynetClient {
       url: initialPortalUrl,
       endpointPath: "/",
     }).then((response) => {
+      /* istanbul ignore next */
       if (typeof response.headers === "undefined") {
         throw new Error(
           "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
         );
       }
-      return response.headers["skynet-portal-api"] ?? "";
+      const portalUrl = response.headers["skynet-portal-api"];
+      if (!portalUrl) {
+        throw new Error("Could not get portal URL for the given portal");
+      }
+      return portalUrl;
     });
 
     this.customOptions = customOptions;
