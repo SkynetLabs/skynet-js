@@ -4,6 +4,12 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [3.0.3-beta]
+
+### Changed
+
+- The SDK now supports cookies with requests that are "same-site" but "cross-origin." This allows accounts to be associated with requests made to API endpoints at the base portal URL.
+
 ## [3.0.2-beta]
 
 ### Added

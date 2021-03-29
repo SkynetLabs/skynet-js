@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "3.0.2",
+  "version": "3.0.3-beta",
   "description": "Sia Skynet Javascript Client",
   "main": "dist/index.js",
   "files": [
