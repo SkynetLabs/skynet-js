@@ -4,6 +4,12 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [3.0.3-beta]
+
+### Added
+
+-
+
 ## [3.0.2-beta]
 
 ### Added
