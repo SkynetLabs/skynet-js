@@ -1,12 +1,21 @@
 import { Permission } from "skynet-interface-utils";
 
-import { Connector } from "./base";
+import { Connector, CustomConnectorOptions } from "./base";
+import { SkynetClient } from "../client";
 import { Dac } from "./dac";
 
 export const mySkyDomain = "skynet-mysky.hns";
 
-export class MySkyConnector extends Connector {
+export class MySky {
   protected permissions: Permission[] = [];
+
+  constructor(protected connector: Connector) {}
+
+  static async init(client: SkynetClient, customOptions?: CustomConnectorOptions): Promise<MySky>{
+    const connector = await Connector.init(client, mySkyDomain, customOptions);
+
+    return new MySky(connector);
+  }
 
   async loadDacs(path: string): Promise<Dac>;
   async loadDacs(path: string, ...paths: string[]): Promise<Dac[]>;
@@ -17,18 +26,21 @@ export class MySkyConnector extends Connector {
       paths = [path];
     }
 
-    const dacs = [];
+    const promises: Promise<Dac>[] = [];
     for (let dacPath of paths) {
-      // Initialize DAC.
-      const connector = await Connector.init(this.client, dacPath);
-      const dac = Dac.init(connector);
-      dacs.push(dac);
+      promises.push(new Promise(async () => {
+        // Initialize DAC.
+        const dac = await Dac.init(this.connector.client, dacPath, this.connector.options);
 
-      // Add DAC permissions.
-      await dac.getPermissions();
-      // const perms = await dac.getPermissions();
-      // this.addPermissions(...perms);
+        // Add DAC permissions.
+        const perms = await dac.getPermissions();
+        this.addPermissions(...perms);
+
+        return dac;
+      }));
     }
+
+    const dacs: Dac[] = await Promise.all(promises);
 
     if (paths) {
       return dacs;
@@ -61,11 +73,11 @@ export class MySkyConnector extends Connector {
     // TODO: Delete all connected dacs.
 
     // Close the connection.
-    this.connection.close();
+    this.connector.connection.close();
 
     // Close the child iframe.
-    if (this.childFrame) {
-      this.childFrame.parentNode!.removeChild(this.childFrame);
+    if (this.connector.childFrame) {
+      this.connector.childFrame.parentNode!.removeChild(this.connector.childFrame);
     }
   }
 

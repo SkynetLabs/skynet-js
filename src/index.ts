@@ -18,7 +18,7 @@ export { Dac, mySkyDomain } from "./connector";
 export type { CustomClientOptions, RequestConfig } from "./client";
 export type { Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
-export type { CustomConnectorOptions, MySkyConnector } from "./connector";
+export type { CustomConnectorOptions, MySky } from "./connector";
 export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";
 export type { CustomGetJSONOptions, CustomSetJSONOptions, VersionedEntryData } from "./skydb";
 export type { CustomUploadOptions, UploadRequestResponse } from "./upload";

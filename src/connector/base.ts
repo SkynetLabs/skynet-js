@@ -16,8 +16,8 @@ const defaultConnectorOptions = {
 export class Connector {
   constructor(
     public url: string,
-    protected client: SkynetClient,
-    protected childFrame: HTMLIFrameElement,
+    public client: SkynetClient,
+    public childFrame: HTMLIFrameElement,
     public connection: Connection,
     public options: CustomConnectorOptions
   ) {}
@@ -27,11 +27,11 @@ export class Connector {
   static async init(client: SkynetClient, domain: string, customOptions?: CustomConnectorOptions): Promise<Connector> {
     const opts = { ...defaultConnectorOptions, ...customOptions };
 
-    const componentUrl = await client.getComponentUrl(domain);
+    const domainUrl = await client.getFullDomainUrl(domain);
 
     // Create the iframe.
 
-    const childFrame = createIframe(componentUrl, componentUrl);
+    const childFrame = createIframe(domainUrl, domainUrl);
     const childWindow = childFrame.contentWindow!;
 
     // Connect to the iframe.
@@ -45,6 +45,6 @@ export class Connector {
 
     // Construct the component connector.
 
-    return new Connector(componentUrl, client, childFrame, connection, opts);
+    return new Connector(domainUrl, client, childFrame, connection, opts);
   }
 }

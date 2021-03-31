@@ -209,6 +209,7 @@ export function getSkylinkUrlForPortal(
  * @returns - The full URL for the given domain.
  */
 export function getFullDomainUrlForPortal(portalUrl: string, domain: string): string {
+  domain = trimSuffix(domain, "/");
   return addSubdomain(portalUrl, domain);
 }
 
