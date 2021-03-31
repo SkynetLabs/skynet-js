@@ -110,23 +110,27 @@ export class SkynetClient {
    */
   constructor(initialPortalUrl = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
     // Kick off async request for the portal URL.
-    this.portalUrl = this.executeRequest({
-      ...customOptions,
-      method: "head",
-      url: initialPortalUrl,
-      endpointPath: "/",
-    }).then((response) => {
-      /* istanbul ignore next */
-      if (typeof response.headers === "undefined") {
-        throw new Error(
-          "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-        );
-      }
-      const portalUrl = response.headers["skynet-portal-api"];
-      if (!portalUrl) {
-        throw new Error("Could not get portal URL for the given portal");
-      }
-      return portalUrl;
+    this.portalUrl = new Promise((resolve, reject) => {
+      this.executeRequest({
+        ...customOptions,
+        method: "head",
+        url: initialPortalUrl,
+        endpointPath: "/",
+      }).then((response) => {
+        /* istanbul ignore next */
+        if (typeof response.headers === "undefined") {
+          reject(
+            new Error(
+              "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+            )
+          );
+        }
+        const portalUrl = response.headers["skynet-portal-api"];
+        if (!portalUrl) {
+          reject(new Error("Could not get portal URL for the given portal"));
+        }
+        resolve(portalUrl);
+      });
     });
 
     this.customOptions = customOptions;
