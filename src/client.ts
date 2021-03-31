@@ -18,8 +18,8 @@ import {
 import { getJSON, setJSON } from "./skydb";
 import { getEntry, getEntryUrl, setEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
-import { loadMySky } from "./connector";
-import { extractDomain, getFullDomainUrl } from "./connector/utils";
+import { loadMySky } from "./mysky";
+import { extractDomain, getFullDomainUrl } from "./mysky/utils";
 
 /**
  * Custom client options.

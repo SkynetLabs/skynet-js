@@ -1,8 +1,22 @@
-import { Permission } from "skynet-interface-utils";
+export type { CustomConnectorOptions } from "./connector";
+export { Dac } from "./dac";
 
-import { Connector, CustomConnectorOptions } from "./base";
+import { PermHidden, Permission, PermWrite } from "skynet-interface-utils";
+
+import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { Dac } from "./dac";
+
+export async function loadMySky(
+  this: SkynetClient,
+  appPath: string,
+  customOptions?: CustomConnectorOptions
+): Promise<MySky> {
+  const mySky = await MySky.init(this, customOptions);;
+  mySky.addPermissions(new Permission(appPath, PermHidden, PermWrite));
+
+  return mySky;
+}
 
 export const mySkyDomain = "skynet-mysky.hns";
 

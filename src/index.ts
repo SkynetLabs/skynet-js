@@ -11,14 +11,14 @@ export {
   getEntryUrlForPortal,
   getSkylinkUrlForPortal,
 } from "./utils/url";
-export { Dac, mySkyDomain } from "./connector";
+export { Dac, mySkyDomain } from "./mysky";
 
 // Export types.
 
 export type { CustomClientOptions, RequestConfig } from "./client";
 export type { Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
-export type { CustomConnectorOptions, MySky } from "./connector";
+export type { CustomConnectorOptions, MySky } from "./mysky";
 export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";
 export type { CustomGetJSONOptions, CustomSetJSONOptions, VersionedEntryData } from "./skydb";
 export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
