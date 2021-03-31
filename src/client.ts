@@ -108,11 +108,7 @@ export class SkynetClient {
    * @param [initialPortalUrl] The initial portal URL to use to access Skynet, if specified. A request will be made to this URL to get the actual portal URL. To use the default portal while passing custom options, pass "".
    * @param [customOptions] Configuration for the client.
    */
-  constructor(initialPortalUrl = "", customOptions: CustomClientOptions = {}) {
-    // Get the initial portal URL, if not provided.
-    if (initialPortalUrl == "") {
-      initialPortalUrl = defaultPortalUrl();
-    }
+  constructor(initialPortalUrl = defaultPortalUrl(), customOptions: CustomClientOptions = {}) {
     // Kick off async request for the portal URL.
     this.portalUrl = this.executeRequest({
       ...customOptions,
