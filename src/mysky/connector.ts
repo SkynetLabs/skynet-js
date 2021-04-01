@@ -27,6 +27,7 @@ export class Connector {
   static async init(client: SkynetClient, domain: string, customOptions?: CustomConnectorOptions): Promise<Connector> {
     const opts = { ...defaultConnectorOptions, ...customOptions };
 
+    // Get the URL for the domain on the current portal.
     const domainUrl = await client.getFullDomainUrl(domain);
 
     // Create the iframe.

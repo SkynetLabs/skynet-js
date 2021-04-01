@@ -1,7 +1,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
-import { PermHidden, Permission, PermWrite } from "skynet-interface-utils";
+import { PermCategory, PermHidden, Permission, PermType, PermWrite } from "skynet-interface-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -21,18 +21,22 @@ export async function loadMySky(
 export const mySkyDomain = "skynet-mysky.hns";
 
 export class MySky {
-  protected permissions: Permission[] = [];
-
   // ============
   // Constructors
   // ============
 
-  constructor(protected connector: Connector) {}
+  constructor(protected connector: Connector, protected permissions: Permission[]) {}
 
   static async init(client: SkynetClient, customOptions?: CustomConnectorOptions): Promise<MySky>{
     const connector = await Connector.init(client, mySkyDomain, customOptions);
 
-    return new MySky(connector);
+    const domain = await client.extractDomain(window.location.hostname);
+    // TODO: Add requestor field to Permission?
+    // TODO: Are these permissions correct?
+    const perm = new Permission(domain, PermCategory.Hidden, PermType.Write);
+    const permissions = [perm];
+
+    return new MySky(connector, permissions);
   }
 
   // ==========
@@ -62,8 +66,7 @@ export class MySky {
   }
 
   async checkLogin(): Promise<boolean> {
-    // TODO
-    return true;
+    return this.connector.connection.remoteHandle().call("checkLogin", this.permissions);
   }
 
   /**
@@ -96,6 +99,11 @@ export class MySky {
   async requestLoginAccess(): Promise<boolean> {
     // TODO
     return true;
+  }
+
+  async userID(): Promise<string> {
+    // TODO
+    throw new Error("not implemented");
   }
 
   // ================
