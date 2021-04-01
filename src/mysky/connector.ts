@@ -47,4 +47,8 @@ export class Connector {
 
     return new Connector(domainUrl, client, childFrame, connection, opts);
   }
+
+  async call(method: string, ...args: unknown[]): Promise<unknown> {
+    return this.connection.remoteHandle().call(method, ...args);
+  }
 }

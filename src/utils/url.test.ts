@@ -1,4 +1,4 @@
-import { addUrlQuery, defaultSkynetPortalUrl, getFullDomainUrlForPortal, getDomainForPortal, makeUrl } from "./url";
+import { addUrlQuery, defaultSkynetPortalUrl, getFullDomainUrlForPortal, extractDomainForPortal, makeUrl } from "./url";
 
 const portalUrl = defaultSkynetPortalUrl;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
@@ -31,14 +31,14 @@ describe("getFullDomainUrlForPortal", () => {
   });
 });
 
-describe("getDomainForPortal", () => {
+describe("extractDomainForPortal", () => {
   const domains = [
     ["dac.hns", "https://dac.hns.siasky.net"],
     [skylinkBase32, `https://${skylinkBase32}.siasky.net`],
   ];
 
   it.each(domains)("should extract domain %s out of full url %s", (domain, fullUrl) => {
-    const receivedDomain = getDomainForPortal(portalUrl, fullUrl);
+    const receivedDomain = extractDomainForPortal(portalUrl, fullUrl);
     expect(receivedDomain).toEqual(domain);
   });
 });

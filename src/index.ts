@@ -11,7 +11,7 @@ export {
   getEntryUrlForPortal,
   getSkylinkUrlForPortal,
 } from "./utils/url";
-export { Dac, mySkyDomain } from "./mysky";
+export { DacLibrary, mySkyDomain } from "./mysky";
 
 // Export types.
 

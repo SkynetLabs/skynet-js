@@ -1,12 +1,16 @@
 import { Permission } from "skynet-interface-utils";
-
-import { Connector, CustomConnectorOptions } from "./base";
 import { SkynetClient } from "../client";
 
-export class Dac {
-  [index: string]: Function;
+import { Connector, CustomConnectorOptions } from "./connector";
 
-  static async init(client: SkynetClient, domain: string, customOptions?: CustomConnectorOptions): Promise<Dac> {
-    const connector = await Connector.init(client, domain, customOptions);
+export abstract class DacLibrary {
+  protected connector?: Connector;
+
+  public constructor(protected dacPath: string) { }
+
+  public async init(client: SkynetClient, customOptions: CustomConnectorOptions) {
+    this.connector = await Connector.init(client, this.dacPath, customOptions);
   }
+
+  abstract getPermissions(): Promise<Permission[]>;
 }
