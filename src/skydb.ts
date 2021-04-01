@@ -9,6 +9,8 @@ import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 import { hashDataKey } from "./crypto";
 
+export type JsonData = Record<string, unknown>;
+
 /**
  * Custom get JSON options.
  */
@@ -20,7 +22,7 @@ export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions & C
 export type CustomSetJSONOptions = BaseCustomOptions & CustomSetEntryOptions & CustomUploadOptions;
 
 export type VersionedEntryData = {
-  data: Record<string, unknown> | null;
+  data: JsonData | null;
   revision: bigint | null;
 };
 
@@ -77,7 +79,7 @@ export async function setJSON(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
-  json: Record<string, unknown>,
+  json: JsonData,
   revision?: bigint,
   customOptions?: CustomSetJSONOptions
 ): Promise<void> {
@@ -101,24 +103,48 @@ export async function setJSON(
     ...customOptions,
   };
 
+  // Fetch the current value to find out the revision.
+  const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+
+  const entry = await getOrCreateRegistryEntry(this, publicKeyArray, dataKey, json, revision, opts);
+
+  // Update the registry.
+  await this.registry.setEntry(privateKey, entry);
+}
+
+export async function getOrCreateRegistryEntry(
+  client: SkynetClient,
+  publicKeyArray: Uint8Array,
+  dataKey: string,
+  json: JsonData,
+  revision?: bigint,
+  customOptions?: CustomSetJSONOptions
+): Promise<RegistryEntry> {
+  const opts = {
+    ...client.customOptions,
+    ...customOptions,
+  };
+
   // Create the data to upload to acquire its skylink.
   //
-  // Use a hash of the data key for the filename to get around siapath restrictions and to avoid exposing it.
+  // Use a hash of the data key for the filename to get around siapath restrictions and to avoid exposing the data key.
   const dataKeyHash = toHexString(hashDataKey(dataKey));
   const file = new File([JSON.stringify(json)], dataKeyHash, { type: "application/json" });
 
   // Start file upload, do not block.
-  const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFile(file, opts);
+  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, opts);
   let skyfile: UploadRequestResponse;
 
   if (revision === undefined) {
-    // fetch the current value to find out the revision.
-    const { publicKey } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
-    // start getEntry, do not block.
-    const entryPromise: Promise<SignedRegistryEntry> = this.registry.getEntry(toHexString(publicKey), dataKey, opts);
+    // Start getEntry, do not block.
+    const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(
+      toHexString(publicKeyArray),
+      dataKey,
+      opts
+    );
     let entry: SignedRegistryEntry;
 
-    // Block until both getEntry and Skyfile upload are finished.
+    // Block until both getEntry and uploadFile are finished.
     [entry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([entryPromise, skyfilePromise]);
 
     if (entry.entry === null) {
@@ -138,13 +164,11 @@ export async function setJSON(
   // Assert the input is 64 bits.
   assertUint64(revision);
 
-  // build the registry value
+  // Build the registry value.
   const entry: RegistryEntry = {
     datakey: dataKey,
     data: trimUriPrefix(skyfile.skylink, uriSkynetPrefix),
     revision,
   };
-
-  // Update the registry.
-  await this.registry.setEntry(privateKey, entry);
+  return entry;
 }

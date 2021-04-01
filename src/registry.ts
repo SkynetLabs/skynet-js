@@ -247,9 +247,29 @@ export async function setEntry(
   const privateKeyArray = hexToUint8Array(privateKey);
 
   // Sign the entry.
-  const signature = sign(hashRegistryEntry(entry), privateKeyArray);
+  // TODO: signature type should be Signature?
+  const signature: Uint8Array = sign(hashRegistryEntry(entry), privateKeyArray);
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(privateKeyArray);
+
+  return await this.registry.setSignedEntry(publicKeyArray, entry, signature, opts);
+}
+
+export async function setSignedEntry(
+  this: SkynetClient,
+  publicKeyArray: Uint8Array,
+  entry: RegistryEntry,
+  signature: Uint8Array,
+  customOptions?: CustomSetEntryOptions
+): Promise<void> {
+  // TODO: Check for valid imputs.
+
+  const opts = {
+    ...defaultSetEntryOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
   const data = {
     publickey: {
       algorithm: "ed25519",

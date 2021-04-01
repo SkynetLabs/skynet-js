@@ -6,6 +6,11 @@ import { PermCategory, PermHidden, Permission, PermType, PermWrite } from "skyne
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
+import { RegistryEntry, setSignedEntry, SignedRegistryEntry } from "../registry";
+import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData } from "../skydb";
+import { hexToUint8Array } from "../utils/string";
+import { Signature } from "../crypto";
+import { deriveDiscoverableTweak } from "./tweak";
 
 export async function loadMySky(
   this: SkynetClient,
@@ -27,7 +32,7 @@ export class MySky {
 
   constructor(protected connector: Connector, protected permissions: Permission[]) {}
 
-  static async init(client: SkynetClient, customOptions?: CustomConnectorOptions): Promise<MySky>{
+  static async init(client: SkynetClient, customOptions?: CustomConnectorOptions): Promise<MySky> {
     const connector = await Connector.init(client, mySkyDomain, customOptions);
 
     const domain = await client.extractDomain(window.location.hostname);
@@ -104,6 +109,40 @@ export class MySky {
   async userID(): Promise<string> {
     // TODO
     throw new Error("not implemented");
+  }
+
+  async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<JsonData | null> {
+    // TODO: Check for valid inputs.
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+
+    return this.connector.client.db.getJSON(publicKey, Buffer.from(dataKey).toString(), opts);
+  }
+
+  async setJSON(path: string, json: JsonData, revision?: bigint, opts?: CustomSetJSONOptions): Promise<void> {
+    // TODO: Check for valid inputs.
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+
+    const entry = await getOrCreateRegistryEntry(
+      this.connector.client,
+      hexToUint8Array(publicKey),
+      Buffer.from(dataKey).toString(),
+      json,
+      revision,
+      opts
+    );
+
+    const signature = await this.signRegistryEntry(entry);
+
+    return await this.connector.client.registry.setSignedEntry(hexToUint8Array(publicKey), entry, signature, opts);
+  }
+
+  // TODO: Is this public-facing?
+  async signRegistryEntry(entry: RegistryEntry): Promise<Signature> {
+    return this.connector.connection.remoteHandle().call("signRegistryEntry", entry);
   }
 
   // ================
