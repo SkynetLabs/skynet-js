@@ -11,6 +11,7 @@ import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, J
 import { hexToUint8Array } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
+import { ParentHandshake, WindowMessenger } from "post-me";
 
 export async function loadMySky(
   this: SkynetClient,
@@ -23,6 +24,7 @@ export async function loadMySky(
 }
 
 export const mySkyDomain = "skynet-mysky.hns";
+const mySkyUiRelativeUrl = "ui.html";
 
 export class MySky {
   public static instance: MySky | null = null;
@@ -103,8 +105,23 @@ export class MySky {
   }
 
   async requestLoginAccess(): Promise<boolean> {
-    // TODO
-    return true;
+    // Launch the UI.
+
+    const uiWindow = await this.launchUi();
+
+    // Complete handshake with UI window.
+
+    const messenger = new WindowMessenger({
+      localWindow: window,
+      remoteWindow: uiWindow,
+      remoteOrigin: "*",
+    });
+    const connection = await ParentHandshake(messenger, {}, this.connector.options.handshakeMaxAttempts, this.connector.options.handshakeAttemptsInterval);
+
+    // Send the UI the list of required permissions.
+
+    // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
+    return connection.remoteHandle().call("requestLoginAccess", this.permissions);
   }
 
   async userID(): Promise<string> {
@@ -143,6 +160,10 @@ export class MySky {
   // ================
   // Internal Methods
   // ================
+
+  protected async launchUi(): Promise<Window> {
+    // TODO
+  }
 
   protected async loadDac(dac: DacLibrary): Promise<void> {
     // Initialize DAC.
