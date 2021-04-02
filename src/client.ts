@@ -16,7 +16,7 @@ import {
   resolveHns,
 } from "./download";
 import { getJSON, setJSON, getOrCreateRegistryEntry } from "./skydb";
-import { getEntry, getEntryUrl, setEntry, setSignedEntry } from "./registry";
+import { getEntry, getEntryUrl, setEntry, postSignedEntry, signEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -102,6 +102,8 @@ export class SkynetClient {
   db = {
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
+
+    // Helpers.
     getOrCreateRegistryEntry: getOrCreateRegistryEntry.bind(this),
   };
 
@@ -111,7 +113,10 @@ export class SkynetClient {
     getEntry: getEntry.bind(this),
     getEntryUrl: getEntryUrl.bind(this),
     setEntry: setEntry.bind(this),
-    setSignedEntry: setSignedEntry.bind(this),
+
+    // Helpers.
+    postSignedEntry: postSignedEntry.bind(this),
+    signEntry: signEntry.bind(this),
   };
 
   /**

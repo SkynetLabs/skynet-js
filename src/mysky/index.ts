@@ -6,7 +6,7 @@ import { PermCategory, PermHidden, Permission, PermType, PermWrite } from "skyne
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { RegistryEntry, setSignedEntry, SignedRegistryEntry } from "../registry";
+import { RegistryEntry } from "../registry";
 import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData } from "../skydb";
 import { hexToUint8Array } from "../utils/string";
 import { Signature } from "../crypto";
@@ -135,26 +135,25 @@ export class MySky {
       opts
     );
 
-    const signature = await this.signRegistryEntry(entry);
+    const signature = await this.signRegistryEntry(entry, path);
 
-    return await this.connector.client.registry.setSignedEntry(hexToUint8Array(publicKey), entry, signature, opts);
-  }
-
-  // TODO: Is this public-facing?
-  async signRegistryEntry(entry: RegistryEntry): Promise<Signature> {
-    return this.connector.connection.remoteHandle().call("signRegistryEntry", entry);
+    return await this.connector.client.registry.postSignedEntry(hexToUint8Array(publicKey), entry, signature, opts);
   }
 
   // ================
   // Internal Methods
   // ================
 
-  async loadDac(dac: DacLibrary): Promise<void> {
+  protected async loadDac(dac: DacLibrary): Promise<void> {
     // Initialize DAC.
     await dac.init(this.connector.client, this.connector.options);
 
     // Add DAC permissions.
     const perms = await dac.getPermissions();
     this.addPermissions(...perms);
+  }
+
+  protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
+    return this.connector.connection.remoteHandle().call("signRegistryEntry", entry, path);
   }
 }
