@@ -79,7 +79,7 @@ export class MySky {
    *
    * 1. Destroying the connected DACs,
    *
-   * 2. Closing the bridge connection,
+   * 2. Closing the connection,
    *
    * 3. Closing the child iframe
    */
@@ -107,8 +107,7 @@ export class MySky {
   }
 
   async userID(): Promise<string> {
-    // TODO
-    throw new Error("not implemented");
+    return this.connector.connection.remoteHandle().call("userID");
   }
 
   async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<JsonData | null> {
