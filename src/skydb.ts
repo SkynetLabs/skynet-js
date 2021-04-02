@@ -103,7 +103,6 @@ export async function setJSON(
     ...customOptions,
   };
 
-  // Fetch the current value to find out the revision.
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
 
   const entry = await getOrCreateRegistryEntry(this, publicKeyArray, dataKey, json, revision, opts);
@@ -136,6 +135,8 @@ export async function getOrCreateRegistryEntry(
   let skyfile: UploadRequestResponse;
 
   if (revision === undefined) {
+    // Fetch the current value to find out the revision.
+    //
     // Start getEntry, do not block.
     const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(
       toHexString(publicKeyArray),

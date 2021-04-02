@@ -1,3 +1,4 @@
+import { trimPrefix, trimSuffix } from "./string";
 import { addUrlQuery, defaultSkynetPortalUrl, getFullDomainUrlForPortal, extractDomainForPortal, makeUrl } from "./url";
 
 const portalUrl = defaultSkynetPortalUrl;
@@ -55,5 +56,19 @@ describe("makeUrl", () => {
     expect(makeUrl(portalUrl, "/skynet/", `${skylink}?foo=bar`)).toEqual(`${portalUrl}/skynet/${skylink}?foo=bar`);
     expect(makeUrl(portalUrl, `${skylink}/?foo=bar`)).toEqual(`${portalUrl}/${skylink}?foo=bar`);
     expect(makeUrl(portalUrl, `${skylink}#foobar`)).toEqual(`${portalUrl}/${skylink}#foobar`);
+  });
+});
+
+describe("trimPrefix", () => {
+  it("should trim the prefix with limit if passed", () => {
+    expect(trimPrefix("//asdf", "/", 1)).toEqual("/asdf");
+    expect(trimPrefix("//asdf", "/", 0)).toEqual("//asdf");
+  });
+});
+
+describe("trimSuffix", () => {
+  it("should trim the suffix with limit if passed", () => {
+    expect(trimSuffix("asdf//", "/", 1)).toEqual("asdf/");
+    expect(trimSuffix("asdf//", "/", 0)).toEqual("asdf//");
   });
 });

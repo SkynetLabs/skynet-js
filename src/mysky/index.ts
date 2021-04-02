@@ -1,7 +1,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
-import { PermCategory, PermHidden, Permission, PermType, PermWrite } from "skynet-interface-utils";
+import { PermCategory, Permission, PermType } from "skynet-interface-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -14,11 +14,10 @@ import { deriveDiscoverableTweak } from "./tweak";
 
 export async function loadMySky(
   this: SkynetClient,
-  appPath: string,
+  skappDomain: string,
   customOptions?: CustomConnectorOptions
 ): Promise<MySky> {
-  const mySky = await MySky.init(this, customOptions);
-  mySky.addPermissions(new Permission(appPath, PermHidden, PermWrite));
+  const mySky = await MySky.New(this, skappDomain, customOptions);
 
   return mySky;
 }
@@ -26,22 +25,30 @@ export async function loadMySky(
 export const mySkyDomain = "skynet-mysky.hns";
 
 export class MySky {
+  public static instance: MySky | null = null;
+
   // ============
   // Constructors
   // ============
 
-  constructor(protected connector: Connector, protected permissions: Permission[]) {}
+  constructor(protected connector: Connector, protected permissions: Permission[], protected domain: string) {}
 
-  static async init(client: SkynetClient, customOptions?: CustomConnectorOptions): Promise<MySky> {
+  static async New(client: SkynetClient, skappDomain: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
+    // Enforce singleton.
+    if (MySky.instance) {
+      throw new Error("MySky was already loaded.");
+    }
+
     const connector = await Connector.init(client, mySkyDomain, customOptions);
 
     const domain = await client.extractDomain(window.location.hostname);
     // TODO: Add requestor field to Permission?
     // TODO: Are these permissions correct?
-    const perm = new Permission(domain, PermCategory.Hidden, PermType.Write);
+    const perm = new Permission(domain, skappDomain, PermCategory.Hidden, PermType.Write);
     const permissions = [perm];
 
-    return new MySky(connector, permissions);
+    MySky.instance = new MySky(connector, permissions, domain);
+    return MySky.instance
   }
 
   // ==========
@@ -49,15 +56,9 @@ export class MySky {
   // ==========
 
   /**
-   * Loads the given DACs. Takes one or more instantiated DAC libraries.
+   * Loads the given DACs.
    */
-  async loadDacs(dac: DacLibrary, ...dacs: DacLibrary[]): Promise<void> {
-    if (dacs) {
-      dacs.unshift(dac);
-    } else {
-      dacs = [dac];
-    }
-
+  async loadDacs(...dacs: DacLibrary[]): Promise<void> {
     const promises: Promise<void>[] = [];
     for (const dac of dacs) {
       promises.push(this.loadDac(dac));

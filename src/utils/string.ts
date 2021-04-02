@@ -18,7 +18,7 @@ export function trimForwardSlash(str: string): string {
  */
 export function trimPrefix(str: string, prefix: string, limit?: number): string {
   while (str.startsWith(prefix)) {
-    if (limit === 0) {
+    if (limit !== undefined && limit <= 0) {
       break;
     }
     str = str.slice(prefix.length);
@@ -39,7 +39,7 @@ export function trimPrefix(str: string, prefix: string, limit?: number): string 
  */
 export function trimSuffix(str: string, suffix: string, limit?: number): string {
   while (str.endsWith(suffix)) {
-    if (limit === 0) {
+    if (limit !== undefined && limit <= 0) {
       break;
     }
     str = str.substring(0, str.length - suffix.length);
