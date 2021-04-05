@@ -256,7 +256,7 @@ export class MySky {
     await dac.init(this.connector.client, this.connector.options);
 
     // Add DAC permissions.
-    const perms = await dac.getPermissions();
+    const perms = dac.getPermissions();
     this.addPermissions(...perms);
   }
 
