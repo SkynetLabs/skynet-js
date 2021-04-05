@@ -1,7 +1,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
-import { errorWindowClosed, PermCategory, Permission, PermType, PromiseController } from "skynet-interface-utils";
+import { ErrorHolder, errorWindowClosed, monitorWindowError, PermCategory, Permission, PermType } from "skynet-interface-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -29,7 +29,7 @@ const mySkyUiRelativeUrl = "ui.html";
 export class MySky {
   public static instance: MySky | null = null;
 
-  protected uiError: string = "";
+  errorHolder = new ErrorHolder();
 
   // ============
   // Constructors
@@ -120,7 +120,7 @@ export class MySky {
   async requestLoginAccess(): Promise<boolean> {
     // Add error listener.
 
-    const { promise: promiseError, controller: controllerError } = this.monitorUiError();
+    const { promise: promiseError, controller: controllerError } = monitorWindowError(this.errorHolder);
 
     let uiWindow: Window;
     let uiConnection: Connection;
@@ -215,8 +215,8 @@ export class MySky {
   // Internal Methods
   // ================
 
-  protected async catchUiError(errorMsg: string) {
-    this.uiError = errorMsg;
+  protected async catchError(errorMsg: string) {
+    this.errorHolder.error = errorMsg;
   }
 
   protected async launchUi(): Promise<[Window, Connection]> {
@@ -239,7 +239,7 @@ export class MySky {
       remoteOrigin: "*",
     });
     const methods = {
-      catchUiError: this.catchUiError,
+      catchError: this.catchError,
     };
     const connection = await ParentHandshake(
       messenger,
@@ -258,35 +258,6 @@ export class MySky {
     // Add DAC permissions.
     const perms = dac.getPermissions();
     this.addPermissions(...perms);
-  }
-
-  // TODO: Move to promise.ts file in skynet-mysky-utils?
-  /**
-   * Checks if there has been an error from the UI on an interval.
-   */
-  protected monitorUiError(): { promise: Promise<void>; controller: PromiseController } {
-    const pingInterval = 100;
-    const controller = new PromiseController();
-
-    const promise: Promise<void> = new Promise((resolve, reject) => {
-      const pingFunc = () => {
-        if (this.uiError !== "") {
-          reject(this.uiError);
-        }
-      };
-
-      const intervalId = window.setInterval(pingFunc, pingInterval);
-
-      // Initialize cleanup function.
-      controller.cleanup = () => {
-        // Clear the interval.
-        window.clearInterval(intervalId);
-        // Cleanup the promise.
-        resolve();
-      };
-    });
-
-    return { promise, controller };
   }
 
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
