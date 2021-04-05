@@ -62,6 +62,8 @@ left=${left}
     throw new Error("could not open window");
   }
 
-  if (newWindow.focus) newWindow.focus();
+  if (newWindow.focus) {
+    newWindow.focus();
+  }
   return newWindow;
 }

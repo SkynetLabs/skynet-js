@@ -1,7 +1,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
-import { PermCategory, Permission, PermType, PromiseController } from "skynet-interface-utils";
+import { errorWindowClosed, PermCategory, Permission, PermType, PromiseController } from "skynet-interface-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -87,10 +87,7 @@ export class MySky {
     // Save failed permissions.
     this.pendingPermissions = failedPermissions;
 
-    if (failedPermissions.length > 0) {
-      return false;
-    }
-    return true;
+    return (failedPermissions.length === 0);
   }
 
   /**
@@ -130,9 +127,10 @@ export class MySky {
     const promise: Promise<void> = new Promise(async (resolve, reject) => {
       // Make this promise run in the background and reject on window close or any errors.
       promiseError.catch((err: string) => {
-        if (err === "closed") {
+        if (err === errorWindowClosed) {
           // Resolve without updating the pending permissions.
           resolve();
+          return;
         }
 
         reject(err);
@@ -177,11 +175,7 @@ export class MySky {
         controllerError.cleanup();
       });
 
-    // Return.
-    if (this.pendingPermissions.length > 0) {
-      return false;
-    }
-    return true;
+    return (this.pendingPermissions.length === 0);
   }
 
   async userID(): Promise<string> {
@@ -247,7 +241,6 @@ export class MySky {
     const methods = {
       catchUiError: this.catchUiError,
     };
-    // TODO: Get handshake values from optional fields.
     const connection = await ParentHandshake(
       messenger,
       methods,

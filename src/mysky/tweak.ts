@@ -1,6 +1,8 @@
 import { hashAll } from "../crypto";
 import { stringToUint8Array } from "../utils/string";
 
+const discoverableBucketTweakVersion = 1;
+
 export class DiscoverableBucketTweak {
   version: number;
   path: Array<Uint8Array>;
@@ -8,7 +10,7 @@ export class DiscoverableBucketTweak {
   constructor(path: string) {
     const paths = splitPath(path);
     const pathHashes = paths.map(hashPathComponent);
-    this.version = 1;
+    this.version = discoverableBucketTweakVersion;
     this.path = pathHashes;
   }
 

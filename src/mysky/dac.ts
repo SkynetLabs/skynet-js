@@ -12,5 +12,5 @@ export abstract class DacLibrary {
     this.connector = await Connector.init(client, this.dacDomain, customOptions);
   }
 
-  abstract getPermissions(): Promise<Permission[]>;
+  abstract getPermissions(): Permission[];
 }
