@@ -1,7 +1,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
-import { PermCategory, Permission, PermType } from "skynet-interface-utils";
+import { PermCategory, Permission, PermType, PromiseController } from "skynet-interface-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -11,7 +11,7 @@ import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, J
 import { hexToUint8Array } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
-import { ParentHandshake, WindowMessenger } from "post-me";
+import { Connection, ParentHandshake, WindowMessenger } from "post-me";
 
 export async function loadMySky(
   this: SkynetClient,
@@ -29,11 +29,18 @@ const mySkyUiRelativeUrl = "ui.html";
 export class MySky {
   public static instance: MySky | null = null;
 
+  protected uiError: string = "";
+
   // ============
   // Constructors
   // ============
 
-  constructor(protected connector: Connector, protected permissions: Permission[], protected domain: string) {}
+  constructor(
+    protected connector: Connector,
+    // TODO: Decide on how to expose in API
+    protected pendingPermissions: Permission[],
+    protected domain: string
+  ) {}
 
   static async New(client: SkynetClient, skappDomain: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
     // Enforce singleton.
@@ -44,13 +51,12 @@ export class MySky {
     const connector = await Connector.init(client, mySkyDomain, customOptions);
 
     const domain = await client.extractDomain(window.location.hostname);
-    // TODO: Add requestor field to Permission?
     // TODO: Are these permissions correct?
     const perm = new Permission(domain, skappDomain, PermCategory.Hidden, PermType.Write);
     const permissions = [perm];
 
     MySky.instance = new MySky(connector, permissions, domain);
-    return MySky.instance
+    return MySky.instance;
   }
 
   // ==========
@@ -70,11 +76,21 @@ export class MySky {
   }
 
   async addPermissions(...permissions: Permission[]) {
-    this.permissions.push(...permissions);
+    this.pendingPermissions.push(...permissions);
   }
 
   async checkLogin(): Promise<boolean> {
-    return this.connector.connection.remoteHandle().call("checkLogin", this.permissions);
+    const failedPermissions: Permission[] = await this.connector.connection
+      .remoteHandle()
+      .call("checkLogin", this.pendingPermissions);
+
+    // Save failed permissions.
+    this.pendingPermissions = failedPermissions;
+
+    if (failedPermissions.length > 0) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -105,23 +121,67 @@ export class MySky {
   }
 
   async requestLoginAccess(): Promise<boolean> {
-    // Launch the UI.
+    // Add error listener.
 
-    const uiWindow = await this.launchUi();
+    const { promise: promiseError, controller: controllerError } = this.monitorUiError();
 
-    // Complete handshake with UI window.
+    let uiWindow: Window;
+    let uiConnection: Connection;
+    const promise: Promise<void> = new Promise(async (resolve, reject) => {
+      // Make this promise run in the background and reject on window close or any errors.
+      promiseError.catch((err: string) => {
+        if (err === "closed") {
+          // Resolve without updating the pending permissions.
+          resolve();
+        }
 
-    const messenger = new WindowMessenger({
-      localWindow: window,
-      remoteWindow: uiWindow,
-      remoteOrigin: "*",
+        reject(err);
+      });
+
+      try {
+        // Launch the UI.
+
+        [uiWindow, uiConnection] = await this.launchUi();
+
+        // Send the UI the list of required permissions.
+
+        // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
+        const failedPermissions: Permission[] = await uiConnection
+          .remoteHandle()
+          .call("requestLoginAccess", this.pendingPermissions);
+
+        // Save failed permissions.
+
+        this.pendingPermissions = failedPermissions;
+      } catch (err) {
+        reject(err);
+      }
     });
-    const connection = await ParentHandshake(messenger, {}, this.connector.options.handshakeMaxAttempts, this.connector.options.handshakeAttemptsInterval);
 
-    // Send the UI the list of required permissions.
+    await promise
+      .catch((err) => {
+        throw err;
+      })
+      .finally(() => {
+        // Close the window.
+        if (uiWindow) {
+          uiWindow.close();
+        }
 
-    // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
-    return connection.remoteHandle().call("requestLoginAccess", this.permissions);
+        // Close the connection.
+        if (uiConnection) {
+          uiConnection.close();
+        }
+
+        // Clean up the event listeners and promises.
+        controllerError.cleanup();
+      });
+
+    // Return.
+    if (this.pendingPermissions.length > 0) {
+      return false;
+    }
+    return true;
   }
 
   async userID(): Promise<string> {
@@ -161,8 +221,41 @@ export class MySky {
   // Internal Methods
   // ================
 
-  protected async launchUi(): Promise<Window> {
-    // TODO
+  protected async catchUiError(errorMsg: string) {
+    this.uiError = errorMsg;
+  }
+
+  protected async launchUi(): Promise<[Window, Connection]> {
+    const options = this.connector.options;
+    const mySkyUrl = this.connector.url;
+    const uiUrl = `${mySkyUrl}/${mySkyUiRelativeUrl}`;
+
+    // Open the window.
+
+    const childWindow = window.open(uiUrl);
+    if (!childWindow) {
+      throw new Error(`Could not open window at '${uiUrl}'`);
+    }
+
+    // Complete handshake with UI window.
+
+    const messenger = new WindowMessenger({
+      localWindow: window,
+      remoteWindow: childWindow,
+      remoteOrigin: "*",
+    });
+    const methods = {
+      catchUiError: this.catchUiError,
+    };
+    // TODO: Get handshake values from optional fields.
+    const connection = await ParentHandshake(
+      messenger,
+      methods,
+      options.handshakeMaxAttempts,
+      options.handshakeAttemptsInterval
+    );
+
+    return [childWindow, connection];
   }
 
   protected async loadDac(dac: DacLibrary): Promise<void> {
@@ -172,6 +265,35 @@ export class MySky {
     // Add DAC permissions.
     const perms = await dac.getPermissions();
     this.addPermissions(...perms);
+  }
+
+  // TODO: Move to promise.ts file in skynet-mysky-utils?
+  /**
+   * Checks if there has been an error from the UI on an interval.
+   */
+  protected monitorUiError(): { promise: Promise<void>; controller: PromiseController } {
+    const pingInterval = 100;
+    const controller = new PromiseController();
+
+    const promise: Promise<void> = new Promise((resolve, reject) => {
+      const pingFunc = () => {
+        if (this.uiError !== "") {
+          reject(this.uiError);
+        }
+      };
+
+      const intervalId = window.setInterval(pingFunc, pingInterval);
+
+      // Initialize cleanup function.
+      controller.cleanup = () => {
+        // Clear the interval.
+        window.clearInterval(intervalId);
+        // Cleanup the promise.
+        resolve();
+      };
+    });
+
+    return { promise, controller };
   }
 
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
