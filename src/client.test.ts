@@ -9,11 +9,14 @@ let client: SkynetClient;
 let mock: MockAdapter;
 
 describe("new SkynetClient", () => {
-  it("should fail to initialize if portal URL header is not found", async () => {
+  it("should not make a portal URL request if portal URL is given", async () => {
     mock = new MockAdapter(axios);
-    mock.onHead(portalUrl).replyOnce(200, {}, {});
     client = new SkynetClient(portalUrl);
 
-    await expect(client.portalUrl).rejects.toThrowError("Could not get portal URL for the given portal");
+    const receivedPortalUrl = await client.portalUrl();
+
+    expect(receivedPortalUrl).toEqual(portalUrl);
+
+    expect(mock.history.get.length).toBe(0);
   });
 });

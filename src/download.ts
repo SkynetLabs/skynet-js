@@ -162,7 +162,7 @@ export async function getSkylinkUrl(
 ): Promise<string> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
-  const portalUrl = await this.portalUrl;
+  const portalUrl = await this.portalUrl();
 
   return getSkylinkUrlForPortal(portalUrl, skylinkUrl, opts);
 }
@@ -197,7 +197,7 @@ export async function getHnsUrl(
   }
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);
-  const portalUrl = await this.portalUrl;
+  const portalUrl = await this.portalUrl();
   const url = opts.subdomain
     ? addSubdomain(addSubdomain(portalUrl, opts.hnsSubdomain), domain)
     : makeUrl(portalUrl, opts.endpointPath, domain);
@@ -227,7 +227,7 @@ export async function getHnsresUrl(
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
-  const portalUrl = await this.portalUrl;
+  const portalUrl = await this.portalUrl();
   return makeUrl(portalUrl, opts.endpointPath, domain);
 }
 
