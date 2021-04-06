@@ -1,6 +1,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
+import { Connection, ParentHandshake, WindowMessenger } from "post-me";
 import { CheckPermissionsResponse, ErrorHolder, errorWindowClosed, monitorWindowError, PermCategory, Permission, PermType } from "skynet-mysky-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
@@ -11,11 +12,11 @@ import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, J
 import { hexToUint8Array } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
-import { Connection, ParentHandshake, WindowMessenger } from "post-me";
+import { popupCenter } from "./utils";
 
 export async function loadMySky(
   this: SkynetClient,
-  skappDomain: string,
+  skappDomain?: string,
   customOptions?: CustomConnectorOptions
 ): Promise<MySky> {
   const mySky = await MySky.New(this, skappDomain, customOptions);
@@ -25,6 +26,8 @@ export async function loadMySky(
 
 export const mySkyDomain = "skynet-mysky.hns";
 const mySkyUiRelativeUrl = "ui.html";
+const mySkyUiTitle = "MySky UI";
+const [mySkyUiW, mySkyUiH] = [500, 500];
 
 export class MySky {
   static instance: MySky | null = null;
@@ -46,7 +49,7 @@ export class MySky {
     this.pendingPermissions = permissions;
   }
 
-  static async New(client: SkynetClient, skappDomain: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
+  static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
     // Enforce singleton.
     if (MySky.instance) {
       return MySky.instance
@@ -55,9 +58,13 @@ export class MySky {
     const connector = await Connector.init(client, mySkyDomain, customOptions);
 
     const domain = await client.extractDomain(window.location.hostname);
-    // TODO: Are these permissions correct?
-    const perm = new Permission(domain, skappDomain, PermCategory.Hidden, PermType.Write);
-    const permissions = [perm];
+    const permissions = [];
+    if (skappDomain) {
+      // TODO: Are these permissions correct?
+      const perm1 = new Permission(domain, skappDomain, PermCategory.Hidden, PermType.Read);
+      const perm2 = new Permission(domain, skappDomain, PermCategory.Hidden, PermType.Write);
+      permissions.push(perm1, perm2);
+    }
 
     MySky.instance = new MySky(connector, permissions, domain);
     return MySky.instance;
@@ -145,7 +152,8 @@ export class MySky {
       try {
         // Launch the UI.
 
-        [uiWindow, uiConnection] = await this.launchUi();
+        uiWindow = await this.launchUI();
+        uiConnection = await this.connectUi(uiWindow);
 
         // Send the UI the list of required permissions.
 
@@ -226,17 +234,22 @@ export class MySky {
     this.errorHolder.error = errorMsg;
   }
 
-  protected async launchUi(): Promise<[Window, Connection]> {
-    const options = this.connector.options;
+  protected async launchUI(): Promise<Window> {
     const mySkyUrl = this.connector.url;
     const uiUrl = `${mySkyUrl}/${mySkyUiRelativeUrl}`;
 
     // Open the window.
 
-    const childWindow = window.open(uiUrl);
+    const childWindow = popupCenter(uiUrl, mySkyUiTitle, mySkyUiW, mySkyUiH);
     if (!childWindow) {
       throw new Error(`Could not open window at '${uiUrl}'`);
     }
+
+    return childWindow;
+  }
+
+  protected async connectUi(childWindow: Window): Promise<Connection> {
+    const options = this.connector.options;
 
     // Complete handshake with UI window.
 
@@ -255,7 +268,7 @@ export class MySky {
       options.handshakeAttemptsInterval
     );
 
-    return [childWindow, connection];
+    return connection;
   }
 
   protected async loadDac(dac: DacLibrary): Promise<void> {
