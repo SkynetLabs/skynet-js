@@ -1,7 +1,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
-import { ErrorHolder, errorWindowClosed, monitorWindowError, PermCategory, Permission, PermType } from "skynet-interface-utils";
+import { ErrorHolder, errorWindowClosed, monitorWindowError, PermCategory, Permission, PermType } from "skynet-mysky-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";

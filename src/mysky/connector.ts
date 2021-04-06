@@ -1,5 +1,5 @@
 import { Connection, ParentHandshake, WindowMessenger } from "post-me";
-import { createIframe, defaultHandshakeAttemptsInterval, defaultHandshakeMaxAttempts } from "skynet-interface-utils";
+import { createIframe, defaultHandshakeAttemptsInterval, defaultHandshakeMaxAttempts } from "skynet-mysky-utils";
 
 import { SkynetClient } from "../client";
 

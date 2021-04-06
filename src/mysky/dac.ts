@@ -1,4 +1,4 @@
-import { Permission } from "skynet-interface-utils";
+import { Permission } from "skynet-mysky-utils";
 import { SkynetClient } from "../client";
 
 import { Connector, CustomConnectorOptions } from "./connector";

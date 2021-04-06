@@ -1,4 +1,4 @@
-import { ensureUrl } from "skynet-interface-utils";
+import { ensureUrl } from "skynet-mysky-utils";
 
 import { SkynetClient } from "../client";
 import { getFullDomainUrlForPortal, extractDomainForPortal } from "../utils/url";
