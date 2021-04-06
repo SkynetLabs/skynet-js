@@ -188,7 +188,8 @@ export class MySky {
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
 
-    return this.connector.client.db.getJSON(publicKey, Buffer.from(dataKey).toString(), opts);
+    const versionedEntry = await this.connector.client.db.getJSON(publicKey, Buffer.from(dataKey).toString(), opts);
+    return versionedEntry.data;
   }
 
   async setJSON(path: string, json: JsonData, revision?: bigint, opts?: CustomSetJSONOptions): Promise<void> {

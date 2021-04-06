@@ -34,12 +34,13 @@ describe("getFullDomainUrlForPortal", () => {
 
 describe("extractDomainForPortal", () => {
   const domains = [
-    ["dac.hns", "https://dac.hns.siasky.net"],
-    [skylinkBase32, `https://${skylinkBase32}.siasky.net`],
+    ["dac.hns.siasky.net", "dac.hns"],
+    [`${skylinkBase32}.siasky.net`, skylinkBase32],
+    ["localhost", "localhost"],
   ];
 
-  it.each(domains)("should extract domain %s out of full url %s", (domain, fullUrl) => {
-    const receivedDomain = extractDomainForPortal(portalUrl, fullUrl);
+  it.each(domains)("should extract domain %s out of full url %s", (fullDomain, domain) => {
+    const receivedDomain = extractDomainForPortal(portalUrl, fullDomain);
     expect(receivedDomain).toEqual(domain);
   });
 });

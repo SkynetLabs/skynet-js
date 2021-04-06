@@ -17,10 +17,10 @@ export async function getFullDomainUrl(this: SkynetClient, domain: string): Prom
   return getFullDomainUrlForPortal(portalUrl, domain);
 }
 
-export async function extractDomain(this: SkynetClient, fullUrl: string): Promise<string> {
+export async function extractDomain(this: SkynetClient, fullDomain: string): Promise<string> {
   const portalUrl = await this.portalUrl;
 
-  return extractDomainForPortal(portalUrl, fullUrl);
+  return extractDomainForPortal(portalUrl, fullDomain);
 }
 
 /**
