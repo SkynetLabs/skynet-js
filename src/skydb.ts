@@ -4,7 +4,7 @@ import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { BaseCustomOptions, uriSkynetPrefix } from "./utils/skylink";
-import { hexToUint8Array, isHexString, trimUriPrefix, toHexString } from "./utils/string";
+import { hexToUint8Array, isHexString, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
 import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 import { hashDataKey } from "./crypto";
@@ -125,10 +125,8 @@ export async function getOrCreateRegistryEntry(
   };
 
   // Create the data to upload to acquire its skylink.
-  //
-  // Use a hash of the data key for the filename to get around siapath restrictions and to avoid exposing the data key.
-  const dataKeyHash = toHexString(hashDataKey(dataKey));
-  const file = new File([JSON.stringify(json)], dataKeyHash, { type: "application/json" });
+  const dataKeyHex = toHexString(stringToUint8Array(dataKey));
+  const file = new File([JSON.stringify(json)], dataKeyHex, { type: "application/json" });
 
   // Start file upload, do not block.
   const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, opts);

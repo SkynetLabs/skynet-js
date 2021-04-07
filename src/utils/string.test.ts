@@ -1,5 +1,8 @@
+import { Buffer } from "buffer";
+
+import { deriveDiscoverableTweak } from "../mysky/tweak";
 import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./skylink";
-import { hexToUint8Array, trimUriPrefix } from "./string";
+import { hexToUint8Array, stringToUint8Array, toHexString, trimUriPrefix } from "./string";
 
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
@@ -44,6 +47,18 @@ describe("hexToUint8Array", () => {
 
   it.each(invalidHexStrings)("should throw on invalid input '%s'", (str) => {
     expect(() => hexToUint8Array(str)).toThrowError(`Input string '${str}' is not a valid hex-encoded string`);
+  });
+});
+
+describe("stringToUint8Array", () => {
+  it("Should work for mySky.setJSON paths", () => {
+    const path = "localhost/cert";
+    const expected = "efbfbd086e5aefbfbd2fdfb83335efbfbdefbfbdefbfbd623439efbfbdefbfbd5d75efbfbd02efbfbd69efbfbdefbfbd1befbfbd1fefbfbd";
+
+    const dataKey = deriveDiscoverableTweak(path);
+    const input = Buffer.from(dataKey).toString();
+    const hash = toHexString(stringToUint8Array(input));
+    expect(hash).toEqual(expected);
   });
 });
 
