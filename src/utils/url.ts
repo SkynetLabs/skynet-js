@@ -110,9 +110,12 @@ export function getEntryUrlForPortal(
     throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
   }
 
+  // We need to hash the data key in order to form the correct URL, as Sia hashes whatever data key we give it.
+  const dataKeyHash = toHexString(hashDataKey(dataKey));
+
   const query = {
     publickey: `ed25519:${publicKey}`,
-    datakey: toHexString(hashDataKey(dataKey)),
+    datakey: dataKeyHash,
     timeout,
   };
 

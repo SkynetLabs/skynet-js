@@ -82,9 +82,10 @@ export function encodeBigintAsUint64(int: bigint): Uint8Array {
  * @returns - String encoded as a byte array.
  */
 export function encodeString(str: string): Uint8Array {
-  const encoded = new Uint8Array(8 + str.length);
-  encoded.set(encodeNumber(str.length));
-  encoded.set(stringToUint8Array(str), 8);
+  const byteArray = stringToUint8Array(str);
+  const encoded = new Uint8Array(8 + byteArray.length);
+  encoded.set(encodeNumber(byteArray.length));
+  encoded.set(byteArray, 8);
   return encoded;
 }
 
