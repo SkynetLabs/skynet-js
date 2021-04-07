@@ -91,7 +91,7 @@ export class MySky {
   }
 
   async checkLogin(): Promise<boolean> {
-    const permissionsResponse: CheckPermissionsResponse = await this.connector.connection
+    const [seedFound, permissionsResponse]: [boolean, CheckPermissionsResponse] = await this.connector.connection
       .remoteHandle()
       .call("checkLogin", this.pendingPermissions);
 
@@ -100,7 +100,7 @@ export class MySky {
     this.grantedPermissions = grantedPermissions;
     this.pendingPermissions = failedPermissions;
 
-    return (failedPermissions.length === 0);
+    return (seedFound && failedPermissions.length === 0);
   }
 
   /**
@@ -137,6 +137,8 @@ export class MySky {
 
     let uiWindow: Window;
     let uiConnection: Connection;
+    let seedFound = false;
+
     const promise: Promise<void> = new Promise(async (resolve, reject) => {
       // Make this promise run in the background and reject on window close or any errors.
       promiseError.catch((err: string) => {
@@ -158,9 +160,10 @@ export class MySky {
         // Send the UI the list of required permissions.
 
         // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
-        const permissionsResponse: CheckPermissionsResponse = await uiConnection
+        const [seedFoundResponse, permissionsResponse]: [boolean, CheckPermissionsResponse] = await uiConnection
           .remoteHandle()
           .call("requestLoginAccess", this.pendingPermissions);
+        seedFound = seedFoundResponse;
 
         // Save failed permissions.
 
@@ -189,7 +192,7 @@ export class MySky {
         controllerError.cleanup();
       });
 
-    return (this.pendingPermissions.length === 0);
+    return (seedFound && this.pendingPermissions.length === 0);
   }
 
   async userID(): Promise<string> {
