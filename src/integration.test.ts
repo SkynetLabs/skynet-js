@@ -1,12 +1,36 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { MAX_REVISION } from "./utils/number";
+import { trimPrefix } from "./utils/string";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
 const client = new SkynetClient(portal);
 
 const dataKey = "HelloWorld";
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      toEqualPortalUrl(argument: string): R;
+    }
+  }
+}
+
+expect.extend({
+  toEqualPortalUrl(received: string, argument: string) {
+    const prefix = `${received.split("//", 1)[0]}//`;
+    const expectedUrl = trimPrefix(argument, prefix);
+    const receivedUrl = trimPrefix(received, prefix);
+
+    // Support the case where we receive siasky.net while expecting eu-fin-1.siasky.net.
+    if (!expectedUrl.endsWith(receivedUrl)) {
+      return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+    }
+    return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
+  },
+});
 
 describe(`Integration test for portal ${portal}`, () => {
   describe("SkyDB end to end integration tests", () => {
@@ -171,7 +195,7 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(data).toEqual(data);
       expect(contentType).toEqual("text/plain");
       expect(metadata).toEqual(plaintextMetadata);
-      expect(portalUrl).toEqual(portal);
+      expect(portalUrl).toEqualPortalUrl(portal);
       expect(skylink).toEqual(returnedSkylink);
     });
 
@@ -188,7 +212,7 @@ describe(`Integration test for portal ${portal}`, () => {
 
       expect(contentType).toEqual("text/plain");
       expect(metadata).toEqual(plaintextMetadata);
-      expect(portalUrl).toEqual(portal);
+      expect(portalUrl).toEqualPortalUrl(portal);
       expect(skylink).toEqual(returnedSkylink);
     });
 

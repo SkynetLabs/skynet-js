@@ -205,7 +205,7 @@ export async function getEntryUrl(
     ...customOptions,
   };
 
-  const portalUrl = await this.portalUrl;
+  const portalUrl = await this.portalUrl();
 
   return getEntryUrlForPortal(portalUrl, publicKey, dataKey, opts);
 }
