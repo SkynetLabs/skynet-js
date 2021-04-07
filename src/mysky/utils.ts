@@ -12,13 +12,13 @@ import { getFullDomainUrlForPortal, extractDomainForPortal } from "../utils/url"
  * @returns - The full URL for the component.
  */
 export async function getFullDomainUrl(this: SkynetClient, domain: string): Promise<string> {
-  const portalUrl = await this.portalUrl;
+  const portalUrl = await this.portalUrl();
 
   return getFullDomainUrlForPortal(portalUrl, domain);
 }
 
 export async function extractDomain(this: SkynetClient, fullDomain: string): Promise<string> {
-  const portalUrl = await this.portalUrl;
+  const portalUrl = await this.portalUrl();
 
   return extractDomainForPortal(portalUrl, fullDomain);
 }
