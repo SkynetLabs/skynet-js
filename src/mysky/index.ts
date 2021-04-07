@@ -176,6 +176,8 @@ export class MySky {
         const { grantedPermissions, failedPermissions } = permissionsResponse;
         this.grantedPermissions = grantedPermissions;
         this.pendingPermissions = failedPermissions;
+
+        resolve();
       } catch (err) {
         reject(err);
       }
@@ -202,7 +204,7 @@ export class MySky {
   }
 
   async userID(): Promise<string> {
-    return this.connector.connection.remoteHandle().call("userID");
+    return await this.connector.connection.remoteHandle().call("userID");
   }
 
   async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<JsonData | null> {
