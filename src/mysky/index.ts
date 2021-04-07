@@ -234,7 +234,7 @@ export class MySky {
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    return await this.connector.client.registry.postSignedEntry(hexToUint8Array(publicKey), entry, signature, opts);
+    return await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, opts);
   }
 
   // ================

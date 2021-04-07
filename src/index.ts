@@ -1,5 +1,6 @@
 export { SkynetClient } from "./client";
 export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
+export { signEntry } from "./registry";
 export { getRelativeFilePath, getRootDirectory } from "./utils/file";
 export { MAX_REVISION } from "./utils/number";
 export { parseSkylink, uriHandshakePrefix, uriHandshakeResolverPrefix, uriSkynetPrefix } from "./utils/skylink";

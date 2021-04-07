@@ -246,14 +246,14 @@ export async function setEntry(
   };
   const privateKeyArray = hexToUint8Array(privateKey);
 
-  const signature: Uint8Array = await this.registry.signEntry(privateKey, entry);
+  const signature: Uint8Array = await signEntry(privateKey, entry);
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(privateKeyArray);
 
-  return await this.registry.postSignedEntry(publicKeyArray, entry, signature, opts);
+  return await this.registry.postSignedEntry(toHexString(publicKeyArray), entry, signature, opts);
 }
 
-export async function signEntry(this: SkynetClient, privateKey: string, entry: RegistryEntry): Promise<Uint8Array> {
+export async function signEntry(privateKey: string, entry: RegistryEntry): Promise<Uint8Array> {
   const privateKeyArray = hexToUint8Array(privateKey);
 
   // Sign the entry.
@@ -263,7 +263,7 @@ export async function signEntry(this: SkynetClient, privateKey: string, entry: R
 
 export async function postSignedEntry(
   this: SkynetClient,
-  publicKeyArray: Uint8Array,
+  publicKey: string,
   entry: RegistryEntry,
   signature: Uint8Array,
   customOptions?: CustomSetEntryOptions
@@ -279,7 +279,7 @@ export async function postSignedEntry(
   const data = {
     publickey: {
       algorithm: "ed25519",
-      key: Array.from(publicKeyArray),
+      key: Array.from(hexToUint8Array(publicKey)),
     },
     datakey: toHexString(hashDataKey(entry.datakey)),
     // Set the revision as a string here since the value may be up to 64 bits.

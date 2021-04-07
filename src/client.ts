@@ -107,9 +107,6 @@ export class SkynetClient {
   db = {
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
-
-    // Helpers.
-    getOrCreateRegistryEntry: getOrCreateRegistryEntry.bind(this),
   };
 
   // SkyDB helpers
@@ -119,9 +116,7 @@ export class SkynetClient {
     getEntryUrl: getEntryUrl.bind(this),
     setEntry: setEntry.bind(this),
 
-    // Helpers.
     postSignedEntry: postSignedEntry.bind(this),
-    signEntry: signEntry.bind(this),
   };
 
   /**
