@@ -1,15 +1,13 @@
 import { SkynetClient } from "./client";
 import {
   BaseCustomOptions,
-  convertSkylinkToBase32,
   defaultOptions,
   formatSkylink,
-  parseSkylink,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
 } from "./utils/skylink";
 import { trimUriPrefix } from "./utils/string";
-import { addSubdomain, addUrlQuery, makeUrl } from "./utils/url";
+import { addSubdomain, addUrlQuery, getSkylinkUrlForPortal, makeUrl } from "./utils/url";
 
 /**
  * Custom download options.
@@ -78,7 +76,7 @@ export type ResolveHnsResponse = {
   skylink: string;
 };
 
-const defaultDownloadOptions = {
+export const defaultDownloadOptions = {
   ...defaultOptions("/"),
 };
 const defaultDownloadHnsOptions = {
@@ -99,14 +97,18 @@ const defaultResolveHnsOptions = {
  * @returns - The full URL that was used.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
-export function downloadFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
+export async function downloadFile(
+  this: SkynetClient,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): Promise<string> {
   /* istanbul ignore next */
   if (typeof skylinkUrl !== "string") {
     throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
   }
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
-  const url = this.getSkylinkUrl(skylinkUrl, opts);
+  const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   // Download the url.
   window.location.assign(url);
@@ -135,7 +137,7 @@ export async function downloadFileHns(
   }
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
-  const url = this.getHnsUrl(domain, opts);
+  const url = await this.getHnsUrl(domain, opts);
 
   // Download the url.
   window.location.assign(url);
@@ -153,64 +155,16 @@ export async function downloadFileHns(
  * @returns - The full URL for the skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
-export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
-  /* istanbul ignore next */
-  if (typeof skylinkUrl !== "string") {
-    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
-  }
-
+export async function getSkylinkUrl(
+  this: SkynetClient,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): Promise<string> {
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const query = opts.query ?? {};
-  if (opts.download) {
-    // Set the "attachment" parameter.
-    query.attachment = true;
-  }
-  if (opts.noResponseMetadata) {
-    // Set the "no-response-metadata" parameter.
-    query["no-response-metadata"] = true;
-  }
 
-  // URL-encode the path.
-  let path = "";
-  if (opts.path) {
-    if (typeof opts.path !== "string") {
-      throw new Error(`opts.path has to be a string, ${typeof opts.path} provided`);
-    }
+  const portalUrl = await this.portalUrl();
 
-    // Encode each element of the path separately and join them.
-    //
-    // Don't use encodeURI because it does not encode characters such as '?'
-    // etc. These are allowed as filenames on Skynet and should be encoded so
-    // they are not treated as URL separators.
-    path = opts.path
-      .split("/")
-      .map((element: string) => encodeURIComponent(element))
-      .join("/");
-  }
-
-  let url;
-  if (opts.subdomain) {
-    // Get the path from the skylink. Use the empty string if not found.
-    const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true }) ?? "";
-    // Get just the skylink.
-    let skylink = parseSkylink(skylinkUrl);
-    if (skylink === null) {
-      throw new Error(`Could not get skylink out of input '${skylinkUrl}'`);
-    }
-    // Convert the skylink (without the path) to base32.
-    skylink = convertSkylinkToBase32(skylink);
-    url = addSubdomain(this.portalUrl, skylink);
-    url = makeUrl(url, skylinkPath, path);
-  } else {
-    // Get the skylink including the path.
-    const skylink = parseSkylink(skylinkUrl, { includePath: true });
-    if (skylink === null) {
-      throw new Error(`Could not get skylink with path out of input '${skylinkUrl}'`);
-    }
-    // Add additional path if passed in.
-    url = makeUrl(this.portalUrl, opts.endpointPath, skylink, path);
-  }
-  return addUrlQuery(url, query);
+  return getSkylinkUrlForPortal(portalUrl, skylinkUrl, opts);
 }
 
 /**
@@ -223,7 +177,11 @@ export function getSkylinkUrl(this: SkynetClient, skylinkUrl: string, customOpti
  * @returns - The full URL for the HNS domain.
  * @throws - Will throw if the input domain is not a string.
  */
-export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: CustomHnsDownloadOptions): string {
+export async function getHnsUrl(
+  this: SkynetClient,
+  domain: string,
+  customOptions?: CustomHnsDownloadOptions
+): Promise<string> {
   /* istanbul ignore next */
   if (typeof domain !== "string") {
     throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
@@ -239,9 +197,10 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: Cu
   }
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);
+  const portalUrl = await this.portalUrl();
   const url = opts.subdomain
-    ? addSubdomain(addSubdomain(this.portalUrl, opts.hnsSubdomain), domain)
-    : makeUrl(this.portalUrl, opts.endpointPath, domain);
+    ? addSubdomain(addSubdomain(portalUrl, opts.hnsSubdomain), domain)
+    : makeUrl(portalUrl, opts.endpointPath, domain);
   return addUrlQuery(url, query);
 }
 
@@ -255,7 +214,11 @@ export function getHnsUrl(this: SkynetClient, domain: string, customOptions?: Cu
  * @returns - The full URL for the resolver for the HNS domain.
  * @throws - Will throw if the input domain is not a string.
  */
-export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?: BaseCustomOptions): string {
+export async function getHnsresUrl(
+  this: SkynetClient,
+  domain: string,
+  customOptions?: BaseCustomOptions
+): Promise<string> {
   /* istanbul ignore next */
   if (typeof domain !== "string") {
     throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
@@ -264,7 +227,8 @@ export function getHnsresUrl(this: SkynetClient, domain: string, customOptions?:
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
-  return makeUrl(this.portalUrl, opts.endpointPath, domain);
+  const portalUrl = await this.portalUrl();
+  return makeUrl(portalUrl, opts.endpointPath, domain);
 }
 
 /**
@@ -288,7 +252,7 @@ export async function getMetadata(
   }
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const url = this.getSkylinkUrl(skylinkUrl, opts);
+  const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   const response = await this.executeRequest({
     ...opts,
@@ -331,7 +295,7 @@ export async function getFileContent<T = unknown>(
   }
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const url = this.getSkylinkUrl(skylinkUrl, opts);
+  const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   return this.getFileContentRequest<T>(url, opts);
 }
@@ -352,7 +316,7 @@ export async function getFileContentHns<T = unknown>(
   customOptions?: CustomHnsDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
-  const url = this.getHnsUrl(domain, opts);
+  const url = await this.getHnsUrl(domain, opts);
 
   return this.getFileContentRequest<T>(url, opts);
 }
@@ -409,14 +373,18 @@ export async function getFileContentRequest<T = unknown>(
  * @returns - The full URL that was used.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
-export function openFile(this: SkynetClient, skylinkUrl: string, customOptions?: CustomDownloadOptions): string {
+export async function openFile(
+  this: SkynetClient,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): Promise<string> {
   /* istanbul ignore next */
   if (typeof skylinkUrl !== "string") {
     throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
   }
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
-  const url = this.getSkylinkUrl(skylinkUrl, opts);
+  const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   window.open(url, "_blank");
 
@@ -444,7 +412,7 @@ export async function openFileHns(
   }
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
-  const url = this.getHnsUrl(domain, opts);
+  const url = await this.getHnsUrl(domain, opts);
 
   // Open the url in a new tab.
   window.open(url, "_blank");
@@ -473,7 +441,7 @@ export async function resolveHns(
   }
 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
-  const url = this.getHnsresUrl(domain, opts);
+  const url = await this.getHnsresUrl(domain, opts);
 
   // Get the txt record from the hnsres domain on the portal.
   const response = await this.executeRequest({

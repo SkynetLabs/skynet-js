@@ -3,13 +3,14 @@ import MockAdapter from "axios-mock-adapter";
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
+import { getEntryUrlForPortal } from "./utils/url";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const dataKey = "app";
 
-const registryLookupUrl = client.registry.getEntryUrl(publicKey, dataKey);
+const registryLookupUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
 
 describe("getEntry", () => {
   let mock: MockAdapter;
@@ -79,22 +80,22 @@ describe("getEntryUrl", () => {
   const encodedPK = "ed25519%3Ac1197e1275fbf570d21dde01a00af83ed4a743d1884e4a09cebce0dd21ae254c";
   const encodedDK = "7c96a0537ab2aaac9cfe0eca217732f4e10791625b4ab4c17e4d91c8078713b9";
 
-  it("should generate the correct registry url for the given entry", () => {
-    const url = client.registry.getEntryUrl(publicKey, dataKey);
+  it("should generate the correct registry url for the given entry", async () => {
+    const url = await client.registry.getEntryUrl(publicKey, dataKey);
 
     expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}&timeout=5`);
   });
 
-  it("Should throw if the timeout is not an integer", () => {
+  it("Should throw if the timeout is not an integer", async () => {
     const { publicKey } = genKeyPairAndSeed();
 
-    expect(() => client.registry.getEntryUrl(publicKey, dataKey, { timeout: 1.5 })).toThrowError(
+    await expect(client.registry.getEntryUrl(publicKey, dataKey, { timeout: 1.5 })).rejects.toThrowError(
       "Invalid 'timeout' parameter '1.5', needs to be an integer between 1s and 300s"
     );
   });
 
-  it("should trim the prefix if it is provided", () => {
-    const url = client.registry.getEntryUrl(`ed25519:${publicKey}`, dataKey);
+  it("should trim the prefix if it is provided", async () => {
+    const url = await client.registry.getEntryUrl(`ed25519:${publicKey}`, dataKey);
 
     expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}&timeout=5`);
   });

@@ -11,6 +11,7 @@ const sialink = `${uriSkynetPrefix}${skylink}`;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 const data = { skylink, merkleroot, bitfield };
+let mock: MockAdapter;
 
 describe("uploadFile", () => {
   const url = `${portalUrl}/skynet/skyfile`;
@@ -18,11 +19,11 @@ describe("uploadFile", () => {
   const file = new File(["foo"], filename, {
     type: "text/plain",
   });
-  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
     mock.onPost(url).replyOnce(200, data);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
     mock.resetHistory();
   });
 
@@ -45,10 +46,11 @@ describe("uploadFile", () => {
     expect(request.withCredentials).toBeTruthy();
   });
 
-  it("should send register onUploadProgress callback if defined", async () => {
+  it("should register onUploadProgress callback if defined", async () => {
     const newPortal = "https://my-portal.net";
     const url = `${newPortal}/skynet/skyfile`;
     const client = new SkynetClient(newPortal);
+    mock.onHead(newPortal).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
 
     // Use replyOnce to catch a single request with the new URL.
     mock.onPost(url).replyOnce(200, data);
@@ -125,6 +127,7 @@ describe("uploadFile", () => {
     const portalUrl = "https://portal.net";
     const url = `${portalUrl}/skynet/skyfile`;
     const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
 
     mock.onPost(`${url}?file=test`).replyOnce(200, data);
 
@@ -160,11 +163,11 @@ describe("uploadDirectory", () => {
     "i-am-not/me-neither/file3.jpeg": new File(["foo3"], "i-am-not/me-neither/file3.jpeg"),
   };
   const url = `${portalUrl}/skynet/skyfile?filename=${filename}`;
-  let mock: MockAdapter;
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
     mock.onPost(url).replyOnce(200, data);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
     mock.resetHistory();
   });
 
