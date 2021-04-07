@@ -2,7 +2,15 @@ export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
 import { Connection, ParentHandshake, WindowMessenger } from "post-me";
-import { CheckPermissionsResponse, ErrorHolder, errorWindowClosed, monitorWindowError, PermCategory, Permission, PermType } from "skynet-mysky-utils";
+import {
+  CheckPermissionsResponse,
+  ErrorHolder,
+  errorWindowClosed,
+  monitorWindowError,
+  PermCategory,
+  Permission,
+  PermType,
+} from "skynet-mysky-utils";
 
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -41,18 +49,14 @@ export class MySky {
   // Constructors
   // ============
 
-  constructor(
-    protected connector: Connector,
-    permissions: Permission[],
-    protected domain: string
-  ) {
+  constructor(protected connector: Connector, permissions: Permission[], protected domain: string) {
     this.pendingPermissions = permissions;
   }
 
   static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
     // Enforce singleton.
     if (MySky.instance) {
-      return MySky.instance
+      return MySky.instance;
     }
 
     const connector = await Connector.init(client, mySkyDomain, customOptions);
@@ -91,16 +95,17 @@ export class MySky {
   }
 
   async checkLogin(): Promise<boolean> {
-    const [seedFound, permissionsResponse]: [boolean, CheckPermissionsResponse] = await this.connector.connection
-      .remoteHandle()
-      .call("checkLogin", this.pendingPermissions);
+    const [seedFound, permissionsResponse]: [
+      boolean,
+      CheckPermissionsResponse
+    ] = await this.connector.connection.remoteHandle().call("checkLogin", this.pendingPermissions);
 
     // Save granted and failed permissions.
-    const {grantedPermissions, failedPermissions} = permissionsResponse;
+    const { grantedPermissions, failedPermissions } = permissionsResponse;
     this.grantedPermissions = grantedPermissions;
     this.pendingPermissions = failedPermissions;
 
-    return (seedFound && failedPermissions.length === 0);
+    return seedFound && failedPermissions.length === 0;
   }
 
   /**
@@ -160,14 +165,15 @@ export class MySky {
         // Send the UI the list of required permissions.
 
         // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
-        const [seedFoundResponse, permissionsResponse]: [boolean, CheckPermissionsResponse] = await uiConnection
-          .remoteHandle()
-          .call("requestLoginAccess", this.pendingPermissions);
+        const [seedFoundResponse, permissionsResponse]: [
+          boolean,
+          CheckPermissionsResponse
+        ] = await uiConnection.remoteHandle().call("requestLoginAccess", this.pendingPermissions);
         seedFound = seedFoundResponse;
 
         // Save failed permissions.
 
-        const {grantedPermissions, failedPermissions} = permissionsResponse;
+        const { grantedPermissions, failedPermissions } = permissionsResponse;
         this.grantedPermissions = grantedPermissions;
         this.pendingPermissions = failedPermissions;
       } catch (err) {
@@ -192,7 +198,7 @@ export class MySky {
         controllerError.cleanup();
       });
 
-    return (seedFound && this.pendingPermissions.length === 0);
+    return seedFound && this.pendingPermissions.length === 0;
   }
 
   async userID(): Promise<string> {
