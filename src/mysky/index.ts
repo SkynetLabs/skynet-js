@@ -49,6 +49,7 @@ const [mySkyUiW, mySkyUiH] = [500, 500];
 export class MySky {
   static instance: MySky | null = null;
 
+  dacs: DacLibrary[] = [];
   grantedPermissions: Permission[] = [];
   pendingPermissions: Permission[];
 
@@ -61,7 +62,7 @@ export class MySky {
   }
 
   static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomMySkyOptions): Promise<MySky> {
-  const opts = { ...defaultMySkyOptions, ...customOptions };
+    const opts = { ...defaultMySkyOptions, ...customOptions };
 
     // Enforce singleton.
     if (MySky.instance) {
@@ -100,6 +101,8 @@ export class MySky {
       promises.push(this.loadDac(dac));
     }
 
+    this.dacs.push(...dacs);
+
     await Promise.all(promises);
   }
 
@@ -118,7 +121,9 @@ export class MySky {
     this.grantedPermissions = grantedPermissions;
     this.pendingPermissions = failedPermissions;
 
-    return seedFound && failedPermissions.length === 0;
+    const loggedIn = (seedFound && failedPermissions.length === 0);
+    this.handleLogin(loggedIn);
+    return loggedIn;
   }
 
   /**
@@ -212,7 +217,9 @@ export class MySky {
         controllerError.cleanup();
       });
 
-    return seedFound && this.pendingPermissions.length === 0;
+    const loggedIn = (seedFound && this.pendingPermissions.length === 0);
+    this.handleLogin(loggedIn);
+    return loggedIn;
   }
 
   async userID(): Promise<string> {
@@ -302,6 +309,14 @@ export class MySky {
     // Add DAC permissions.
     const perms = dac.getPermissions();
     this.addPermissions(...perms);
+  }
+
+  protected handleLogin(loggedIn: boolean): void {
+    if (loggedIn) {
+      for (let dac of this.dacs) {
+        dac.onUserLogin();
+      }
+    }
   }
 
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {

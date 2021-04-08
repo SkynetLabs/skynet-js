@@ -13,4 +13,12 @@ export abstract class DacLibrary {
   }
 
   abstract getPermissions(): Permission[];
+
+  onUserLogin(): void {
+    if (!this.connector) {
+      throw new Error("init was not called");
+    }
+
+    this.connector.connection.remoteHandle().call("onUserLogin");
+  }
 }
