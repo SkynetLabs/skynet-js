@@ -9,7 +9,7 @@ import {
 } from "./crypto";
 import { deriveDiscoverableTweak } from "./mysky/tweak";
 import { MAX_REVISION } from "./utils/number";
-import { toHexString } from "./utils/string";
+import { toHexString, uint8ArrayToString } from "./utils/string";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -135,7 +135,7 @@ describe("hashDataKey", () => {
     const expected = "852b9478b480488fe2d18286d14c92e997f00e22f5d146627246e633897c314f";
 
     const dataKey = deriveDiscoverableTweak(path);
-    const input = Buffer.from(dataKey).toString();
+    const input = uint8ArrayToString(dataKey);
     const hash = toHexString(hashDataKey(input));
     expect(hash).toEqual(expected);
   });

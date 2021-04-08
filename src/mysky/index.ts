@@ -12,13 +12,12 @@ import {
   PermType,
 } from "skynet-mysky-utils";
 
-import { Buffer } from "buffer";
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
 import { RegistryEntry } from "../registry";
 import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData, VersionedEntryData } from "../skydb";
-import { hexToUint8Array } from "../utils/string";
+import { hexToUint8Array, uint8ArrayToString } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
@@ -226,7 +225,7 @@ export class MySky {
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
 
-    return await this.connector.client.db.getJSON(publicKey, Buffer.from(dataKey).toString(), opts);
+    return await this.connector.client.db.getJSON(publicKey, uint8ArrayToString(dataKey), opts);
   }
 
   async setJSON(path: string, json: JsonData, revision?: bigint, opts?: CustomSetJSONOptions): Promise<void> {
@@ -239,7 +238,7 @@ export class MySky {
     const entry = await getOrCreateRegistryEntry(
       this.connector.client,
       hexToUint8Array(publicKey),
-      Buffer.from(dataKey).toString(),
+      uint8ArrayToString(dataKey),
       json,
       revision,
       opts

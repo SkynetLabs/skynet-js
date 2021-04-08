@@ -1,8 +1,6 @@
-import { Buffer } from "buffer";
-
 import { deriveDiscoverableTweak } from "../mysky/tweak";
 import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./skylink";
-import { hexToUint8Array, stringToUint8Array, toHexString, trimUriPrefix } from "./string";
+import { hexToUint8Array, stringToUint8Array, toHexString, trimUriPrefix, uint8ArrayToString } from "./string";
 
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
@@ -56,7 +54,7 @@ describe("stringToUint8Array", () => {
     const expected = "efbfbd086e5aefbfbd2fdfb83335efbfbdefbfbdefbfbd623439efbfbdefbfbd5d75efbfbd02efbfbd69efbfbdefbfbd1befbfbd1fefbfbd";
 
     const dataKey = deriveDiscoverableTweak(path);
-    const input = Buffer.from(dataKey).toString();
+    const input = uint8ArrayToString(dataKey);
     const hash = toHexString(stringToUint8Array(input));
     expect(hash).toEqual(expected);
   });

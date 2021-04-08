@@ -89,6 +89,16 @@ export function stringToUint8Array(str: string): Uint8Array {
 }
 
 /**
+ * Converts a uint8 array to a string.
+ *
+ * @param array - The uint8 array to convert.
+ * @returns - The string.
+ */
+export function uint8ArrayToString(array: Uint8Array): string {
+  return Buffer.from(array).toString();
+}
+
+/**
  * Converts a hex encoded string to a uint8 array.
  *
  * @param str - The string to convert.

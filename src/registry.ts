@@ -5,7 +5,7 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultOptions } from "./utils/skylink";
-import { hexToUint8Array, isHexString, toHexString } from "./utils/string";
+import { hexToUint8Array, isHexString, toHexString, uint8ArrayToString } from "./utils/string";
 import { getEntryUrlForPortal } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
@@ -158,7 +158,7 @@ export async function getEntry(
   // Use empty string if the data is empty.
   let data = "";
   if (response.data.data) {
-    data = Buffer.from(hexToUint8Array(response.data.data)).toString();
+    data = uint8ArrayToString(hexToUint8Array(response.data.data));
   }
   const signedEntry = {
     entry: {
