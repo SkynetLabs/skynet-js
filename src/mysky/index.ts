@@ -4,7 +4,7 @@ export { DacLibrary } from "./dac";
 import { Connection, ParentHandshake, WindowMessenger } from "post-me";
 import {
   CheckPermissionsResponse,
-  ErrorHolder,
+  dispatchedErrorEvent,
   errorWindowClosed,
   monitorWindowError,
   PermCategory,
@@ -42,8 +42,6 @@ export class MySky {
 
   grantedPermissions: Permission[] = [];
   pendingPermissions: Permission[];
-
-  protected errorHolder = new ErrorHolder();
 
   // ============
   // Constructors
@@ -136,13 +134,12 @@ export class MySky {
   }
 
   async requestLoginAccess(): Promise<boolean> {
-    // Add error listener.
-
-    const { promise: promiseError, controller: controllerError } = monitorWindowError(this.errorHolder);
-
     let uiWindow: Window;
     let uiConnection: Connection;
     let seedFound = false;
+
+    // Add error listener.
+    const { promise: promiseError, controller: controllerError } = monitorWindowError();
 
     const promise: Promise<void> = new Promise(async (resolve, reject) => {
       // Make this promise run in the background and reject on window close or any errors.
@@ -221,6 +218,7 @@ export class MySky {
     // TODO: Check for valid inputs.
 
     const publicKey = await this.userID();
+    // TODO: Convert to hex?
     const dataKey = deriveDiscoverableTweak(path);
 
     const entry = await getOrCreateRegistryEntry(
@@ -242,7 +240,8 @@ export class MySky {
   // ================
 
   protected async catchError(errorMsg: string) {
-    this.errorHolder.error = errorMsg;
+    const event = new CustomEvent(dispatchedErrorEvent, { detail: errorMsg });
+    window.dispatchEvent(event);
   }
 
   protected async launchUI(): Promise<Window> {
