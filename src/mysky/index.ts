@@ -22,10 +22,18 @@ import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 
+export type CustomMySkyOptions = CustomConnectorOptions & {
+  dev: boolean;
+};
+
+const defaultMySkyOptions = {
+  dev: false,
+};
+
 export async function loadMySky(
   this: SkynetClient,
   skappDomain?: string,
-  customOptions?: CustomConnectorOptions
+  customOptions?: CustomMySkyOptions
 ): Promise<MySky> {
   const mySky = await MySky.New(this, skappDomain, customOptions);
 
@@ -33,6 +41,7 @@ export async function loadMySky(
 }
 
 export const mySkyDomain = "skynet-mysky.hns";
+export const mySkyDevDomain = "sandbridge.hns";
 const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
 const [mySkyUiW, mySkyUiH] = [500, 500];
@@ -47,28 +56,34 @@ export class MySky {
   // Constructors
   // ============
 
-  constructor(protected connector: Connector, permissions: Permission[], protected domain: string) {
+  constructor(protected connector: Connector, permissions: Permission[], protected hostDomain: string) {
     this.pendingPermissions = permissions;
   }
 
-  static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
+  static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomMySkyOptions): Promise<MySky> {
+  const opts = { ...defaultMySkyOptions, ...customOptions };
+
     // Enforce singleton.
     if (MySky.instance) {
       return MySky.instance;
     }
 
-    const connector = await Connector.init(client, mySkyDomain, customOptions);
+    let domain = mySkyDomain;
+    if (opts.dev) {
+      domain = mySkyDevDomain;
+    }
+    const connector = await Connector.init(client, domain, customOptions);
 
-    const domain = await client.extractDomain(window.location.hostname);
+    const hostDomain = await client.extractDomain(window.location.hostname);
     const permissions = [];
     if (skappDomain) {
       // TODO: Are these permissions correct?
-      const perm1 = new Permission(domain, skappDomain, PermCategory.Hidden, PermType.Read);
-      const perm2 = new Permission(domain, skappDomain, PermCategory.Hidden, PermType.Write);
+      const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Read);
+      const perm2 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Write);
       permissions.push(perm1, perm2);
     }
 
-    MySky.instance = new MySky(connector, permissions, domain);
+    MySky.instance = new MySky(connector, permissions, hostDomain);
     return MySky.instance;
   }
 
