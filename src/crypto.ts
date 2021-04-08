@@ -1,5 +1,5 @@
 import { misc, codec } from "sjcl";
-import type { Buffer } from "buffer";
+import { Buffer } from "buffer";
 import { blake2bFinal, blake2bInit, blake2bUpdate } from "blakejs";
 import randomBytes from "randombytes";
 import { sign } from "tweetnacl";

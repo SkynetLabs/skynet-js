@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 /**
  * Removes a prefix from the beginning of the string.
  *

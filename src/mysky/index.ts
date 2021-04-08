@@ -291,6 +291,6 @@ export class MySky {
   }
 
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
-    return this.connector.connection.remoteHandle().call("signRegistryEntry", entry, path);
+    return await this.connector.connection.remoteHandle().call("signRegistryEntry", entry, path);
   }
 }
