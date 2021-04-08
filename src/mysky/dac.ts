@@ -10,6 +10,7 @@ export abstract class DacLibrary {
 
   public async init(client: SkynetClient, customOptions: CustomConnectorOptions) {
     this.connector = await Connector.init(client, this.dacDomain, customOptions);
+    await this.connector.connection.remoteHandle().call("init");
   }
 
   abstract getPermissions(): Permission[];
