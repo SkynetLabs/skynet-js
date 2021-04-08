@@ -16,7 +16,7 @@ import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
 import { RegistryEntry } from "../registry";
-import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData } from "../skydb";
+import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData, VersionedEntryData } from "../skydb";
 import { hexToUint8Array } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
@@ -219,14 +219,13 @@ export class MySky {
     return await this.connector.connection.remoteHandle().call("userID");
   }
 
-  async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<JsonData | null> {
+  async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<VersionedEntryData> {
     // TODO: Check for valid inputs.
 
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
 
-    const versionedEntry = await this.connector.client.db.getJSON(publicKey, Buffer.from(dataKey).toString(), opts);
-    return versionedEntry.data;
+    return await this.connector.client.db.getJSON(publicKey, Buffer.from(dataKey).toString(), opts);
   }
 
   async setJSON(path: string, json: JsonData, revision?: bigint, opts?: CustomSetJSONOptions): Promise<void> {
