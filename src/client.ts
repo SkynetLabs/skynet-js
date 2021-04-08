@@ -15,7 +15,7 @@ import {
   openFileHns,
   resolveHns,
 } from "./download";
-import { getJSON, setJSON, getOrCreateRegistryEntry } from "./skydb";
+import { getJSON, setJSON } from "./skydb";
 import { getEntry, getEntryUrl, setEntry, postSignedEntry, signEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";

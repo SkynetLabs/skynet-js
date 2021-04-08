@@ -130,7 +130,7 @@ export class MySky {
   }
 
   async logout(): Promise<void> {
-    // TODO
+    return await this.connector.connection.remoteHandle().call("logout");
   }
 
   async requestLoginAccess(): Promise<boolean> {
