@@ -12,6 +12,7 @@ import {
   PermType,
 } from "skynet-mysky-utils";
 
+import { Buffer } from "buffer";
 import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
