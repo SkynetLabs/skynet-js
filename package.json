@@ -100,7 +100,6 @@
     "axios-mock-adapter": "^1.18.2",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "eslint": "^7.11.0",
-    "eslint-plugin-compat": "^3.8.0",
     "eslint-plugin-jsdoc": "^32.0.0",
     "husky": "^5.0.9",
     "jest": "^26.4.2",

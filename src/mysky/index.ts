@@ -16,13 +16,7 @@ import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
 import { RegistryEntry } from "../registry";
-import {
-  CustomGetJSONOptions,
-  CustomSetJSONOptions,
-  getOrCreateRegistryEntry,
-  JsonData,
-  VersionedEntryData,
-} from "../skydb";
+import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData, JSONResponse } from "../skydb";
 import { hexToUint8Array, uint8ArrayToString } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
@@ -167,6 +161,7 @@ export class MySky {
     // Add error listener.
     const { promise: promiseError, controller: controllerError } = monitorWindowError();
 
+    // eslint-disable-next-line no-async-promise-executor
     const promise: Promise<void> = new Promise(async (resolve, reject) => {
       // Make this promise run in the background and reject on window close or any errors.
       promiseError.catch((err: string) => {
@@ -232,7 +227,7 @@ export class MySky {
     return await this.connector.connection.remoteHandle().call("userID");
   }
 
-  async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<VersionedEntryData> {
+  async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<JSONResponse> {
     // TODO: Check for valid inputs.
 
     const publicKey = await this.userID();
@@ -241,25 +236,26 @@ export class MySky {
     return await this.connector.client.db.getJSON(publicKey, uint8ArrayToString(dataKey), opts);
   }
 
-  async setJSON(path: string, json: JsonData, revision?: bigint, opts?: CustomSetJSONOptions): Promise<void> {
+  async setJSON(path: string, json: JsonData, opts?: CustomSetJSONOptions): Promise<JSONResponse> {
     // TODO: Check for valid inputs.
 
     const publicKey = await this.userID();
     // TODO: Convert to hex?
     const dataKey = deriveDiscoverableTweak(path);
 
-    const entry = await getOrCreateRegistryEntry(
+    const [entry, skylink] = await getOrCreateRegistryEntry(
       this.connector.client,
       hexToUint8Array(publicKey),
       uint8ArrayToString(dataKey),
       json,
-      revision,
       opts
     );
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    return await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, opts);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, opts);
+
+    return { data: json, skylink };
   }
 
   // ================
@@ -319,7 +315,7 @@ export class MySky {
 
   protected handleLogin(loggedIn: boolean): void {
     if (loggedIn) {
-      for (let dac of this.dacs) {
+      for (const dac of this.dacs) {
         dac.onUserLogin();
       }
     }

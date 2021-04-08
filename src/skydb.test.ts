@@ -9,7 +9,9 @@ import { regexRevisionNoQuotes } from "./registry";
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
-const json = { data: "thisistext" };
+const jsonData = { data: "thisistext" };
+const fullJsonData = { _data: jsonData, _v: 2 };
+const legacyJsonData = jsonData;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 
@@ -41,19 +43,29 @@ describe("getJSON", () => {
   it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).replyOnce(200, json, {});
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
 
     const jsonReturned = await client.db.getJSON(publicKey, dataKey);
-    expect(jsonReturned.data).toEqual(json);
+    expect(jsonReturned.data).toEqual(jsonData);
+    expect(mock.history.get.length).toBe(2);
+  });
+
+  it("should perform a lookup and skylink GET on legacy pre-v4 data", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).replyOnce(200, legacyJsonData, {});
+
+    const jsonReturned = await client.db.getJSON(publicKey, dataKey);
+    expect(jsonReturned.data).toEqual(jsonData);
     expect(mock.history.get.length).toBe(2);
   });
 
   it("should return null if no entry is found", async () => {
     mock.onGet(registryLookupUrl).reply(404);
 
-    const { data, revision } = await client.db.getJSON(publicKey, dataKey);
+    const { data, skylink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toBeNull();
-    expect(revision).toBeNull();
+    expect(skylink).toBeNull();
   });
 
   it("should throw if the returned file data is not JSON", async () => {
@@ -86,27 +98,12 @@ describe("setJSON", () => {
     mock.onPost(registryUrl).replyOnce(204);
 
     // set data
-    await client.db.setJSON(privateKey, dataKey, json);
+    const { data: returnedData, skylink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
+    expect(returnedData).toEqual(jsonData);
+    expect(returnedSkylink).toEqual(`sia:${skylink}`);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
-    expect(mock.history.post.length).toBe(2);
-
-    const data = JSON.parse(mock.history.post[1].data);
-    expect(data).toBeDefined();
-    expect(data.revision).toEqual(revision + 1);
-  });
-
-  it("should use the revision if it is passed in", async () => {
-    // mock a successful registry update
-    mock.onPost(registryUrl).replyOnce(204);
-
-    // set data
-    const updated = await client.db.setJSON(privateKey, dataKey, json, BigInt(revision + 1));
-
-    expect(updated);
-
-    // assert our request history contains the expected amount of requests
     expect(mock.history.post.length).toBe(2);
 
     const data = JSON.parse(mock.history.post[1].data);
@@ -121,7 +118,7 @@ describe("setJSON", () => {
     mock.onPost(registryUrl).reply(204);
 
     // call `setJSON` on the client
-    await client.db.setJSON(privateKey, dataKey, json);
+    await client.db.setJSON(privateKey, dataKey, jsonData);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);

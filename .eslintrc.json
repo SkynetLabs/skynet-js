@@ -9,12 +9,7 @@
     "browser": true,
     "jest": true
   },
-  "extends": [
-    "eslint:recommended",
-    "plugin:jsdoc/recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:compat/recommended"
-  ],
+  "extends": ["eslint:recommended", "plugin:jsdoc/recommended", "plugin:@typescript-eslint/recommended"],
   "rules": {
     "jsdoc/require-description": 1,
     "jsdoc/require-param-type": 0,

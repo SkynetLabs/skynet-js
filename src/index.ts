@@ -21,6 +21,6 @@ export type { Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomConnectorOptions, CustomMySkyOptions, MySky } from "./mysky";
 export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";
-export type { CustomGetJSONOptions, CustomSetJSONOptions, JsonData, VersionedEntryData } from "./skydb";
+export type { CustomGetJSONOptions, CustomSetJSONOptions, JsonData, JSONResponse } from "./skydb";
 export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
 export type { ParseSkylinkOptions } from "./utils/skylink";
