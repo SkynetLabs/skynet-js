@@ -16,7 +16,13 @@ import { Connector, CustomConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
 import { RegistryEntry } from "../registry";
-import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData, VersionedEntryData } from "../skydb";
+import {
+  CustomGetJSONOptions,
+  CustomSetJSONOptions,
+  getOrCreateRegistryEntry,
+  JsonData,
+  VersionedEntryData,
+} from "../skydb";
 import { hexToUint8Array, uint8ArrayToString } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
@@ -121,7 +127,7 @@ export class MySky {
     this.grantedPermissions = grantedPermissions;
     this.pendingPermissions = failedPermissions;
 
-    const loggedIn = (seedFound && failedPermissions.length === 0);
+    const loggedIn = seedFound && failedPermissions.length === 0;
     this.handleLogin(loggedIn);
     return loggedIn;
   }
@@ -217,7 +223,7 @@ export class MySky {
         controllerError.cleanup();
       });
 
-    const loggedIn = (seedFound && this.pendingPermissions.length === 0);
+    const loggedIn = seedFound && this.pendingPermissions.length === 0;
     this.handleLogin(loggedIn);
     return loggedIn;
   }

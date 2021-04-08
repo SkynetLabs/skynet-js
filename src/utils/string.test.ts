@@ -51,7 +51,8 @@ describe("hexToUint8Array", () => {
 describe("stringToUint8Array", () => {
   it("Should work for mySky.setJSON paths", () => {
     const path = "localhost/cert";
-    const expected = "efbfbd086e5aefbfbd2fdfb83335efbfbdefbfbdefbfbd623439efbfbdefbfbd5d75efbfbd02efbfbd69efbfbdefbfbd1befbfbd1fefbfbd";
+    const expected =
+      "efbfbd086e5aefbfbd2fdfb83335efbfbdefbfbdefbfbd623439efbfbdefbfbd5d75efbfbd02efbfbd69efbfbdefbfbd1befbfbd1fefbfbd";
 
     const dataKey = deriveDiscoverableTweak(path);
     const input = uint8ArrayToString(dataKey);
