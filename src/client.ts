@@ -15,6 +15,7 @@ import {
   openFileHns,
   resolveHns,
 } from "./download";
+import { getJSON as fileGetJSON } from "./file";
 import { getJSON, setJSON } from "./skydb";
 import { getEntry, getEntryUrl, setEntry, postSignedEntry, signEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
@@ -101,6 +102,12 @@ export class SkynetClient {
   extractDomain = extractDomain;
   getFullDomainUrl = getFullDomainUrl;
   loadMySky = loadMySky;
+
+  // File API
+
+  file = {
+    getJSON: fileGetJSON.bind(this),
+  };
 
   // SkyDB
 

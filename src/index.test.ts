@@ -26,6 +26,10 @@ describe("SkynetClient", () => {
     expect(client).toHaveProperty("getFullDomainUrl");
     expect(client).toHaveProperty("loadMySky");
 
+    // File
+    expect(client).toHaveProperty("file");
+    expect(client.file).toHaveProperty("getJSON");
+
     // SkyDB
     expect(client).toHaveProperty("db");
     expect(client.db).toHaveProperty("getJSON");

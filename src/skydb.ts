@@ -7,7 +7,6 @@ import { BaseCustomOptions, uriSkynetPrefix } from "./utils/skylink";
 import { hexToUint8Array, isHexString, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
 import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
-import { hashDataKey } from "./crypto";
 
 export type JsonData = Record<string, unknown>;
 
