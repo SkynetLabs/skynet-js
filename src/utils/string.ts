@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 /**
  * Removes a prefix from the beginning of the string.
  *
@@ -13,11 +15,18 @@ export function trimForwardSlash(str: string): string {
  *
  * @param str - The string to process.
  * @param prefix - The prefix to remove.
+ * @param [limit] - Maximum amount of times to trim. No limit by default.
  * @returns - The processed string.
  */
-export function trimPrefix(str: string, prefix: string): string {
+export function trimPrefix(str: string, prefix: string, limit?: number): string {
   while (str.startsWith(prefix)) {
+    if (limit !== undefined && limit <= 0) {
+      break;
+    }
     str = str.slice(prefix.length);
+    if (limit) {
+      limit -= 1;
+    }
   }
   return str;
 }
@@ -27,11 +36,18 @@ export function trimPrefix(str: string, prefix: string): string {
  *
  * @param str - The string to process.
  * @param suffix - The suffix to remove.
+ * @param [limit] - Maximum amount of times to trim. No limit by default.
  * @returns - The processed string.
  */
-export function trimSuffix(str: string, suffix: string): string {
+export function trimSuffix(str: string, suffix: string, limit?: number): string {
   while (str.endsWith(suffix)) {
+    if (limit !== undefined && limit <= 0) {
+      break;
+    }
     str = str.substring(0, str.length - suffix.length);
+    if (limit) {
+      limit -= 1;
+    }
   }
   return str;
 }
@@ -70,6 +86,16 @@ export function stringToUint8Array(str: string): Uint8Array {
   }
 
   return Uint8Array.from(Buffer.from(str));
+}
+
+/**
+ * Converts a uint8 array to a string.
+ *
+ * @param array - The uint8 array to convert.
+ * @returns - The string.
+ */
+export function uint8ArrayToString(array: Uint8Array): string {
+  return Buffer.from(array).toString();
 }
 
 /**

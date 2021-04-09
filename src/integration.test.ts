@@ -1,6 +1,5 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
-import { MAX_REVISION } from "./utils/number";
 import { trimPrefix } from "./utils/string";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
@@ -38,44 +37,44 @@ describe(`Integration test for portal ${portal}`, () => {
       const { publicKey } = genKeyPairAndSeed();
 
       // Try getting an inexistent entry.
-      const { data, revision } = await client.db.getJSON(publicKey, "foo");
+      const { data, skylink } = await client.db.getJSON(publicKey, "foo");
       expect(data).toBeNull();
-      expect(revision).toBeNull();
+      expect(skylink).toBeNull();
     });
 
     it("Should set and get new entries", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
       const json = { data: "thisistext" };
+      const json2 = { data: "foo2" };
 
-      // Set the file in the SkyDB.
+      // Set the file in SkyDB.
       await client.db.setJSON(privateKey, dataKey, json);
 
-      // get the file in the SkyDB
-      const { data, revision } = await client.db.getJSON(publicKey, dataKey);
+      // Get the file in SkyDB.
+      const { data, skylink } = await client.db.getJSON(publicKey, dataKey);
       expect(data).toEqual(json);
-      // Revision should be 0.
-      expect(revision).toEqual(BigInt(0));
+      expect(skylink).toBeTruthy();
+
+      // Set the file again.
+      await client.db.setJSON(privateKey, dataKey, json2);
+
+      const { data: data2, skylink: skylink2 } = await client.db.getJSON(publicKey, dataKey);
+      expect(data2).toEqual(json2);
+      expect(skylink2).toBeTruthy();
     });
 
-    it("Should set and get entries with the revision at the max allowed", async () => {
+    // Regression test: Use some strange data keys that have failed in previous versions.
+    const dataKeys = [".", "..", "http://localhost:8000/", ""];
+
+    it.each(dataKeys)("Should set and get new entry with dataKey '%s'", async (dataKey) => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
-      const json = { data: "testnumber2" };
+      const json = { data: "thisistext" };
 
-      await client.db.setJSON(privateKey, dataKey, json, MAX_REVISION);
+      await client.db.setJSON(privateKey, dataKey, json);
 
-      const actual = await client.db.getJSON(publicKey, dataKey);
-      expect(actual.data).toEqual(json);
-      expect(actual.revision).toEqual(MAX_REVISION);
-    });
-
-    it("Try setting the revision higher than the uint64 max", async () => {
-      const { privateKey } = genKeyPairAndSeed();
-      const json = { data: "testnumber3" };
-      const largeint = MAX_REVISION + BigInt(1);
-
-      await expect(client.db.setJSON(privateKey, dataKey, json, largeint)).rejects.toThrowError(
-        "Argument 18446744073709551616 does not fit in a 64-bit unsigned integer; exceeds 2^64-1"
-      );
+      const { data, skylink } = await client.db.getJSON(publicKey, dataKey);
+      expect(data).toEqual(json);
+      expect(skylink).toBeTruthy();
     });
   });
 

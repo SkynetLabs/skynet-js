@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "3.0.2",
+  "version": "3.1.0-beta",
   "description": "Sia Skynet Javascript Client",
   "main": "dist/index.js",
   "files": [
@@ -26,10 +26,10 @@
     ],
     "coverageThreshold": {
       "global": {
-        "branches": 100,
-        "functions": 100,
-        "lines": 100,
-        "statements": 100
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
       }
     },
     "rootDir": "src"
@@ -72,11 +72,13 @@
     "buffer": "^6.0.1",
     "mime": "^2.5.2",
     "path-browserify": "^1.0.1",
+    "post-me": "^0.4.5",
     "randombytes": "^2.1.0",
     "sjcl": "^1.0.8",
+    "skynet-mysky-utils": "^0.1.2",
     "tweetnacl": "^1.0.3",
     "url-join": "^4.0.1",
-    "url-parse": "^1.4.7"
+    "url-parse": "1.4.7"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",
@@ -98,13 +100,12 @@
     "axios-mock-adapter": "^1.18.2",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "eslint": "^7.11.0",
-    "eslint-plugin-compat": "^3.8.0",
     "eslint-plugin-jsdoc": "^32.0.0",
     "husky": "^5.0.9",
     "jest": "^26.4.2",
     "lint-staged": "^10.3.0",
     "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
-    "typescript": "^4.0.3"
+    "typescript": "^4.2.3"
   }
 }

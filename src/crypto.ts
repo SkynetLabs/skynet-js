@@ -1,5 +1,5 @@
 import { misc, codec } from "sjcl";
-import type { Buffer } from "buffer";
+import { Buffer } from "buffer";
 import { blake2bFinal, blake2bInit, blake2bUpdate } from "blakejs";
 import randomBytes from "randombytes";
 import { sign } from "tweetnacl";
@@ -82,9 +82,10 @@ export function encodeBigintAsUint64(int: bigint): Uint8Array {
  * @returns - String encoded as a byte array.
  */
 export function encodeString(str: string): Uint8Array {
-  const encoded = new Uint8Array(8 + str.length);
-  encoded.set(encodeNumber(str.length));
-  encoded.set(stringToUint8Array(str), 8);
+  const byteArray = stringToUint8Array(str);
+  const encoded = new Uint8Array(8 + byteArray.length);
+  encoded.set(encodeNumber(byteArray.length));
+  encoded.set(byteArray, 8);
   return encoded;
 }
 

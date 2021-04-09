@@ -110,9 +110,12 @@ export function getEntryUrlForPortal(
     throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
   }
 
+  // We need to hash the data key in order to form the correct URL, as Sia hashes whatever data key we give it.
+  const dataKeyHash = toHexString(hashDataKey(dataKey));
+
   const query = {
     publickey: `ed25519:${publicKey}`,
-    datakey: toHexString(hashDataKey(dataKey)),
+    datakey: dataKeyHash,
     timeout,
   };
 
@@ -198,4 +201,34 @@ export function getSkylinkUrlForPortal(
     url = makeUrl(portalUrl, opts.endpointPath, skylink, path);
   }
   return addUrlQuery(url, query);
+}
+
+/**
+ * Constructs the full URL for the given domain,
+ * e.g. ("https://siasky.net", "dac.hns") => "https://dac.hns.siasky.net"
+ *
+ * @param portalUrl - The portal URL.
+ * @param domain - Domain.
+ * @returns - The full URL for the given domain.
+ */
+export function getFullDomainUrlForPortal(portalUrl: string, domain: string): string {
+  domain = trimSuffix(domain, "/");
+  return addSubdomain(portalUrl, domain);
+}
+
+// TODO: Expand to also take a fullURL instead of just a fullDomain.
+/**
+ * Extracts the domain from the given portal URL,
+ * e.g. ("https://siasky.net", "dac.hns.siasky.net") => "dac.hns"
+ *
+ * @param portalUrl - The portal URL.
+ * @param fullUrl - Full URL.
+ * @returns - The extracted domain.
+ */
+export function extractDomainForPortal(portalUrl: string, fullDomain: string): string {
+  const portalUrlObj = new URL(portalUrl);
+  const portalDomain = portalUrlObj.hostname;
+
+  const domain = trimSuffix(fullDomain, portalDomain, 1);
+  return trimSuffix(domain, ".");
 }

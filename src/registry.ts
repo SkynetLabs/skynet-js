@@ -5,7 +5,7 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultOptions } from "./utils/skylink";
-import { hexToUint8Array, isHexString, toHexString } from "./utils/string";
+import { hexToUint8Array, isHexString, toHexString, uint8ArrayToString } from "./utils/string";
 import { getEntryUrlForPortal } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 
@@ -158,7 +158,7 @@ export async function getEntry(
   // Use empty string if the data is empty.
   let data = "";
   if (response.data.data) {
-    data = Buffer.from(hexToUint8Array(response.data.data)).toString();
+    data = uint8ArrayToString(hexToUint8Array(response.data.data));
   }
   const signedEntry = {
     entry: {
@@ -246,14 +246,40 @@ export async function setEntry(
   };
   const privateKeyArray = hexToUint8Array(privateKey);
 
-  // Sign the entry.
-  const signature = sign(hashRegistryEntry(entry), privateKeyArray);
+  const signature: Uint8Array = await signEntry(privateKey, entry);
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(privateKeyArray);
+
+  return await this.registry.postSignedEntry(toHexString(publicKeyArray), entry, signature, opts);
+}
+
+export async function signEntry(privateKey: string, entry: RegistryEntry): Promise<Uint8Array> {
+  const privateKeyArray = hexToUint8Array(privateKey);
+
+  // Sign the entry.
+  // TODO: signature type should be Signature?
+  return sign(hashRegistryEntry(entry), privateKeyArray);
+}
+
+export async function postSignedEntry(
+  this: SkynetClient,
+  publicKey: string,
+  entry: RegistryEntry,
+  signature: Uint8Array,
+  customOptions?: CustomSetEntryOptions
+): Promise<void> {
+  // TODO: Check for valid imputs.
+
+  const opts = {
+    ...defaultSetEntryOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
   const data = {
     publickey: {
       algorithm: "ed25519",
-      key: Array.from(publicKeyArray),
+      key: Array.from(hexToUint8Array(publicKey)),
     },
     datakey: toHexString(hashDataKey(entry.datakey)),
     // Set the revision as a string here since the value may be up to 64 bits.

@@ -4,9 +4,13 @@ import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { BaseCustomOptions, uriSkynetPrefix } from "./utils/skylink";
-import { hexToUint8Array, isHexString, trimUriPrefix, toHexString } from "./utils/string";
+import { hexToUint8Array, isHexString, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
 import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
+
+export const JSON_RESPONSE_VERSION = 2;
+
+export type JsonData = Record<string, unknown>;
 
 /**
  * Custom get JSON options.
@@ -18,9 +22,9 @@ export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions & C
  */
 export type CustomSetJSONOptions = BaseCustomOptions & CustomSetEntryOptions & CustomUploadOptions;
 
-export type VersionedEntryData = {
-  data: Record<string, unknown> | null;
-  revision: bigint | null;
+export type JSONResponse = {
+  data: JsonData | null;
+  skylink: string | null;
 };
 
 /**
@@ -38,7 +42,7 @@ export async function getJSON(
   publicKey: string,
   dataKey: string,
   customOptions?: CustomGetJSONOptions
-): Promise<VersionedEntryData> {
+): Promise<JSONResponse> {
   const opts = {
     ...this.customOptions,
     ...customOptions,
@@ -47,7 +51,7 @@ export async function getJSON(
   // Lookup the registry entry.
   const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null) {
-    return { data: null, revision: null };
+    return { data: null, skylink: null };
   }
 
   // Download the data in that Skylink.
@@ -58,7 +62,16 @@ export async function getJSON(
     throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
   }
 
-  return { data, revision: entry.revision };
+  if (!(data["_data"] && data["_v"])) {
+    // Legacy data prior to v4, return as-is.
+    return { data, skylink };
+  }
+
+  const actualData = data["_data"];
+  if (typeof actualData !== "object" || data === null) {
+    throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
+  }
+  return { data: actualData as Record<string, unknown>, skylink };
 }
 
 /**
@@ -68,18 +81,16 @@ export async function getJSON(
  * @param privateKey - The user private key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.
- * @param [revision] - The revision number for the data entry.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @throws - Will throw if the given entry revision does not fit in 64 bits, or if the revision was not given, if the latest revision of the entry is the maximum revision allowed.
+ * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setJSON(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
-  json: Record<string, unknown>,
-  revision?: bigint,
+  json: JsonData,
   customOptions?: CustomSetJSONOptions
-): Promise<void> {
+): Promise<JSONResponse> {
   /* istanbul ignore next */
   if (typeof privateKey !== "string") {
     throw new Error(`Expected parameter privateKey to be type string, was type ${typeof privateKey}`);
@@ -100,47 +111,74 @@ export async function setJSON(
     ...customOptions,
   };
 
+  const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+
+  const [entry, skylink] = await getOrCreateRegistryEntry(this, publicKeyArray, dataKey, json, opts);
+
+  // Update the registry.
+  await this.registry.setEntry(privateKey, entry);
+
+  return { data: json, skylink };
+}
+
+export async function getOrCreateRegistryEntry(
+  client: SkynetClient,
+  publicKeyArray: Uint8Array,
+  dataKey: string,
+  json: JsonData,
+  customOptions?: CustomSetJSONOptions
+): Promise<[RegistryEntry, string]> {
+  const opts = {
+    ...client.customOptions,
+    ...customOptions,
+  };
+
+  // Set the hidden _data and _v fields.
+  const data = { _data: json, _v: JSON_RESPONSE_VERSION };
+
   // Create the data to upload to acquire its skylink.
-  const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
+  const dataKeyHex = toHexString(stringToUint8Array(dataKey));
+  const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.
-  const skyfilePromise: Promise<UploadRequestResponse> = this.uploadFile(file, opts);
-  let skyfile: UploadRequestResponse;
+  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, opts);
 
-  if (revision === undefined) {
-    // fetch the current value to find out the revision.
-    const { publicKey } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
-    // start getEntry, do not block.
-    const entryPromise: Promise<SignedRegistryEntry> = this.registry.getEntry(toHexString(publicKey), dataKey, opts);
-    let entry: SignedRegistryEntry;
+  // Fetch the current value to find out the revision.
+  //
+  // Start getEntry, do not block.
+  const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(
+    toHexString(publicKeyArray),
+    dataKey,
+    opts
+  );
 
-    // Block until both getEntry and Skyfile upload are finished.
-    [entry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([entryPromise, skyfilePromise]);
+  // Block until both getEntry and uploadFile are finished.
+  const [signedEntry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
+    entryPromise,
+    skyfilePromise,
+  ]);
 
-    if (entry.entry === null) {
-      revision = BigInt(0);
-    } else {
-      revision = entry.entry.revision + BigInt(1);
-    }
-
-    // Throw if the revision is already the maximum value.
-    if (revision > MAX_REVISION) {
-      throw new Error("Current entry already has maximum allowed revision, could not update the entry");
-    }
+  let revision: bigint;
+  if (signedEntry.entry === null) {
+    revision = BigInt(0);
   } else {
-    skyfile = await skyfilePromise;
+    revision = signedEntry.entry.revision + BigInt(1);
+  }
+
+  // Throw if the revision is already the maximum value.
+  if (revision > MAX_REVISION) {
+    throw new Error("Current entry already has maximum allowed revision, could not update the entry");
   }
 
   // Assert the input is 64 bits.
   assertUint64(revision);
 
-  // build the registry value
+  // Build the registry value.
+  const skylink = skyfile.skylink;
   const entry: RegistryEntry = {
     datakey: dataKey,
-    data: trimUriPrefix(skyfile.skylink, uriSkynetPrefix),
+    data: trimUriPrefix(skylink, uriSkynetPrefix),
     revision,
   };
-
-  // Update the registry.
-  await this.registry.setEntry(privateKey, entry);
+  return [entry, skylink];
 }
