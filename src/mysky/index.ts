@@ -260,8 +260,9 @@ export class MySky {
   }
 
   protected async launchUI(): Promise<Window> {
-    const mySkyUrl = this.connector.url;
-    const uiUrl = `${mySkyUrl}/${mySkyUiRelativeUrl}`;
+    const mySkyUrl = new URL(this.connector.url);
+    mySkyUrl.pathname = mySkyUiRelativeUrl;
+    const uiUrl = mySkyUrl.toString();
 
     // Open the window.
 
