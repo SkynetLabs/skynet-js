@@ -6,6 +6,16 @@ For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
 ## [4.0.0-beta]
 
+### Changed
+
+- **[Breaking change]** `client.db.getJSON` no longer returns `{ data, revision }` but instead `{ data, skylink }`.
+- **[Breaking change]** `client.db.setJSON` no longer accepts a revision number.
+- **[Breaking change]** `getSkylinkUrl`, `downloadFile`, `openFile`, and the HNS equivalents are all now `async`.
+- **[Breaking change]** `client.portalUrl` is now an async method instead of a variable.
+
+- Fixed Range Error on unicode data keys.
+- The SDK now supports cookies with requests that are "same-site" but "cross-origin." This allows accounts to be associated with requests made to API endpoints at the base portal URL.
+
 ### Added
 
 #### MySky
@@ -21,16 +31,6 @@ For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 - Added `signEntry` helper function.
 - Added `client.registry.postSignedEntry` helper method.
 - Added `client.initPortalUrl` method to manually initialize the portal URL before it is needed.
-
-### Changed
-
-- **[Breaking change]** `client.db.getJSON` no longer returns `{ data, revision }` but instead `{ data, skylink }`.
-- **[Breaking change]** `client.db.setJSON` no longer accepts a revision number.
-- **[Breaking change]** `getSkylinkUrl`, `downloadFile`, `openFile`, and the HNS equivalents are all now `async`.
-- **[Breaking change]** `client.portalUrl` is now an async method instead of a variable.
-
-- Fixed Range Error on unicode data keys.
-- The SDK now supports cookies with requests that are "same-site" but "cross-origin." This allows accounts to be associated with requests made to API endpoints at the base portal URL.
 
 ## [3.0.2-beta]
 
