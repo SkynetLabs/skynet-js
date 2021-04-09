@@ -12,7 +12,7 @@ import {
   PermType,
 } from "skynet-mysky-utils";
 
-import { Connector, CustomConnectorOptions } from "./connector";
+import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
 import { RegistryEntry } from "../registry";
@@ -22,18 +22,10 @@ import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 
-export type CustomMySkyOptions = CustomConnectorOptions & {
-  dev: boolean;
-};
-
-const defaultMySkyOptions = {
-  dev: false,
-};
-
 export async function loadMySky(
   this: SkynetClient,
   skappDomain?: string,
-  customOptions?: CustomMySkyOptions
+  customOptions?: CustomConnectorOptions
 ): Promise<MySky> {
   const mySky = await MySky.New(this, skappDomain, customOptions);
 
@@ -61,8 +53,8 @@ export class MySky {
     this.pendingPermissions = permissions;
   }
 
-  static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomMySkyOptions): Promise<MySky> {
-    const opts = { ...defaultMySkyOptions, ...customOptions };
+  static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
+    const opts = { ...defaultConnectorOptions, ...customOptions };
 
     // Enforce singleton.
     if (MySky.instance) {

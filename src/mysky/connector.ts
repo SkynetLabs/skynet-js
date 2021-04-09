@@ -4,11 +4,13 @@ import { createIframe, defaultHandshakeAttemptsInterval, defaultHandshakeMaxAtte
 import { SkynetClient } from "../client";
 
 export type CustomConnectorOptions = {
+  dev: boolean;
   handshakeMaxAttempts?: number;
   handshakeAttemptsInterval?: number;
 };
 
-const defaultConnectorOptions = {
+export const defaultConnectorOptions = {
+  dev: false,
   handshakeMaxAttempts: defaultHandshakeMaxAttempts,
   handshakeAttemptsInterval: defaultHandshakeAttemptsInterval,
 };
@@ -28,7 +30,10 @@ export class Connector {
     const opts = { ...defaultConnectorOptions, ...customOptions };
 
     // Get the URL for the domain on the current portal.
-    const domainUrl = await client.getFullDomainUrl(domain);
+    let domainUrl = await client.getFullDomainUrl(domain);
+    if (opts.dev) {
+      domainUrl = `${domainUrl}?dev=true`;
+    }
 
     // Create the iframe.
 
