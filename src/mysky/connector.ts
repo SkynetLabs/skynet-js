@@ -2,15 +2,18 @@ import { Connection, ParentHandshake, WindowMessenger } from "post-me";
 import { createIframe, defaultHandshakeAttemptsInterval, defaultHandshakeMaxAttempts } from "skynet-mysky-utils";
 
 import { SkynetClient } from "../client";
+import { addUrlQuery } from "../utils/url";
 
 export type CustomConnectorOptions = {
-  dev: boolean;
+  dev?: boolean;
+  debug?: boolean;
   handshakeMaxAttempts?: number;
   handshakeAttemptsInterval?: number;
 };
 
 export const defaultConnectorOptions = {
   dev: false,
+  debug: false,
   handshakeMaxAttempts: defaultHandshakeMaxAttempts,
   handshakeAttemptsInterval: defaultHandshakeAttemptsInterval,
 };
@@ -32,7 +35,10 @@ export class Connector {
     // Get the URL for the domain on the current portal.
     let domainUrl = await client.getFullDomainUrl(domain);
     if (opts.dev) {
-      domainUrl = `${domainUrl}?dev=true`;
+      domainUrl = addUrlQuery(domainUrl, {dev: "true"});
+    }
+    if (opts.debug) {
+      domainUrl = addUrlQuery(domainUrl, {debug: "true"});
     }
 
     // Create the iframe.
