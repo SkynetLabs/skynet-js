@@ -35,10 +35,10 @@ export class Connector {
     // Get the URL for the domain on the current portal.
     let domainUrl = await client.getFullDomainUrl(domain);
     if (opts.dev) {
-      domainUrl = addUrlQuery(domainUrl, {dev: "true"});
+      domainUrl = addUrlQuery(domainUrl, { dev: "true" });
     }
     if (opts.debug) {
-      domainUrl = addUrlQuery(domainUrl, {debug: "true"});
+      domainUrl = addUrlQuery(domainUrl, { debug: "true" });
     }
 
     // Create the iframe.

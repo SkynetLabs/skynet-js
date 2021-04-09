@@ -216,6 +216,7 @@ export function getFullDomainUrlForPortal(portalUrl: string, domain: string): st
   return addSubdomain(portalUrl, domain);
 }
 
+// TODO: Expand to also take a fullURL instead of just a fullDomain.
 /**
  * Extracts the domain from the given portal URL,
  * e.g. ("https://siasky.net", "dac.hns.siasky.net") => "dac.hns"
