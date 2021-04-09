@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "3.1.0-beta",
+  "version": "4.0.0-beta",
   "description": "Sia Skynet Javascript Client",
   "main": "dist/index.js",
   "files": [
@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
-    "lint:eslint": "eslint --ext .ts utils src --max-warnings 0",
+    "lint:eslint": "eslint --ext .ts utils src --max-warnings 30",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",
     "test": "jest --coverage --coverageDirectory ../coverage"
