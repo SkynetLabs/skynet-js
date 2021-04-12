@@ -214,9 +214,9 @@ function validateUploadResponse(response: AxiosResponse): void {
       throw new Error("response.data field missing");
     }
 
-    validateString("response.data.skylink", response.data.skylink, "upload response field");
-    validateString("response.data.merkleroot", response.data.merkleroot, "upload response field");
-    validateNumber("response.data.bitfield", response.data.bitfield, "upload response field");
+    validateString("skylink", response.data.skylink, "upload response field");
+    validateString("merkleroot", response.data.merkleroot, "upload response field");
+    validateNumber("bitfield", response.data.bitfield, "upload response field");
   } catch (err) {
     throw new Error(
       `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
