@@ -15,7 +15,6 @@ import {
   validateOptionalObject,
   validateString,
 } from "./utils/validation";
-import { extractBaseCustomOptions } from "./utils/options";
 
 /**
  * Custom get entry options.
@@ -44,36 +43,6 @@ export const defaultSetEntryOptions = {
   ...defaultBaseOptions,
   endpointSetEntry: "/skynet/registry",
 };
-
-/**
- * Extract only the get entry custom options from the given options.
- *
- * @param opts - The given options.
- * @returns - The extracted get entry custom options.
- */
-export function extractGetEntryOptions(opts: Record<string, unknown>): CustomGetEntryOptions {
-  const baseOpts = extractBaseCustomOptions(opts);
-  const getEntryOpts = (({ endpointGetEntry }) => ({
-    endpointGetEntry,
-  }))(opts);
-  // @ts-expect-error - We can't ensure the correct types here.
-  return { ...baseOpts, ...getEntryOpts };
-}
-
-/**
- * Extract only the set entry custom options from the given options.
- *
- * @param opts - The given options.
- * @returns - The extracted set entry custom options.
- */
-export function extractSetEntryOptions(opts: Record<string, unknown>): CustomSetEntryOptions {
-  const baseOpts = extractBaseCustomOptions(opts);
-  const setEntryOpts = (({ endpointSetEntry }) => ({
-    endpointSetEntry,
-  }))(opts);
-  // @ts-expect-error - We can't ensure the correct types here.
-  return { ...baseOpts, ...setEntryOpts };
-}
 
 export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 

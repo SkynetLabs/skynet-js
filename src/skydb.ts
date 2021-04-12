@@ -8,15 +8,14 @@ import {
   RegistryEntry,
   SignedRegistryEntry,
   CustomSetEntryOptions,
-  extractGetEntryOptions,
-  extractSetEntryOptions,
 } from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/skylink";
 import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
-import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse, extractUploadOptions } from "./upload";
-import { defaultDownloadOptions, CustomDownloadOptions, extractDownloadOptions } from "./download";
+import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
+import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
+import { extractOptions } from "./utils/options";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -74,7 +73,7 @@ export async function getJSON(
   };
 
   // Lookup the registry entry.
-  const getEntryOpts = extractGetEntryOptions(opts);
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
   const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
   if (entry === null) {
     return { data: null, skylink: null };
@@ -82,7 +81,7 @@ export async function getJSON(
 
   // Download the data in that Skylink.
   const skylink = entry.data;
-  const downloadOpts = extractDownloadOptions(opts);
+  const downloadOpts = extractOptions(opts, defaultDownloadOptions);
   const { data } = await this.getFileContent<Record<string, unknown>>(skylink, downloadOpts);
 
   if (typeof data !== "object" || data === null) {
@@ -134,7 +133,7 @@ export async function setJSON(
   const [entry, skylink] = await getOrCreateRegistryEntry(this, publicKeyArray, dataKey, json, opts);
 
   // Update the registry.
-  const setEntryOpts = extractSetEntryOptions(opts);
+  const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 
   return { data: json, skylink };
@@ -163,13 +162,13 @@ export async function getOrCreateRegistryEntry(
   const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.
-  const uploadOpts = extractUploadOptions(opts);
+  const uploadOpts = extractOptions(opts, defaultUploadOptions);
   const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
 
   // Fetch the current value to find out the revision.
   //
   // Start getEntry, do not block.
-  const getEntryOpts = extractGetEntryOptions(opts);
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
   const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(
     toHexString(publicKeyArray),
     dataKey,

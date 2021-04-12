@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 
-import { BaseCustomOptions, defaultBaseOptions, extractBaseCustomOptions } from "./utils/options";
+import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { formatSkylink, uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/skylink";
 import { trimUriPrefix } from "./utils/string";
 import { addSubdomain, addUrlQuery, getSkylinkUrlForPortal, makeUrl } from "./utils/url";
@@ -96,26 +96,6 @@ const defaultResolveHnsOptions = {
   ...defaultBaseOptions,
   endpointDownloadHnsres: "hnsres",
 };
-
-/**
- * Extract only the download custom options from the given options.
- *
- * @param opts - The given options.
- * @returns - The extracted download custom options.
- */
-export function extractDownloadOptions(opts: Record<string, unknown>): CustomDownloadOptions {
-  const baseOpts = extractBaseCustomOptions(opts);
-  const downloadOpts = (({ endpointDownload, download, noResponseMetadata, path, query, subdomain }) => ({
-    endpointDownload,
-    download,
-    noResponseMetadata,
-    path,
-    query,
-    subdomain,
-  }))(opts);
-  // @ts-expect-error - We can't ensure the correct types here.
-  return { ...baseOpts, ...downloadOpts };
-}
 
 /**
  * Initiates a download of the content of the skylink within the browser.

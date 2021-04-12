@@ -10,7 +10,6 @@ import {
   validateOptionalObject,
   validateString,
 } from "./utils/validation";
-import { extractBaseCustomOptions } from "./utils/options";
 
 /**
  * Custom upload options.
@@ -50,31 +49,6 @@ export const defaultUploadOptions = {
   customFilename: "",
   query: undefined,
 };
-
-/**
- * Extract only the upload custom options from the given options.
- *
- * @param opts - The given options.
- * @returns - The extracted upload custom options.
- */
-export function extractUploadOptions(opts: Record<string, unknown>): CustomUploadOptions {
-  const baseOpts = extractBaseCustomOptions(opts);
-  const uploadOpts = (({
-    endpointUpload,
-    portalFileFieldname,
-    portalDirectoryFileFieldname,
-    customFilename,
-    query,
-  }) => ({
-    endpointUpload,
-    portalFileFieldname,
-    portalDirectoryFileFieldname,
-    customFilename,
-    query,
-  }))(opts);
-  // @ts-expect-error - We can't ensure the correct types here.
-  return { ...baseOpts, ...uploadOpts };
-}
 
 /**
  * Uploads a file to Skynet.

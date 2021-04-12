@@ -15,16 +15,19 @@ export const defaultBaseOptions = {
 };
 
 /**
- * Extract only the base custom options from the given options.
+ * Extract only the model's custom options from the given options.
  *
  * @param opts - The given options.
- * @returns - The extracted base custom options.
+ * @param model - The model options.
+ * @returns - The extracted custom options.
  */
-export function extractBaseCustomOptions(opts: Record<string, unknown>): BaseCustomOptions {
-  // @ts-expect-error - We can't ensure the correct types here.
-  return (({ APIKey, customUserAgent, onUploadProgress }) => ({
-    APIKey,
-    customUserAgent,
-    onUploadProgress,
-  }))(opts);
+export function extractOptions<T extends Record<string, unknown>>(opts: Record<string, unknown>, model: T): T {
+  const result: Record<string, unknown> = {};
+  for (const property in model) {
+    if (Object.prototype.hasOwnProperty.call(model, property)) {
+      result[property] = opts[property];
+    }
+  }
+
+  return result as T;
 }
