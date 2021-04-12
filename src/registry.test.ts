@@ -105,12 +105,14 @@ describe("setEntry", () => {
   it("Should throw an error if the private key is not hex-encoded", async () => {
     // @ts-expect-error We pass an invalid private key on purpose.
     await expect(client.registry.setEntry("foo", {})).rejects.toThrowError(
-      "Expected parameter privateKey to be a hex-encoded string"
+      "Expected parameter 'privateKey' to be a hex-encoded string, was 'foo'"
     );
   });
 
   it("Should throw an error if the entry is not an object", async () => {
     // @ts-expect-error We do not pass an entry on purpose.
-    await expect(client.registry.setEntry(privateKey)).rejects.toThrowError("Expected parameter entry to be an object");
+    await expect(client.registry.setEntry(privateKey)).rejects.toThrowError(
+      "Expected parameter 'entry' to be type 'object', was 'undefined'"
+    );
   });
 });

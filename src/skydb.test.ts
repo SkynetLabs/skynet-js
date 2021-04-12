@@ -153,21 +153,21 @@ describe("setJSON", () => {
 
   it("Should throw an error if the private key is not hex-encoded", async () => {
     await expect(client.db.setJSON("foo", dataKey, {})).rejects.toThrowError(
-      "Expected parameter privateKey to be a hex-encoded string"
+      "Expected parameter 'privateKey' to be a hex-encoded string, was 'foo'"
     );
   });
 
   it("Should throw an error if the data key is not provided", async () => {
     // @ts-expect-error We do not pass the datakey on purpose.
     await expect(client.db.setJSON(privateKey)).rejects.toThrowError(
-      "Expected parameter dataKey to be type string, was type undefined"
+      "Expected parameter 'dataKey' to be type 'string', was 'undefined'"
     );
   });
 
   it("Should throw an error if the json is not provided", async () => {
     // @ts-expect-error We do not pass the json on purpose.
     await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
-      "Expected parameter json to be an object"
+      "Expected parameter 'json' to be type 'object', was 'undefined'"
     );
   });
 });

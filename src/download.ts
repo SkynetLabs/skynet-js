@@ -1,13 +1,15 @@
+import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
+
+import { BaseCustomOptions, defaultOptions, extractBaseCustomOptions,} from "./utils/options";
 import {
-  BaseCustomOptions,
-  defaultOptions,
   formatSkylink,
   uriHandshakePrefix,
   uriHandshakeResolverPrefix,
 } from "./utils/skylink";
 import { trimUriPrefix } from "./utils/string";
 import { addSubdomain, addUrlQuery, getSkylinkUrlForPortal, makeUrl } from "./utils/url";
+import { validateOptionalObject, validateString } from "./utils/validation";
 
 /**
  * Custom download options.
@@ -78,14 +80,33 @@ export type ResolveHnsResponse = {
 
 export const defaultDownloadOptions = {
   ...defaultOptions("/"),
+  download: false,
+  noResponseMetadata: false,
+  path: undefined,
+  query: undefined,
+  subdomain: false,
 };
 const defaultDownloadHnsOptions = {
+  ...defaultDownloadOptions,
   ...defaultOptions("/hns"),
   hnsSubdomain: "hns",
 };
 const defaultResolveHnsOptions = {
   ...defaultOptions("/hnsres"),
 };
+
+export function extractDownloadOptions(opts: Record<string, unknown>): CustomDownloadOptions {
+  const baseOpts = extractBaseCustomOptions(opts);
+  const downloadOpts = (({ download, noResponseMetadata, path, query, subdomain }) => ({
+    download,
+    noResponseMetadata,
+    path,
+    query,
+    subdomain,
+  }))(opts);
+  // @ts-expect-error
+  return { ...baseOpts, ...downloadOpts };
+}
 
 /**
  * Initiates a download of the content of the skylink within the browser.
@@ -102,12 +123,10 @@ export async function downloadFile(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<string> {
-  /* istanbul ignore next */
-  if (typeof skylinkUrl !== "string") {
-    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
-  }
+  // Validation is done in `getSkylinkUrl`.
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
+
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   // Download the url.
@@ -131,12 +150,10 @@ export async function downloadFileHns(
   domain: string,
   customOptions?: CustomDownloadOptions
 ): Promise<string> {
-  /* istanbul ignore next */
-  if (typeof domain !== "string") {
-    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
-  }
+  // Validation is done in `getHnsUrl`.
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
+
   const url = await this.getHnsUrl(domain, opts);
 
   // Download the url.
@@ -160,6 +177,8 @@ export async function getSkylinkUrl(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<string> {
+  // Validation is done in `getSkylinkUrlForPortal`.
+
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   const portalUrl = await this.portalUrl();
@@ -182,12 +201,11 @@ export async function getHnsUrl(
   domain: string,
   customOptions?: CustomHnsDownloadOptions
 ): Promise<string> {
-  /* istanbul ignore next */
-  if (typeof domain !== "string") {
-    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
-  }
+  validateString("domain", domain, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultDownloadHnsOptions);
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+
   const query = opts.query ?? {};
   if (opts.download) {
     query.attachment = true;
@@ -201,6 +219,7 @@ export async function getHnsUrl(
   const url = opts.subdomain
     ? addSubdomain(addSubdomain(portalUrl, opts.hnsSubdomain), domain)
     : makeUrl(portalUrl, opts.endpointPath, domain);
+
   return addUrlQuery(url, query);
 }
 
@@ -219,15 +238,14 @@ export async function getHnsresUrl(
   domain: string,
   customOptions?: BaseCustomOptions
 ): Promise<string> {
-  /* istanbul ignore next */
-  if (typeof domain !== "string") {
-    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
-  }
+  validateString("domain", domain, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultResolveHnsOptions);
 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
   const portalUrl = await this.portalUrl();
+
   return makeUrl(portalUrl, opts.endpointPath, domain);
 }
 
@@ -246,12 +264,10 @@ export async function getMetadata(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<GetMetadataResponse> {
-  /* istanbul ignore next */
-  if (typeof skylinkUrl !== "string") {
-    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
-  }
+  // Validation is done in `getSkylinkUrl`.
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   const response = await this.executeRequest({
@@ -289,10 +305,7 @@ export async function getFileContent<T = unknown>(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
-  /* istanbul ignore next */
-  if (typeof skylinkUrl !== "string") {
-    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
-  }
+  // Validation is done in `getSkylinkUrl`.
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
@@ -315,7 +328,10 @@ export async function getFileContentHns<T = unknown>(
   domain: string,
   customOptions?: CustomHnsDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
+  // Validation is done in `getHnsUrl`.
+
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+
   const url = await this.getHnsUrl(domain, opts);
 
   return this.getFileContentRequest<T>(url, opts);
@@ -335,6 +351,8 @@ export async function getFileContentRequest<T = unknown>(
   url: string,
   customOptions?: CustomDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
+  // Not publicly available, don't validate input.
+
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   // GET request the data at the skylink.
@@ -378,12 +396,10 @@ export async function openFile(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<string> {
-  /* istanbul ignore next */
-  if (typeof skylinkUrl !== "string") {
-    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
-  }
+  // Validation is done in `getSkylinkUrl`.
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   window.open(url, "_blank");
@@ -406,12 +422,10 @@ export async function openFileHns(
   domain: string,
   customOptions?: CustomHnsDownloadOptions
 ): Promise<string> {
-  /* istanbul ignore next */
-  if (typeof domain !== "string") {
-    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
-  }
+  // Validation is done in `getHnsUrl`.
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+
   const url = await this.getHnsUrl(domain, opts);
 
   // Open the url in a new tab.
@@ -435,12 +449,10 @@ export async function resolveHns(
   domain: string,
   customOptions?: BaseCustomOptions
 ): Promise<ResolveHnsResponse> {
-  /* istanbul ignore next */
-  if (typeof domain !== "string") {
-    throw new Error(`Expected parameter domain to be type string, was type ${typeof domain}`);
-  }
+  // Validation is done in `getHnsresUrl`.
 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
+
   const url = await this.getHnsresUrl(domain, opts);
 
   // Get the txt record from the hnsres domain on the portal.
@@ -450,5 +462,21 @@ export async function resolveHns(
     url,
   });
 
+  validateResolveHnsResponse(response);
+
   return response.data;
+}
+
+function validateResolveHnsResponse(response: AxiosResponse): void {
+  try {
+    if (!response.data) {
+      throw new Error("response.data field missing");
+    }
+
+    validateString("response.data.skylink", response.data.skylink, "upload response field");
+  } catch (err) {
+    throw new Error(
+      `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+    );
+  }
 }

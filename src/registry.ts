@@ -4,19 +4,25 @@ import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
-import { BaseCustomOptions, defaultOptions } from "./utils/skylink";
-import { hexToUint8Array, isHexString, toHexString, uint8ArrayToString } from "./utils/string";
+import { BaseCustomOptions, defaultOptions } from "./utils/options";
+import { hexToUint8Array, toHexString, uint8ArrayToString } from "./utils/string";
 import { getEntryUrlForPortal } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
+import {
+  validateBigint,
+  validateHexString,
+  validateObject,
+  validateOptionalObject,
+  validateString,
+} from "./utils/validation";
+import { extractBaseCustomOptions } from "./utils/options";
 
 /**
  * Custom get entry options.
  *
  * @property [timeout=5] - The custom timeout for getting an entry, in seconds. The maximum value allowed is 300.
  */
-export type CustomGetEntryOptions = BaseCustomOptions & {
-  timeout?: number;
-};
+export type CustomGetEntryOptions = BaseCustomOptions;
 
 /**
  * Custom set entry options.
@@ -25,14 +31,21 @@ export type CustomSetEntryOptions = BaseCustomOptions;
 
 export const defaultGetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
-  timeout: 5,
 };
 
-const defaultSetEntryOptions = {
+export const defaultSetEntryOptions = {
   ...defaultOptions("/skynet/registry"),
 };
 
-export const MAX_GET_ENTRY_TIMEOUT = 300; // 5 minutes
+export function extractGetEntryOptions(opts: Record<string, unknown>): CustomGetEntryOptions {
+  return extractBaseCustomOptions(opts);
+}
+
+export function extractSetEntryOptions(opts: Record<string, unknown>): CustomSetEntryOptions {
+  return extractBaseCustomOptions(opts);
+}
+
+export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 
 /**
  * Regex for JSON revision value without quotes.
@@ -145,13 +158,13 @@ export async function getEntry(
   }
 
   // Sanity check.
-  if (
-    typeof response.data.data !== "string" ||
-    typeof response.data.revision !== "string" ||
-    typeof response.data.signature !== "string"
-  ) {
+  try {
+    validateString("response.data.data", response.data.data, "entry response field");
+    validateString("response.data.revision", response.data.revision, "entry response field");
+    validateString("response.data.signature", response.data.signature, "entry response field");
+  } catch (err) {
     throw new Error(
-      "Did not get a complete entry response despite a successful request. Please try again and report this issue to the devs if it persists."
+      `Did not get a complete entry response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
     );
   }
 
@@ -199,6 +212,8 @@ export async function getEntryUrl(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<string> {
+  // Validation is done in `getEntryUrlForPortal`.
+
   const opts = {
     ...defaultGetEntryOptions,
     ...this.customOptions,
@@ -225,16 +240,9 @@ export async function setEntry(
   entry: RegistryEntry,
   customOptions?: CustomSetEntryOptions
 ): Promise<void> {
-  /* istanbul ignore next */
-  if (typeof privateKey !== "string") {
-    throw new Error(`Expected parameter privateKey to be type string, was type ${typeof privateKey}`);
-  }
-  if (!isHexString(privateKey)) {
-    throw new Error("Expected parameter privateKey to be a hex-encoded string");
-  }
-  if (typeof entry !== "object" || entry === null) {
-    throw new Error("Expected parameter entry to be an object");
-  }
+  validateHexString("privateKey", privateKey, "parameter");
+  validateRegistryEntry("entry", entry, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
 
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
@@ -254,6 +262,8 @@ export async function setEntry(
 }
 
 export async function signEntry(privateKey: string, entry: RegistryEntry): Promise<Uint8Array> {
+  // TODO: Publicly available, validate input.
+
   const privateKeyArray = hexToUint8Array(privateKey);
 
   // Sign the entry.
@@ -302,4 +312,11 @@ export async function postSignedEntry(
       return json.replace(regexRevisionWithQuotes, '"revision":$1');
     },
   });
+}
+
+export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
+  validateObject(name, value, valueKind);
+  validateString(`${name}.datakey`, (value as RegistryEntry).datakey, `${valueKind} field`);
+  validateString(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
+  validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
 }

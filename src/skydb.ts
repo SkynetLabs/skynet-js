@@ -1,12 +1,22 @@
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
-import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
+import {
+  defaultGetEntryOptions,
+  defaultSetEntryOptions,
+  CustomGetEntryOptions,
+  RegistryEntry,
+  SignedRegistryEntry,
+  CustomSetEntryOptions,
+  extractGetEntryOptions,
+  extractSetEntryOptions,
+} from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
-import { BaseCustomOptions, uriSkynetPrefix } from "./utils/skylink";
-import { hexToUint8Array, isHexString, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
-import { CustomUploadOptions, UploadRequestResponse } from "./upload";
-import { CustomDownloadOptions } from "./download";
+import { uriSkynetPrefix } from "./utils/skylink";
+import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
+import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse, extractUploadOptions } from "./upload";
+import { defaultDownloadOptions, CustomDownloadOptions, extractDownloadOptions } from "./download";
+import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -15,12 +25,23 @@ export type JsonData = Record<string, unknown>;
 /**
  * Custom get JSON options.
  */
-export type CustomGetJSONOptions = BaseCustomOptions & CustomGetEntryOptions & CustomDownloadOptions;
+export type CustomGetJSONOptions = CustomGetEntryOptions & CustomDownloadOptions;
+
+export const defaultGetJSONOptions = {
+  ...defaultGetEntryOptions,
+  ...defaultDownloadOptions,
+};
 
 /**
  * Custom set JSON options.
  */
-export type CustomSetJSONOptions = BaseCustomOptions & CustomSetEntryOptions & CustomUploadOptions;
+export type CustomSetJSONOptions = CustomGetJSONOptions & CustomSetEntryOptions & CustomUploadOptions;
+
+export const defaultSetJSONOptions = {
+  ...defaultGetJSONOptions,
+  ...defaultSetEntryOptions,
+  ...defaultUploadOptions,
+};
 
 export type JSONResponse = {
   data: JsonData | null;
@@ -43,7 +64,11 @@ export async function getJSON(
   dataKey: string,
   customOptions?: CustomGetJSONOptions
 ): Promise<JSONResponse> {
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+  // Rest of validation is done in `getEntry`.
+
   const opts = {
+    ...defaultGetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
@@ -56,7 +81,8 @@ export async function getJSON(
 
   // Download the data in that Skylink.
   const skylink = entry.data;
-  const { data } = await this.getFileContent<Record<string, unknown>>(skylink, opts);
+  const downloadOpts = extractDownloadOptions(opts);
+  const { data } = await this.getFileContent<Record<string, unknown>>(skylink, downloadOpts);
 
   if (typeof data !== "object" || data === null) {
     throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
@@ -91,22 +117,13 @@ export async function setJSON(
   json: JsonData,
   customOptions?: CustomSetJSONOptions
 ): Promise<JSONResponse> {
-  /* istanbul ignore next */
-  if (typeof privateKey !== "string") {
-    throw new Error(`Expected parameter privateKey to be type string, was type ${typeof privateKey}`);
-  }
-  /* istanbul ignore next */
-  if (typeof dataKey !== "string") {
-    throw new Error(`Expected parameter dataKey to be type string, was type ${typeof dataKey}`);
-  }
-  if (!isHexString(privateKey)) {
-    throw new Error("Expected parameter privateKey to be a hex-encoded string");
-  }
-  if (typeof json !== "object" || json === null) {
-    throw new Error("Expected parameter json to be an object");
-  }
+  validateHexString("privateKey", privateKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateObject("json", json, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
 
   const opts = {
+    ...defaultSetEntryOptions,
     ...this.customOptions,
     ...customOptions,
   };
@@ -116,7 +133,8 @@ export async function setJSON(
   const [entry, skylink] = await getOrCreateRegistryEntry(this, publicKeyArray, dataKey, json, opts);
 
   // Update the registry.
-  await this.registry.setEntry(privateKey, entry);
+  const setEntryOpts = extractSetEntryOptions(opts);
+  await this.registry.setEntry(privateKey, entry, setEntryOpts);
 
   return { data: json, skylink };
 }
@@ -128,7 +146,10 @@ export async function getOrCreateRegistryEntry(
   json: JsonData,
   customOptions?: CustomSetJSONOptions
 ): Promise<[RegistryEntry, string]> {
+  // Not publicly available, don't validate input.
+
   const opts = {
+    ...defaultSetJSONOptions,
     ...client.customOptions,
     ...customOptions,
   };
@@ -141,15 +162,17 @@ export async function getOrCreateRegistryEntry(
   const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.
-  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, opts);
+  const uploadOpts = extractUploadOptions(opts);
+  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
 
   // Fetch the current value to find out the revision.
   //
   // Start getEntry, do not block.
+  const getEntryOpts = extractGetEntryOptions(opts);
   const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(
     toHexString(publicKeyArray),
     dataKey,
-    opts
+    getEntryOpts
   );
 
   // Block until both getEntry and uploadFile are finished.

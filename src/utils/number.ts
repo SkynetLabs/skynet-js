@@ -1,3 +1,5 @@
+import { validateBigint } from "./validation";
+
 /**
  * The maximum allowed value for an entry revision. Setting an entry revision to this value prevents it from being updated further.
  */
@@ -11,10 +13,7 @@ export const MAX_REVISION = BigInt("18446744073709551615"); // max uint64
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt/asUintN | MDN Demo}
  */
 export function assertUint64(int: bigint): void {
-  /* istanbul ignore next */
-  if (typeof int !== "bigint") {
-    throw new Error(`Expected parameter int to be type bigint, was type ${typeof int}`);
-  }
+  validateBigint("int", int, "parameter");
 
   if (int < BigInt(0)) {
     throw new Error(`Argument ${int} must be an unsigned 64-bit integer; was negative`);

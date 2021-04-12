@@ -160,7 +160,6 @@ export class SkynetClient {
           url: this.initialPortalUrl,
           endpointPath: "/",
         }).then((response) => {
-          /* istanbul ignore next */
           if (typeof response.headers === "undefined") {
             reject(
               new Error(

@@ -7,6 +7,7 @@ import { sign } from "tweetnacl";
 import { RegistryEntry } from "./registry";
 import { assertUint64 } from "./utils/number";
 import { hexToUint8Array, stringToUint8Array, toHexString } from "./utils/string";
+import { validateNumber, validateString } from "./utils/validation";
 
 export type Signature = Buffer;
 
@@ -98,14 +99,8 @@ export function encodeString(str: string): Uint8Array {
  * @throws - Will throw if the inputs are not strings.
  */
 export function deriveChildSeed(masterSeed: string, seed: string): string {
-  /* istanbul ignore next */
-  if (typeof masterSeed !== "string") {
-    throw new Error(`Expected parameter masterSeed to be type string, was type ${typeof masterSeed}`);
-  }
-  /* istanbul ignore next */
-  if (typeof seed !== "string") {
-    throw new Error(`Expected parameter seed to be type string, was type ${typeof seed}`);
-  }
+  validateString("masterSeed", masterSeed, "parameter");
+  validateString("seed", seed, "parameter");
 
   return toHexString(hashAll(encodeString(masterSeed), encodeString(seed)));
 }
@@ -117,6 +112,8 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
  * @returns - The generated key pair and seed.
  */
 export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
+  validateNumber("length", length, "parameter");
+
   const seed = makeSeed(length);
   return { ...genKeyPairFromSeed(seed), seed };
 }
@@ -129,15 +126,13 @@ export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
  * @throws - Will throw if the input is not a string.
  */
 export function genKeyPairFromSeed(seed: string): KeyPair {
-  /* istanbul ignore next */
-  if (typeof seed !== "string") {
-    throw new Error(`Expected parameter seed to be type string, was type ${typeof seed}`);
-  }
+  validateString("seed", seed, "parameter");
 
   // Get a 32-byte key.
   const derivedKey = misc.pbkdf2(seed, "", 1000, 32 * 8);
   const derivedKeyHex = codec.hex.fromBits(derivedKey);
   const { publicKey, secretKey } = sign.keyPair.fromSeed(hexToUint8Array(derivedKeyHex));
+
   return { publicKey: toHexString(publicKey), privateKey: toHexString(secretKey) };
 }
 
