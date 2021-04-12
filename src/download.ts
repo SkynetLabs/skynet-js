@@ -1,12 +1,8 @@
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 
-import { BaseCustomOptions, defaultOptions, extractBaseCustomOptions,} from "./utils/options";
-import {
-  formatSkylink,
-  uriHandshakePrefix,
-  uriHandshakeResolverPrefix,
-} from "./utils/skylink";
+import { BaseCustomOptions, defaultBaseOptions, extractBaseCustomOptions } from "./utils/options";
+import { formatSkylink, uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/skylink";
 import { trimUriPrefix } from "./utils/string";
 import { addSubdomain, addUrlQuery, getSkylinkUrlForPortal, makeUrl } from "./utils/url";
 import { validateOptionalObject, validateString } from "./utils/validation";
@@ -14,6 +10,7 @@ import { validateOptionalObject, validateString } from "./utils/validation";
 /**
  * Custom download options.
  *
+ * @property [endpointDownload] - The relative URL path of the portal endpoint to contact.
  * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
  * @property [noResponseMetadata=false] - Download without metadata in the response.
  * @property [path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
@@ -21,6 +18,7 @@ import { validateOptionalObject, validateString } from "./utils/validation";
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
  */
 export type CustomDownloadOptions = BaseCustomOptions & {
+  endpointDownload?: string;
   download?: boolean;
   noResponseMetadata?: boolean;
   path?: string;
@@ -31,9 +29,11 @@ export type CustomDownloadOptions = BaseCustomOptions & {
 /**
  * Custom HNS download options.
  *
+ * @property [endpointDownloadHns] - The relative URL path of the portal endpoint to contact.
  * @property [hnsSubdomain="hns"] - The name of the hns subdomain on the portal.
  */
 export type CustomHnsDownloadOptions = CustomDownloadOptions & {
+  endpointDownloadHns?: string;
   hnsSubdomain?: string;
 };
 
@@ -79,7 +79,8 @@ export type ResolveHnsResponse = {
 };
 
 export const defaultDownloadOptions = {
-  ...defaultOptions("/"),
+  ...defaultBaseOptions,
+  endpointDownload: "/",
   download: false,
   noResponseMetadata: false,
   path: undefined,
@@ -88,23 +89,31 @@ export const defaultDownloadOptions = {
 };
 const defaultDownloadHnsOptions = {
   ...defaultDownloadOptions,
-  ...defaultOptions("/hns"),
+  endpointDownloadHns: "hns",
   hnsSubdomain: "hns",
 };
 const defaultResolveHnsOptions = {
-  ...defaultOptions("/hnsres"),
+  ...defaultBaseOptions,
+  endpointDownloadHnsres: "hnsres",
 };
 
+/**
+ * Extract only the download custom options from the given options.
+ *
+ * @param opts - The given options.
+ * @returns - The extracted download custom options.
+ */
 export function extractDownloadOptions(opts: Record<string, unknown>): CustomDownloadOptions {
   const baseOpts = extractBaseCustomOptions(opts);
-  const downloadOpts = (({ download, noResponseMetadata, path, query, subdomain }) => ({
+  const downloadOpts = (({ endpointDownload, download, noResponseMetadata, path, query, subdomain }) => ({
+    endpointDownload,
     download,
     noResponseMetadata,
     path,
     query,
     subdomain,
   }))(opts);
-  // @ts-expect-error
+  // @ts-expect-error - We can't ensure the correct types here.
   return { ...baseOpts, ...downloadOpts };
 }
 
@@ -218,7 +227,7 @@ export async function getHnsUrl(
   const portalUrl = await this.portalUrl();
   const url = opts.subdomain
     ? addSubdomain(addSubdomain(portalUrl, opts.hnsSubdomain), domain)
-    : makeUrl(portalUrl, opts.endpointPath, domain);
+    : makeUrl(portalUrl, opts.endpointDownloadHns, domain);
 
   return addUrlQuery(url, query);
 }
@@ -246,7 +255,7 @@ export async function getHnsresUrl(
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
   const portalUrl = await this.portalUrl();
 
-  return makeUrl(portalUrl, opts.endpointPath, domain);
+  return makeUrl(portalUrl, opts.endpointDownloadHnsres, domain);
 }
 
 /**
@@ -272,6 +281,7 @@ export async function getMetadata(
 
   const response = await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointDownload,
     method: "head",
     url,
   });
@@ -308,6 +318,7 @@ export async function getFileContent<T = unknown>(
   // Validation is done in `getSkylinkUrl`.
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
   return this.getFileContentRequest<T>(url, opts);
@@ -358,6 +369,7 @@ export async function getFileContentRequest<T = unknown>(
   // GET request the data at the skylink.
   const response = await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointDownload,
     method: "get",
     url,
   });
@@ -458,6 +470,7 @@ export async function resolveHns(
   // Get the txt record from the hnsres domain on the portal.
   const response = await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointDownloadHnsres,
     method: "get",
     url,
   });

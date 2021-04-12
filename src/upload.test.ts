@@ -139,10 +139,14 @@ describe("uploadFile", () => {
 
   it("Trying to upload with a skykey should throw an error", async () => {
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
-    await expect(client.uploadFile(file, { skykeyName: "test" })).rejects.toThrow();
+    await expect(client.uploadFile(file, { skykeyName: "test" })).rejects.toThrow(
+      "Object parameter 'customOptions' contains unexpected property 'skykeyName'"
+    );
 
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
-    await expect(client.uploadFile(file, { skykeyId: "test" })).rejects.toThrow();
+    await expect(client.uploadFile(file, { skykeyId: "test" })).rejects.toThrow(
+      "Object parameter 'customOptions' contains unexpected property 'skykeyId'"
+    );
   });
 
   it("should throw if a skylink was not returned", async () => {

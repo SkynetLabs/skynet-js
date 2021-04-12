@@ -2,32 +2,27 @@ import { CustomClientOptions } from "../client";
 
 /**
  * Base custom options for methods hitting the API.
- *
- * @property [endpointPath] - The relative URL path of the portal endpoint to contact.
  */
-export type BaseCustomOptions = CustomClientOptions & {
-  endpointPath?: string;
+export type BaseCustomOptions = CustomClientOptions;
+
+/**
+ * The default base custom options.
+ */
+export const defaultBaseOptions = {
+  APIKey: "",
+  customUserAgent: "",
+  onUploadProgress: undefined,
 };
 
 /**
- * Returns the default base custom options for the given endpoint path.
+ * Extract only the base custom options from the given options.
  *
- * @param endpointPath - The endpoint path.
- * @returns - The base custom options.
+ * @param opts - The given options.
+ * @returns - The extracted base custom options.
  */
-export function defaultOptions(endpointPath: string): CustomClientOptions & { endpointPath: string } {
-  return {
-    endpointPath,
-    APIKey: "",
-    customUserAgent: "",
-    onUploadProgress: undefined,
-  };
-}
-
 export function extractBaseCustomOptions(opts: Record<string, unknown>): BaseCustomOptions {
-  // @ts-expect-error
-  return (({ endpointPath, APIKey, customUserAgent, onUploadProgress }) => ({
-    endpointPath,
+  // @ts-expect-error - We can't ensure the correct types here.
+  return (({ APIKey, customUserAgent, onUploadProgress }) => ({
     APIKey,
     customUserAgent,
     onUploadProgress,

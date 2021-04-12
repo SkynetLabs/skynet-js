@@ -121,7 +121,7 @@ describe("getSkylinkUrl", () => {
   });
 
   it("should return correctly formed URL with forced download", async () => {
-    const url = await client.getSkylinkUrl(skylink, { download: true, endpointPath: "skynet/skylink" });
+    const url = await client.getSkylinkUrl(skylink, { download: true, endpointDownload: "skynet/skylink" });
 
     expect(url).toEqual(`${portalUrl}/skynet/skylink/${skylink}${attachment}`);
   });

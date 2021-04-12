@@ -1,5 +1,5 @@
 import { getFileMimeType } from "./utils/file";
-import { BaseCustomOptions, defaultOptions } from "./utils/options";
+import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { formatSkylink } from "./utils/skylink";
 import { SkynetClient } from "./client";
 import { AxiosResponse } from "axios";
@@ -15,12 +15,14 @@ import { extractBaseCustomOptions } from "./utils/options";
 /**
  * Custom upload options.
  *
+ * @property [endpointUpload] - The relative URL path of the portal endpoint to contact.
  * @property [portalFileFieldname="file"] - The file fieldname for uploading files on this portal.
  * @property [portalDirectoryfilefieldname="files[]"] - The file fieldname for uploading directories on this portal.
  * @property [customFilename] - The custom filename to use when uploading files.
  * @property [query] - Query parameters. Allows passing in parameters that haven't been implemented in the SDK yet.
  */
 export type CustomUploadOptions = BaseCustomOptions & {
+  endpointUpload?: string;
   portalFileFieldname?: string;
   portalDirectoryFileFieldname?: string;
   customFilename?: string;
@@ -41,22 +43,36 @@ export type UploadRequestResponse = {
 };
 
 export const defaultUploadOptions = {
-  ...defaultOptions("/skynet/skyfile"),
+  ...defaultBaseOptions,
+  endpointUpload: "/skynet/skyfile",
   portalFileFieldname: "file",
   portalDirectoryFileFieldname: "files[]",
   customFilename: "",
   query: undefined,
 };
 
+/**
+ * Extract only the upload custom options from the given options.
+ *
+ * @param opts - The given options.
+ * @returns - The extracted upload custom options.
+ */
 export function extractUploadOptions(opts: Record<string, unknown>): CustomUploadOptions {
   const baseOpts = extractBaseCustomOptions(opts);
-  const uploadOpts = (({ portalFileFieldname, portalDirectoryFileFieldname, customFilename, query }) => ({
+  const uploadOpts = (({
+    endpointUpload,
+    portalFileFieldname,
+    portalDirectoryFileFieldname,
+    customFilename,
+    query,
+  }) => ({
+    endpointUpload,
     portalFileFieldname,
     portalDirectoryFileFieldname,
     customFilename,
     query,
   }))(opts);
-  // @ts-expect-error
+  // @ts-expect-error - We can't ensure the correct types here.
   return { ...baseOpts, ...uploadOpts };
 }
 
@@ -118,6 +134,7 @@ export async function uploadFileRequest(
 
   const response = await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointUpload,
     method: "post",
     data: formData,
   });
@@ -187,6 +204,7 @@ export async function uploadDirectoryRequest(
 
   const response = await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointUpload,
     method: "post",
     data: formData,
     query: { filename },

@@ -68,13 +68,14 @@ export async function getJSON(
   // Rest of validation is done in `getEntry`.
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...defaultGetJSONOptions,
     ...this.customOptions,
     ...customOptions,
   };
 
   // Lookup the registry entry.
-  const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, opts);
+  const getEntryOpts = extractGetEntryOptions(opts);
+  const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
   if (entry === null) {
     return { data: null, skylink: null };
   }
@@ -123,7 +124,7 @@ export async function setJSON(
   validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
 
   const opts = {
-    ...defaultSetEntryOptions,
+    ...defaultSetJSONOptions,
     ...this.customOptions,
     ...customOptions,
   };

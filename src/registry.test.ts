@@ -2,7 +2,6 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
-import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { getEntryUrlForPortal } from "./utils/url";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
@@ -40,25 +39,6 @@ describe("getEntry", () => {
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrow();
   });
 
-  it("Should throw an error if the timeout is too large", async () => {
-    const { publicKey } = genKeyPairAndSeed();
-
-    // Try getting an entry with an excessive timeout.
-    await expect(
-      client.registry.getEntry(publicKey, dataKey, {
-        timeout: MAX_GET_ENTRY_TIMEOUT + 1,
-      })
-    ).rejects.toThrowError(
-      `Invalid 'timeout' parameter '${
-        MAX_GET_ENTRY_TIMEOUT + 1
-      }', needs to be an integer between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`
-    );
-
-    // No network calls should have been made.
-    expect(mock.history.get.length).toBe(0);
-    expect(mock.history.post.length).toBe(0);
-  });
-
   it("Should throw an error if the public key is not hex-encoded", async () => {
     await expect(client.registry.getEntry("foo", dataKey)).rejects.toThrowError(
       "Given public key 'foo' is not a valid hex-encoded string or contains an invalid prefix"
@@ -86,11 +66,12 @@ describe("getEntryUrl", () => {
     expect(url).toEqual(`${portalUrl}/skynet/registry?publickey=${encodedPK}&datakey=${encodedDK}&timeout=5`);
   });
 
-  it("Should throw if the timeout is not an integer", async () => {
+  it("Should throw if a timeout is provided", async () => {
     const { publicKey } = genKeyPairAndSeed();
 
+    // @ts-expect-error - Pass an invalid timeout parameter on purpose.
     await expect(client.registry.getEntryUrl(publicKey, dataKey, { timeout: 1.5 })).rejects.toThrowError(
-      "Invalid 'timeout' parameter '1.5', needs to be an integer between 1s and 300s"
+      "Object parameter 'customOptions' contains unexpected property 'timeout'"
     );
   });
 

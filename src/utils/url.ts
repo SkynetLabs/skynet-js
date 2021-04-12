@@ -6,7 +6,7 @@ import { defaultGetEntryOptions, CustomGetEntryOptions, DEFAULT_GET_ENTRY_TIMEOU
 import { hashDataKey } from "../crypto";
 import { defaultDownloadOptions, CustomDownloadOptions } from "../download";
 import { convertSkylinkToBase32, parseSkylink } from "./skylink";
-import { validateOptionalObject, validateString } from "./validation";
+import { throwValidationError, validateOptionalObject, validateString } from "./validation";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
@@ -60,6 +60,9 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
  * @returns - Final URL constructed from the input parts.
  */
 export function makeUrl(...args: string[]): string {
+  if (args.length === 0) {
+    throwValidationError("args", args, "parameter", "non-empty");
+  }
   return args.reduce((acc, cur) => urljoin(acc, cur));
 }
 
@@ -104,7 +107,7 @@ export function getEntryUrlForPortal(
     timeout: DEFAULT_GET_ENTRY_TIMEOUT,
   };
 
-  let url = makeUrl(portalUrl, opts.endpointPath);
+  let url = makeUrl(portalUrl, opts.endpointGetEntry);
   url = addUrlQuery(url, query);
 
   return url;
@@ -178,7 +181,7 @@ export function getSkylinkUrlForPortal(
       throw new Error(`Could not get skylink with path out of input '${skylinkUrl}'`);
     }
     // Add additional path if passed in.
-    url = makeUrl(portalUrl, opts.endpointPath, skylink, path);
+    url = makeUrl(portalUrl, opts.endpointDownload, skylink, path);
   }
   return addUrlQuery(url, query);
 }

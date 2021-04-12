@@ -17,7 +17,7 @@ import {
 } from "./download";
 import { getJSON as fileGetJSON } from "./file";
 import { getJSON, setJSON } from "./skydb";
-import { getEntry, getEntryUrl, setEntry, postSignedEntry, signEntry } from "./registry";
+import { getEntry, getEntryUrl, setEntry, postSignedEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -53,8 +53,6 @@ export type RequestConfig = CustomClientOptions & {
   query?: Record<string, unknown>;
   timeout?: number; // TODO: remove
   extraPath?: string;
-  skykeyName?: string;
-  skykeyId?: string;
   headers?: Record<string, unknown>;
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;
@@ -205,10 +203,6 @@ export class SkynetClient {
    * @throws - Will throw if unimplemented options have been passed in.
    */
   protected async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
-    if (config.skykeyName || config.skykeyId) {
-      throw new Error("Unimplemented: skykeys have not been implemented in this SDK");
-    }
-
     // Build the URL.
     let url = config.url;
     if (!url) {

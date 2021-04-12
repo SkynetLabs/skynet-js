@@ -1,7 +1,6 @@
 import base64 from "base64-js";
 import base32Encode from "base32-encode";
 import parse from "url-parse";
-import { CustomClientOptions } from "../client";
 import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
 import { validateOptionalObject, validateString } from "./validation";
 

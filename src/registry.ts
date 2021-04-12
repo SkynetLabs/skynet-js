@@ -4,7 +4,7 @@ import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
-import { BaseCustomOptions, defaultOptions } from "./utils/options";
+import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { hexToUint8Array, toHexString, uint8ArrayToString } from "./utils/string";
 import { getEntryUrlForPortal } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
@@ -20,29 +20,59 @@ import { extractBaseCustomOptions } from "./utils/options";
 /**
  * Custom get entry options.
  *
- * @property [timeout=5] - The custom timeout for getting an entry, in seconds. The maximum value allowed is 300.
+ * @property [endpointGetEntry] - The relative URL path of the portal endpoint to contact.
  */
-export type CustomGetEntryOptions = BaseCustomOptions;
+export type CustomGetEntryOptions = BaseCustomOptions & {
+  endpointGetEntry?: string;
+};
 
 /**
  * Custom set entry options.
+ *
+ * @property [endpointSetEntry] - The relative URL path of the portal endpoint to contact.
  */
-export type CustomSetEntryOptions = BaseCustomOptions;
+export type CustomSetEntryOptions = BaseCustomOptions & {
+  endpointSetEntry?: string;
+};
 
 export const defaultGetEntryOptions = {
-  ...defaultOptions("/skynet/registry"),
+  ...defaultBaseOptions,
+  endpointGetEntry: "/skynet/registry",
 };
 
 export const defaultSetEntryOptions = {
-  ...defaultOptions("/skynet/registry"),
+  ...defaultBaseOptions,
+  endpointSetEntry: "/skynet/registry",
 };
 
+/**
+ * Extract only the get entry custom options from the given options.
+ *
+ * @param opts - The given options.
+ * @returns - The extracted get entry custom options.
+ */
 export function extractGetEntryOptions(opts: Record<string, unknown>): CustomGetEntryOptions {
-  return extractBaseCustomOptions(opts);
+  const baseOpts = extractBaseCustomOptions(opts);
+  const getEntryOpts = (({ endpointGetEntry }) => ({
+    endpointGetEntry,
+  }))(opts);
+  // @ts-expect-error - We can't ensure the correct types here.
+  return { ...baseOpts, ...getEntryOpts };
 }
 
+/**
+ * Extract only the set entry custom options from the given options.
+ *
+ * @param opts - The given options.
+ * @returns - The extracted set entry custom options.
+ */
 export function extractSetEntryOptions(opts: Record<string, unknown>): CustomSetEntryOptions {
-  return extractBaseCustomOptions(opts);
+  const baseOpts = extractBaseCustomOptions(opts);
+  const setEntryOpts = (({ endpointSetEntry }) => ({
+    endpointSetEntry,
+  }))(opts);
+  // @ts-expect-error - We can't ensure the correct types here.
+  return { ...baseOpts, ...setEntryOpts };
 }
 
 export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
@@ -111,6 +141,7 @@ export async function getEntry(
   try {
     response = await this.executeRequest({
       ...opts,
+      endpointPath: opts.endpointGetEntry,
       url,
       method: "get",
       // Transform the response to add quotes, since uint64 cannot be accurately
@@ -301,6 +332,7 @@ export async function postSignedEntry(
 
   await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointSetEntry,
     method: "post",
     data,
     // Transform the request to remove quotes, since the revision needs to be
