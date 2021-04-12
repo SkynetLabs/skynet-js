@@ -1,15 +1,16 @@
 const { genKeyPairFromSeed, SkynetClient, uriSkynetPrefix } = require("..");
 
 const fs = require("fs");
+const fse = require('fs-extra');
 const tar = require("tar-fs");
 
 const deploySeed = "SKYNET_JS_DEPLOY_SEED";
 const hns = "skynet-js";
 const dataKey = "skynet-js";
-const bundlePath = "dist/bundle/index.js";
-const scriptName = "index.js";
+const bundlePath = "dist/bundle";
 const packageJson = "../package.json";
 const skipDownload = false;
+const skipUpload = false;
 
 const versionsDir = "versions";
 const versionsTarFile = `${versionsDir}.tar`;
@@ -70,38 +71,44 @@ const versionsTarFile = `${versionsDir}.tar`;
     versionSubdir = `${versionSubdir}-${suffix}`;
   }
   const destinationDir = `${versionsDir}/${versionSubdir}`;
-  const destination = `${destinationDir}/${scriptName}`;
+
   // Copy the bundle. destination will be created or overwritten.
-  console.log(`Copying ${bundlePath} -> ${destination}`);
+  console.log(`Copying ${bundlePath} -> ${destinationDir}`);
+  if (fs.existsSync(destinationDir)) {
+    fs.rmdirSync(destinationDir, { recursive: true });
+  }
   fs.mkdirSync(destinationDir, { recursive: true });
-  fs.copyFileSync(bundlePath, destination);
+  fse.copySync(bundlePath, destinationDir);
 
   // Upload the directory and get the skylink.
 
-  console.log(`Uploading '${versionsDir}' dir`);
-  let { skylink } = await client.uploadDirectoryFromPath(versionsDir, { disableDefaultPath: true });
-  skylink = skylink.slice(uriSkynetPrefix.length);
-  console.log(`Skylink: ${skylink}`);
-  // Delete versionsDir.
-  fs.rmdirSync(versionsDir, { recursive: true });
+  if (!skipUpload) {
+    console.log(`Uploading '${versionsDir}' dir`);
+    let { skylink } = await client.uploadDirectoryFromPath(versionsDir, { disableDefaultPath: true });
+    skylink = skylink.slice(uriSkynetPrefix.length);
+    console.log(`Skylink: ${skylink}`);
 
-  // Update the registry entry.
+    // Delete versionsDir.
+    fs.rmdirSync(versionsDir, { recursive: true });
 
-  console.log(`Updating '${dataKey}' registry entry with skylink ${skylink}`);
-  const seed = process.env[deploySeed];
-  if (!seed) {
-    throw new Error(`Seed not found, make sure SKYNET_JS_DEPLOY_SEED is set`);
+    // Update the registry entry.
+
+    console.log(`Updating '${dataKey}' registry entry with skylink ${skylink}`);
+    const seed = process.env[deploySeed];
+    if (!seed) {
+      throw new Error(`Seed not found, make sure SKYNET_JS_DEPLOY_SEED is set`);
+    }
+    const { publicKey, privateKey } = genKeyPairFromSeed(seed);
+    const { entry } = await client.registry.getEntry(publicKey, dataKey);
+    await client.registry.setEntry(privateKey, { datakey: dataKey, data: skylink, revision: entry.revision + BigInt(1) });
+
+    // Print the registry URL.
+
+    const registryUrl = client.registry.getEntryUrl(publicKey, dataKey);
+    console.log(`Registry URL: ${registryUrl}`);
+    const skynsUrl = client.registry.getSkynsUrl(publicKey, dataKey);
+    console.log(`Skyns URL: ${skynsUrl}`);
   }
-  const { publicKey, privateKey } = genKeyPairFromSeed(seed);
-  const { entry } = await client.registry.getEntry(publicKey, dataKey);
-  await client.registry.setEntry(privateKey, { datakey: dataKey, data: skylink, revision: entry.revision + BigInt(1) });
-
-  // Print the registry URL.
-
-  const registryUrl = client.registry.getEntryUrl(publicKey, dataKey);
-  console.log(`Registry URL: ${registryUrl}`);
-  const skynsUrl = client.registry.getSkynsUrl(publicKey, dataKey);
-  console.log(`Skyns URL: ${skynsUrl}`);
 })().catch((e) => {
   console.log(e);
 });
