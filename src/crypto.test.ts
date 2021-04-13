@@ -2,14 +2,14 @@ import {
   deriveChildSeed,
   encodeBigintAsUint64,
   encodeNumber,
-  encodeString,
+  encodeUtf8String,
   genKeyPairFromSeed,
   hashDataKey,
   hashRegistryEntry,
 } from "./crypto";
 import { deriveDiscoverableTweak } from "./mysky/tweak";
 import { MAX_REVISION } from "./utils/number";
-import { toHexString, uint8ArrayToString } from "./utils/string";
+import { toHexString } from "./utils/string";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -95,14 +95,14 @@ describe("encodeNumber", () => {
   });
 });
 
-describe("encodeString", () => {
+describe("encodeUtf8String", () => {
   const strings: Array<[string, number[]]> = [
     ["", [0, 0, 0, 0, 0, 0, 0, 0]],
     ["skynet", [6, 0, 0, 0, 0, 0, 0, 0, 115, 107, 121, 110, 101, 116]],
   ];
 
   it.each(strings)("should correctly encode string %s as %s", (input, encoding) => {
-    expect(encodeString(input)).toEqualUint8Array(new Uint8Array(encoding));
+    expect(encodeUtf8String(input)).toEqualUint8Array(new Uint8Array(encoding));
   });
 });
 
@@ -130,13 +130,13 @@ describe("hashDataKey", () => {
     expect(toHexString(hashDataKey(input))).toEqual(hash);
   });
 
+  // Test to ensure hashDataKey doesn't change unexpectedly.
   it("Should work for mySky.setJSON paths", () => {
     const path = "localhost/cert";
-    const expected = "852b9478b480488fe2d18286d14c92e997f00e22f5d146627246e633897c314f";
+    const expected = "9156a31343e7520e7b6a657fa3e9b41c326f6e996a0e75fffdb367fb046dcc1e";
 
     const dataKey = deriveDiscoverableTweak(path);
-    const input = uint8ArrayToString(dataKey);
-    const hash = toHexString(hashDataKey(input));
+    const hash = toHexString(hashDataKey(dataKey));
     expect(hash).toEqual(expected);
   });
 });

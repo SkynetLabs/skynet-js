@@ -73,29 +73,29 @@ export function trimUriPrefix(str: string, prefix: string): string {
 }
 
 /**
- * Converts a string to a uint8 array.
+ * Converts a UTF-8 string to a uint8 array containing valid UTF-8 bytes.
  *
  * @param str - The string to convert.
  * @returns - The uint8 array.
  * @throws - Will throw if the input is not a string.
  */
-export function stringToUint8Array(str: string): Uint8Array {
+export function stringToUint8ArrayUtf8(str: string): Uint8Array {
   /* istanbul ignore next */
   if (typeof str !== "string") {
     throw new Error(`Expected parameter str to be type string, was type ${typeof str}`);
   }
 
-  return Uint8Array.from(Buffer.from(str));
+  return Uint8Array.from(Buffer.from(str, "utf-8"));
 }
 
 /**
- * Converts a uint8 array to a string.
+ * Converts a uint8 array containing valid utf-8 bytes to a string.
  *
  * @param array - The uint8 array to convert.
  * @returns - The string.
  */
-export function uint8ArrayToString(array: Uint8Array): string {
-  return Buffer.from(array).toString();
+export function uint8ArrayToStringUtf8(array: Uint8Array): string {
+  return Buffer.from(array).toString("utf-8");
 }
 
 /**

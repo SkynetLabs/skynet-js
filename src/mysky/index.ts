@@ -17,7 +17,7 @@ import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
 import { RegistryEntry } from "../registry";
 import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData, JSONResponse } from "../skydb";
-import { hexToUint8Array, uint8ArrayToString } from "../utils/string";
+import { hexToUint8Array, uint8ArrayToStringUtf8 } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
@@ -225,7 +225,7 @@ export class MySky {
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
 
-    return await this.connector.client.db.getJSON(publicKey, uint8ArrayToString(dataKey), opts);
+    return await this.connector.client.db.getJSON(publicKey, dataKey, opts);
   }
 
   async setJSON(path: string, json: JsonData, opts?: CustomSetJSONOptions): Promise<JSONResponse> {
@@ -238,7 +238,7 @@ export class MySky {
     const [entry, skylink] = await getOrCreateRegistryEntry(
       this.connector.client,
       hexToUint8Array(publicKey),
-      uint8ArrayToString(dataKey),
+      dataKey,
       json,
       opts
     );

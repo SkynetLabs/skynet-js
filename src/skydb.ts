@@ -4,7 +4,7 @@ import { SkynetClient } from "./client";
 import { CustomGetEntryOptions, RegistryEntry, SignedRegistryEntry, CustomSetEntryOptions } from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { BaseCustomOptions, uriSkynetPrefix } from "./utils/skylink";
-import { hexToUint8Array, isHexString, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
+import { hexToUint8Array, isHexString, trimUriPrefix, toHexString, stringToUint8ArrayUtf8 } from "./utils/string";
 import { CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { CustomDownloadOptions } from "./download";
 
@@ -137,7 +137,7 @@ export async function getOrCreateRegistryEntry(
   const data = { _data: json, _v: JSON_RESPONSE_VERSION };
 
   // Create the data to upload to acquire its skylink.
-  const dataKeyHex = toHexString(stringToUint8Array(dataKey));
+  const dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
   const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.

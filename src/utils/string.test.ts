@@ -1,6 +1,8 @@
+import { fromByteArray } from "base64-js";
+import randomBytes from "randombytes";
 import { deriveDiscoverableTweak } from "../mysky/tweak";
 import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./skylink";
-import { hexToUint8Array, stringToUint8Array, toHexString, trimUriPrefix, uint8ArrayToString } from "./string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
 
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
@@ -29,6 +31,22 @@ expect.extend({
   },
 });
 
+describe("string/bytearray conversions", () => {
+  it("should convert to and from valid UTF-8 strings without any loss of data", () => {
+    const bytes = randomBytes(length);
+
+    // Convert random bytes to base64. Should be valid utf-8.
+    const base64Str = fromByteArray(bytes);
+    // Convert between string and array a few times.
+    const array = stringToUint8ArrayUtf8(base64Str);
+    const base64Str2 = uint8ArrayToStringUtf8(array);
+    const array2 = stringToUint8ArrayUtf8(base64Str2);
+
+    expect(base64Str).toEqual(base64Str2);
+    expect(array).toEqualUint8Array(array2);
+  });
+});
+
 describe("hexToUint8Array", () => {
   const hexStrings: Array<[string, number[]]> = [
     ["ff", [255]],
@@ -49,14 +67,13 @@ describe("hexToUint8Array", () => {
 });
 
 describe("stringToUint8Array", () => {
+  // Test to ensure stringToUint8Array doesn't change unexpectedly.
   it("Should work for mySky.setJSON paths", () => {
     const path = "localhost/cert";
-    const expected =
-      "efbfbd086e5aefbfbd2fdfb83335efbfbdefbfbdefbfbd623439efbfbdefbfbd5d75efbfbd02efbfbd69efbfbdefbfbd1befbfbd1fefbfbd";
+    const expected = "73676875577463763337677a4e5a7637735749304f5950785858574441757533615a7a4847366f663462773d";
 
     const dataKey = deriveDiscoverableTweak(path);
-    const input = uint8ArrayToString(dataKey);
-    const hash = toHexString(stringToUint8Array(input));
+    const hash = toHexString(stringToUint8ArrayUtf8(dataKey));
     expect(hash).toEqual(expected);
   });
 });
