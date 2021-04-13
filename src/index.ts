@@ -13,6 +13,17 @@ export {
   getSkylinkUrlForPortal,
 } from "./utils/url";
 export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
+// Re-export Permissions.
+export {
+  Permission,
+  PermCategory,
+  PermType,
+  PermRead,
+  PermWrite,
+  PermHidden,
+  PermDiscoverable,
+  PermLegacySkyID,
+} from "skynet-mysky-utils";
 
 // Export types.
 
