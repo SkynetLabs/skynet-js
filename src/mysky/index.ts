@@ -232,11 +232,11 @@ export class MySky {
     validateString("path", path, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
 
-  const opts = {
-    ...defaultGetJSONOptions,
-    ...this.connector.client.customOptions,
-    ...customOptions,
-  };
+    const opts = {
+      ...defaultGetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
 
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
@@ -250,11 +250,11 @@ export class MySky {
     validateObject("json", json, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
 
-  const opts = {
-    ...defaultSetJSONOptions,
-    ...this.connector.client.customOptions,
-    ...customOptions,
-  };
+    const opts = {
+      ...defaultSetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
 
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);

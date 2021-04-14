@@ -33,6 +33,7 @@ export type CustomGetEntryOptions = BaseCustomOptions & {
  */
 export type CustomSetEntryOptions = BaseCustomOptions & {
   endpointSetEntry?: string;
+  hashedDataKey?: boolean;
 };
 
 export const defaultGetEntryOptions = {
