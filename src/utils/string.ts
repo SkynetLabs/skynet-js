@@ -1,5 +1,7 @@
 import { Buffer } from "buffer";
 
+import { throwValidationError, validateHexString, validateString } from "./validation";
+
 /**
  * Removes a prefix from the beginning of the string.
  *
@@ -80,10 +82,7 @@ export function trimUriPrefix(str: string, prefix: string): string {
  * @throws - Will throw if the input is not a string.
  */
 export function stringToUint8ArrayUtf8(str: string): Uint8Array {
-  /* istanbul ignore next */
-  if (typeof str !== "string") {
-    throw new Error(`Expected parameter str to be type string, was type ${typeof str}`);
-  }
+  validateString("str", str, "parameter");
 
   return Uint8Array.from(Buffer.from(str, "utf-8"));
 }
@@ -106,13 +105,13 @@ export function uint8ArrayToStringUtf8(array: Uint8Array): string {
  * @throws - Will throw if the input is not a valid hex-encoded string or is an empty string.
  */
 export function hexToUint8Array(str: string): Uint8Array {
-  if (!isHexString(str)) {
-    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
-  }
+  validateHexString("str", str, "parameter");
+
   const matches = str.match(/.{1,2}/g);
   if (matches === null) {
-    throw new Error(`Input string '${str}' is not a valid hex-encoded string`);
+    throw throwValidationError("str", str, "parameter", "a hex-encoded string");
   }
+
   return new Uint8Array(matches.map((byte) => parseInt(byte, 16)));
 }
 
@@ -124,10 +123,7 @@ export function hexToUint8Array(str: string): Uint8Array {
  * @throws - Will throw if the input is not a string.
  */
 export function isHexString(str: string): boolean {
-  /* istanbul ignore next */
-  if (typeof str !== "string") {
-    throw new Error(`Expected parameter str to be type string, was type ${typeof str}`);
-  }
+  validateString("str", str, "parameter");
 
   return /^[0-9A-Fa-f]*$/g.test(str);
 }

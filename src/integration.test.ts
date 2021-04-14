@@ -1,5 +1,4 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
-import { MAX_GET_ENTRY_TIMEOUT } from "./registry";
 import { trimPrefix } from "./utils/string";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
@@ -150,30 +149,6 @@ describe(`Integration test for portal ${portal}`, () => {
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
 
       expect(returnedEntry).toEqual(entry);
-    });
-
-    it("setEntry should not be affected by timeout parameter", async () => {
-      const { publicKey, privateKey } = genKeyPairAndSeed();
-
-      const entry = {
-        datakey: dataKey,
-        data: "bar",
-        revision: BigInt(0),
-      };
-
-      // Use a timeout of 0 (invalid, but should be ignored).
-      // @ts-expect-error We pass an invalid parameter on purpose.
-      await client.registry.setEntry(privateKey, entry, { timeout: 0 });
-      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
-      expect(returnedEntry).toEqual(entry);
-
-      entry.revision = BigInt(1);
-
-      // Use a timeout of 301 (invalid, but should be ignored).
-      // @ts-expect-error We pass an invalid parameter on purpose.
-      await client.registry.setEntry(privateKey, entry, { timeout: MAX_GET_ENTRY_TIMEOUT + 1 });
-      const { entry: returnedEntry2 } = await client.registry.getEntry(publicKey, dataKey);
-      expect(returnedEntry2).toEqual(entry);
     });
   });
 
