@@ -1,6 +1,6 @@
 import { fromByteArray } from "base64-js";
 import { hashAll } from "../crypto";
-import { stringToUint8ArrayUtf8 } from "../utils/string";
+import { stringToUint8ArrayUtf8, toHexString } from "../utils/string";
 
 const discoverableBucketTweakVersion = 1;
 
@@ -42,7 +42,8 @@ export function hashPathComponent(component: string): Uint8Array {
   return hashAll(stringToUint8ArrayUtf8(component));
 }
 
-export function deriveDiscoverableTweak(path: string): Uint8Array {
+export function deriveDiscoverableTweak(path: string): string {
   const dbt = new DiscoverableBucketTweak(path);
-  return dbt.getHash();
+  const bytes = dbt.getHash();
+  return toHexString(bytes);
 }

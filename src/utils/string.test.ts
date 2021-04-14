@@ -68,18 +68,6 @@ describe("hexToUint8Array", () => {
   });
 });
 
-describe("stringToUint8Array", () => {
-  // Test to ensure stringToUint8Array doesn't change unexpectedly.
-  it("Should work for mySky.setJSON paths", () => {
-    const path = "localhost/cert";
-    const expected = "73676875577463763337677a4e5a7637735749304f5950785858574441757533615a7a4847366f663462773d";
-
-    const dataKey = deriveDiscoverableTweak(path);
-    const hash = toHexString(stringToUint8ArrayUtf8(dataKey));
-    expect(hash).toEqual(expected);
-  });
-});
-
 describe("trimUriPrefix", () => {
   it("should correctly parse hns prefixed link", () => {
     const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];

@@ -1,18 +1,26 @@
 import { SkynetClient } from "./client";
 import { deriveDiscoverableTweak } from "./mysky/tweak";
-import { CustomGetJSONOptions, JSONResponse } from "./skydb";
-import { validateString } from "./utils/validation";
+import { CustomGetJSONOptions, defaultGetJSONOptions, JSONResponse } from "./skydb";
+import { validateOptionalObject, validateString } from "./utils/validation";
 
 export async function getJSON(
   this: SkynetClient,
   userID: string,
   path: string,
-  opts?: CustomGetJSONOptions
+  customOptions?: CustomGetJSONOptions
 ): Promise<JSONResponse> {
+  validateString("userID", userID, "parameter");
   validateString("path", path, "parameter");
-  // Rest of validation is done in `getJSON`.
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+
+  const opts = {
+    ...defaultGetJSONOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
 
   const dataKey = deriveDiscoverableTweak(path);
+  opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
   return await this.db.getJSON(userID, dataKey, opts);
 }

@@ -79,7 +79,7 @@ export function makeUrl(...args: string[]): string {
 export function getEntryUrlForPortal(
   portalUrl: string,
   publicKey: string,
-  dataKey: string | Uint8Array,
+  dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): string {
   validateString("portalUrl", portalUrl, "parameter");
@@ -99,16 +99,14 @@ export function getEntryUrlForPortal(
   }
 
   // If not a hashed byte array already, hash the data key in order to form the correct URL.
-  let dataKeyHash;
-  if (typeof dataKey === "string") {
-    dataKeyHash = toHexString(hashDataKey(dataKey));
-  } else {
-    dataKeyHash = toHexString(dataKey);
+  let dataKeyHashHex = dataKey;
+  if (!opts.hashedDataKeyHex) {
+    dataKeyHashHex = toHexString(hashDataKey(dataKey));
   }
 
   const query = {
     publickey: `ed25519:${publicKey}`,
-    datakey: dataKeyHash,
+    datakey: dataKeyHashHex,
     timeout: DEFAULT_GET_ENTRY_TIMEOUT,
   };
 

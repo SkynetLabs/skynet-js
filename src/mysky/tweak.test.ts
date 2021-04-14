@@ -1,4 +1,4 @@
-import { toByteArray } from "base64-js";
+import { hexToUint8Array } from "../utils/string";
 import { deriveDiscoverableTweak, DiscoverableBucketTweak, hashPathComponent, splitPath } from "./tweak";
 
 const fullPath = "skyfeed.hns/preferences/ui.json";
@@ -55,7 +55,7 @@ describe("deriveDiscoverableTweak", () => {
 
   it("should correctly derive the dbt", () => {
     const dataKey = deriveDiscoverableTweak(fullPath);
-    const tweak = toByteArray(dataKey);
+    const tweak = hexToUint8Array(dataKey);
     expect(tweak).toEqualUint8Array(new Uint8Array(expectedDbt));
   });
 });

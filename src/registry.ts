@@ -23,6 +23,7 @@ import {
  */
 export type CustomGetEntryOptions = BaseCustomOptions & {
   endpointGetEntry?: string;
+  hashedDataKey?: boolean;
 };
 
 /**
@@ -37,11 +38,13 @@ export type CustomSetEntryOptions = BaseCustomOptions & {
 export const defaultGetEntryOptions = {
   ...defaultBaseOptions,
   endpointGetEntry: "/skynet/registry",
+  hashedDataKeyHex: false,
 };
 
 export const defaultSetEntryOptions = {
   ...defaultBaseOptions,
   endpointSetEntry: "/skynet/registry",
+  hashedDataKeyHex: false,
 };
 
 export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
@@ -93,7 +96,7 @@ export type SignedRegistryEntry = {
 export async function getEntry(
   this: SkynetClient,
   publicKey: string,
-  dataKey: string | Uint8Array,
+  dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<SignedRegistryEntry> {
   // Validation is done in `getEntryUrl`.
@@ -173,16 +176,9 @@ export async function getEntry(
   if (response.data.data) {
     data = uint8ArrayToStringUtf8(hexToUint8Array(response.data.data));
   }
-  let dataKeyStr;
-  // Convert the datakey to a string, use base64 encoding.
-  if (typeof dataKey === "string") {
-    dataKeyStr = dataKey;
-  } else {
-    dataKeyStr = toHexString(dataKey);
-  }
   const signedEntry = {
     entry: {
-      datakey: dataKeyStr,
+      datakey: dataKey,
       data,
       // Convert the revision from a string to bigint.
       revision: BigInt(response.data.revision),
@@ -216,7 +212,7 @@ export async function getEntry(
 export async function getEntryUrl(
   this: SkynetClient,
   publicKey: string,
-  dataKey: string | Uint8Array,
+  dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<string> {
   // Validation is done in `getEntryUrlForPortal`.
@@ -293,12 +289,17 @@ export async function postSignedEntry(
     ...customOptions,
   };
 
+  let datakey = entry.datakey;
+  if (!opts.hashedDataKeyHex) {
+    // Hash the data key if it's not already hashed and in hex form.
+    datakey = toHexString(hashDataKey(entry.datakey));
+  }
   const data = {
     publickey: {
       algorithm: "ed25519",
       key: Array.from(hexToUint8Array(publicKey)),
     },
-    datakey: toHexString(hashDataKey(entry.datakey)),
+    datakey,
     // Set the revision as a string here since the value may be up to 64 bits.
     // We remove the quotes later in transformRequest.
     revision: entry.revision.toString(),

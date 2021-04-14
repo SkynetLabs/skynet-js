@@ -129,16 +129,6 @@ describe("hashDataKey", () => {
   it.each(keys)("should correctly hash key %s as %s", (input: string, hash: string) => {
     expect(toHexString(hashDataKey(input))).toEqual(hash);
   });
-
-  // Test to ensure hashDataKey doesn't change unexpectedly.
-  it("Should work for mySky.setJSON paths", () => {
-    const path = "localhost/cert";
-    const expected = "9156a31343e7520e7b6a657fa3e9b41c326f6e996a0e75fffdb367fb046dcc1e";
-
-    const dataKey = deriveDiscoverableTweak(path);
-    const hash = toHexString(hashDataKey(dataKey));
-    expect(hash).toEqual(expected);
-  });
 });
 
 describe("hashRegistryValue", () => {

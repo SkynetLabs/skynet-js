@@ -232,8 +232,15 @@ export class MySky {
     validateString("path", path, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
 
+  const opts = {
+    ...defaultGetJSONOptions,
+    ...this.connector.client.customOptions,
+    ...customOptions,
+  };
+
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     return await this.connector.client.db.getJSON(publicKey, dataKey, customOptions);
   }
@@ -243,8 +250,15 @@ export class MySky {
     validateObject("json", json, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
 
+  const opts = {
+    ...defaultSetJSONOptions,
+    ...this.connector.client.customOptions,
+    ...customOptions,
+  };
+
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const [entry, skylink] = await getOrCreateRegistryEntry(
       this.connector.client,
