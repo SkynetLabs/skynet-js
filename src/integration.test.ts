@@ -31,7 +31,38 @@ expect.extend({
 });
 
 describe(`Integration test for portal ${portal}`, () => {
+  describe("File API integration tests", () => {
+    it("Should get existing File API data", async () => {
+      const userID = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+      const path = "snew.hns/asdf";
+      const expected = { name: "testnames" };
+
+      const { data: received } = await client.file.getJSON(userID, path);
+      expect(received).toEqual(expect.objectContaining(expected));
+    });
+  });
+
   describe("SkyDB end to end integration tests", () => {
+    it("Should get existing SkyDB data", async () => {
+      const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
+      const dataKey = "dataKey1";
+      const expected = { message: "hi Marcin" };
+
+      const { data: received } = await client.db.getJSON(publicKey, dataKey);
+
+      expect(expected).toEqual(received);
+    });
+
+    it("Should get existing SkyDB data with unicode datakey", async () => {
+      const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
+      const dataKey = "dataKeyż";
+      const expected = { message: "Hello" };
+
+      const { data: received } = await client.db.getJSON(publicKey, dataKey);
+
+      expect(expected).toEqual(received);
+    });
+
     it("Should return null for an inexistent entry", async () => {
       const { publicKey } = genKeyPairAndSeed();
 

@@ -6,7 +6,7 @@ import { sign } from "tweetnacl";
 
 import { RegistryEntry } from "./registry";
 import { assertUint64 } from "./utils/number";
-import { hexToUint8Array, stringToUint8Array, toHexString } from "./utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString } from "./utils/string";
 import { validateNumber, validateString } from "./utils/validation";
 
 export type Signature = Buffer;
@@ -77,13 +77,13 @@ export function encodeBigintAsUint64(int: bigint): Uint8Array {
 }
 
 /**
- * Converts the given string into a uint8 array.
+ * Encodes the given UTF-8 string into a uint8 array containing the string length and the string.
  *
  * @param str - String to encode.
  * @returns - String encoded as a byte array.
  */
-export function encodeString(str: string): Uint8Array {
-  const byteArray = stringToUint8Array(str);
+export function encodeUtf8String(str: string): Uint8Array {
+  const byteArray = stringToUint8ArrayUtf8(str);
   const encoded = new Uint8Array(8 + byteArray.length);
   encoded.set(encodeNumber(byteArray.length));
   encoded.set(byteArray, 8);
@@ -102,7 +102,7 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
   validateString("masterSeed", masterSeed, "parameter");
   validateString("seed", seed, "parameter");
 
-  return toHexString(hashAll(encodeString(masterSeed), encodeString(seed)));
+  return toHexString(hashAll(encodeUtf8String(masterSeed), encodeUtf8String(seed)));
 }
 
 /**
@@ -157,21 +157,25 @@ export function hashAll(...args: Uint8Array[]): Uint8Array {
  * @returns - Hash of the datakey.
  */
 export function hashDataKey(datakey: string): Uint8Array {
-  return hashAll(encodeString(datakey));
+  return hashAll(encodeUtf8String(datakey));
 }
 
 /**
  * Hashes the given registry entry.
  *
  * @param registryEntry - Registry entry to hash.
+ * @param hashedDataKeyHex - Whether the data key is already hashed and in hex format. If not, we hash the data key.
  * @returns - Hash of the registry entry.
  */
-export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
-  return hashAll(
-    hashDataKey(registryEntry.datakey),
-    encodeString(registryEntry.data),
-    encodeBigintAsUint64(registryEntry.revision)
-  );
+export function hashRegistryEntry(registryEntry: RegistryEntry, hashedDataKeyHex: boolean): Uint8Array {
+  let dataKeyBytes;
+  if (hashedDataKeyHex) {
+    dataKeyBytes = hexToUint8Array(registryEntry.datakey);
+  } else {
+    dataKeyBytes = hashDataKey(registryEntry.datakey);
+  }
+
+  return hashAll(dataKeyBytes, encodeUtf8String(registryEntry.data), encodeBigintAsUint64(registryEntry.revision));
 }
 
 /**

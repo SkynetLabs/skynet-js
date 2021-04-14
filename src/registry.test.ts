@@ -2,6 +2,7 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
+import { signEntry } from "./registry";
 import { getEntryUrlForPortal } from "./utils/url";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
@@ -95,5 +96,13 @@ describe("setEntry", () => {
     await expect(client.registry.setEntry(privateKey)).rejects.toThrowError(
       "Expected parameter 'entry' to be type 'object', was 'undefined'"
     );
+  });
+});
+
+describe("signEntry", () => {
+  it("Should throw if we try to sign an entry with a prehashed datakey that is not in hex format", async () => {
+    await expect(
+      signEntry(privateKey, { data: "test", datakey: "test", revision: BigInt(0) }, true)
+    ).rejects.toThrowError("Expected parameter 'str' to be a hex-encoded string, was 'test'");
   });
 });

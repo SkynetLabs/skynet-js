@@ -15,7 +15,7 @@ import {
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { RegistryEntry } from "../registry";
+import { defaultSetEntryOptions, RegistryEntry } from "../registry";
 import {
   defaultGetJSONOptions,
   defaultSetJSONOptions,
@@ -25,11 +25,12 @@ import {
   JsonData,
   JSONResponse,
 } from "../skydb";
-import { hexToUint8Array, uint8ArrayToString } from "../utils/string";
+import { hexToUint8Array } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
+import { extractOptions } from "../utils/options";
 
 export async function loadMySky(
   this: SkynetClient,
@@ -107,7 +108,7 @@ export class MySky {
     await Promise.all(promises);
   }
 
-  async addPermissions(...permissions: Permission[]) {
+  async addPermissions(...permissions: Permission[]): Promise<void> {
     this.pendingPermissions.push(...permissions);
   }
 
@@ -232,10 +233,17 @@ export class MySky {
     validateString("path", path, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
 
+    const opts = {
+      ...defaultGetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    return await this.connector.client.db.getJSON(publicKey, uint8ArrayToString(dataKey), customOptions);
+    return await this.connector.client.db.getJSON(publicKey, dataKey, opts);
   }
 
   async setJSON(path: string, json: JsonData, customOptions?: CustomSetJSONOptions): Promise<JSONResponse> {
@@ -243,20 +251,28 @@ export class MySky {
     validateObject("json", json, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
 
+    const opts = {
+      ...defaultSetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const [entry, skylink] = await getOrCreateRegistryEntry(
       this.connector.client,
       hexToUint8Array(publicKey),
-      uint8ArrayToString(dataKey),
+      dataKey,
       json,
-      customOptions
+      opts
     );
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, customOptions);
+    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: json, skylink };
   }
@@ -265,7 +281,7 @@ export class MySky {
   // Internal Methods
   // ================
 
-  protected async catchError(errorMsg: string) {
+  protected async catchError(errorMsg: string): Promise<void> {
     const event = new CustomEvent(dispatchedErrorEvent, { detail: errorMsg });
     window.dispatchEvent(event);
   }

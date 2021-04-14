@@ -5,7 +5,7 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { hexToUint8Array, toHexString, uint8ArrayToString } from "./utils/string";
+import { hexToUint8Array, toHexString, uint8ArrayToStringUtf8 } from "./utils/string";
 import { getEntryUrlForPortal } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
@@ -23,6 +23,7 @@ import {
  */
 export type CustomGetEntryOptions = BaseCustomOptions & {
   endpointGetEntry?: string;
+  hashedDataKeyHex?: boolean;
 };
 
 /**
@@ -32,16 +33,19 @@ export type CustomGetEntryOptions = BaseCustomOptions & {
  */
 export type CustomSetEntryOptions = BaseCustomOptions & {
   endpointSetEntry?: string;
+  hashedDataKeyHex?: boolean;
 };
 
 export const defaultGetEntryOptions = {
   ...defaultBaseOptions,
   endpointGetEntry: "/skynet/registry",
+  hashedDataKeyHex: false,
 };
 
 export const defaultSetEntryOptions = {
   ...defaultBaseOptions,
   endpointSetEntry: "/skynet/registry",
+  hashedDataKeyHex: false,
 };
 
 export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
@@ -126,6 +130,7 @@ export async function getEntry(
       },
     });
   } catch (err) {
+    // TODO: Refactor this validation into a separate function.
     /* istanbul ignore next */
     if (!err.response) {
       console.log(`Full error: ${err}`);
@@ -171,7 +176,7 @@ export async function getEntry(
   // Use empty string if the data is empty.
   let data = "";
   if (response.data.data) {
-    data = uint8ArrayToString(hexToUint8Array(response.data.data));
+    data = uint8ArrayToStringUtf8(hexToUint8Array(response.data.data));
   }
   const signedEntry = {
     entry: {
@@ -185,7 +190,7 @@ export async function getEntry(
   if (
     signedEntry &&
     !sign.detached.verify(
-      hashRegistryEntry(signedEntry.entry),
+      hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex),
       new Uint8Array(signedEntry.signature),
       hexToUint8Array(publicKey)
     )
@@ -254,21 +259,25 @@ export async function setEntry(
   };
   const privateKeyArray = hexToUint8Array(privateKey);
 
-  const signature: Uint8Array = await signEntry(privateKey, entry);
+  const signature: Uint8Array = await signEntry(privateKey, entry, opts.hashedDataKeyHex);
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(privateKeyArray);
 
   return await this.registry.postSignedEntry(toHexString(publicKeyArray), entry, signature, opts);
 }
 
-export async function signEntry(privateKey: string, entry: RegistryEntry): Promise<Uint8Array> {
+export async function signEntry(
+  privateKey: string,
+  entry: RegistryEntry,
+  hashedDataKeyHex: boolean
+): Promise<Uint8Array> {
   // TODO: Publicly available, validate input.
 
   const privateKeyArray = hexToUint8Array(privateKey);
 
   // Sign the entry.
   // TODO: signature type should be Signature?
-  return sign(hashRegistryEntry(entry), privateKeyArray);
+  return sign(hashRegistryEntry(entry, hashedDataKeyHex), privateKeyArray);
 }
 
 export async function postSignedEntry(
@@ -278,7 +287,10 @@ export async function postSignedEntry(
   signature: Uint8Array,
   customOptions?: CustomSetEntryOptions
 ): Promise<void> {
-  // TODO: Check for valid imputs.
+  validateHexString("publicKey", publicKey, "parameter");
+  // TODO: Validate entry and signature
+  validateString("entry.dataKey", entry.datakey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
 
   const opts = {
     ...defaultSetEntryOptions,
@@ -286,12 +298,17 @@ export async function postSignedEntry(
     ...customOptions,
   };
 
+  // Hash and hex encode the given data key if it is not a hash already.
+  let datakey = entry.datakey;
+  if (!opts.hashedDataKeyHex) {
+    datakey = toHexString(hashDataKey(entry.datakey));
+  }
   const data = {
     publickey: {
       algorithm: "ed25519",
       key: Array.from(hexToUint8Array(publicKey)),
     },
-    datakey: toHexString(hashDataKey(entry.datakey)),
+    datakey,
     // Set the revision as a string here since the value may be up to 64 bits.
     // We remove the quotes later in transformRequest.
     revision: entry.revision.toString(),

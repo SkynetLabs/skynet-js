@@ -11,7 +11,7 @@ import {
 } from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/skylink";
-import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8Array } from "./utils/string";
+import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8 } from "./utils/string";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
@@ -158,7 +158,10 @@ export async function getOrCreateRegistryEntry(
   const data = { _data: json, _v: JSON_RESPONSE_VERSION };
 
   // Create the data to upload to acquire its skylink.
-  const dataKeyHex = toHexString(stringToUint8Array(dataKey));
+  let dataKeyHex = dataKey;
+  if (!opts.hashedDataKeyHex) {
+    dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
+  }
   const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.
