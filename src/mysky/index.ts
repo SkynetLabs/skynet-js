@@ -266,7 +266,7 @@ export class MySky {
       hexToUint8Array(publicKey),
       dataKey,
       json,
-      customOptions
+      opts
     );
 
     const signature = await this.signRegistryEntry(entry, path);
