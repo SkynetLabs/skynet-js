@@ -103,14 +103,12 @@ export function getEntryUrlForPortal(
   if (!opts.hashedDataKeyHex) {
     dataKeyHashHex = toHexString(hashDataKey(dataKey));
   }
-  console.log(`Data key: ${dataKey}, hash: ${dataKeyHashHex}`);
 
   const query = {
     publickey: `ed25519:${publicKey}`,
     datakey: dataKeyHashHex,
     timeout: DEFAULT_GET_ENTRY_TIMEOUT,
   };
-  console.log(query);
 
   let url = makeUrl(portalUrl, opts.endpointGetEntry);
   url = addUrlQuery(url, query);

@@ -166,12 +166,15 @@ export function hashDataKey(datakey: string): Uint8Array {
  * @param registryEntry - Registry entry to hash.
  * @returns - Hash of the registry entry.
  */
-export function hashRegistryEntry(registryEntry: RegistryEntry): Uint8Array {
-  return hashAll(
-    hashDataKey(registryEntry.datakey),
-    encodeUtf8String(registryEntry.data),
-    encodeBigintAsUint64(registryEntry.revision)
-  );
+export function hashRegistryEntry(registryEntry: RegistryEntry, hashedDataKeyHex: boolean): Uint8Array {
+  let dataKeyBytes;
+  if (hashedDataKeyHex) {
+    dataKeyBytes = hexToUint8Array(registryEntry.datakey);
+  } else {
+    dataKeyBytes = hashDataKey(registryEntry.datakey);
+  }
+
+  return hashAll(dataKeyBytes, encodeUtf8String(registryEntry.data), encodeBigintAsUint64(registryEntry.revision));
 }
 
 /**

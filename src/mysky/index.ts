@@ -15,7 +15,7 @@ import {
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { RegistryEntry } from "../registry";
+import { defaultSetEntryOptions, RegistryEntry } from "../registry";
 import {
   defaultGetJSONOptions,
   defaultSetJSONOptions,
@@ -30,6 +30,7 @@ import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
+import { extractOptions } from "../utils/options";
 
 export async function loadMySky(
   this: SkynetClient,
@@ -270,7 +271,8 @@ export class MySky {
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, opts);
+    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: json, skylink };
   }
