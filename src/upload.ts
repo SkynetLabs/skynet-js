@@ -1,17 +1,27 @@
 import { getFileMimeType } from "./utils/file";
-import { BaseCustomOptions, defaultOptions, formatSkylink } from "./utils/skylink";
+import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
+import { formatSkylink } from "./utils/skylink";
 import { SkynetClient } from "./client";
 import { AxiosResponse } from "axios";
+import {
+  throwValidationError,
+  validateNumber,
+  validateObject,
+  validateOptionalObject,
+  validateString,
+} from "./utils/validation";
 
 /**
  * Custom upload options.
  *
+ * @property [endpointUpload] - The relative URL path of the portal endpoint to contact.
  * @property [portalFileFieldname="file"] - The file fieldname for uploading files on this portal.
  * @property [portalDirectoryfilefieldname="files[]"] - The file fieldname for uploading directories on this portal.
  * @property [customFilename] - The custom filename to use when uploading files.
- * @property [query] - Query parameters.
+ * @property [query] - Query parameters. Allows passing in parameters that haven't been implemented in the SDK yet.
  */
 export type CustomUploadOptions = BaseCustomOptions & {
+  endpointUpload?: string;
   portalFileFieldname?: string;
   portalDirectoryFileFieldname?: string;
   customFilename?: string;
@@ -31,11 +41,13 @@ export type UploadRequestResponse = {
   bitfield: number;
 };
 
-const defaultUploadOptions = {
-  ...defaultOptions("/skynet/skyfile"),
+export const defaultUploadOptions = {
+  ...defaultBaseOptions,
+  endpointUpload: "/skynet/skyfile",
   portalFileFieldname: "file",
   portalDirectoryFileFieldname: "files[]",
   customFilename: "",
+  query: undefined,
 };
 
 /**
@@ -53,17 +65,12 @@ export async function uploadFile(
   file: File,
   customOptions?: CustomUploadOptions
 ): Promise<UploadRequestResponse> {
+  // Validation is done in `uploadDirectoryRequest`.
+
   const response = await this.uploadFileRequest(file, customOptions);
 
-  if (
-    typeof response.data.skylink !== "string" ||
-    typeof response.data.merkleroot !== "string" ||
-    typeof response.data.bitfield !== "number"
-  ) {
-    throw new Error(
-      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
+  // Sanity check.
+  validateUploadResponse(response);
 
   const skylink = formatSkylink(response.data.skylink);
   const merkleroot = response.data.merkleroot;
@@ -86,6 +93,9 @@ export async function uploadFileRequest(
   file: File,
   customOptions?: CustomUploadOptions
 ): Promise<AxiosResponse> {
+  validateFile("file", file, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
+
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
   const formData = new FormData();
 
@@ -98,6 +108,7 @@ export async function uploadFileRequest(
 
   const response = await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointUpload,
     method: "post",
     data: formData,
   });
@@ -122,17 +133,12 @@ export async function uploadDirectory(
   filename: string,
   customOptions?: CustomUploadOptions
 ): Promise<UploadRequestResponse> {
+  // Validation is done in `uploadDirectoryRequest`.
+
   const response = await this.uploadDirectoryRequest(directory, filename, customOptions);
 
-  if (
-    typeof response.data.skylink !== "string" ||
-    typeof response.data.merkleroot !== "string" ||
-    typeof response.data.bitfield !== "number"
-  ) {
-    throw new Error(
-      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
+  // Sanity check.
+  validateUploadResponse(response);
 
   const skylink = formatSkylink(response.data.skylink);
   const merkleroot = response.data.merkleroot;
@@ -158,10 +164,9 @@ export async function uploadDirectoryRequest(
   filename: string,
   customOptions?: CustomUploadOptions
 ): Promise<AxiosResponse> {
-  /* istanbul ignore next */
-  if (typeof filename !== "string") {
-    throw new Error(`Expected parameter filename to be type string, was type ${typeof filename}`);
-  }
+  validateObject("directory", directory, "parameter");
+  validateString("filename", filename, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
 
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
   const formData = new FormData();
@@ -173,6 +178,7 @@ export async function uploadDirectoryRequest(
 
   const response = await this.executeRequest({
     ...opts,
+    endpointPath: opts.endpointUpload,
     method: "post",
     data: formData,
     query: { filename },
@@ -194,4 +200,26 @@ export async function uploadDirectoryRequest(
  */
 function ensureFileObjectConsistency(file: File): File {
   return new File([file], file.name, { type: getFileMimeType(file) });
+}
+
+function validateFile(name: string, value: unknown, valueKind: string) {
+  if (!(value instanceof File)) {
+    throwValidationError(name, value, valueKind, "'File'");
+  }
+}
+
+function validateUploadResponse(response: AxiosResponse): void {
+  try {
+    if (!response.data) {
+      throw new Error("response.data field missing");
+    }
+
+    validateString("skylink", response.data.skylink, "upload response field");
+    validateString("merkleroot", response.data.merkleroot, "upload response field");
+    validateNumber("bitfield", response.data.bitfield, "upload response field");
+  } catch (err) {
+    throw new Error(
+      `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+    );
+  }
 }

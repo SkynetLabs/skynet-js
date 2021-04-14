@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
+    "lint": "yarn lint:tsc && yarn lint:eslint",
     "lint:eslint": "eslint --ext .ts utils src --max-warnings 30",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",

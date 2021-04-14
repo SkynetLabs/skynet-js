@@ -16,11 +16,20 @@ import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./co
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
 import { RegistryEntry } from "../registry";
-import { CustomGetJSONOptions, CustomSetJSONOptions, getOrCreateRegistryEntry, JsonData, JSONResponse } from "../skydb";
+import {
+  defaultGetJSONOptions,
+  defaultSetJSONOptions,
+  CustomGetJSONOptions,
+  CustomSetJSONOptions,
+  getOrCreateRegistryEntry,
+  JsonData,
+  JSONResponse,
+} from "../skydb";
 import { hexToUint8Array, uint8ArrayToString } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
+import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 
 export async function loadMySky(
   this: SkynetClient,
@@ -219,20 +228,22 @@ export class MySky {
     return await this.connector.connection.remoteHandle().call("userID");
   }
 
-  async getJSON(path: string, opts?: CustomGetJSONOptions): Promise<JSONResponse> {
-    // TODO: Check for valid inputs.
+  async getJSON(path: string, customOptions?: CustomGetJSONOptions): Promise<JSONResponse> {
+    validateString("path", path, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
 
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
 
-    return await this.connector.client.db.getJSON(publicKey, uint8ArrayToString(dataKey), opts);
+    return await this.connector.client.db.getJSON(publicKey, uint8ArrayToString(dataKey), customOptions);
   }
 
-  async setJSON(path: string, json: JsonData, opts?: CustomSetJSONOptions): Promise<JSONResponse> {
-    // TODO: Check for valid inputs.
+  async setJSON(path: string, json: JsonData, customOptions?: CustomSetJSONOptions): Promise<JSONResponse> {
+    validateString("path", path, "parameter");
+    validateObject("json", json, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
 
     const publicKey = await this.userID();
-    // TODO: Convert to hex?
     const dataKey = deriveDiscoverableTweak(path);
 
     const [entry, skylink] = await getOrCreateRegistryEntry(
@@ -240,12 +251,12 @@ export class MySky {
       hexToUint8Array(publicKey),
       uint8ArrayToString(dataKey),
       json,
-      opts
+      customOptions
     );
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, opts);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, customOptions);
 
     return { data: json, skylink };
   }

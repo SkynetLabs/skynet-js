@@ -2,10 +2,11 @@ import parse from "url-parse";
 import urljoin from "url-join";
 
 import { isHexString, toHexString, trimPrefix, trimSuffix } from "./string";
-import { defaultGetEntryOptions, CustomGetEntryOptions, MAX_GET_ENTRY_TIMEOUT } from "../registry";
+import { defaultGetEntryOptions, CustomGetEntryOptions, DEFAULT_GET_ENTRY_TIMEOUT } from "../registry";
 import { hashDataKey } from "../crypto";
 import { defaultDownloadOptions, CustomDownloadOptions } from "../download";
 import { convertSkylinkToBase32, parseSkylink } from "./skylink";
+import { throwValidationError, validateOptionalObject, validateString } from "./validation";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
@@ -59,6 +60,9 @@ export function addUrlQuery(url: string, query: Record<string, unknown>): string
  * @returns - Final URL constructed from the input parts.
  */
 export function makeUrl(...args: string[]): string {
+  if (args.length === 0) {
+    throwValidationError("args", args, "parameter", "non-empty");
+  }
   return args.reduce((acc, cur) => urljoin(acc, cur));
 }
 
@@ -78,31 +82,15 @@ export function getEntryUrlForPortal(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): string {
-  /* istanbul ignore next */
-  if (typeof portalUrl !== "string") {
-    throw new Error(`Expected parameter 'portalUrl' to be type string, was type ${typeof portalUrl}`);
-  }
-  /* istanbul ignore next */
-  if (typeof publicKey !== "string") {
-    throw new Error(`Expected parameter 'publicKey' to be type string, was type ${typeof publicKey}`);
-  }
-  /* istanbul ignore next */
-  if (typeof dataKey !== "string") {
-    throw new Error(`Expected parameter 'dataKey' to be type string, was type ${typeof dataKey}`);
-  }
+  validateString("portalUrl", portalUrl, "parameter");
+  validateString("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
 
   const opts = {
     ...defaultGetEntryOptions,
     ...customOptions,
   };
-
-  const timeout = opts.timeout;
-
-  if (!Number.isInteger(timeout) || timeout > MAX_GET_ENTRY_TIMEOUT || timeout < 1) {
-    throw new Error(
-      `Invalid 'timeout' parameter '${timeout}', needs to be an integer between 1s and ${MAX_GET_ENTRY_TIMEOUT}s`
-    );
-  }
 
   // Trim the prefix if it was passed in.
   publicKey = trimPrefix(publicKey, "ed25519:");
@@ -116,10 +104,10 @@ export function getEntryUrlForPortal(
   const query = {
     publickey: `ed25519:${publicKey}`,
     datakey: dataKeyHash,
-    timeout,
+    timeout: DEFAULT_GET_ENTRY_TIMEOUT,
   };
 
-  let url = makeUrl(portalUrl, opts.endpointPath);
+  let url = makeUrl(portalUrl, opts.endpointGetEntry);
   url = addUrlQuery(url, query);
 
   return url;
@@ -139,14 +127,9 @@ export function getSkylinkUrlForPortal(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): string {
-  /* istanbul ignore next */
-  if (typeof portalUrl !== "string") {
-    throw new Error(`Expected parameter 'portalUrl' to be type string, was type ${typeof portalUrl}`);
-  }
-  /* istanbul ignore next */
-  if (typeof skylinkUrl !== "string") {
-    throw new Error(`Expected parameter skylinkUrl to be type string, was type ${typeof skylinkUrl}`);
-  }
+  validateString("portalUrl", portalUrl, "parameter");
+  validateString("skylinkUrl", skylinkUrl, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultDownloadOptions);
 
   const opts = { ...defaultDownloadOptions, ...customOptions };
 
@@ -198,7 +181,7 @@ export function getSkylinkUrlForPortal(
       throw new Error(`Could not get skylink with path out of input '${skylinkUrl}'`);
     }
     // Add additional path if passed in.
-    url = makeUrl(portalUrl, opts.endpointPath, skylink, path);
+    url = makeUrl(portalUrl, opts.endpointDownload, skylink, path);
   }
   return addUrlQuery(url, query);
 }
@@ -212,6 +195,9 @@ export function getSkylinkUrlForPortal(
  * @returns - The full URL for the given domain.
  */
 export function getFullDomainUrlForPortal(portalUrl: string, domain: string): string {
+  validateString("portalUrl", portalUrl, "parameter");
+  validateString("domain", domain, "parameter");
+
   domain = trimSuffix(domain, "/");
   return addSubdomain(portalUrl, domain);
 }
@@ -222,10 +208,13 @@ export function getFullDomainUrlForPortal(portalUrl: string, domain: string): st
  * e.g. ("https://siasky.net", "dac.hns.siasky.net") => "dac.hns"
  *
  * @param portalUrl - The portal URL.
- * @param fullUrl - Full URL.
+ * @param fullDomain - Full URL.
  * @returns - The extracted domain.
  */
 export function extractDomainForPortal(portalUrl: string, fullDomain: string): string {
+  validateString("portalUrl", portalUrl, "parameter");
+  validateString("fullDomain", fullDomain, "parameter");
+
   const portalUrlObj = new URL(portalUrl);
   const portalDomain = portalUrlObj.hostname;
 
