@@ -7,7 +7,6 @@ import {
   hashDataKey,
   hashRegistryEntry,
 } from "./crypto";
-import { deriveDiscoverableTweak } from "./mysky/tweak";
 import { MAX_REVISION } from "./utils/number";
 import { toHexString } from "./utils/string";
 

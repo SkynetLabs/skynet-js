@@ -107,7 +107,7 @@ export class MySky {
     await Promise.all(promises);
   }
 
-  async addPermissions(...permissions: Permission[]) {
+  async addPermissions(...permissions: Permission[]): Promise<void> {
     this.pendingPermissions.push(...permissions);
   }
 
@@ -279,7 +279,7 @@ export class MySky {
   // Internal Methods
   // ================
 
-  protected async catchError(errorMsg: string) {
+  protected async catchError(errorMsg: string): Promise<void> {
     const event = new CustomEvent(dispatchedErrorEvent, { detail: errorMsg });
     window.dispatchEvent(event);
   }

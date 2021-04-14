@@ -8,7 +8,7 @@ export abstract class DacLibrary {
 
   public constructor(protected dacDomain: string) {}
 
-  public async init(client: SkynetClient, customOptions: CustomConnectorOptions) {
+  public async init(client: SkynetClient, customOptions: CustomConnectorOptions): Promise<void> {
     this.connector = await Connector.init(client, this.dacDomain, customOptions);
     await this.connector.connection.remoteHandle().call("init");
   }

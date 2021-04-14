@@ -103,6 +103,7 @@ export function getEntryUrlForPortal(
   if (!opts.hashedDataKeyHex) {
     dataKeyHashHex = toHexString(hashDataKey(dataKey));
   }
+  console.log(`Data key: ${dataKey}, hash: ${dataKeyHashHex}`);
 
   const query = {
     publickey: `ed25519:${publicKey}`,

@@ -1,4 +1,3 @@
-import { fromByteArray } from "base64-js";
 import { hashAll } from "../crypto";
 import { stringToUint8ArrayUtf8, toHexString } from "../utils/string";
 

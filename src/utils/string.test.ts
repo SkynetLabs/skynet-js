@@ -1,8 +1,7 @@
 import { fromByteArray } from "base64-js";
 import randomBytes from "randombytes";
-import { deriveDiscoverableTweak } from "../mysky/tweak";
 import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./skylink";
-import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
 
 const hnsLink = "doesn";
 const hnsresLink = "doesn";
