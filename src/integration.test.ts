@@ -53,7 +53,7 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(expected).toEqual(received);
     });
 
-    it("Should get existing SkyDB data with unicode datakey", async () => {
+    it("Should get existing SkyDB data with unicode data key", async () => {
       const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
       const dataKey = "dataKeyż";
       const expected = { message: "Hello" };
@@ -123,7 +123,7 @@ describe(`Integration test for portal ${portal}`, () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
 
       const entry = {
-        datakey: dataKey,
+        dataKey,
         data: "foo",
         revision: BigInt(0),
       };
@@ -139,7 +139,7 @@ describe(`Integration test for portal ${portal}`, () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
 
       const entry = {
-        datakey: dataKey,
+        dataKey,
         data: "",
         revision: BigInt(0),
       };
