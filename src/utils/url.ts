@@ -98,7 +98,7 @@ export function getEntryUrlForPortal(
     throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
   }
 
-  // If not a hashed byte array already, hash the data key in order to form the correct URL.
+  // Hash and hex encode the given data key if it is not a hash already.
   let dataKeyHashHex = dataKey;
   if (!opts.hashedDataKeyHex) {
     dataKeyHashHex = toHexString(hashDataKey(dataKey));

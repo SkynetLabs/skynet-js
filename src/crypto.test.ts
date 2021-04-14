@@ -164,4 +164,26 @@ describe("hashRegistryValue", () => {
 
     expect(toHexString(hash)).toEqual(h);
   });
+
+  it("hashing registry entry with hashed vs non-hashed datakeys should result in different outputs", () => {
+    const hash1 = hashRegistryEntry(
+      {
+        datakey: "abcd",
+        data: "abc π",
+        revision: BigInt(123456789),
+      },
+      false
+    );
+
+    const hash2 = hashRegistryEntry(
+      {
+        datakey: "abcd",
+        data: "abc π",
+        revision: BigInt(123456789),
+      },
+      true
+    );
+
+    expect(toHexString(hash1)).not.toEqual(toHexString(hash2));
+  });
 });

@@ -164,6 +164,7 @@ export function hashDataKey(datakey: string): Uint8Array {
  * Hashes the given registry entry.
  *
  * @param registryEntry - Registry entry to hash.
+ * @param hashedDataKeyHex - Whether the data key is already hashed and in hex format. If not, we hash the data key.
  * @returns - Hash of the registry entry.
  */
 export function hashRegistryEntry(registryEntry: RegistryEntry, hashedDataKeyHex: boolean): Uint8Array {

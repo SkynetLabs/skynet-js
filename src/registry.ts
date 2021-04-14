@@ -298,9 +298,9 @@ export async function postSignedEntry(
     ...customOptions,
   };
 
+  // Hash and hex encode the given data key if it is not a hash already.
   let datakey = entry.datakey;
   if (!opts.hashedDataKeyHex) {
-    // Hash the data key if it's not already hashed and in hex form.
     datakey = toHexString(hashDataKey(entry.datakey));
   }
   const data = {
