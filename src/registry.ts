@@ -81,7 +81,7 @@ export type SignedRegistryEntry = {
 export async function getEntry(
   this: SkynetClient,
   publicKey: string,
-  dataKey: string,
+  dataKey: string | Uint8Array,
   customOptions?: CustomGetEntryOptions
 ): Promise<SignedRegistryEntry> {
   // Validation is done in `getEntryUrl`.
@@ -160,9 +160,16 @@ export async function getEntry(
   if (response.data.data) {
     data = uint8ArrayToStringUtf8(hexToUint8Array(response.data.data));
   }
+  let dataKeyStr;
+  // Convert the datakey to a string, use base64 encoding.
+  if (typeof dataKey === "string") {
+    dataKeyStr = dataKey;
+  } else {
+    dataKeyStr = toHexString(dataKey);
+  }
   const signedEntry = {
     entry: {
-      datakey: dataKey,
+      datakey: dataKeyStr,
       data,
       // Convert the revision from a string to bigint.
       revision: BigInt(response.data.revision),
@@ -196,7 +203,7 @@ export async function getEntry(
 export async function getEntryUrl(
   this: SkynetClient,
   publicKey: string,
-  dataKey: string,
+  dataKey: string | Uint8Array,
   customOptions?: CustomGetEntryOptions
 ): Promise<string> {
   const opts = {

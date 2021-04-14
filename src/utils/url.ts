@@ -75,7 +75,7 @@ export function makeUrl(...args: string[]): string {
 export function getEntryUrlForPortal(
   portalUrl: string,
   publicKey: string,
-  dataKey: string,
+  dataKey: string | Uint8Array,
   customOptions?: CustomGetEntryOptions
 ): string {
   /* istanbul ignore next */
@@ -110,8 +110,13 @@ export function getEntryUrlForPortal(
     throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
   }
 
-  // We need to hash the data key in order to form the correct URL.
-  const dataKeyHash = toHexString(hashDataKey(dataKey));
+  // If not a hashed byte array already, hash the data key in order to form the correct URL.
+  let dataKeyHash;
+  if (typeof dataKey === "string") {
+    dataKeyHash = toHexString(hashDataKey(dataKey));
+  } else {
+    dataKeyHash = toHexString(dataKey);
+  }
 
   const query = {
     publickey: `ed25519:${publicKey}`,

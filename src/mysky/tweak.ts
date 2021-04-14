@@ -42,10 +42,7 @@ export function hashPathComponent(component: string): Uint8Array {
   return hashAll(stringToUint8ArrayUtf8(component));
 }
 
-export function deriveDiscoverableTweak(path: string): string {
+export function deriveDiscoverableTweak(path: string): Uint8Array {
   const dbt = new DiscoverableBucketTweak(path);
-  const bytes = dbt.getHash();
-
-  // Convert the data key from random bytes to a string in a lossless manner -- we use base64 for this.
-  return fromByteArray(bytes);
+  return dbt.getHash();
 }

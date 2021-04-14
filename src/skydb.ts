@@ -40,7 +40,7 @@ export type JSONResponse = {
 export async function getJSON(
   this: SkynetClient,
   publicKey: string,
-  dataKey: string,
+  dataKey: string | Uint8Array,
   customOptions?: CustomGetJSONOptions
 ): Promise<JSONResponse> {
   const opts = {
@@ -87,7 +87,7 @@ export async function getJSON(
 export async function setJSON(
   this: SkynetClient,
   privateKey: string,
-  dataKey: string,
+  dataKey: string | Uint8Array,
   json: JsonData,
   customOptions?: CustomSetJSONOptions
 ): Promise<JSONResponse> {
@@ -124,7 +124,7 @@ export async function setJSON(
 export async function getOrCreateRegistryEntry(
   client: SkynetClient,
   publicKeyArray: Uint8Array,
-  dataKey: string,
+  dataKey: string | Uint8Array,
   json: JsonData,
   customOptions?: CustomSetJSONOptions
 ): Promise<[RegistryEntry, string]> {
@@ -137,6 +137,7 @@ export async function getOrCreateRegistryEntry(
   const data = { _data: json, _v: JSON_RESPONSE_VERSION };
 
   // Create the data to upload to acquire its skylink.
+  // TODO: Update
   const dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
   const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
 
@@ -175,8 +176,14 @@ export async function getOrCreateRegistryEntry(
 
   // Build the registry value.
   const skylink = skyfile.skylink;
+  let dataKeyStr;
+  if (typeof dataKey === "string") {
+    dataKeyStr = dataKey;
+  } else {
+    dataKeyStr = toHexString(dataKey);
+  }
   const entry: RegistryEntry = {
-    datakey: dataKey,
+    datakey: dataKeyStr,
     data: trimUriPrefix(skylink, uriSkynetPrefix),
     revision,
   };
