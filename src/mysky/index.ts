@@ -242,7 +242,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    return await this.connector.client.db.getJSON(publicKey, dataKey, customOptions);
+    return await this.connector.client.db.getJSON(publicKey, dataKey, opts);
   }
 
   async setJSON(path: string, json: JsonData, customOptions?: CustomSetJSONOptions): Promise<JSONResponse> {
@@ -270,7 +270,7 @@ export class MySky {
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, customOptions);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, opts);
 
     return { data: json, skylink };
   }

@@ -110,6 +110,7 @@ export function getEntryUrlForPortal(
     datakey: dataKeyHashHex,
     timeout: DEFAULT_GET_ENTRY_TIMEOUT,
   };
+  console.log(query);
 
   let url = makeUrl(portalUrl, opts.endpointGetEntry);
   url = addUrlQuery(url, query);
