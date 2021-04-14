@@ -202,7 +202,7 @@ export async function getOrCreateRegistryEntry(
   // Build the registry value.
   const skylink = skyfile.skylink;
   const entry: RegistryEntry = {
-    datakey: dataKey,
+    dataKey,
     data: trimUriPrefix(skylink, uriSkynetPrefix),
     revision,
   };

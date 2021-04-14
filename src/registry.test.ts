@@ -100,9 +100,9 @@ describe("setEntry", () => {
 });
 
 describe("signEntry", () => {
-  it("Should throw if we try to sign an entry with a prehashed datakey that is not in hex format", async () => {
+  it("Should throw if we try to sign an entry with a prehashed data key that is not in hex format", async () => {
     await expect(
-      signEntry(privateKey, { data: "test", datakey: "test", revision: BigInt(0) }, true)
+      signEntry(privateKey, { data: "test", dataKey: "test", revision: BigInt(0) }, true)
     ).rejects.toThrowError("Expected parameter 'str' to be a hex-encoded string, was 'test'");
   });
 });

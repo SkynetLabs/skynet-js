@@ -158,7 +158,7 @@ describe("setJSON", () => {
   });
 
   it("Should throw an error if the data key is not provided", async () => {
-    // @ts-expect-error We do not pass the datakey on purpose.
+    // @ts-expect-error We do not pass the data key on purpose.
     await expect(client.db.setJSON(privateKey)).rejects.toThrowError(
       "Expected parameter 'dataKey' to be type 'string', was 'undefined'"
     );

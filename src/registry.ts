@@ -63,12 +63,12 @@ const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
 /**
  * Registry entry.
  *
- * @property datakey - The key of the data for the given entry.
+ * @property dataKey - The key of the data for the given entry.
  * @property data - The data stored in the entry.
  * @property revision - The revision number for the entry.
  */
 export type RegistryEntry = {
-  datakey: string;
+  dataKey: string;
   data: string;
   revision: bigint;
 };
@@ -180,7 +180,7 @@ export async function getEntry(
   }
   const signedEntry = {
     entry: {
-      datakey: dataKey,
+      dataKey,
       data,
       // Convert the revision from a string to bigint.
       revision: BigInt(response.data.revision),
@@ -257,10 +257,9 @@ export async function setEntry(
     ...this.customOptions,
     ...customOptions,
   };
+
   const privateKeyArray = hexToUint8Array(privateKey);
-
   const signature: Uint8Array = await signEntry(privateKey, entry, opts.hashedDataKeyHex);
-
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(privateKeyArray);
 
   return await this.registry.postSignedEntry(toHexString(publicKeyArray), entry, signature, opts);
@@ -289,7 +288,7 @@ export async function postSignedEntry(
 ): Promise<void> {
   validateHexString("publicKey", publicKey, "parameter");
   // TODO: Validate entry and signature
-  validateString("entry.dataKey", entry.datakey, "parameter");
+  validateString("entry.dataKey", entry.dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
 
   const opts = {
@@ -299,9 +298,9 @@ export async function postSignedEntry(
   };
 
   // Hash and hex encode the given data key if it is not a hash already.
-  let datakey = entry.datakey;
+  let datakey = entry.dataKey;
   if (!opts.hashedDataKeyHex) {
-    datakey = toHexString(hashDataKey(entry.datakey));
+    datakey = toHexString(hashDataKey(entry.dataKey));
   }
   const data = {
     publickey: {
@@ -334,7 +333,7 @@ export async function postSignedEntry(
 
 export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
   validateObject(name, value, valueKind);
-  validateString(`${name}.datakey`, (value as RegistryEntry).datakey, `${valueKind} field`);
+  validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
   validateString(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
   validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
 }

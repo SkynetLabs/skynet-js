@@ -153,11 +153,11 @@ export function hashAll(...args: Uint8Array[]): Uint8Array {
 /**
  * Hash the given data key.
  *
- * @param datakey - Datakey to hash.
- * @returns - Hash of the datakey.
+ * @param dataKey - Data key to hash.
+ * @returns - Hash of the data key.
  */
-export function hashDataKey(datakey: string): Uint8Array {
-  return hashAll(encodeUtf8String(datakey));
+export function hashDataKey(dataKey: string): Uint8Array {
+  return hashAll(encodeUtf8String(dataKey));
 }
 
 /**
@@ -170,9 +170,9 @@ export function hashDataKey(datakey: string): Uint8Array {
 export function hashRegistryEntry(registryEntry: RegistryEntry, hashedDataKeyHex: boolean): Uint8Array {
   let dataKeyBytes;
   if (hashedDataKeyHex) {
-    dataKeyBytes = hexToUint8Array(registryEntry.datakey);
+    dataKeyBytes = hexToUint8Array(registryEntry.dataKey);
   } else {
-    dataKeyBytes = hashDataKey(registryEntry.datakey);
+    dataKeyBytes = hashDataKey(registryEntry.dataKey);
   }
 
   return hashAll(dataKeyBytes, encodeUtf8String(registryEntry.data), encodeBigintAsUint64(registryEntry.revision));
