@@ -4,6 +4,21 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.1-beta]
+
+### Changed
+
+- **[Breaking change]** An issue with path encodings in `file.getJSON`, `mysky.getJSON` and `mysky.setJSON` has been fixed. Unfortunately the encoding had to be changed so all MySky data will be lost.
+- **[Breaking change]** Renamed `RegistryEntry.datakey` to `dataKey` for consistency
+
+### Removed
+
+- **[Breaking change]** The `getEntry` `timeout` option has been removed as it no longer has an effect.
+
+### Added
+
+- `Permission` is now re-exported from `skynet-js` so that you can call `mysky.addPermissions` without requiring the `skynet-mysky-utils` dependency.
+
 ## [4.0.0-beta]
 
 ### Changed

@@ -229,6 +229,13 @@ export class MySky {
     return await this.connector.connection.remoteHandle().call("userID");
   }
 
+  /**
+   * Gets Discoverable JSON at the given path through MySky, if the user has given permissions to do so.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An object containing the json data as well as the skylink for the data.
+   */
   async getJSON(path: string, customOptions?: CustomGetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
@@ -246,6 +253,14 @@ export class MySky {
     return await this.connector.client.db.getJSON(publicKey, dataKey, opts);
   }
 
+  /**
+   * Sets Discoverable JSON at the given path through MySky, if the user has given permissions to do so.
+   *
+   * @param path - The data path.
+   * @param json - The json to set.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An object containing the json data as well as the skylink for the data.
+   */
   async setJSON(path: string, json: JsonData, customOptions?: CustomSetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
     validateObject("json", json, "parameter");

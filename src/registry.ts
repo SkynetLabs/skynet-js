@@ -20,6 +20,7 @@ import {
  * Custom get entry options.
  *
  * @property [endpointGetEntry] - The relative URL path of the portal endpoint to contact.
+ * @property [hashedDataKeyHex] - Whether the data key is already hashed and in hex format. If not, we hash the data key.
  */
 export type CustomGetEntryOptions = BaseCustomOptions & {
   endpointGetEntry?: string;
@@ -30,6 +31,7 @@ export type CustomGetEntryOptions = BaseCustomOptions & {
  * Custom set entry options.
  *
  * @property [endpointSetEntry] - The relative URL path of the portal endpoint to contact.
+ * @property [hashedDataKeyHex] - Whether the data key is already hashed and in hex format. If not, we hash the data key.
  */
 export type CustomSetEntryOptions = BaseCustomOptions & {
   endpointSetEntry?: string;
