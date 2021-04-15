@@ -4,14 +4,19 @@ const fs = require("fs");
 const fse = require('fs-extra');
 const tar = require("tar-fs");
 
+// The secret seed phrase to deploy with.
 const deploySeed = "SKYNET_JS_DEPLOY_SEED";
-const hns = "skynet-js";
-const dataKey = "skynet-js";
+// The location of the bundle to deploy. Must be a folder.
 const bundlePath = "dist/bundle";
+// Location of package.json, used to get the latest version.
 const packageJson = "../package.json";
+// Set to true to skip the download.
 const skipDownload = false;
+// Set to true to skip the upload.
 const skipUpload = false;
 
+const hns = "skynet-js";
+const dataKey = "skynet-js";
 const versionsDir = "versions";
 const versionsTarFile = `${versionsDir}.tar`;
 
