@@ -214,13 +214,23 @@ export function getFullDomainUrlForPortal(portalUrl: string, domain: string): st
  * @param fullDomain - Full URL.
  * @returns - The extracted domain.
  */
-export function extractDomainForPortal(portalUrl: string, fullDomain: string): string {
+export function extractDomainForPortal(portalUrl: string, fullUrl: string): string {
   validateString("portalUrl", portalUrl, "parameter");
-  validateString("fullDomain", fullDomain, "parameter");
+  validateString("fullDomain", fullUrl, "parameter");
 
+  // Try to extract the domain from the fullUrl.
+  try {
+    const fullUrlObj = new URL(fullUrl);
+    fullUrl = fullUrlObj.hostname;
+  } catch {}
+
+  // Trim any slashes from the input URL.
+  fullUrl = trimSuffix(fullUrl, "/");
+
+  // Get the portal domain.
   const portalUrlObj = new URL(portalUrl);
-  const portalDomain = portalUrlObj.hostname;
+  const portalDomain = trimSuffix(portalUrlObj.hostname, "/");
 
-  const domain = trimSuffix(fullDomain, portalDomain, 1);
+  const domain = trimSuffix(fullUrl, portalDomain, 1);
   return trimSuffix(domain, ".");
 }
