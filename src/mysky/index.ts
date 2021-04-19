@@ -54,8 +54,13 @@ export async function loadMySky(
 export class MySky {
   static instance: MySky | null = null;
 
+  // Holds the loaded DACs.
   dacs: DacLibrary[] = [];
+
+  // Holds the currently granted permissions.
   grantedPermissions: Permission[] = [];
+
+  // Holds permissions that have not been granted.
   pendingPermissions: Permission[];
 
   // ============
