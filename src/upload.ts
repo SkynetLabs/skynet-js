@@ -1,8 +1,11 @@
+import { AxiosResponse } from "axios";
+import { Buffer } from "buffer";
+import { Upload } from "tus-js-client";
+
 import { getFileMimeType } from "./utils/file";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
-import { SkynetClient } from "./client";
-import { AxiosResponse } from "axios";
+import { buildRequestHeaders, buildRequestUrl, SkynetClient } from "./client";
 import {
   throwValidationError,
   validateNumber,
@@ -10,6 +13,13 @@ import {
   validateOptionalObject,
   validateString,
 } from "./utils/validation";
+import { toHexString, trimSuffix } from "./utils/string";
+import { SiaSkylink } from "./skylink/sia";
+
+// 4MiB * dataPieces - encryptionOverhead, set in skyd.
+const DEFAULT_TUS_CHUNK_SIZE = (1 << 22) * 10;
+
+const DEFAULT_TUS_RETRY_DELAYS = [0, 3000, 5000, 10000, 20000];
 
 /**
  * Custom upload options.
@@ -26,6 +36,19 @@ export type CustomUploadOptions = BaseCustomOptions & {
   portalDirectoryFileFieldname?: string;
   customFilename?: string;
   query?: Record<string, unknown>;
+};
+
+/**
+ * Custom large upload options.
+ *
+ * @property [endpointLargeUpload] - The relative URL path of the portal endpoint to contact.
+ */
+export type CustomLargeUploadOptions = BaseCustomOptions & {
+  endpointLargeUpload?: string;
+  endpointLargeUploadId?: string;
+  customFilename?: string;
+  chunkSize?: number;
+  retryDelays?: number[];
 };
 
 /**
@@ -50,13 +73,21 @@ export const defaultUploadOptions = {
   query: undefined,
 };
 
+export const defaultLargeUploadOptions = {
+  ...defaultBaseOptions,
+  endpointLargeUpload: "/skynet/tus",
+  endpointLargeUploadId: "/skynet/upload/tus",
+  chunkSize: DEFAULT_TUS_CHUNK_SIZE,
+  retryDelays: DEFAULT_TUS_RETRY_DELAYS,
+};
+
 /**
  * Uploads a file to Skynet.
  *
  * @param this - SkynetClient
  * @param file - The file to upload.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointPath="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
  * @returns - The returned skylink.
  * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
  */
@@ -65,7 +96,7 @@ export async function uploadFile(
   file: File,
   customOptions?: CustomUploadOptions
 ): Promise<UploadRequestResponse> {
-  // Validation is done in `uploadDirectoryRequest`.
+  // Validation is done in `uploadFileRequest`.
 
   const response = await this.uploadFileRequest(file, customOptions);
 
@@ -114,6 +145,131 @@ export async function uploadFileRequest(
   });
 
   return response;
+}
+
+/**
+ * Uploads a large file to Skynet using tus.
+ *
+ * @param this - SkynetClient
+ * @param file - The file to upload.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The returned skylink.
+ * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
+ */
+export async function uploadLargeFile(
+  this: SkynetClient,
+  // TODO: Change in Node?
+  file: File,
+  customOptions?: CustomLargeUploadOptions
+): Promise<UploadRequestResponse> {
+  // Validation is done in `uploadLargeFileRequest`.
+
+  const response = await this.uploadLargeFileRequest(file, customOptions);
+
+  // Sanity check.
+  validateLargeUploadResponse(response);
+
+  // Get the skylink.
+  const metadata = response.headers["upload-metadata"];
+  // Convert the string metadata header into a map.
+  const metadataMap: Map<string, string> = new Map(metadata.split(",").map((pair: string) => pair.split(" ")));
+  let skylink = metadataMap.get("Skylink");
+  // Validate that metadata contains Skylink.
+  if (!skylink) {
+    throw new Error("Response header 'upload-metadata' missing 'Skylink' field");
+  }
+  skylink = Buffer.from(skylink, "base64").toString("utf-8");
+
+  // Get the remaining fields.
+  const siaSkylink = SiaSkylink.loadString(skylink);
+  const merkleroot = toHexString(siaSkylink.merkleRoot);
+  const bitfield = siaSkylink.bitfield;
+
+  // Format the skylink.
+  skylink = formatSkylink(skylink);
+
+  return { skylink, merkleroot, bitfield };
+}
+
+/**
+ * Makes a request to upload a file to Skynet.
+ *
+ * @param this - SkynetClient
+ * @param file - The file to upload.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointPath="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The upload response.
+ */
+export async function uploadLargeFileRequest(
+  this: SkynetClient,
+  file: File,
+  customOptions?: CustomLargeUploadOptions
+): Promise<AxiosResponse> {
+  // TODO: Accept Buffer in Node?
+  // validateFile("file", file, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultLargeUploadOptions);
+
+  const opts = { ...defaultLargeUploadOptions, ...this.customOptions, ...customOptions };
+
+  // TODO: Add back upload options once they are implemented in skyd.
+  const url = await buildRequestUrl(this, opts.endpointLargeUpload);
+  const headers = buildRequestHeaders(opts.customUserAgent, opts.customCookie);
+
+  file = ensureFileObjectConsistency(file);
+  let filename = file.name;
+  if (opts.customFilename) {
+    filename = opts.customFilename;
+  }
+  // TODO: Authorization?
+  // TODO: Do we have to enable cross-site cookies?
+
+  const onProgress =
+    opts.onUploadProgress &&
+    function (bytesSent: number, bytesTotal: number) {
+      const progress = bytesSent / bytesTotal;
+
+      // @ts-expect-error TS complains.
+      opts.onUploadProgress(progress, { loaded: bytesSent, total: bytesTotal });
+    };
+
+  return new Promise((resolve, reject) => {
+    const tusOpts = {
+      endpoint: url,
+      chunkSize: opts.chunkSize,
+      retryDelays: opts.retryDelays,
+      metadata: {
+        filename,
+        filetype: file.type,
+      },
+      headers,
+      onProgress,
+      onError: (error: Error) => {
+        reject(error);
+      },
+      onSuccess: async () => {
+        if (!upload.url) {
+          reject(new Error("'upload.url' was not set"));
+          return;
+        }
+
+        // Extract the location from the URL.
+        const [location] = trimSuffix(upload.url, "/").split("/").slice(-1);
+        // Call HEAD to get the metadata, including the skylink.
+        const resp = await this.executeRequest({
+          ...opts,
+          endpointPath: opts.endpointLargeUpload,
+          method: "head",
+          headers: { ...headers, "Tus-Resumable": "1.0.0" },
+          extraPath: location,
+        });
+        resolve(resp);
+      },
+    };
+
+    const upload = new Upload(file, tusOpts);
+    upload.start();
+  });
 }
 
 /**
@@ -169,8 +325,8 @@ export async function uploadDirectoryRequest(
   validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
 
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
-  const formData = new FormData();
 
+  const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {
     file = ensureFileObjectConsistency(file as File);
     formData.append(opts.portalDirectoryFileFieldname, file as File, path);
@@ -231,6 +387,27 @@ function validateUploadResponse(response: AxiosResponse): void {
     validateString("skylink", response.data.skylink, "upload response field");
     validateString("merkleroot", response.data.merkleroot, "upload response field");
     validateNumber("bitfield", response.data.bitfield, "upload response field");
+  } catch (err) {
+    throw new Error(
+      `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+    );
+  }
+}
+
+/**
+ * Validates the large upload response.
+ *
+ * @param response - The upload response.
+ * @throws - Will throw if not a valid upload response.
+ */
+function validateLargeUploadResponse(response: AxiosResponse): void {
+  try {
+    if (!response.headers) {
+      throw new Error("response.headers field missing");
+    }
+
+    const metadata = response.headers["upload-metadata"];
+    validateString(`response.headers["upload-metadata"]`, metadata, "upload response field");
   } catch (err) {
     throw new Error(
       `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`

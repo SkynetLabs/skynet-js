@@ -1,6 +1,14 @@
 import axios, { AxiosResponse } from "axios";
 import type { Method } from "axios";
-import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
+
+import {
+  uploadFile,
+  uploadLargeFile,
+  uploadDirectory,
+  uploadDirectoryRequest,
+  uploadFileRequest,
+  uploadLargeFileRequest,
+} from "./upload";
 import {
   downloadFile,
   downloadFileHns,
@@ -57,10 +65,10 @@ export type RequestConfig = CustomClientOptions & {
   data?: FormData | Record<string, unknown>;
   url?: string;
   method?: Method;
+  headers?: Headers;
   query?: Record<string, unknown>;
   timeout?: number; // TODO: remove
   extraPath?: string;
-  headers?: Record<string, unknown>;
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;
 };
@@ -84,6 +92,8 @@ export class SkynetClient {
 
   uploadFile = uploadFile;
   protected uploadFileRequest = uploadFileRequest;
+  uploadLargeFile = uploadLargeFile;
+  protected uploadLargeFileRequest = uploadLargeFileRequest;
   uploadDirectory = uploadDirectory;
   protected uploadDirectoryRequest = uploadDirectoryRequest;
 
@@ -212,28 +222,12 @@ export class SkynetClient {
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
-   * @throws - Will throw if unimplemented options have been passed in.
    */
   protected async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
-    // Build the URL.
-    let url = config.url;
-    if (!url) {
-      const portalUrl = await this.portalUrl();
-      url = makeUrl(portalUrl, config.endpointPath, config.extraPath ?? "");
-    }
-    if (config.query) {
-      url = addUrlQuery(url, config.query);
-    }
+    const url = await buildRequestUrl(this, config.endpointPath, config.url, config.extraPath, config.query);
 
     // Build headers.
-    const headers = { ...config.headers };
-    // Set some headers from common options.
-    if (config.customUserAgent) {
-      headers["User-Agent"] = config.customUserAgent;
-    }
-    if (config.customCookie) {
-      headers["Cookie"] = config.customCookie;
-    }
+    const headers = buildRequestHeaders(config.headers, config.customUserAgent, config.customCookie);
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
@@ -263,4 +257,39 @@ export class SkynetClient {
       withCredentials: true,
     });
   }
+}
+
+export async function buildRequestUrl(
+  client: SkynetClient,
+  endpointPath: string,
+  url?: string,
+  extraPath?: string,
+  query?: Record<string, unknown>
+): Promise<string> {
+  // Build the URL.
+  if (!url) {
+    const portalUrl = await client.portalUrl();
+    url = makeUrl(portalUrl, endpointPath, extraPath ?? "");
+  }
+  if (query) {
+    url = addUrlQuery(url, query);
+  }
+
+  return url;
+}
+
+type Headers = { [key: string]: string };
+
+export function buildRequestHeaders(headers?: Headers, customUserAgent?: string, customCookie?: string): Headers {
+  if (!headers) {
+    headers = {};
+  }
+  // Set some headers from common options.
+  if (customUserAgent) {
+    headers["User-Agent"] = customUserAgent;
+  }
+  if (customCookie) {
+    headers["Cookie"] = customCookie;
+  }
+  return headers;
 }

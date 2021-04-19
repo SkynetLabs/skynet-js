@@ -58,7 +58,10 @@ export class Connector {
     // Create the iframe.
 
     const childFrame = createIframe(domainUrl, domainUrl);
-    const childWindow = childFrame.contentWindow!;
+    if (!childFrame.contentWindow) {
+      throw new Error("'childFrame.contentWindow' was null");
+    }
+    const childWindow = childFrame.contentWindow;
 
     // Connect to the iframe.
 

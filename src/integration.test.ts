@@ -311,8 +311,24 @@ describe(`Integration test for portal ${portal}`, () => {
     //   expect(skylink).toEqual(returnedSkylink);
     // });
 
+    it("Custom filenames should take effect", async () => {
+      const customFilename = "asdf!!";
+
+      // Upload the data with a custom filename.
+
+      const file = new File([fileData], dataKey);
+      const { skylink } = await client.uploadFile(file, { customFilename });
+      expect(skylink).not.toEqual("");
+
+      // Get file metadata and check filename.
+
+      const { metadata } = await client.getMetadata(skylink);
+      expect(metadata).toEqual(expect.objectContaining({ filename: customFilename }));
+    });
+
     it("Should get plaintext file contents", async () => {
       // Upload the data to acquire its skylink.
+
       const file = new File([fileData], dataKey, { type: plaintextType });
       const { skylink } = await client.uploadFile(file);
       expect(skylink).not.toEqual("");
@@ -406,4 +422,29 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(data).toEqual(expectedData);
     });
   });
+
+  // TODO: Doesn't work in Node. See
+  // https://github.com/tus/tus-js-client/issues/252#issuecomment-821181951
+  // describe("Large upload integration tests", () => {
+  //   // TODO: Remove.
+  //   const client = new SkynetClient("https://siasky.xyz");
+  //   const fileData = "testing";
+  //   const filename = "name";
+  //   const file = new File([fileData], filename);
+
+  //   it("Should be able to upload and download a small file uploaded using the large upload method", async () => {
+  //     // Upload the data using the large file upload.
+
+  //     console.log("calling uploadlargefile...");
+  //     // @ts-ignore
+  //     const { skylink } = await client.uploadLargeFile(file);
+  //     console.log("finished calling uploadlargefile...");
+  //     expect(skylink).not.toEqual("");
+
+  //     // Get file metadata and check filename.
+
+  //     const { metadata } = await client.getMetadata(skylink);
+  //     console.log(metadata);
+  //   });
+  // });
 });
