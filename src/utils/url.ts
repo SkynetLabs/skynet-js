@@ -205,7 +205,6 @@ export function getFullDomainUrlForPortal(portalUrl: string, domain: string): st
   return addSubdomain(portalUrl, domain);
 }
 
-// TODO: Expand to also take a fullURL instead of just a fullDomain.
 /**
  * Extracts the domain from the given portal URL,
  * e.g. ("https://siasky.net", "dac.hns.siasky.net") => "dac.hns"
@@ -218,8 +217,20 @@ export function extractDomainForPortal(portalUrl: string, fullDomain: string): s
   validateString("portalUrl", portalUrl, "parameter");
   validateString("fullDomain", fullDomain, "parameter");
 
+  // Try to extract the domain from the fullDomain.
+  try {
+    const fullDomainObj = new URL(fullDomain);
+    fullDomain = fullDomainObj.hostname;
+  } catch {
+    // If fullDomain is not a URL, ignore the error and use it as-is.
+  }
+
+  // Trim any slashes from the input URL.
+  fullDomain = trimSuffix(fullDomain, "/");
+
+  // Get the portal domain.
   const portalUrlObj = new URL(portalUrl);
-  const portalDomain = portalUrlObj.hostname;
+  const portalDomain = trimSuffix(portalUrlObj.hostname, "/");
 
   const domain = trimSuffix(fullDomain, portalDomain, 1);
   return trimSuffix(domain, ".");

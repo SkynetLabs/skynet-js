@@ -135,13 +135,11 @@ export async function getEntry(
     // TODO: Refactor this validation into a separate function.
     /* istanbul ignore next */
     if (!err.response) {
-      console.log(`Full error: ${err}`);
-      throw new Error("Error response not found");
+      throw new Error(`Error response not found. Full error: ${err}`);
     }
     /* istanbul ignore next */
     if (!err.response.status) {
-      console.log(`Full error: ${err}`);
-      throw new Error("Error response did not contain expected field 'status'");
+      throw new Error(`Error response did not contain expected field 'status'. Full error: ${err}`);
     }
     // Check if status was 404 "not found" and return null if so.
     if (err.response.status === 404) {
@@ -150,14 +148,14 @@ export async function getEntry(
 
     /* istanbul ignore next */
     if (!err.response.data) {
-      console.log(`Full error: ${err}`);
-      throw new Error(`Error response did not contain expected field 'data'. Status code: ${err.response.status}`);
+      throw new Error(
+        `Error response did not contain expected field 'data'. Status code: ${err.response.status}. Full error: ${err}`
+      );
     }
     /* istanbul ignore next */
     if (!err.response.data.message) {
-      console.log(`Full error: ${err}`);
       throw new Error(
-        `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}`
+        `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}. Full error: ${err}`
       );
     }
     // Return the error message from the response.

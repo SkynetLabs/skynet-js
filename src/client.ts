@@ -21,6 +21,7 @@ import { getEntry, getEntryUrl, setEntry, postSignedEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
+import { trimSuffix } from "./utils/string";
 
 /**
  * Custom client options.
@@ -169,7 +170,7 @@ export class SkynetClient {
           if (!portalUrl) {
             reject(new Error("Could not get portal URL for the given portal"));
           }
-          resolve(portalUrl);
+          resolve(trimSuffix(portalUrl, "/"));
         });
       });
     }
