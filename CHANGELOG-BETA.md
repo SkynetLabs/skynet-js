@@ -4,6 +4,12 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.2-beta]
+
+### Changed
+
+- Expanded `client.extractDomain` to also work with input URLs.
+
 ## [4.0.1-beta]
 
 ### Changed
