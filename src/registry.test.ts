@@ -23,7 +23,9 @@ describe("getEntry", () => {
   it("should throw if the response status is not in the 200s and not 404 and JSON is returned", async () => {
     mock.onGet(registryLookupUrl).replyOnce(400, JSON.stringify({ message: "foo error" }));
 
-    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError("foo error");
+    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError(
+      "Request failed with status code 400"
+    );
   });
 
   it("should throw if the response status is not in the 200s and not 404 and HTML is returned", async () => {

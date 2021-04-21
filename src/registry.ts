@@ -335,23 +335,7 @@ function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
   // Check if status was 404 "not found" and return null if so.
   if (err.response.status === 404) {
     return { entry: null, signature: null };
-  } else if (err.response.status >= 400) {
-    console.log(err);
+  } else {
     throw err;
   }
-
-  /* istanbul ignore next */
-  if (!err.response.data) {
-    throw new Error(
-      `Error response did not contain expected field 'data'. Status code: ${err.response.status}. Full error: ${err}`
-    );
-  }
-  /* istanbul ignore next */
-  if (!err.response.data.message) {
-    throw new Error(
-      `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}. Full error: ${err}`
-    );
-  }
-  // Return the error message from the response.
-  throw new Error(err.response.data.message);
 }
