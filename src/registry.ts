@@ -1,4 +1,4 @@
-import type { AxiosResponse } from "axios";
+import type { AxiosError, AxiosResponse } from "axios";
 import { Buffer } from "buffer";
 import { sign } from "tweetnacl";
 
@@ -127,39 +127,17 @@ export async function getEntry(
         }
         // Change the revision value from a JSON integer to a string.
         data = data.replace(regexRevisionNoQuotes, '"revision":"$1"');
-        // Convert the JSON data to an object.
-        return JSON.parse(data);
+        // Try converting the JSON data to an object.
+        try {
+          return JSON.parse(data);
+        } catch {
+          // The data is not JSON, it's likely an HTML error response.
+          return data;
+        }
       },
     });
   } catch (err) {
-    // TODO: Refactor this validation into a separate function.
-    /* istanbul ignore next */
-    if (!err.response) {
-      throw new Error(`Error response not found. Full error: ${err}`);
-    }
-    /* istanbul ignore next */
-    if (!err.response.status) {
-      throw new Error(`Error response did not contain expected field 'status'. Full error: ${err}`);
-    }
-    // Check if status was 404 "not found" and return null if so.
-    if (err.response.status === 404) {
-      return { entry: null, signature: null };
-    }
-
-    /* istanbul ignore next */
-    if (!err.response.data) {
-      throw new Error(
-        `Error response did not contain expected field 'data'. Status code: ${err.response.status}. Full error: ${err}`
-      );
-    }
-    /* istanbul ignore next */
-    if (!err.response.data.message) {
-      throw new Error(
-        `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}. Full error: ${err}`
-      );
-    }
-    // Return the error message from the response.
-    throw new Error(err.response.data.message);
+    return handleGetEntryErrResponse(err);
   }
 
   // Sanity check.
@@ -336,4 +314,41 @@ export function validateRegistryEntry(name: string, value: unknown, valueKind: s
   validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
   validateString(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
   validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
+}
+
+/**
+ * Handles error responses returned in getEntry.
+ *
+ * @param err - The Axios error.
+ * @returns - An empty signed registry entry if the status code is 404.
+ * @throws - Will throw if the status code is not 404.
+ */
+function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
+  /* istanbul ignore next */
+  if (!err.response) {
+    throw new Error(`Error response field not found, incomplete Axios error. Full error: ${err}`);
+  }
+  /* istanbul ignore next */
+  if (!err.response.status) {
+    throw new Error(`Error response did not contain expected field 'status'. Full error: ${err}`);
+  }
+  // Check if status was 404 "not found" and return null if so.
+  if (err.response.status === 404) {
+    return { entry: null, signature: null };
+  }
+
+  /* istanbul ignore next */
+  if (!err.response.data) {
+    throw new Error(
+      `Error response did not contain expected field 'data'. Status code: ${err.response.status}. Full error: ${err}`
+    );
+  }
+  /* istanbul ignore next */
+  if (!err.response.data.message) {
+    throw new Error(
+      `Error response did not contained expected fields 'data.message'. Status code: ${err.response.status}. Full error: ${err}`
+    );
+  }
+  // Return the error message from the response.
+  throw new Error(err.response.data.message);
 }
