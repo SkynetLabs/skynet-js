@@ -38,7 +38,7 @@ describe("getEntry", () => {
     mock.onGet(registryLookupUrl).replyOnce(429, responseHTML);
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError(
-      "Error response did not contained expected fields 'data.message'. Status code: 429. Full error: Error: Request failed with status code 429"
+      "Request failed with status code 429"
     );
   });
 
