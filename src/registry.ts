@@ -5,8 +5,8 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { hexToUint8Array, toHexString, uint8ArrayToStringUtf8 } from "./utils/string";
-import { getEntryUrlForPortal } from "./utils/url";
+import { hexToUint8Array, isHexString, toHexString, trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
+import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
   validateBigint,
@@ -15,6 +15,7 @@ import {
   validateOptionalObject,
   validateString,
 } from "./utils/validation";
+import { newSkylinkV2 } from "./skylink";
 
 /**
  * Custom get entry options.
@@ -228,6 +229,70 @@ export async function getEntryUrl(
   const portalUrl = await this.portalUrl();
 
   return getEntryUrlForPortal(portalUrl, publicKey, dataKey, opts);
+}
+
+/**
+ * Gets the registry entry URL without an initialized client.
+ *
+ * @param portalUrl - The portal URL.
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The full get entry URL.
+ * @throws - Will throw if the provided timeout is invalid or the given key is not valid.
+ */
+export function getEntryUrlForPortal(
+  portalUrl: string,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): string {
+  validateString("portalUrl", portalUrl, "parameter");
+  validateString("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+
+  const opts = {
+    ...defaultGetEntryOptions,
+    ...customOptions,
+  };
+
+  // Trim the prefix if it was passed in.
+  publicKey = trimPrefix(publicKey, "ed25519:");
+  if (!isHexString(publicKey)) {
+    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
+  }
+
+  // Hash and hex encode the given data key if it is not a hash already.
+  let dataKeyHashHex = dataKey;
+  if (!opts.hashedDataKeyHex) {
+    dataKeyHashHex = toHexString(hashDataKey(dataKey));
+  }
+
+  const query = {
+    publickey: `ed25519:${publicKey}`,
+    datakey: dataKeyHashHex,
+    timeout: DEFAULT_GET_ENTRY_TIMEOUT,
+  };
+
+  let url = makeUrl(portalUrl, opts.endpointGetEntry);
+  url = addUrlQuery(url, query);
+
+  return url;
+}
+
+export async function getEntrySkylink(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): Promise<string> {
+  // validateString("publicKey", publicKey, "parameter");
+  // validateString("dataKey", dataKey, "parameter");
+  // validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+
+  // return newSkylinkV2(siaPublicKey, tweak).toString();
+  return "unimplemented";
 }
 
 /**

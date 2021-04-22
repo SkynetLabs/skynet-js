@@ -2,8 +2,7 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
-import { signEntry } from "./registry";
-import { getEntryUrlForPortal } from "./utils/url";
+import { getEntryUrlForPortal, signEntry } from "./registry";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;

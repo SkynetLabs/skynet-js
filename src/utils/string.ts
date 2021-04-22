@@ -12,6 +12,7 @@ export function trimForwardSlash(str: string): string {
   return trimPrefix(trimSuffix(str, "/"), "/");
 }
 
+// TODO: Move to mysky-utils
 /**
  * Removes a prefix from the beginning of the string.
  *
@@ -33,6 +34,7 @@ export function trimPrefix(str: string, prefix: string, limit?: number): string 
   return str;
 }
 
+// TODO: Move to mysky-utils
 /**
  * Removes a suffix from the end of the string.
  *

@@ -17,7 +17,7 @@ import {
 } from "./download";
 import { getJSON as fileGetJSON } from "./file";
 import { getJSON, setJSON } from "./skydb";
-import { getEntry, getEntryUrl, setEntry, postSignedEntry } from "./registry";
+import { getEntry, getEntryUrl, getEntrySkylink, setEntry, postSignedEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -120,6 +120,7 @@ export class SkynetClient {
   registry = {
     getEntry: getEntry.bind(this),
     getEntryUrl: getEntryUrl.bind(this),
+    getEntrySkylink: getEntrySkylink.bind(this),
     setEntry: setEntry.bind(this),
 
     postSignedEntry: postSignedEntry.bind(this),

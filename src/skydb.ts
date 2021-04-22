@@ -10,7 +10,7 @@ import {
   CustomSetEntryOptions,
 } from "./registry";
 import { assertUint64, MAX_REVISION } from "./utils/number";
-import { uriSkynetPrefix } from "./utils/skylink";
+import { uriSkynetPrefix } from "./utils/url";
 import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8 } from "./utils/string";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";

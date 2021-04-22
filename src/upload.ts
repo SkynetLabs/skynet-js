@@ -1,6 +1,6 @@
 import { getFileMimeType } from "./utils/file";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { formatSkylink } from "./utils/skylink";
+import { formatSkylink } from "./skylink/format";
 import { SkynetClient } from "./client";
 import { AxiosResponse } from "axios";
 import {

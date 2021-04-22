@@ -1,10 +1,11 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
+import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
-import { defaultSkynetPortalUrl, getEntryUrlForPortal, getSkylinkUrlForPortal } from "./utils/url";
+import { defaultSkynetPortalUrl } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
-import { regexRevisionNoQuotes } from "./registry";
+import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";

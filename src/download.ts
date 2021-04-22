@@ -2,9 +2,10 @@ import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { formatSkylink, uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/skylink";
+import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
+import { parseSkylink } from "./skylink/parse";
 import { trimUriPrefix } from "./utils/string";
-import { addSubdomain, addUrlQuery, getSkylinkUrlForPortal, makeUrl } from "./utils/url";
+import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/url";
 import { validateOptionalObject, validateString } from "./utils/validation";
 
 /**
@@ -173,6 +174,79 @@ export async function getSkylinkUrl(
   const portalUrl = await this.portalUrl();
 
   return getSkylinkUrlForPortal(portalUrl, skylinkUrl, opts);
+}
+
+/**
+ * Gets the skylink URL without an initialized client.
+ *
+ * @param portalUrl - The portal URL.
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The full URL for the skylink.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
+ */
+export function getSkylinkUrlForPortal(
+  portalUrl: string,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): string {
+  validateString("portalUrl", portalUrl, "parameter");
+  validateString("skylinkUrl", skylinkUrl, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultDownloadOptions);
+
+  const opts = { ...defaultDownloadOptions, ...customOptions };
+
+  const query = opts.query ?? {};
+  if (opts.download) {
+    // Set the "attachment" parameter.
+    query.attachment = true;
+  }
+  if (opts.noResponseMetadata) {
+    // Set the "no-response-metadata" parameter.
+    query["no-response-metadata"] = true;
+  }
+
+  // URL-encode the path.
+  let path = "";
+  if (opts.path) {
+    if (typeof opts.path !== "string") {
+      throw new Error(`opts.path has to be a string, ${typeof opts.path} provided`);
+    }
+
+    // Encode each element of the path separately and join them.
+    //
+    // Don't use encodeURI because it does not encode characters such as '?'
+    // etc. These are allowed as filenames on Skynet and should be encoded so
+    // they are not treated as URL separators.
+    path = opts.path
+      .split("/")
+      .map((element: string) => encodeURIComponent(element))
+      .join("/");
+  }
+
+  let url;
+  if (opts.subdomain) {
+    // Get the path from the skylink. Use the empty string if not found.
+    const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true }) ?? "";
+    // Get just the skylink.
+    let skylink = parseSkylink(skylinkUrl);
+    if (skylink === null) {
+      throw new Error(`Could not get skylink out of input '${skylinkUrl}'`);
+    }
+    // Convert the skylink (without the path) to base32.
+    skylink = convertSkylinkToBase32(skylink);
+    url = addSubdomain(portalUrl, skylink);
+    url = makeUrl(url, skylinkPath, path);
+  } else {
+    // Get the skylink including the path.
+    const skylink = parseSkylink(skylinkUrl, { includePath: true });
+    if (skylink === null) {
+      throw new Error(`Could not get skylink with path out of input '${skylinkUrl}'`);
+    }
+    // Add additional path if passed in.
+    url = makeUrl(portalUrl, opts.endpointDownload, skylink, path);
+  }
+  return addUrlQuery(url, query);
 }
 
 /**

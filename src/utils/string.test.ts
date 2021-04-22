@@ -1,6 +1,7 @@
 import { fromByteArray } from "base64-js";
 import randomBytes from "randombytes";
-import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./skylink";
+
+import { uriHandshakePrefix, uriHandshakeResolverPrefix } from "./url";
 import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
 
 const hnsLink = "doesn";

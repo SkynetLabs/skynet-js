@@ -3,7 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
 import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
-import { getSkylinkUrlForPortal } from "./utils/url";
+import { getSkylinkUrlForPortal } from "./download";
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
