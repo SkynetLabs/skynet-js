@@ -18,7 +18,7 @@ export function encodeNumber(num: number): Uint8Array {
 }
 
 /**
- * Converts the given bigint into a uint8 array.
+ * Encodes the given bigint into a uint8 array.
  *
  * @param int - Bigint to encode.
  * @returns - Bigint encoded as a byte array.
@@ -37,6 +37,12 @@ export function encodeBigintAsUint64(int: bigint): Uint8Array {
   return encoded;
 }
 
+/**
+ * Encodes the uint8array, prefixed by its length.
+ *
+ * @param bytes - The input array.
+ * @returns - The encoded byte array.
+ */
 export function encodePrefixedBytes(bytes: Uint8Array): Uint8Array {
   const len = bytes.length;
   const buf = new ArrayBuffer(8 + len);

@@ -1,4 +1,4 @@
-import { hexToUint8Array, toHexString } from "../utils/string";
+import { hexToUint8Array } from "../utils/string";
 import { newEd25519PublicKey, newSkylinkV2, newSpecifier, SiaSkylink } from "./sia";
 
 declare global {

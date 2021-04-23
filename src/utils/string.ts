@@ -5,6 +5,9 @@ import { throwValidationError, validateHexString, validateString } from "./valid
 /**
  * Returns a boolean indicating whether the String contains only ASCII bytes.
  * From https://stackoverflow.com/a/14313213/6085242.
+ *
+ * @param str - The input string.
+ * @returns - Whether the string is ASCII.
  */
 export function isASCIIString(str: string): boolean {
   // eslint-disable-next-line

@@ -202,12 +202,26 @@ function ensureFileObjectConsistency(file: File): File {
   return new File([file], file.name, { type: getFileMimeType(file) });
 }
 
+/**
+ * Validates the given value as a file.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @throws - Will throw if not a valid file.
+ */
 function validateFile(name: string, value: unknown, valueKind: string) {
   if (!(value instanceof File)) {
     throwValidationError(name, value, valueKind, "'File'");
   }
 }
 
+/**
+ * Validates the upload response.
+ *
+ * @param response - The upload response.
+ * @throws - Will throw if not a valid upload response.
+ */
 function validateUploadResponse(response: AxiosResponse): void {
   try {
     if (!response.data) {

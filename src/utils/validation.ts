@@ -103,12 +103,29 @@ export function validateHexString(name: string, value: unknown, valueKind: strin
   }
 }
 
+/**
+ * Validates the given value as a uint8array.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @throws - Will throw if not a valid uint8array.
+ */
 export function validateUint8Array(name: string, value: unknown, valueKind: string): void {
   if (!(value instanceof Uint8Array)) {
     throwValidationError(name, value, valueKind, "'Uint8Array'");
   }
 }
 
+/**
+ * Validates the given value as a uint8array of the given length.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @param len - The length to check.
+ * @throws - Will throw if not a valid uint8array of the given length.
+ */
 export function validateUint8ArrayLen(name: string, value: unknown, valueKind: string, len: number): void {
   validateUint8Array(name, value, valueKind);
   if ((value as Uint8Array).length !== len) {

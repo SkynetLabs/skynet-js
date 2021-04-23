@@ -4,7 +4,7 @@ import { encodePrefixedBytes } from "../utils/encoding";
 import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
 import { validateHexString, validateUint8ArrayLen } from "../utils/validation";
 
-// rawSkylinkSize is the raw size of the data that gets put into a link.
+// The raw size of the data that gets put into a link.
 const RAW_SKYLINK_SIZE = 34;
 
 export class SiaSkylink {
@@ -35,6 +35,9 @@ const SPECIFIER_LEN = 16;
 /**
  * Returns a specifier for given name, a specifier can only be 16 bytes so we
  * panic if the given name is too long.
+ *
+ * @param name - The name.
+ * @returns - The specifier, if valid.
  */
 export function newSpecifier(name: string): Uint8Array {
   validateSpecifier(name);
@@ -56,6 +59,12 @@ class SiaPublicKey {
   }
 }
 
+/**
+ * Creates a new sia public key. Matches Ed25519PublicKey in sia.
+ *
+ * @param publicKey - The hex-encoded public key.
+ * @returns - The SiaPublicKey.
+ */
 export function newEd25519PublicKey(publicKey: string): SiaPublicKey {
   validateHexString("publicKey", publicKey, "parameter");
 
@@ -66,6 +75,13 @@ export function newEd25519PublicKey(publicKey: string): SiaPublicKey {
   return new SiaPublicKey(algorithm, publicKeyBytes);
 }
 
+/**
+ * Creates a new v2 skylink. Matches NewSkylinkV2 in skyd.
+ *
+ * @param siaPublicKey - The public key as a SiaPublicKey.
+ * @param tweak - The hashed tweak.
+ * @returns - The v2 skylink.
+ */
 export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): SiaSkylink {
   const version = 2;
   const bitfield = version - 1;
@@ -73,6 +89,13 @@ export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): Sia
   return new SiaSkylink(bitfield, merkleRoot);
 }
 
+/**
+ * A helper to derive an entry id for a registry key value pair. Matches DeriveRegistryEntryID in sia.
+ *
+ * @param pubKey - The sia public key.
+ * @param tweak - The tweak.
+ * @returns - The entry ID as a hash of the inputs.
+ */
 function deriveRegistryEntryID(pubKey: SiaPublicKey, tweak: Uint8Array): Uint8Array {
   return hashAll(pubKey.marshalSia(), tweak);
 }
@@ -80,6 +103,9 @@ function deriveRegistryEntryID(pubKey: SiaPublicKey, tweak: Uint8Array): Uint8Ar
 /**
  * Performs validation checks on the specifier name, it panics when the input is
  * invalid seeing we want to catch this on runtime.
+ *
+ * @param name - The specifier name.
+ * @throws - Will throw if the specifier name is not valid.
  */
 function validateSpecifier(name: string) {
   if (!isASCIIString(name)) {
