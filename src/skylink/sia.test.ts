@@ -36,8 +36,8 @@ describe("newSpecifier", () => {
 describe("newSkylinkV2", () => {
   it("should create v2 skylinks correctly", () => {
     // Hard-code expected data from skyd.
-    const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2"
-    const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1"
+    const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
+    const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
     const expectedSkylink = "AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ";
 
     const siaPublicKey = newEd25519PublicKey(publicKey);

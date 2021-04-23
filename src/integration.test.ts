@@ -88,6 +88,7 @@ describe(`Integration test for portal ${portal}`, () => {
       // Set the file again.
       await client.db.setJSON(privateKey, dataKey, json2);
 
+      // Get the file again, should have been updated.
       const { data: data2, skylink: skylink2 } = await client.db.getJSON(publicKey, dataKey);
       expect(data2).toEqual(json2);
       expect(skylink2).toBeTruthy();

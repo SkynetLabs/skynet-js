@@ -1,5 +1,6 @@
 import { fromByteArray } from "base64-js";
-import { encodePrefixedBytes, hashAll } from "../crypto";
+import { hashAll } from "../crypto";
+import { encodePrefixedBytes } from "../utils/encoding";
 import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
 import { validateHexString, validateUint8ArrayLen } from "../utils/validation";
 
@@ -45,10 +46,7 @@ export function newSpecifier(name: string): Uint8Array {
 const PUBLIC_KEY_SIZE = 32;
 
 class SiaPublicKey {
-  constructor (
-    public algorithm: Uint8Array,
-    public key: Uint8Array,
-  ) {}
+  constructor(public algorithm: Uint8Array, public key: Uint8Array) {}
 
   marshalSia(): Uint8Array {
     const bytes = new Uint8Array(SPECIFIER_LEN + 8 + PUBLIC_KEY_SIZE);
@@ -70,7 +68,7 @@ export function newEd25519PublicKey(publicKey: string): SiaPublicKey {
 
 export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): SiaSkylink {
   const version = 2;
-  const bitfield = (version - 1);
+  const bitfield = version - 1;
   const merkleRoot = deriveRegistryEntryID(siaPublicKey, tweak);
   return new SiaSkylink(bitfield, merkleRoot);
 }
