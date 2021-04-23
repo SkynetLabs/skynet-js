@@ -306,7 +306,7 @@ export class MySky {
     const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
-    return { data: json, skylink };
+    return { data: json, dataLink: skylink };
   }
 
   // ================

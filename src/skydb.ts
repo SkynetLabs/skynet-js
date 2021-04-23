@@ -44,7 +44,7 @@ export const defaultSetJSONOptions = {
 
 export type JSONResponse = {
   data: JsonData | null;
-  skylink: string | null;
+  dataLink: string | null;
 };
 
 /**
@@ -76,7 +76,7 @@ export async function getJSON(
   const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
   const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
   if (entry === null) {
-    return { data: null, skylink: null };
+    return { data: null, dataLink: null };
   }
 
   // Download the data in that Skylink.
@@ -90,14 +90,14 @@ export async function getJSON(
 
   if (!(data["_data"] && data["_v"])) {
     // Legacy data prior to v4, return as-is.
-    return { data, skylink };
+    return { data, dataLink: skylink };
   }
 
   const actualData = data["_data"];
   if (typeof actualData !== "object" || data === null) {
     throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
   }
-  return { data: actualData as Record<string, unknown>, skylink };
+  return { data: actualData as Record<string, unknown>, dataLink: skylink };
 }
 
 /**
@@ -136,7 +136,7 @@ export async function setJSON(
   const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 
-  return { data: json, skylink };
+  return { data: json, dataLink: skylink };
 }
 
 export async function getOrCreateRegistryEntry(

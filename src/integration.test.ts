@@ -67,9 +67,9 @@ describe(`Integration test for portal ${portal}`, () => {
       const { publicKey } = genKeyPairAndSeed();
 
       // Try getting an inexistent entry.
-      const { data, skylink } = await client.db.getJSON(publicKey, "foo");
+      const { data, dataLink } = await client.db.getJSON(publicKey, "foo");
       expect(data).toBeNull();
-      expect(skylink).toBeNull();
+      expect(dataLink).toBeNull();
     });
 
     it("Should set and get new entries", async () => {
@@ -81,17 +81,17 @@ describe(`Integration test for portal ${portal}`, () => {
       await client.db.setJSON(privateKey, dataKey, json);
 
       // Get the file in SkyDB.
-      const { data, skylink } = await client.db.getJSON(publicKey, dataKey);
+      const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
       expect(data).toEqual(json);
-      expect(skylink).toBeTruthy();
+      expect(dataLink).toBeTruthy();
 
       // Set the file again.
       await client.db.setJSON(privateKey, dataKey, json2);
 
       // Get the file again, should have been updated.
-      const { data: data2, skylink: skylink2 } = await client.db.getJSON(publicKey, dataKey);
+      const { data: data2, dataLink: dataLink2 } = await client.db.getJSON(publicKey, dataKey);
       expect(data2).toEqual(json2);
-      expect(skylink2).toBeTruthy();
+      expect(dataLink2).toBeTruthy();
     });
 
     // Regression test: Use some strange data keys that have failed in previous versions.
@@ -103,9 +103,9 @@ describe(`Integration test for portal ${portal}`, () => {
 
       await client.db.setJSON(privateKey, dataKey, json);
 
-      const { data, skylink } = await client.db.getJSON(publicKey, dataKey);
+      const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
       expect(data).toEqual(json);
-      expect(skylink).toBeTruthy();
+      expect(dataLink).toBeTruthy();
     });
   });
 

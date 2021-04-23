@@ -64,9 +64,9 @@ describe("getJSON", () => {
   it("should return null if no entry is found", async () => {
     mock.onGet(registryLookupUrl).reply(404);
 
-    const { data, skylink } = await client.db.getJSON(publicKey, dataKey);
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toBeNull();
-    expect(skylink).toBeNull();
+    expect(dataLink).toBeNull();
   });
 
   it("should throw if the returned file data is not JSON", async () => {
@@ -99,7 +99,7 @@ describe("setJSON", () => {
     mock.onPost(registryUrl).replyOnce(204);
 
     // set data
-    const { data: returnedData, skylink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
+    const { data: returnedData, dataLink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
     expect(returnedData).toEqual(jsonData);
     expect(returnedSkylink).toEqual(`sia:${skylink}`);
 
