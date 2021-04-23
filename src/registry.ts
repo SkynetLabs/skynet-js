@@ -240,7 +240,7 @@ export async function getEntryUrl(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The full get entry URL.
- * @throws - Will throw if the provided timeout is invalid or the given key is not valid.
+ * @throws - Will throw if the given key is not valid.
  */
 export function getEntryUrlForPortal(
   portalUrl: string,
@@ -282,7 +282,17 @@ export function getEntryUrlForPortal(
   return url;
 }
 
-export async function getEntrySkylink(
+/**
+ * Gets the entry link for the entry at the given public key and data key. This link stays the same even if the content at the entry changes.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry link.
+ * @throws - Will throw if the given key is not valid.
+ */
+export async function getEntryLink(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
@@ -322,6 +332,7 @@ export async function getEntrySkylink(
  * @param privateKey - The user private key.
  * @param entry - The entry to set.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - An empty promise.
  * @throws - Will throw if the entry revision does not fit in 64 bits or the given key is not valid.
  */
 export async function setEntry(
