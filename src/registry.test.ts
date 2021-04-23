@@ -54,6 +54,18 @@ describe("getEntry", () => {
   });
 });
 
+describe("getEntrySkylink", () => {
+  it("should get the correct entry skylink", async () => {
+    const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2"
+    const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1"
+    const expectedSkylink = "sia:AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ";
+
+    const skylink = await client.registry.getEntrySkylink(publicKey, dataKey, { hashedDataKeyHex: true } );
+
+    expect(skylink).toEqual(expectedSkylink);
+  });
+});
+
 describe("getEntryUrl", () => {
   // Hard-code public key and expected encoded values to catch any breaking changes to the encoding code.
   const publicKey = "c1197e1275fbf570d21dde01a00af83ed4a743d1884e4a09cebce0dd21ae254c";

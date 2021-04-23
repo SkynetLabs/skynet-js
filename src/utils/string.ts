@@ -3,6 +3,15 @@ import { Buffer } from "buffer";
 import { throwValidationError, validateHexString, validateString } from "./validation";
 
 /**
+ * Returns a boolean indicating whether the String contains only ASCII bytes.
+ * From https://stackoverflow.com/a/14313213/6085242.
+ */
+export function isASCIIString(str: string): boolean {
+  // eslint-disable-next-line
+  return /^[\x00-\x7F]*$/.test(str);
+}
+
+/**
  * Removes a prefix from the beginning of the string.
  *
  * @param str - The string to process.

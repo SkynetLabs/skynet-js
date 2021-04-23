@@ -15,7 +15,8 @@ import {
   validateOptionalObject,
   validateString,
 } from "./utils/validation";
-import { newSkylinkV2 } from "./skylink";
+import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
+import { formatSkylink } from "./skylink/format";
 
 /**
  * Custom get entry options.
@@ -287,12 +288,31 @@ export async function getEntrySkylink(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<string> {
-  // validateString("publicKey", publicKey, "parameter");
-  // validateString("dataKey", dataKey, "parameter");
-  // validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+  validateString("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
 
-  // return newSkylinkV2(siaPublicKey, tweak).toString();
-  return "unimplemented";
+  const opts = {
+    ...defaultGetEntryOptions,
+    ...customOptions,
+  };
+
+  // Trim the prefix if it was passed in.
+  publicKey = trimPrefix(publicKey, "ed25519:");
+  if (!isHexString(publicKey)) {
+    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
+  }
+
+  const siaPublicKey = newEd25519PublicKey(publicKey);
+  let tweak;
+  if (opts.hashedDataKeyHex) {
+    tweak = hexToUint8Array(dataKey);
+  } else {
+    tweak = hashDataKey(dataKey);
+  }
+
+  const skylink = newSkylinkV2(siaPublicKey, tweak).toString();
+  return formatSkylink(skylink);
 }
 
 /**

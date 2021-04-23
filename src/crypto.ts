@@ -76,6 +76,19 @@ export function encodeBigintAsUint64(int: bigint): Uint8Array {
   return encoded;
 }
 
+export function encodePrefixedBytes(bytes: Uint8Array): Uint8Array {
+  const len = bytes.length;
+  const buf = new ArrayBuffer(8 + len);
+  const view = new DataView(buf);
+
+  // Sia uses setUint64 which is unavailable in JS.
+  view.setUint32(0, len, true);
+  const uint8Bytes = new Uint8Array(buf);
+  uint8Bytes.set(bytes, 8);
+
+  return uint8Bytes
+}
+
 /**
  * Encodes the given UTF-8 string into a uint8 array containing the string length and the string.
  *
