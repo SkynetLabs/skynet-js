@@ -254,7 +254,8 @@ export class MySky {
   }
 
   /**
-   * Gets the entry link for the entry at the given path. This link stays the same even if the content at the entry changes.
+   * Gets the entry link for the entry at the given path. This is a v2 skylink.
+   * This link stays the same even if the content at the entry changes.
    *
    * @param path - The data path.
    * @returns - The entry link.

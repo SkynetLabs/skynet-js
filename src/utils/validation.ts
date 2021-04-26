@@ -128,8 +128,9 @@ export function validateUint8Array(name: string, value: unknown, valueKind: stri
  */
 export function validateUint8ArrayLen(name: string, value: unknown, valueKind: string, len: number): void {
   validateUint8Array(name, value, valueKind);
-  if ((value as Uint8Array).length !== len) {
-    throwValidationError(name, value, valueKind, `'Uint8Array' of length ${len}`);
+  const actualLen = (value as Uint8Array).length;
+  if (actualLen !== len) {
+    throwValidationError(name, value, valueKind, `'Uint8Array' of length ${len}, was length ${actualLen}`);
   }
 }
 
