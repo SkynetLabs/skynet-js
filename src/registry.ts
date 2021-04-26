@@ -335,7 +335,7 @@ function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
   // Check if status was 404 "not found" and return null if so.
   if (err.response.status === 404) {
     return { entry: null, signature: null };
-  } else {
-    throw err;
   }
+
+  throw err;
 }
