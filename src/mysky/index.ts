@@ -11,6 +11,7 @@ import {
   Permission,
   PermType,
 } from "skynet-mysky-utils";
+import type { CustomUserIDOptions } from "skynet-mysky-utils";
 
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -32,6 +33,14 @@ import { popupCenter } from "./utils";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 import { extractOptions } from "../utils/options";
 
+export const mySkyDomain = "skynet-mysky.hns";
+export const mySkyDevDomain = "skynet-mysky-dev.hns";
+export const mySkyAlphaDomain = "sandbridge.hns";
+
+const mySkyUiRelativeUrl = "ui.html";
+const mySkyUiTitle = "MySky UI";
+const [mySkyUiW, mySkyUiH] = [600, 600];
+
 export async function loadMySky(
   this: SkynetClient,
   skappDomain?: string,
@@ -41,13 +50,6 @@ export async function loadMySky(
 
   return mySky;
 }
-
-export const mySkyDomain = "skynet-mysky.hns";
-export const mySkyDevDomain = "skynet-mysky-dev.hns";
-export const mySkyAlphaDomain = "sandbridge.hns";
-const mySkyUiRelativeUrl = "ui.html";
-const mySkyUiTitle = "MySky UI";
-const [mySkyUiW, mySkyUiH] = [600, 600];
 
 export class MySky {
   static instance: MySky | null = null;
@@ -228,8 +230,8 @@ export class MySky {
     return loggedIn;
   }
 
-  async userID(): Promise<string> {
-    return await this.connector.connection.remoteHandle().call("userID");
+  async userID(opts?: CustomUserIDOptions): Promise<string> {
+    return await this.connector.connection.remoteHandle().call("userID", opts);
   }
 
   /**
