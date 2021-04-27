@@ -1,10 +1,11 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
+import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
-import { defaultSkynetPortalUrl, getEntryUrlForPortal, getSkylinkUrlForPortal } from "./utils/url";
+import { defaultSkynetPortalUrl } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
-import { regexRevisionNoQuotes } from "./registry";
+import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
@@ -63,9 +64,9 @@ describe("getJSON", () => {
   it("should return null if no entry is found", async () => {
     mock.onGet(registryLookupUrl).reply(404);
 
-    const { data, skylink } = await client.db.getJSON(publicKey, dataKey);
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toBeNull();
-    expect(skylink).toBeNull();
+    expect(dataLink).toBeNull();
   });
 
   it("should throw if the returned file data is not JSON", async () => {
@@ -98,7 +99,7 @@ describe("setJSON", () => {
     mock.onPost(registryUrl).replyOnce(204);
 
     // set data
-    const { data: returnedData, skylink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
+    const { data: returnedData, dataLink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
     expect(returnedData).toEqual(jsonData);
     expect(returnedSkylink).toEqual(`sia:${skylink}`);
 

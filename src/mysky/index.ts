@@ -15,7 +15,7 @@ import {
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { defaultSetEntryOptions, RegistryEntry } from "../registry";
+import { defaultGetEntryOptions, defaultSetEntryOptions, RegistryEntry } from "../registry";
 import {
   defaultGetJSONOptions,
   defaultSetJSONOptions,
@@ -257,6 +257,24 @@ export class MySky {
   }
 
   /**
+   * Gets the entry link for the entry at the given path. This is a v2 skylink.
+   * This link stays the same even if the content at the entry changes.
+   *
+   * @param path - The data path.
+   * @returns - The entry link.
+   */
+  async getEntryLink(path: string): Promise<string> {
+    validateString("path", path, "parameter");
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+    const opts = defaultGetEntryOptions;
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+    return await this.connector.client.registry.getEntryLink(publicKey, dataKey, opts);
+  }
+
+  /**
    * Sets Discoverable JSON at the given path through MySky, if the user has given permissions to do so.
    *
    * @param path - The data path.
@@ -292,7 +310,7 @@ export class MySky {
     const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
-    return { data: json, skylink };
+    return { data: json, dataLink: skylink };
   }
 
   // ================

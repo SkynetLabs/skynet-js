@@ -5,8 +5,8 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { hexToUint8Array, toHexString, uint8ArrayToStringUtf8 } from "./utils/string";
-import { getEntryUrlForPortal } from "./utils/url";
+import { hexToUint8Array, isHexString, toHexString, trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
+import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
   validateBigint,
@@ -15,6 +15,8 @@ import {
   validateOptionalObject,
   validateString,
 } from "./utils/validation";
+import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
+import { formatSkylink } from "./skylink/format";
 
 /**
  * Custom get entry options.
@@ -209,12 +211,106 @@ export async function getEntryUrl(
 }
 
 /**
+ * Gets the registry entry URL without an initialized client.
+ *
+ * @param portalUrl - The portal URL.
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The full get entry URL.
+ * @throws - Will throw if the given key is not valid.
+ */
+export function getEntryUrlForPortal(
+  portalUrl: string,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): string {
+  validateString("portalUrl", portalUrl, "parameter");
+  validateString("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+
+  const opts = {
+    ...defaultGetEntryOptions,
+    ...customOptions,
+  };
+
+  // Trim the prefix if it was passed in.
+  publicKey = trimPrefix(publicKey, "ed25519:");
+  if (!isHexString(publicKey)) {
+    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
+  }
+
+  // Hash and hex encode the given data key if it is not a hash already.
+  let dataKeyHashHex = dataKey;
+  if (!opts.hashedDataKeyHex) {
+    dataKeyHashHex = toHexString(hashDataKey(dataKey));
+  }
+
+  const query = {
+    publickey: `ed25519:${publicKey}`,
+    datakey: dataKeyHashHex,
+    timeout: DEFAULT_GET_ENTRY_TIMEOUT,
+  };
+
+  let url = makeUrl(portalUrl, opts.endpointGetEntry);
+  url = addUrlQuery(url, query);
+
+  return url;
+}
+
+/**
+ * Gets the entry link for the entry at the given public key and data key. This link stays the same even if the content at the entry changes.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry link.
+ * @throws - Will throw if the given key is not valid.
+ */
+export async function getEntryLink(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): Promise<string> {
+  validateString("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+
+  const opts = {
+    ...defaultGetEntryOptions,
+    ...customOptions,
+  };
+
+  // Trim the prefix if it was passed in.
+  publicKey = trimPrefix(publicKey, "ed25519:");
+  if (!isHexString(publicKey)) {
+    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
+  }
+
+  const siaPublicKey = newEd25519PublicKey(publicKey);
+  let tweak;
+  if (opts.hashedDataKeyHex) {
+    tweak = hexToUint8Array(dataKey);
+  } else {
+    tweak = hashDataKey(dataKey);
+  }
+
+  const skylink = newSkylinkV2(siaPublicKey, tweak).toString();
+  return formatSkylink(skylink);
+}
+
+/**
  * Sets the registry entry.
  *
  * @param this - SkynetClient
  * @param privateKey - The user private key.
  * @param entry - The entry to set.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - An empty promise.
  * @throws - Will throw if the entry revision does not fit in 64 bits or the given key is not valid.
  */
 export async function setEntry(
