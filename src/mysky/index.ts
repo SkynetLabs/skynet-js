@@ -43,10 +43,11 @@ export async function loadMySky(
 }
 
 export const mySkyDomain = "skynet-mysky.hns";
-export const mySkyDevDomain = "sandbridge.hns";
+export const mySkyDevDomain = "skynet-mysky-dev.hns";
+export const mySkyAlphaDomain = "sandbridge.hns";
 const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
-const [mySkyUiW, mySkyUiH] = [500, 500];
+const [mySkyUiW, mySkyUiH] = [600, 600];
 
 export class MySky {
   static instance: MySky | null = null;
@@ -72,7 +73,9 @@ export class MySky {
     }
 
     let domain = mySkyDomain;
-    if (opts.dev) {
+    if (opts.alpha) {
+      domain = mySkyAlphaDomain;
+    } else if (opts.dev) {
       domain = mySkyDevDomain;
     }
     const connector = await Connector.init(client, domain, customOptions);
