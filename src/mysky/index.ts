@@ -299,7 +299,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const [entry, skylink] = await getOrCreateRegistryEntry(
+    const [entry, dataLink] = await getOrCreateRegistryEntry(
       this.connector.client,
       hexToUint8Array(publicKey),
       dataKey,
@@ -312,7 +312,7 @@ export class MySky {
     const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
-    return { data: json, dataLink: skylink };
+    return { data: json, dataLink };
   }
 
   // ================

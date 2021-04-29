@@ -23,12 +23,18 @@ export type JsonData = Record<string, unknown>;
 
 /**
  * Custom get JSON options.
+ *
+ * @property [cachedDataLink] - The last known data link. If it hasn't changed, do not download the file contents again.
  */
-export type CustomGetJSONOptions = CustomGetEntryOptions & CustomDownloadOptions;
+export type CustomGetJSONOptions = CustomGetEntryOptions &
+  CustomDownloadOptions & {
+    cachedDataLink?: string;
+  };
 
 export const defaultGetJSONOptions = {
   ...defaultGetEntryOptions,
   ...defaultDownloadOptions,
+  cachedDataLink: undefined,
 };
 
 /**
@@ -78,11 +84,16 @@ export async function getJSON(
   if (entry === null) {
     return { data: null, dataLink: null };
   }
+  const dataLink = entry.data;
 
-  // Download the data in that Skylink.
-  const skylink = entry.data;
+  // If a cached data link is provided and the data link hasn't changed, return.
+  if (opts.cachedDataLink && dataLink === opts.cachedDataLink) {
+    return { data: null, dataLink };
+  }
+
+  // Download the data in the returned data link.
   const downloadOpts = extractOptions(opts, defaultDownloadOptions);
-  const { data } = await this.getFileContent<JsonData>(skylink, downloadOpts);
+  const { data } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
 
   if (typeof data !== "object" || data === null) {
     throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
@@ -90,14 +101,14 @@ export async function getJSON(
 
   if (!(data["_data"] && data["_v"])) {
     // Legacy data prior to v4, return as-is.
-    return { data, dataLink: skylink };
+    return { data, dataLink };
   }
 
   const actualData = data["_data"];
   if (typeof actualData !== "object" || data === null) {
     throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
   }
-  return { data: actualData as JsonData, dataLink: skylink };
+  return { data: actualData as JsonData, dataLink };
 }
 
 /**
@@ -200,11 +211,11 @@ export async function getOrCreateRegistryEntry(
   assertUint64(revision);
 
   // Build the registry value.
-  const skylink = skyfile.skylink;
+  const dataLink = skyfile.skylink;
   const entry: RegistryEntry = {
     dataKey,
-    data: trimUriPrefix(skylink, uriSkynetPrefix),
+    data: trimUriPrefix(dataLink, uriSkynetPrefix),
     revision,
   };
-  return [entry, skylink];
+  return [entry, dataLink];
 }
