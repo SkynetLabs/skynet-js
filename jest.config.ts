@@ -1,9 +1,12 @@
+// jest.config.ts
+import type { Config } from "@jest/types";
+
 /*
  * For a detailed explanation regarding each configuration property, visit:
  * https://jestjs.io/docs/en/configuration.html
  */
 
-export default {
+const config: Config.InitialOptions = {
   // TS-Jest setup
   preset: "ts-jest",
 
@@ -209,3 +212,5 @@ export default {
   // Whether to use watchman for file crawling
   // watchman: true,
 };
+
+export default config;
