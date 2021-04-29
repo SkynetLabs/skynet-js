@@ -2,12 +2,13 @@
   "name": "skynet-js",
   "version": "4.0.4-beta",
   "description": "Sia Skynet Javascript Client",
-  "type": "module",
   "main": "dist/cjs/entry.js",
   "module": "dist/mjs/index.js",
   "exports": {
-    "require": "./js/index.js",
-    "import": "./mjs/index.js"
+    ".": {
+        "import": "./dist/mjs/index.js",
+        "require": "./dist/cjs/index.js"
+    }
   },
   "files": [
     "dist/*"
