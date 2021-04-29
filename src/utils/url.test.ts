@@ -1,3 +1,4 @@
+import { combineStrings } from "../../utils/testing";
 import { trimPrefix, trimSuffix } from "./string";
 import { addUrlQuery, defaultSkynetPortalUrl, getFullDomainUrlForPortal, extractDomainForPortal, makeUrl } from "./url";
 
@@ -20,11 +21,31 @@ describe("addUrlQuery", () => {
 });
 
 describe("getFullDomainUrlForPortal", () => {
-  const domains = [
-    ["dac.hns", "https://dac.hns.siasky.net"],
-    ["dac.hns/", "https://dac.hns.siasky.net"],
-    [skylinkBase32, `https://${skylinkBase32}.siasky.net`],
-  ];
+  const domains = [];
+
+  const expectedUrl = "https://dac.hns.siasky.net";
+  const hnsDomains = combineStrings(["", "sia:", "sia://"], ["dac.hns"], ["", "/"]);
+  domains.push(...hnsDomains.map((domain) => [domain, expectedUrl]));
+
+  const expectedPathUrl = `${expectedUrl}/path/file.json`;
+  const hnsPathDomains = combineStrings(hnsDomains, ["/path/file.json"]);
+  domains.push(...hnsPathDomains.map((domain) => [domain, expectedPathUrl]));
+
+  const expectedSkylinkUrl = `https://${skylinkBase32}.siasky.net`;
+  const skylinkDomains = combineStrings(["", "sia:", "sia://"], [skylinkBase32], ["", "/"]);
+  domains.push(...skylinkDomains.map((domain) => [domain, expectedSkylinkUrl]));
+
+  const expectedSkylinkPathUrl = `${expectedSkylinkUrl}/path/file.json`;
+  const skylinkPathDomains = combineStrings(skylinkDomains, ["/path/file.json"]);
+  domains.push(...skylinkPathDomains.map((domain) => [domain, expectedSkylinkPathUrl]));
+
+  const expectedLocalhostUrl = `localhost`;
+  const localhostDomains = combineStrings(["", "sia:", "sia://"], ["localhost"], ["", "/"]);
+  domains.push(...localhostDomains.map((domain) => [domain, expectedLocalhostUrl]));
+
+  const expectedLocalhostPathUrl = `${expectedLocalhostUrl}/path/file.json`;
+  const localhostPathDomains = combineStrings(localhostDomains, ["/path/file.json"]);
+  domains.push(...localhostPathDomains.map((domain) => [domain, expectedLocalhostPathUrl]));
 
   it.each(domains)("domain %s should return correctly formed full URL %s", (domain, fullUrl) => {
     const url = getFullDomainUrlForPortal(portalUrl, domain);
@@ -33,13 +54,39 @@ describe("getFullDomainUrlForPortal", () => {
 });
 
 describe("extractDomainForPortal", () => {
-  const domains = [
-    ["dac.hns.siasky.net", "dac.hns"],
-    [`${skylinkBase32}.siasky.net`, skylinkBase32],
-    ["localhost", "localhost"],
-  ];
+  const urls = [];
 
-  it.each(domains)("should extract domain %s out of full url %s", (fullDomain, domain) => {
+  // Add simple HNS domain URLs.
+  const expectedDomain = "dac.hns";
+  const hnsUrls = combineStrings(["", "https://"], ["dac.hns.siasky.net"], ["", "/"]);
+  urls.push(...hnsUrls.map((url) => [url, expectedDomain]));
+
+  // Add HNS domain URLs with a path.
+  const expectedPathDomain = `${expectedDomain}/path/file.json`;
+  const hnsPathUrls = combineStrings(hnsUrls, ["/path/file.json"]);
+  urls.push(...hnsPathUrls.map((url) => [url, expectedPathDomain]));
+
+  // Add skylink domain URLs.
+  const expectedSkylinkDomain = skylinkBase32;
+  const skylinkUrls = combineStrings(["", "https://"], [`${skylinkBase32}.siasky.net`], ["", "/"]);
+  urls.push(...skylinkUrls.map((url) => [url, expectedSkylinkDomain]));
+
+  // Add skylink domain URLs with a path.
+  const expectedSkylinkPathDomain = `${expectedSkylinkDomain}/path/file.json`;
+  const skylinkPathUrls = combineStrings(skylinkUrls, ["/path/file.json"]);
+  urls.push(...skylinkPathUrls.map((url) => [url, expectedSkylinkPathDomain]));
+
+  // Add localhost domain URLs.
+  const expectedLocalhostDomain = "localhost";
+  const localhostUrls = combineStrings(["", "https://"], ["localhost"], ["", "/"]);
+  urls.push(...localhostUrls.map((url) => [url, expectedLocalhostDomain]));
+
+  // Add localhost domain URLs with a path.
+  const expectedLocalhostPathDomain = `${expectedLocalhostDomain}/path/file.json`;
+  const localhostPathUrls = combineStrings(localhostUrls, ["/path/file.json"]);
+  urls.push(...localhostPathUrls.map((url) => [url, expectedLocalhostPathDomain]));
+
+  it.each(urls)("should extract from full url %s the domain %s", (fullDomain, domain) => {
     const receivedDomain = extractDomainForPortal(portalUrl, fullDomain);
     expect(receivedDomain).toEqual(domain);
   });

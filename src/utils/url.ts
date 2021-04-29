@@ -1,7 +1,7 @@
 import parse from "url-parse";
 import urljoin from "url-join";
 
-import { trimSuffix } from "./string";
+import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
 import { throwValidationError, validateString } from "./validation";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
@@ -21,6 +21,33 @@ export function defaultPortalUrl(): string {
   /* istanbul ignore next */
   if (typeof window === "undefined") return "/"; // default to path root on ssr
   return window.location.origin;
+}
+
+/**
+ * Adds a path to the given URL.
+ *
+ * @param url - The URL.
+ * @param path - The given path.
+ * @returns - The final URL.
+ */
+export function addPath(url: string, path: string): string {
+  if (!path) {
+    return url;
+  }
+  path = trimForwardSlash(path);
+
+  let str;
+  if (url === "localhost") {
+    // Special handling for localhost.
+    str = `localhost/${path}`;
+  } else {
+    // Construct a URL object and set the pathname property.
+    const urlObj = new URL(url);
+    urlObj.pathname = path;
+    str = urlObj.toString();
+  }
+
+  return trimSuffix(str, "/");
 }
 
 /**
@@ -68,7 +95,7 @@ export function makeUrl(...args: string[]): string {
 
 /**
  * Constructs the full URL for the given domain,
- * e.g. ("https://siasky.net", "dac.hns") => "https://dac.hns.siasky.net"
+ * e.g. ("https://siasky.net", "dac.hns/path/file") => "https://dac.hns.siasky.net/path/file"
  *
  * @param portalUrl - The portal URL.
  * @param domain - Domain.
@@ -78,13 +105,31 @@ export function getFullDomainUrlForPortal(portalUrl: string, domain: string): st
   validateString("portalUrl", portalUrl, "parameter");
   validateString("domain", domain, "parameter");
 
-  domain = trimSuffix(domain, "/");
-  return addSubdomain(portalUrl, domain);
+  domain = trimUriPrefix(domain, uriSkynetPrefix);
+  domain = trimForwardSlash(domain);
+
+  // Split on first / to get the path.
+  let path;
+  [domain, path] = domain.split(/\/(.+)/);
+
+  // Add to subdomain.
+  let url;
+  if (domain === "localhost") {
+    // Special handling for localhost.
+    url = "localhost";
+  } else {
+    url = addSubdomain(portalUrl, domain);
+  }
+  // Add back the path if there was one.
+  if (path) {
+    url = addPath(url, path);
+  }
+  return url;
 }
 
 /**
  * Extracts the domain from the given portal URL,
- * e.g. ("https://siasky.net", "dac.hns.siasky.net") => "dac.hns"
+ * e.g. ("https://siasky.net", "dac.hns.siasky.net/path/file") => "dac.hns/path/file"
  *
  * @param portalUrl - The portal URL.
  * @param fullDomain - Full URL.
@@ -94,21 +139,33 @@ export function extractDomainForPortal(portalUrl: string, fullDomain: string): s
   validateString("portalUrl", portalUrl, "parameter");
   validateString("fullDomain", fullDomain, "parameter");
 
-  // Try to extract the domain from the fullDomain.
+  let path;
   try {
+    // Try to extract the domain from the fullDomain.
     const fullDomainObj = new URL(fullDomain);
     fullDomain = fullDomainObj.hostname;
+    path = fullDomainObj.pathname;
+    path = trimForwardSlash(path);
   } catch {
     // If fullDomain is not a URL, ignore the error and use it as-is.
+    //
+    // Trim any slashes from the input URL.
+    fullDomain = trimForwardSlash(fullDomain);
+    // Split on first / to get the path.
+    [fullDomain, path] = fullDomain.split(/\/(.+)/);
   }
-
-  // Trim any slashes from the input URL.
-  fullDomain = trimSuffix(fullDomain, "/");
 
   // Get the portal domain.
   const portalUrlObj = new URL(portalUrl);
-  const portalDomain = trimSuffix(portalUrlObj.hostname, "/");
+  const portalDomain = trimForwardSlash(portalUrlObj.hostname);
 
-  const domain = trimSuffix(fullDomain, portalDomain, 1);
-  return trimSuffix(domain, ".");
+  // Remove the portal domain from the domain.
+  let domain = trimSuffix(fullDomain, portalDomain, 1);
+  domain = trimSuffix(domain, ".");
+  // Add back the path if there is one.
+  if (path && path !== "") {
+    path = trimForwardSlash(path);
+    domain = `${domain}/${path}`;
+  }
+  return domain;
 }

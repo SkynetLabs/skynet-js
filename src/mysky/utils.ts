@@ -17,6 +17,14 @@ export async function getFullDomainUrl(this: SkynetClient, domain: string): Prom
   return getFullDomainUrlForPortal(portalUrl, domain);
 }
 
+/**
+ * Extracts the domain from the current portal URL,
+ * e.g. ("dac.hns.siasky.net") => "dac.hns"
+ *
+ * @param this - SkynetClient
+ * @param fullDomain - Full URL.
+ * @returns - The extracted domain.
+ */
 export async function extractDomain(this: SkynetClient, fullDomain: string): Promise<string> {
   const portalUrl = await this.portalUrl();
 
