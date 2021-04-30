@@ -6,6 +6,7 @@ export { getRelativeFilePath, getRootDirectory } from "./utils/file";
 export { MAX_REVISION } from "./utils/number";
 export { convertSkylinkToBase32 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
+export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
 export {
   defaultPortalUrl,
   defaultSkynetPortalUrl,

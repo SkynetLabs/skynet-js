@@ -1,5 +1,16 @@
 import { hexToUint8Array } from "../utils/string";
-import { newEd25519PublicKey, newSkylinkV2, newSpecifier, SiaSkylink } from "./sia";
+import {
+  decodeSkylink,
+  isSkylinkV1,
+  isSkylinkV2,
+  newEd25519PublicKey,
+  newSkylinkV2,
+  newSpecifier,
+  SiaSkylink,
+} from "./sia";
+
+const skylinkV1 = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+const skylinkV2 = "AQA7pRL8JEXcIuDbjsVyucWvprL4aD6feNDWwylo19vS2w";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -23,6 +34,35 @@ expect.extend({
     }
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
+});
+
+describe("decodeSkylink", () => {
+  // prettier-ignore
+  const expectedBytes = new Uint8Array([92, 0, 111, 139, 178, 109, 37, 180, 18, 48, 7, 3, 194, 117, 39, 154, 157, 133, 40, 51, 227, 131, 207, 237, 77, 49, 79, 224, 28, 12, 75, 21, 93, 18]);
+
+  it("should decode a base64 skylink", () => {
+    const bytes = decodeSkylink(skylinkV1);
+    expect(bytes).toEqualUint8Array(expectedBytes);
+  });
+
+  it("should decode a base32 skylink", () => {
+    const bytes = decodeSkylink("bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g");
+    expect(bytes).toEqualUint8Array(expectedBytes);
+  });
+});
+
+describe("isSkylinkV1", () => {
+  it("should work for v1 and v2 skylinks", () => {
+    expect(isSkylinkV1(skylinkV1)).toBeTruthy();
+    expect(isSkylinkV1(skylinkV2)).toBeFalsy();
+  });
+});
+
+describe("isSkylinkV2", () => {
+  it("should work for v1 and v2 skylinks", () => {
+    expect(isSkylinkV2(skylinkV1)).toBeFalsy();
+    expect(isSkylinkV2(skylinkV2)).toBeTruthy();
+  });
 });
 
 describe("newSpecifier", () => {
