@@ -28,11 +28,13 @@ import { trimSuffix } from "./utils/string";
  *
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
+ * @property [customCookie] - Custom cookie header to set.
  * @property [onUploadProgress] - Optional callback to track upload progress.
  */
 export type CustomClientOptions = {
   APIKey?: string;
   customUserAgent?: string;
+  customCookie?: string;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
 };
 
@@ -219,6 +221,9 @@ export class SkynetClient {
     const headers = { ...config.headers };
     if (config.customUserAgent) {
       headers["User-Agent"] = config.customUserAgent;
+    }
+    if (config.customCookie) {
+      headers["Cookie"] = config.customCookie
     }
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
