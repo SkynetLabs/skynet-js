@@ -46,8 +46,30 @@ describe("getJSON", () => {
     mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
 
-    const jsonReturned = await client.db.getJSON(publicKey, dataKey);
-    expect(jsonReturned.data).toEqual(jsonData);
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+    expect(data).toEqual(jsonData);
+    expect(dataLink).toEqual(skylink);
+    expect(mock.history.get.length).toBe(2);
+  });
+
+  it("should perform a lookup but not a skylink GET if the cachedDataLink is a hit", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: skylink });
+    expect(data).toBeNull();
+    expect(dataLink).toEqual(skylink);
+    expect(mock.history.get.length).toBe(1);
+  });
+
+  it("should perform a lookup and a skylink GET if the cachedDataLink is not a hit", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
+
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" });
+    expect(data).toEqual(jsonData);
+    expect(dataLink).toEqual(skylink);
     expect(mock.history.get.length).toBe(2);
   });
 
