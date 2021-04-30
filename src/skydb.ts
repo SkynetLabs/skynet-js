@@ -197,6 +197,19 @@ export async function getOrCreateRegistryEntry(
     skyfilePromise,
   ]);
 
+  const revision = getRevisionFromSignedEntry(signedEntry);
+
+  // Build the registry entry.
+  const dataLink = skyfile.skylink;
+  const entry: RegistryEntry = {
+    dataKey,
+    data: trimUriPrefix(dataLink, uriSkynetPrefix),
+    revision,
+  };
+  return [entry, dataLink];
+}
+
+export function getRevisionFromSignedEntry(signedEntry: SignedRegistryEntry): bigint {
   let revision: bigint;
   if (signedEntry.entry === null) {
     revision = BigInt(0);
@@ -212,12 +225,5 @@ export async function getOrCreateRegistryEntry(
   // Assert the input is 64 bits.
   assertUint64(revision);
 
-  // Build the registry value.
-  const dataLink = skyfile.skylink;
-  const entry: RegistryEntry = {
-    dataKey,
-    data: trimUriPrefix(dataLink, uriSkynetPrefix),
-    revision,
-  };
-  return [entry, dataLink];
+  return revision;
 }
