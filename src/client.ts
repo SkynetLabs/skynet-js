@@ -223,7 +223,7 @@ export class SkynetClient {
       headers["User-Agent"] = config.customUserAgent;
     }
     if (config.customCookie) {
-      headers["Cookie"] = config.customCookie
+      headers["Cookie"] = config.customCookie;
     }
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
