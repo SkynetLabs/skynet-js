@@ -11,6 +11,7 @@ export type BaseCustomOptions = CustomClientOptions;
 export const defaultBaseOptions = {
   APIKey: "",
   customUserAgent: "",
+  customCookie: "",
   onUploadProgress: undefined,
 };
 

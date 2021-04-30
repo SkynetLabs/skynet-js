@@ -15,7 +15,7 @@ import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8 } f
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
-import { extractOptions } from "./utils/options";
+import { defaultBaseOptions, extractOptions } from "./utils/options";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -32,6 +32,7 @@ export type CustomGetJSONOptions = CustomGetEntryOptions &
   };
 
 export const defaultGetJSONOptions = {
+  ...defaultBaseOptions,
   ...defaultGetEntryOptions,
   ...defaultDownloadOptions,
   cachedDataLink: undefined,
@@ -43,6 +44,7 @@ export const defaultGetJSONOptions = {
 export type CustomSetJSONOptions = CustomGetJSONOptions & CustomSetEntryOptions & CustomUploadOptions;
 
 export const defaultSetJSONOptions = {
+  ...defaultBaseOptions,
   ...defaultGetJSONOptions,
   ...defaultSetEntryOptions,
   ...defaultUploadOptions,
