@@ -189,11 +189,15 @@ export class MySky {
 
         // Send the UI the list of required permissions.
 
+        // Slightly hacky, but this copies permissions array so that Proxy objects
+        // used in frameworks like Vuex don't try to pass through postMessage.
+        const perms =JSON.parse ( JSON.stringify ( this.pendingPermissions) );
+
         // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
         const [seedFoundResponse, permissionsResponse]: [
           boolean,
           CheckPermissionsResponse
-        ] = await uiConnection.remoteHandle().call("requestLoginAccess", this.pendingPermissions);
+        ] = await uiConnection.remoteHandle().call("requestLoginAccess", perms);
         seedFound = seedFoundResponse;
 
         // Save failed permissions.
