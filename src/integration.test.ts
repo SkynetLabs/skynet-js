@@ -294,10 +294,17 @@ describe(`Integration test for portal ${portal}`, () => {
       // Use an HNS we own that we don't plan on changing soon.
       const domain = "mayonnaise";
       const expectedSkylink = "sia:AQCfQDiv3fIlaKsTRux8h2g2d1euMPM_DzpjnaeE9ZWp3A";
+      const expectedData = {
+        registry: {
+          publickey: "ed25519:519cf70a886069eaff97a94f74eba880ac44509b6969beca4c59298e83a9364c",
+          datakey: "43c8a9b01609544ab152dad397afc3b56c1518eb546750dbc6cad5944fec0292",
+        },
+      };
 
-      const { skylink } = await client.resolveHns(domain);
+      const { data, skylink } = await client.resolveHns(domain);
 
-      expect(expectedSkylink).toEqual(skylink);
+      expect(skylink).toEqual(expectedSkylink);
+      expect(data).toEqual(expectedData);
     });
   });
 });
