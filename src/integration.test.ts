@@ -53,6 +53,19 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(expected).toEqual(received);
     });
 
+    it("Should get existing SkyDB data using entry link", async () => {
+      const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
+      const dataKey = "dataKey1";
+      const expected = { message: "hi Marcin" };
+
+      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+      console.log(entryLink);
+
+      const { data: received } = await client.getFileContent(entryLink);
+
+      expect(expected).toEqual(received);
+    });
+
     it("Should get existing SkyDB data with unicode data key", async () => {
       const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
       const dataKey = "dataKeyż";
