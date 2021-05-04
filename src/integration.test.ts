@@ -293,7 +293,7 @@ describe(`Integration test for portal ${portal}`, () => {
     it("Resolving an HNS name to a skylink should work", async () => {
       // Use an HNS we own that we don't plan on changing soon.
       const domain = "mayonnaise";
-      const expectedSkylink = "AQCfQDiv3fIlaKsTRux8h2g2d1euMPM_DzpjnaeE9ZWp3A";
+      const expectedSkylink = "sia:AQCfQDiv3fIlaKsTRux8h2g2d1euMPM_DzpjnaeE9ZWp3A";
 
       const { skylink } = await client.resolveHns(domain);
 
