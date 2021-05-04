@@ -77,7 +77,7 @@ export type GetMetadataResponse = {
  * @property skylink - 46-character skylink.
  */
 export type ResolveHnsResponse = {
-  data: JsonData,
+  data: JsonData;
   skylink: string;
 };
 
@@ -536,7 +536,9 @@ export async function resolveHns(
   if (response.data.skylink) {
     return { data: response.data, skylink: response.data.skylink };
   } else {
-    const skylink = await this.registry.getEntryLink(response.data.registry.publickey, response.data.registry.datakey, { hashedDataKeyHex: true });
+    const skylink = await this.registry.getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
+      hashedDataKeyHex: true,
+    });
     return { data: response.data, skylink };
   }
 }
@@ -554,7 +556,12 @@ function validateResolveHnsResponse(response: AxiosResponse): void {
       validateString("response.data.registry.publickey", response.data.registry.publickey, "resolveHns response field");
       validateString("response.data.registry.datakey", response.data.registry.datakey, "resolveHns response field");
     } else {
-      throwValidationError("response.data", response.data, "response data object", "object containing skylink or registry field");
+      throwValidationError(
+        "response.data",
+        response.data,
+        "response data object",
+        "object containing skylink or registry field"
+      );
     }
   } catch (err) {
     throw new Error(
