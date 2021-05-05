@@ -5,7 +5,7 @@ import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } fr
 import { validateHexString, validateNumber, validateUint8ArrayLen } from "../utils/validation";
 
 // The raw size of the data that gets put into a link.
-const RAW_SKYLINK_SIZE = 34;
+export const RAW_SKYLINK_SIZE = 34;
 
 export class SiaSkylink {
   constructor(public bitfield: number, public merkleRoot: Uint8Array) {

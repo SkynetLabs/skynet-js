@@ -16,6 +16,7 @@ import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 import { extractOptions } from "./utils/options";
+import { base64RawUrlToByteArray } from "./utils/encoding";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -155,14 +156,14 @@ export async function getOrCreateRegistryEntry(
   };
 
   // Set the hidden _data and _v fields.
-  const data = { _data: json, _v: JSON_RESPONSE_VERSION };
+  const fullData = { _data: json, _v: JSON_RESPONSE_VERSION };
 
   // Create the data to upload to acquire its skylink.
   let dataKeyHex = dataKey;
   if (!opts.hashedDataKeyHex) {
     dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
   }
-  const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
+  const file = new File([JSON.stringify(fullData)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.
   const uploadOpts = extractOptions(opts, defaultUploadOptions);
@@ -200,10 +201,13 @@ export async function getOrCreateRegistryEntry(
   assertUint64(revision);
 
   // Build the registry value.
-  const skylink = skyfile.skylink;
+  //
+  // Add padding.
+  const skylink = `${skyfile.skylink}==`;
+  const data = base64RawUrlToByteArray(trimUriPrefix(skylink, uriSkynetPrefix));
   const entry: RegistryEntry = {
     dataKey,
-    data: trimUriPrefix(skylink, uriSkynetPrefix),
+    data,
     revision,
   };
   return [entry, skylink];

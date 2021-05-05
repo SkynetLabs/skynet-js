@@ -135,6 +135,38 @@ export function validateUint8ArrayLen(name: string, value: unknown, valueKind: s
 }
 
 /**
+ * Validates the given value using all the given fns and throws if all of them fail.
+ *
+ * @param fns - The functions to validate the union with.
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @param expected - The expected union type.
+ * @throws - Will throw if not a valid union of the given functions.
+ */
+export function validateUnion(
+  fns: Array<(name: string, value: unknown, valueKind: string) => void>,
+  name: string,
+  value: unknown,
+  valueKind: string,
+  expected: string
+): void {
+  let success = false;
+  for (const fn of fns) {
+    try {
+      fn(name, value, valueKind);
+      success = true;
+    } catch {
+      // Don't propogate thrown error.
+    }
+  }
+
+  if (!success) {
+    throwValidationError(name, value, valueKind, expected);
+  }
+}
+
+/**
  * Throws an error for the given value
  *
  * @param name - The name of the value.
