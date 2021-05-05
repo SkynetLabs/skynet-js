@@ -125,7 +125,14 @@ export function hashRegistryEntry(registryEntry: RegistryEntry, hashedDataKeyHex
     dataKeyBytes = hashDataKey(registryEntry.dataKey);
   }
 
-  return hashAll(dataKeyBytes, encodeUtf8String(registryEntry.data), encodeBigintAsUint64(registryEntry.revision));
+  let dataBytes;
+  if (typeof registryEntry.data === "string") {
+    dataBytes = encodeUtf8String(registryEntry.data);
+  } else {
+    dataBytes = encodePrefixedBytes(registryEntry.data);
+  }
+
+  return hashAll(dataKeyBytes, dataBytes, encodeBigintAsUint64(registryEntry.revision));
 }
 
 /**

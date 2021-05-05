@@ -44,9 +44,9 @@ describe(`Integration test for portal ${portal}`, () => {
 
   describe("SkyDB end to end integration tests", () => {
     it("Should get existing SkyDB data", async () => {
-      const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
+      const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
       const dataKey = "dataKey1";
-      const expected = { message: "hi Marcin" };
+      const expected = { message: "hi there" };
 
       const { data: received } = await client.db.getJSON(publicKey, dataKey);
 
@@ -54,16 +54,15 @@ describe(`Integration test for portal ${portal}`, () => {
     });
 
     it("Should get existing SkyDB data using entry link", async () => {
-      const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
-      const dataKey = "dataKey1";
-      const expected = { message: "hi Marcin" };
+      const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+      const dataKey = "dataKey3";
+      const expected = { _data: { message: "hi there!" } };
 
       const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
-      console.log(entryLink);
 
-      const { data: received } = await client.getFileContent(entryLink);
+      const { data } = await client.getFileContent(entryLink);
 
-      expect(expected).toEqual(received);
+      expect(data).toEqual(expect.objectContaining(expected));
     });
 
     it("Should get existing SkyDB data with unicode data key", async () => {
@@ -138,7 +137,7 @@ describe(`Integration test for portal ${portal}`, () => {
 
       const entry = {
         dataKey,
-        data: "foo",
+        data: "AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg",
         revision: BigInt(0),
       };
 

@@ -9,14 +9,21 @@ import {
   SignedRegistryEntry,
   CustomSetEntryOptions,
 } from "./registry";
+import { RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/url";
-import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8 } from "./utils/string";
+import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8, trimSuffix } from "./utils/string";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
-import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
-import { base64RawUrlToByteArray } from "./utils/encoding";
+import { base64RawUrlToByteArray, byteArrayToBase64RawUrl } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
+import {
+  validateHexString,
+  validateObject,
+  validateOptionalObject,
+  validateString,
+  validateUint8ArrayLen,
+} from "./utils/validation";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -87,7 +94,17 @@ export async function getJSON(
   if (entry === null) {
     return { data: null, dataLink: null };
   }
-  const dataLink = entry.data;
+
+  // Determine the data link.
+  // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
+  let dataLink = entry.data;
+  if (typeof dataLink !== "string") {
+    throw new Error("Did not get string entry.data response");
+  }
+  if (dataLink.length !== 46) {
+    dataLink = byteArrayToBase64RawUrl(stringToUint8ArrayUtf8(dataLink));
+    dataLink = trimSuffix(dataLink, "=");
+  }
 
   // If a cached data link is provided and the data link hasn't changed, return.
   if (opts.cachedDataLink && dataLink === opts.cachedDataLink) {
@@ -214,10 +231,12 @@ export async function getOrCreateRegistryEntry(
   assertUint64(revision);
 
   // Build the registry value.
-  //
+  const dataLink = skyfile.skylink;
+  // TODO: Use decodeSkylink
   // Add padding.
-  const dataLink = `${skyfile.skylink}==`;
-  const data = base64RawUrlToByteArray(trimUriPrefix(dataLink, uriSkynetPrefix));
+  const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
+  const data = base64RawUrlToByteArray(paddedDataLink);
+  validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
     dataKey,
     data,
