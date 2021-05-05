@@ -19,10 +19,28 @@ describe("getEntry", () => {
     mock.resetHistory();
   });
 
-  it("should throw if the response status is not in the 200s and not 404", async () => {
+  it("should throw if the response status is not in the 200s and not 404 and JSON is returned", async () => {
     mock.onGet(registryLookupUrl).replyOnce(400, JSON.stringify({ message: "foo error" }));
 
-    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError("foo error");
+    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError(
+      "Request failed with status code 400"
+    );
+  });
+
+  it("should throw if the response status is not in the 200s and not 404 and HTML is returned", async () => {
+    const responseHTML = `
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>openresty/1.19.3.1</center>
+</body>
+</html>`;
+
+    mock.onGet(registryLookupUrl).replyOnce(429, responseHTML);
+
+    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError(
+      "Request failed with status code 429"
+    );
   });
 
   it("should throw if the signature could not be verified", async () => {

@@ -12,7 +12,29 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        server: [eu-ger-1, eu-ger-2, eu-fin-1, us-or-1, us-or-2, us-pa-1, us-pa-2, us-va-1]
+        server: [eu-fin-1, eu-fin-2, eu-ger-1, eu-ger-2, eu-ger-3, eu-ger-4, us-or-1, us-or-2, us-pa-2, us-va-1]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16"
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Integration test on server
+        run: yarn run jest src/integration.test.ts
+        env:
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.server }}.siasky.net"
+
+  test-dev:
+    name: Daily Dev Server Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dev-server: [siasky.dev, siasky.xyz]
 
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: yarn
 
-      - name: Integration test on server
+      - name: Integration test on dev server
         run: yarn run jest src/integration.test.ts
         env:
-          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.server }}.siasky.net"
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.dev-server }}"

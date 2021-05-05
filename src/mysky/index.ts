@@ -11,6 +11,7 @@ import {
   Permission,
   PermType,
 } from "skynet-mysky-utils";
+import type { CustomUserIDOptions } from "skynet-mysky-utils";
 
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -32,6 +33,14 @@ import { popupCenter } from "./utils";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 import { extractOptions } from "../utils/options";
 
+export const mySkyDomain = "skynet-mysky.hns";
+export const mySkyDevDomain = "skynet-mysky-dev.hns";
+export const mySkyAlphaDomain = "sandbridge.hns";
+
+const mySkyUiRelativeUrl = "ui.html";
+const mySkyUiTitle = "MySky UI";
+const [mySkyUiW, mySkyUiH] = [600, 600];
+
 export async function loadMySky(
   this: SkynetClient,
   skappDomain?: string,
@@ -41,12 +50,6 @@ export async function loadMySky(
 
   return mySky;
 }
-
-export const mySkyDomain = "skynet-mysky.hns";
-export const mySkyDevDomain = "sandbridge.hns";
-const mySkyUiRelativeUrl = "ui.html";
-const mySkyUiTitle = "MySky UI";
-const [mySkyUiW, mySkyUiH] = [500, 500];
 
 export class MySky {
   static instance: MySky | null = null;
@@ -72,7 +75,9 @@ export class MySky {
     }
 
     let domain = mySkyDomain;
-    if (opts.dev) {
+    if (opts.alpha) {
+      domain = mySkyAlphaDomain;
+    } else if (opts.dev) {
       domain = mySkyDevDomain;
     }
     const connector = await Connector.init(client, domain, customOptions);
@@ -225,8 +230,8 @@ export class MySky {
     return loggedIn;
   }
 
-  async userID(): Promise<string> {
-    return await this.connector.connection.remoteHandle().call("userID");
+  async userID(opts?: CustomUserIDOptions): Promise<string> {
+    return await this.connector.connection.remoteHandle().call("userID", opts);
   }
 
   /**
@@ -294,7 +299,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const [entry, skylink] = await getOrCreateRegistryEntry(
+    const [entry, dataLink] = await getOrCreateRegistryEntry(
       this.connector.client,
       hexToUint8Array(publicKey),
       dataKey,
@@ -307,7 +312,7 @@ export class MySky {
     const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
-    return { data: json, dataLink: skylink };
+    return { data: json, dataLink };
   }
 
   // ================

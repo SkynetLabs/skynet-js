@@ -1,8 +1,16 @@
 {
   "name": "skynet-js",
-  "version": "4.0.2-beta",
+  "version": "4.0.5-beta",
   "description": "Sia Skynet Javascript Client",
-  "main": "dist/index.js",
+  "main": "dist/cjs/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "module": "dist/mjs/index.js",
+  "exports": {
+    ".": {
+        "import": "./dist/mjs/index.js",
+        "require": "./dist/cjs/index.js"
+    }
+  },
   "files": [
     "dist/*"
   ],
@@ -12,28 +20,12 @@
     "not OperaMini all"
   ],
   "scripts": {
-    "build": "rimraf dist && babel src --out-dir dist --extensions .ts --ignore src/**/*.test.ts && tsc --project tsconfig.build.json",
+    "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.cjs.json",
     "lint": "yarn lint:tsc && yarn lint:eslint",
     "lint:eslint": "eslint --ext .ts utils src --max-warnings 30",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",
-    "test": "jest --coverage --coverageDirectory ../coverage"
-  },
-  "jest": {
-    "testTimeout": 60000,
-    "clearMocks": true,
-    "collectCoverageFrom": [
-      "**/*.ts"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 70,
-        "functions": 70,
-        "lines": 70,
-        "statements": 70
-      }
-    },
-    "rootDir": "src"
+    "test": "jest --coverage"
   },
   "husky": {
     "hooks": {
@@ -61,11 +53,10 @@
   "author": "Karol Wypchlo",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/NebulousLabs/skynet-js/issues"
+    "url": "https://github.com/SkynetLabs/skynet-js/issues"
   },
-  "homepage": "https://github.com/NebulousLabs/skynet-js",
+  "homepage": "https://github.com/SkynetLabs/skynet-js",
   "dependencies": {
-    "@babel/runtime": "^7.11.2",
     "axios": "^0.21.0",
     "base32-encode": "^1.1.1",
     "base64-js": "^1.3.1",
@@ -76,22 +67,16 @@
     "post-me": "^0.4.5",
     "randombytes": "^2.1.0",
     "sjcl": "^1.0.8",
-    "skynet-mysky-utils": "^0.1.2",
+    "skynet-mysky-utils": "^0.2.2",
     "tweetnacl": "^1.0.3",
     "url-join": "^4.0.1",
     "url-parse": "1.4.7"
   },
   "devDependencies": {
-    "@babel/cli": "^7.11.6",
-    "@babel/core": "^7.11.6",
-    "@babel/plugin-proposal-class-properties": "^7.10.4",
-    "@babel/plugin-transform-runtime": "^7.11.5",
-    "@babel/preset-env": "^7.11.5",
-    "@babel/preset-typescript": "^7.10.4",
     "@types/base64-js": "^1.3.0",
-    "@types/jest": "^26.0.14",
+    "@types/jest": "^26.0.23",
     "@types/mime": "^2.0.3",
-    "@types/node": "^14.11.2",
+    "@types/node": "^15.0.1",
     "@types/randombytes": "^2.0.0",
     "@types/sjcl": "^1.0.29",
     "@types/url-join": "^4.0.0",
@@ -99,14 +84,15 @@
     "@typescript-eslint/eslint-plugin": "^4.3.0",
     "@typescript-eslint/parser": "^4.3.0",
     "axios-mock-adapter": "^1.18.2",
-    "babel-plugin-transform-class-properties": "^6.24.1",
     "eslint": "^7.11.0",
-    "eslint-plugin-jsdoc": "^32.0.0",
+    "eslint-plugin-jsdoc": "^33.0.0",
     "husky": "^5.0.9",
-    "jest": "^26.4.2",
+    "jest": "^26.6.3",
     "lint-staged": "^10.3.0",
     "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
-    "typescript": "^4.2.3"
+    "ts-jest": "^26.5.5",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
   }
 }

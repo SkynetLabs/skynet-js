@@ -4,6 +4,35 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.5-beta]
+
+### Added
+
+- Added `cachedDataLink` option to `registry.getJSON`. This lets us avoid getting the data again if the latest data link matches the cached data link.
+- Added `customCookie` client option.
+
+### Changed
+
+- Make datapath functions `client.getFullDomainUrl` and `client.extractDomain` when paths are included, and for localhost domains/urls.
+- Fixed build for CommonJS and React projects.
+
+## [4.0.4-beta]
+
+### Added
+
+- Pass custom userID options to mysky
+
+## [4.0.3-beta]
+
+### Changed
+
+- **[Breaking change]** Renamed SkyDB `skylink` response field to `dataLink`.
+
+### Added
+
+- Added `registry.getEntryLink` and `mysky.getEntryLink`.
+- Added `client.loadMySky` `alpha` option, allowing access to the experimental alpha MySky.
+
 ## [4.0.2-beta]
 
 ### Changed

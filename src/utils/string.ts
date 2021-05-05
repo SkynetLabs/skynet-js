@@ -15,7 +15,7 @@ export function isASCIIString(str: string): boolean {
 }
 
 /**
- * Removes a prefix from the beginning of the string.
+ * Removes slashes from the beginning and end of the string.
  *
  * @param str - The string to process.
  * @returns - The processed string.

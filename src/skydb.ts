@@ -15,8 +15,8 @@ import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8 } f
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
-import { extractOptions } from "./utils/options";
 import { base64RawUrlToByteArray } from "./utils/encoding";
+import { defaultBaseOptions, extractOptions } from "./utils/options";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -24,12 +24,19 @@ export type JsonData = Record<string, unknown>;
 
 /**
  * Custom get JSON options.
+ *
+ * @property [cachedDataLink] - The last known data link. If it hasn't changed, do not download the file contents again.
  */
-export type CustomGetJSONOptions = CustomGetEntryOptions & CustomDownloadOptions;
+export type CustomGetJSONOptions = CustomGetEntryOptions &
+  CustomDownloadOptions & {
+    cachedDataLink?: string;
+  };
 
 export const defaultGetJSONOptions = {
+  ...defaultBaseOptions,
   ...defaultGetEntryOptions,
   ...defaultDownloadOptions,
+  cachedDataLink: undefined,
 };
 
 /**
@@ -38,6 +45,7 @@ export const defaultGetJSONOptions = {
 export type CustomSetJSONOptions = CustomGetJSONOptions & CustomSetEntryOptions & CustomUploadOptions;
 
 export const defaultSetJSONOptions = {
+  ...defaultBaseOptions,
   ...defaultGetJSONOptions,
   ...defaultSetEntryOptions,
   ...defaultUploadOptions,
@@ -79,11 +87,16 @@ export async function getJSON(
   if (entry === null) {
     return { data: null, dataLink: null };
   }
+  const dataLink = entry.data;
 
-  // Download the data in that Skylink.
-  const skylink = entry.data;
+  // If a cached data link is provided and the data link hasn't changed, return.
+  if (opts.cachedDataLink && dataLink === opts.cachedDataLink) {
+    return { data: null, dataLink };
+  }
+
+  // Download the data in the returned data link.
   const downloadOpts = extractOptions(opts, defaultDownloadOptions);
-  const { data } = await this.getFileContent<JsonData>(skylink, downloadOpts);
+  const { data } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
 
   if (typeof data !== "object" || data === null) {
     throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
@@ -91,14 +104,14 @@ export async function getJSON(
 
   if (!(data["_data"] && data["_v"])) {
     // Legacy data prior to v4, return as-is.
-    return { data, dataLink: skylink };
+    return { data, dataLink };
   }
 
   const actualData = data["_data"];
   if (typeof actualData !== "object" || data === null) {
     throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
   }
-  return { data: actualData as JsonData, dataLink: skylink };
+  return { data: actualData as JsonData, dataLink };
 }
 
 /**
@@ -203,12 +216,12 @@ export async function getOrCreateRegistryEntry(
   // Build the registry value.
   //
   // Add padding.
-  const skylink = `${skyfile.skylink}==`;
-  const data = base64RawUrlToByteArray(trimUriPrefix(skylink, uriSkynetPrefix));
+  const dataLink = `${skyfile.skylink}==`;
+  const data = base64RawUrlToByteArray(trimUriPrefix(dataLink, uriSkynetPrefix));
   const entry: RegistryEntry = {
     dataKey,
     data,
     revision,
   };
-  return [entry, skylink];
+  return [entry, dataLink];
 }
