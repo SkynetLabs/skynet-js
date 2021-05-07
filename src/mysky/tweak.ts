@@ -1,4 +1,5 @@
-import { hashAll } from "../crypto";
+import { hash } from "tweetnacl";
+
 import { stringToUint8ArrayUtf8, toHexString } from "../utils/string";
 
 const discoverableBucketTweakVersion = 1;
@@ -15,21 +16,21 @@ export class DiscoverableBucketTweak {
   }
 
   encode(): Uint8Array {
-    const size = 1 + 32 * this.path.length;
+    const size = 1 + 64 * this.path.length;
     const buf = new Uint8Array(size);
 
     buf.set([this.version]);
     let offset = 1;
     for (const pathLevel of this.path) {
       buf.set(pathLevel, offset);
-      offset += 32;
+      offset += 64;
     }
     return buf;
   }
 
   getHash(): Uint8Array {
     const encoding = this.encode();
-    return hashAll(encoding);
+    return hash(encoding);
   }
 }
 
@@ -38,7 +39,7 @@ export function splitPath(path: string): Array<string> {
 }
 
 export function hashPathComponent(component: string): Uint8Array {
-  return hashAll(stringToUint8ArrayUtf8(component));
+  return hash(stringToUint8ArrayUtf8(component));
 }
 
 export function deriveDiscoverableTweak(path: string): string {
