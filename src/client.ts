@@ -41,12 +41,16 @@ export type CustomClientOptions = {
 /**
  * Config options for a single request.
  *
+ * @propety endpointPath - The endpoint to contact.
  * @property [data] - The data for a POST request.
  * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
  * @property [method] - The request method.
  * @property [query] - Query parameters.
  * @property [timeout] - Request timeout. May be deprecated.
  * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
+ * @property [headers] - Any request headers to set.
+ * @property [transformRequest] - A function that allows manually transforming the request.
+ * @property [transformResponse] - A function that allows manually transforming the response.
  */
 export type RequestConfig = CustomClientOptions & {
   endpointPath: string;
