@@ -26,14 +26,14 @@ import {
   JsonData,
   JSONResponse,
 } from "../skydb";
-import { hexToUint8Array } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
+import { RAW_SKYLINK_SIZE } from "../skylink/sia";
 import { popupCenter } from "./utils";
-import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
-import { extractOptions } from "../utils/options";
 import { MAX_REVISION } from "../utils/number";
-import { emptySkylink } from "../skylink";
+import { extractOptions } from "../utils/options";
+import { hexToUint8Array } from "../utils/string";
+import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
@@ -43,6 +43,11 @@ const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
 const [mySkyUiW, mySkyUiH] = [600, 600];
 
+/**
+ * @param this
+ * @param skappDomain
+ * @param customOptions
+ */
 export async function loadMySky(
   this: SkynetClient,
   skappDomain?: string,
@@ -103,6 +108,8 @@ export class MySky {
 
   /**
    * Loads the given DACs.
+   *
+   * @param {...any} dacs
    */
   async loadDacs(...dacs: DacLibrary[]): Promise<void> {
     const promises: Promise<void>[] = [];
@@ -353,10 +360,11 @@ export class MySky {
       throw new Error("Current entry already has maximum allowed revision, could not update the entry");
     }
 
-    // Build the registry value.
+    // Build the registry value. Use empty bytes for the data.
+    const data = new Uint8Array(RAW_SKYLINK_SIZE);
     const entry: RegistryEntry = {
       dataKey,
-      data: emptySkylink,
+      data,
       revision,
     };
 
