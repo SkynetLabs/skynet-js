@@ -160,17 +160,23 @@ describe("getMetadata", () => {
 
   const skynetFileMetadata = { filename: "sia.pdf" };
 
-  it.each(validSkylinkVariations)(
-    "should successfully fetch skynet file headers from skylink %s",
-    async (fullSkylink) => {
-      mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata);
+  it("should successfully fetch skynet file metadata from skylink", async () => {
+    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata);
 
-      const { metadata } = await client.getMetadata(fullSkylink);
+    const { metadata } = await client.getMetadata(skylink);
 
-      expect(metadata).toEqual(skynetFileMetadata);
-    }
-  );
+    expect(metadata).toEqual(skynetFileMetadata);
+  });
 
+  it("should throw if a path is supplied", async () => {
+    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata);
+
+    await expect(client.getMetadata(`${skylink}/path/file`)).rejects.toThrowError(
+      "Skylink string should not contain a path"
+    );
+  });
+
+  // TODO: Add back in once the endpoint supports these headers.
   // it("should throw if no headers were returned", async () => {
   //   mock.onGet(skylinkUrl).replyOnce(200, {});
 

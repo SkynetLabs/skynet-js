@@ -13,7 +13,6 @@ import { validateOptionalObject, validateString } from "./utils/validation";
  *
  * @property [endpointDownload] - The relative URL path of the portal endpoint to contact.
  * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
- * @property [includePath=true] - Whether to include the path after the skylink, e.g. /<skylink>/foo/bar.
  * @property [path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
  * @property [query={}] - A query object to convert to a query parameter string and append to the URL.
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
@@ -21,7 +20,6 @@ import { validateOptionalObject, validateString } from "./utils/validation";
 export type CustomDownloadOptions = BaseCustomOptions & {
   endpointDownload?: string;
   download?: boolean;
-  includePath?: boolean;
   path?: string;
   query?: Record<string, unknown>;
   subdomain?: boolean;
@@ -92,7 +90,6 @@ export const defaultDownloadOptions = {
   ...defaultBaseOptions,
   endpointDownload: "/",
   download: false,
-  includePath: true,
   path: undefined,
   query: undefined,
   subdomain: false,
@@ -246,20 +243,16 @@ export function getSkylinkUrlForPortal(
     // Convert the skylink (without the path) to base32.
     skylink = convertSkylinkToBase32(skylink);
     url = addSubdomain(portalUrl, skylink);
-    if (opts.includePath) {
-      url = makeUrl(url, skylinkPath, path);
-    }
+    url = makeUrl(url, skylinkPath, path);
   } else {
     // Get the skylink including the path.
-    const skylink = parseSkylink(skylinkUrl, { includePath: opts.includePath });
+    const skylink = parseSkylink(skylinkUrl, { includePath: true });
     if (skylink === null) {
       throw new Error(`Could not get skylink with path out of input '${skylinkUrl}'`);
     }
     // Add additional path if passed in.
     url = makeUrl(portalUrl, opts.endpointDownload, skylink);
-    if (opts.includePath) {
-      url = makeUrl(url, path);
-    }
+    url = makeUrl(url, path);
   }
   return addUrlQuery(url, query);
 }
@@ -344,7 +337,11 @@ export async function getMetadata(
   const opts = { ...defaultGetMetadataOptions, ...this.customOptions, ...customOptions };
 
   // Don't include the path for now since the endpoint doesn't support it.
-  const getSkylinkUrlOpts = { endpointDownload: opts.endpointGetMetadata, query: opts.query, includePath: false };
+  const path = parseSkylink(skylinkUrl, { onlyPath: true });
+  if (path) {
+    throw new Error("Skylink string should not contain a path");
+  }
+  const getSkylinkUrlOpts = { endpointDownload: opts.endpointGetMetadata, query: opts.query };
   const url = await this.getSkylinkUrl(skylinkUrl, getSkylinkUrlOpts);
 
   const response = await this.executeRequest({
@@ -357,6 +354,8 @@ export async function getMetadata(
   validateGetMetadataResponse(response);
 
   const metadata = response.data;
+
+  // TODO: Add back in once the endpoint supports these headers.
 
   // if (typeof response.headers === "undefined") {
   //   throw new Error(
