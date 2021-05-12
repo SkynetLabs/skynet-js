@@ -41,7 +41,7 @@ export type CustomClientOptions = {
 /**
  * Config options for a single request.
  *
- * @propety endpointPath - The endpoint to contact.
+ * @property endpointPath - The endpoint to contact.
  * @property [data] - The data for a POST request.
  * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
  * @property [method] - The request method.
