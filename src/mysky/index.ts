@@ -33,6 +33,7 @@ import { popupCenter } from "./utils";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 import { extractOptions } from "../utils/options";
 import { MAX_REVISION } from "../utils/number";
+import { emptySkylink } from "../skylink";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
@@ -355,7 +356,7 @@ export class MySky {
     // Build the registry value.
     const entry: RegistryEntry = {
       dataKey,
-      data: "deleted",
+      data: emptySkylink,
       revision,
     };
 
