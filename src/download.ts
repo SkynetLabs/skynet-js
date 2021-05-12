@@ -556,7 +556,7 @@ function validateGetMetadataResponse(response: AxiosResponse): void {
     }
   } catch (err) {
     throw new Error(
-      `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+      `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
     );
   }
 }
