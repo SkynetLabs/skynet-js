@@ -3,14 +3,12 @@ import MockAdapter from "axios-mock-adapter";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
 import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
-import { getSkylinkUrlForPortal } from "./download";
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
-const skylinkUrl = getSkylinkUrlForPortal(portalUrl, skylink);
 const sialink = `${uriSkynetPrefix}${skylink}`;
 
 const validSkylinkVariations = combineStrings(
@@ -86,12 +84,6 @@ describe("getHnsUrl", () => {
 
     expect(url).toEqual(`${expectedHnsUrl}${attachment}`);
   });
-
-  it("should return correctly formed hns URL with no-response-metadata set", async () => {
-    const url = await client.getHnsUrl(hnsLink, { noResponseMetadata: true });
-
-    expect(url).toEqual(`${expectedHnsUrl}?no-response-metadata=true`);
-  });
 });
 
 describe("getHnsresUrl", () => {
@@ -132,18 +124,6 @@ describe("getSkylinkUrl", () => {
     expect(url).toEqual(`${expectedUrl}/foo%3Fbar${attachment}`);
   });
 
-  it("should return correctly formed URLs with no-response-metadata set", async () => {
-    const url = await client.getSkylinkUrl(skylink, { noResponseMetadata: true });
-
-    expect(url).toEqual(`${expectedUrl}?no-response-metadata=true`);
-  });
-
-  it("should return correctly formed URLs with no-response-metadata set and with forced download", async () => {
-    const url = await client.getSkylinkUrl(skylink, { download: true, noResponseMetadata: true });
-
-    expect(url).toEqual(`${expectedUrl}?attachment=true&no-response-metadata=true`);
-  });
-
   const expectedBase32 = `https://${skylinkBase32}.siasky.net`;
 
   it.each(validSkylinkVariations)("should convert base64 skylink to base32 using skylink %s", async (fullSkylink) => {
@@ -171,45 +151,39 @@ describe("getSkylinkUrl", () => {
 describe("getMetadata", () => {
   let mock: MockAdapter;
 
+  const skylinkUrl = `${portalUrl}/skynet/metadata/${skylink}`;
+
   beforeEach(() => {
     mock = new MockAdapter(axios);
     mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
   });
 
   const skynetFileMetadata = { filename: "sia.pdf" };
-  const headersFull = { "skynet-skylink": skylink, "skynet-file-metadata": JSON.stringify(skynetFileMetadata) };
 
-  it.each(validSkylinkVariations)(
-    "should successfully fetch skynet file headers from skylink %s",
-    async (fullSkylink) => {
-      const skylinkUrl = await client.getSkylinkUrl(fullSkylink);
-      mock.onHead(skylinkUrl).replyOnce(200, {}, headersFull);
+  it("should successfully fetch skynet file metadata from skylink", async () => {
+    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata);
 
-      const { metadata } = await client.getMetadata(fullSkylink);
+    const { metadata } = await client.getMetadata(skylink);
 
-      expect(metadata).toEqual(skynetFileMetadata);
-    }
-  );
+    expect(metadata).toEqual(skynetFileMetadata);
+  });
 
-  it.each(validSkylinkVariations)(
-    "should quietly return nothing when skynet metadata headers not present for skylink %s",
-    async (fullSkylink) => {
-      const skylinkUrl = await client.getSkylinkUrl(fullSkylink);
-      mock.onHead(skylinkUrl).replyOnce(200, {}, {});
+  it("should throw if a path is supplied", async () => {
+    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata);
 
-      const { metadata } = await client.getMetadata(fullSkylink);
-
-      expect(metadata).toEqual({});
-    }
-  );
-
-  it("should throw if no headers were returned", async () => {
-    mock.onHead(skylinkUrl).replyOnce(200, {});
-
-    await expect(client.getMetadata(skylink)).rejects.toThrowError(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    await expect(client.getMetadata(`${skylink}/path/file`)).rejects.toThrowError(
+      "Skylink string should not contain a path"
     );
   });
+
+  // TODO: Add back in once the endpoint supports these headers.
+  // it("should throw if no headers were returned", async () => {
+  //   mock.onGet(skylinkUrl).replyOnce(200, {});
+
+  //   await expect(client.getMetadata(skylink)).rejects.toThrowError(
+  //     "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+  //   );
+  // });
 });
 
 describe("getFileContent", () => {
@@ -231,11 +205,10 @@ describe("getFileContent", () => {
     const skylinkUrl = await client.getSkylinkUrl(input);
     mock.onGet(skylinkUrl).replyOnce(200, skynetFileContents, fullHeaders);
 
-    const { data, contentType, metadata, skylink: skylink2 } = await client.getFileContent(input);
+    const { data, contentType, skylink: skylink2 } = await client.getFileContent(input);
 
     expect(data).toEqual(skynetFileContents);
     expect(contentType).toEqual("application/json");
-    expect(metadata).toEqual(skynetFileMetadata);
     expect(skylink2).toEqual(sialink);
   });
 
@@ -247,11 +220,10 @@ describe("getFileContent", () => {
       const skylinkUrl = await client.getSkylinkUrl(input);
       mock.onGet(skylinkUrl).replyOnce(200, skynetFileContents, headers);
 
-      const { data, contentType, metadata, skylink: skylink2 } = await client.getFileContent(input);
+      const { data, contentType, skylink: skylink2 } = await client.getFileContent(input);
 
       expect(data).toEqual(skynetFileContents);
       expect(contentType).toEqual("");
-      expect(metadata).toEqual({});
       expect(skylink2).toEqual("");
     }
   );

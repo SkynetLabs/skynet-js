@@ -13,7 +13,6 @@ import { validateOptionalObject, validateString } from "./utils/validation";
  *
  * @property [endpointDownload] - The relative URL path of the portal endpoint to contact.
  * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
- * @property [noResponseMetadata=false] - Download without metadata in the response.
  * @property [path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
  * @property [query={}] - A query object to convert to a query parameter string and append to the URL.
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
@@ -21,7 +20,6 @@ import { validateOptionalObject, validateString } from "./utils/validation";
 export type CustomDownloadOptions = BaseCustomOptions & {
   endpointDownload?: string;
   download?: boolean;
-  noResponseMetadata?: boolean;
   path?: string;
   query?: Record<string, unknown>;
   subdomain?: boolean;
@@ -38,6 +36,15 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
   hnsSubdomain?: string;
 };
 
+export type CustomGetMetadataOptions = BaseCustomOptions & {
+  endpointGetMetadata?: string;
+  query?: Record<string, unknown>;
+};
+
+export type CustomHnsResolveOptions = BaseCustomOptions & {
+  endpointResolveHns?: string;
+};
+
 /**
  * The response for a get file content request.
  *
@@ -50,7 +57,6 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
 export type GetFileContentResponse<T = unknown> = {
   data: T;
   contentType: string;
-  metadata: Record<string, unknown>;
   portalUrl: string;
   skylink: string;
 };
@@ -64,10 +70,11 @@ export type GetFileContentResponse<T = unknown> = {
  * @property skylink - 46-character skylink.
  */
 export type GetMetadataResponse = {
-  contentType: string;
   metadata: Record<string, unknown>;
-  portalUrl: string;
-  skylink: string;
+  // TODO: Add back in once the endpoint supports these headers.
+  // contentType: string;
+  // portalUrl: string;
+  // skylink: string;
 };
 
 /**
@@ -83,10 +90,13 @@ export const defaultDownloadOptions = {
   ...defaultBaseOptions,
   endpointDownload: "/",
   download: false,
-  noResponseMetadata: false,
   path: undefined,
   query: undefined,
   subdomain: false,
+};
+const defaultGetMetadataOptions = {
+  endpointGetMetadata: "/skynet/metadata",
+  query: undefined,
 };
 const defaultDownloadHnsOptions = {
   ...defaultDownloadOptions,
@@ -95,7 +105,7 @@ const defaultDownloadHnsOptions = {
 };
 const defaultResolveHnsOptions = {
   ...defaultBaseOptions,
-  endpointDownloadHnsres: "hnsres",
+  endpointResolveHns: "hnsres",
 };
 
 /**
@@ -104,7 +114,7 @@ const defaultResolveHnsOptions = {
  * @param this - SkynetClient
  * @param skylinkUrl - 46-character skylink, or a valid skylink URL. Can be followed by a path. Note that the skylink will not be encoded, so if your path might contain special characters, consider using `customOptions.path`.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
@@ -131,7 +141,7 @@ export async function downloadFile(
  * @param this - SkynetClient
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  * @throws - Will throw if the input domain is not a string.
  */
@@ -158,7 +168,7 @@ export async function downloadFileHns(
  * @param this - SkynetClient
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
@@ -182,6 +192,7 @@ export async function getSkylinkUrl(
  * @param portalUrl - The portal URL.
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint.
  * @returns - The full URL for the skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
@@ -200,10 +211,6 @@ export function getSkylinkUrlForPortal(
   if (opts.download) {
     // Set the "attachment" parameter.
     query.attachment = true;
-  }
-  if (opts.noResponseMetadata) {
-    // Set the "no-response-metadata" parameter.
-    query["no-response-metadata"] = true;
   }
 
   // URL-encode the path.
@@ -244,7 +251,8 @@ export function getSkylinkUrlForPortal(
       throw new Error(`Could not get skylink with path out of input '${skylinkUrl}'`);
     }
     // Add additional path if passed in.
-    url = makeUrl(portalUrl, opts.endpointDownload, skylink, path);
+    url = makeUrl(portalUrl, opts.endpointDownload, skylink);
+    url = makeUrl(url, path);
   }
   return addUrlQuery(url, query);
 }
@@ -255,7 +263,7 @@ export function getSkylinkUrlForPortal(
  * @param this - SkynetClient
  * @param domain - Handshake domain.
  * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the HNS domain.
  * @throws - Will throw if the input domain is not a string.
  */
@@ -273,9 +281,6 @@ export async function getHnsUrl(
   if (opts.download) {
     query.attachment = true;
   }
-  if (opts.noResponseMetadata) {
-    query["no-response-metadata"] = true;
-  }
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);
   const portalUrl = await this.portalUrl();
@@ -292,14 +297,14 @@ export async function getHnsUrl(
  * @param this - SkynetClient
  * @param domain - Handshake domain.
  * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointResolveHns="/hnsres"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the resolver for the HNS domain.
  * @throws - Will throw if the input domain is not a string.
  */
 export async function getHnsresUrl(
   this: SkynetClient,
   domain: string,
-  customOptions?: BaseCustomOptions
+  customOptions?: CustomHnsResolveOptions
 ): Promise<string> {
   validateString("domain", domain, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultResolveHnsOptions);
@@ -309,7 +314,7 @@ export async function getHnsresUrl(
   domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
   const portalUrl = await this.portalUrl();
 
-  return makeUrl(portalUrl, opts.endpointDownloadHnsres, domain);
+  return makeUrl(portalUrl, opts.endpointResolveHns, domain);
 }
 
 /**
@@ -318,40 +323,51 @@ export async function getHnsresUrl(
  * @param this - SkynetClient
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
- * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointGetMetadata="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The metadata in JSON format. Empty if no metadata was found.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getMetadata(
   this: SkynetClient,
   skylinkUrl: string,
-  customOptions?: CustomDownloadOptions
+  customOptions?: CustomGetMetadataOptions
 ): Promise<GetMetadataResponse> {
   // Validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...defaultGetMetadataOptions, ...this.customOptions, ...customOptions };
 
-  const url = await this.getSkylinkUrl(skylinkUrl, opts);
+  // Don't include the path for now since the endpoint doesn't support it.
+  const path = parseSkylink(skylinkUrl, { onlyPath: true });
+  if (path) {
+    throw new Error("Skylink string should not contain a path");
+  }
+  const getSkylinkUrlOpts = { endpointDownload: opts.endpointGetMetadata, query: opts.query };
+  const url = await this.getSkylinkUrl(skylinkUrl, getSkylinkUrlOpts);
 
   const response = await this.executeRequest({
     ...opts,
-    endpointPath: opts.endpointDownload,
-    method: "head",
+    endpointPath: opts.endpointGetMetadata,
+    method: "GET",
     url,
   });
 
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
+  validateGetMetadataResponse(response);
 
-  const contentType = response.headers["content-type"] ?? "";
-  const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+  const metadata = response.data;
 
-  return { contentType, metadata, portalUrl, skylink };
+  // TODO: Add back in once the endpoint supports these headers.
+
+  // if (typeof response.headers === "undefined") {
+  //   throw new Error(
+  //     "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+  //   );
+  // }
+
+  // const contentType = response.headers["content-type"] ?? "";
+  // const portalUrl = response.headers["skynet-portal-api"] ?? "";
+  // const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+
+  return { metadata };
 }
 
 /**
@@ -360,7 +376,7 @@ export async function getMetadata(
  * @param this - SkynetClient
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
@@ -384,7 +400,7 @@ export async function getFileContent<T = unknown>(
  * @param this - SkynetClient
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
  * @throws - Will throw if the domain does not contain a skylink.
  */
@@ -440,11 +456,10 @@ export async function getFileContentRequest<T = unknown>(
   }
 
   const contentType = response.headers["content-type"] ?? "";
-  const metadata = response.headers["skynet-file-metadata"] ? JSON.parse(response.headers["skynet-file-metadata"]) : {};
   const portalUrl = response.headers["skynet-portal-api"] ?? "";
   const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
 
-  return { data: response.data, contentType, portalUrl, metadata, skylink };
+  return { data: response.data, contentType, portalUrl, skylink };
 }
 
 /**
@@ -453,7 +468,7 @@ export async function getFileContentRequest<T = unknown>(
  * @param this - SkynetClient
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
- * @param [customOptions.endpointPath="/"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
@@ -479,7 +494,7 @@ export async function openFile(
  * @param this - SkynetClient
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFileHns` for the full list.
- * @param [customOptions.endpointPath="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
  * @throws - Will throw if the input domain is not a string.
  */
@@ -506,14 +521,14 @@ export async function openFileHns(
  * @param this - SkynetClient
  * @param domain - Handshake resolver domain.
  * @param [customOptions={}] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/hnsres"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointResolveHns="/hnsres"] - The relative URL path of the portal endpoint to contact.
  * @returns - The data for the TXT record.
  * @throws - Will throw if the input domain is not a string.
  */
 export async function resolveHns(
   this: SkynetClient,
   domain: string,
-  customOptions?: BaseCustomOptions
+  customOptions?: CustomHnsResolveOptions
 ): Promise<ResolveHnsResponse> {
   // Validation is done in `getHnsresUrl`.
 
@@ -524,7 +539,7 @@ export async function resolveHns(
   // Get the txt record from the hnsres domain on the portal.
   const response = await this.executeRequest({
     ...opts,
-    endpointPath: opts.endpointDownloadHnsres,
+    endpointPath: opts.endpointResolveHns,
     method: "get",
     url,
   });
@@ -532,6 +547,18 @@ export async function resolveHns(
   validateResolveHnsResponse(response);
 
   return response.data;
+}
+
+function validateGetMetadataResponse(response: AxiosResponse): void {
+  try {
+    if (!response.data) {
+      throw new Error("response.data field missing");
+    }
+  } catch (err) {
+    throw new Error(
+      `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+    );
+  }
 }
 
 function validateResolveHnsResponse(response: AxiosResponse): void {
