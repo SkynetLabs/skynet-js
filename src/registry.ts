@@ -5,14 +5,7 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import {
-  hexToUint8Array,
-  isHexString,
-  stringToUint8ArrayUtf8,
-  toHexString,
-  trimPrefix,
-  uint8ArrayToStringUtf8,
-} from "./utils/string";
+import { hexToUint8Array, isHexString, toHexString, trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
@@ -26,7 +19,6 @@ import {
 } from "./utils/validation";
 import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
 import { formatSkylink } from "./skylink/format";
-import { fromByteArray, toByteArray } from "base64-js";
 
 /**
  * Custom get entry options.
@@ -167,33 +159,32 @@ export async function getEntry(
   const revision = BigInt(response.data.revision);
   const signature = Buffer.from(hexToUint8Array(response.data.signature));
 
-  // // Use empty array if the data is empty.
-  // let data = new Uint8Array([]);
-  // // Try verifying the returned data as raw bytes.
-  // if (response.data.data) {
-  //   data = hexToUint8Array(response.data.data);
-  // }
-  // const signedEntry = {
-  //   entry: {
-  //     dataKey,
-  //     data,
-  //     revision,
-  //   },
-  //   signature,
-  // };
-  // if (
-  //   sign.detached.verify(
-  //     hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex),
-  //     new Uint8Array(signedEntry.signature),
-  //     hexToUint8Array(publicKey)
-  //   )
-  // ) {
-  //   console.log("yo");
-  //   console.log(data);
-  //   // return signedEntry;
-  // }
-  // Try verifying the returned data as a string.
+  // Use empty array if the data is empty.
+  let data = new Uint8Array([]);
+  // Try verifying the returned data as raw bytes.
+  if (response.data.data) {
+    data = hexToUint8Array(response.data.data);
+  }
+  const signedEntry = {
+    entry: {
+      dataKey,
+      data,
+      revision,
+    },
+    signature,
+  };
+  if (
+    sign.detached.verify(
+      hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex),
+      new Uint8Array(signedEntry.signature),
+      hexToUint8Array(publicKey)
+    )
+  ) {
+    return signedEntry;
+  }
 
+  // Try verifying the returned data as a string.
+  //
   // Use empty array if the data is empty.
   let dataStr = "";
   if (response.data.data) {

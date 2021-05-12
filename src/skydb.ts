@@ -12,7 +12,14 @@ import {
 import { RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/url";
-import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8, trimSuffix } from "./utils/string";
+import {
+  hexToUint8Array,
+  trimUriPrefix,
+  toHexString,
+  stringToUint8ArrayUtf8,
+  trimSuffix,
+  uint8ArrayToStringUtf8,
+} from "./utils/string";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { base64RawUrlToByteArray, byteArrayToBase64RawUrl } from "./utils/encoding";
@@ -98,12 +105,21 @@ export async function getJSON(
   // Determine the data link.
   // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
   let dataLink = entry.data;
-  if (typeof dataLink !== "string") {
-    throw new Error("Did not get string entry.data response");
-  }
-  if (dataLink.length !== 46) {
-    dataLink = byteArrayToBase64RawUrl(stringToUint8ArrayUtf8(dataLink));
-    dataLink = trimSuffix(dataLink, "=");
+  if (typeof dataLink === "string") {
+    if (dataLink.length !== 46) {
+      throw new Error(`String entry.data response was not 46 bytes: ${dataLink}`);
+    }
+  } else {
+    if (dataLink.length === 46) {
+      // Legacy data that was able to be verified as bytes, convert to string.
+      dataLink = uint8ArrayToStringUtf8(dataLink);
+    } else if (dataLink.length === RAW_SKYLINK_SIZE) {
+      // Convert the datalink to a base64 skylink.
+      dataLink = byteArrayToBase64RawUrl(dataLink);
+      dataLink = trimSuffix(dataLink, "=");
+    } else {
+      throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${dataLink}"`);
+    }
   }
 
   // If a cached data link is provided and the data link hasn't changed, return.
