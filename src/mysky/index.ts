@@ -32,6 +32,7 @@ import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 import { extractOptions } from "../utils/options";
+import { MAX_REVISION } from "../utils/number";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
@@ -233,7 +234,7 @@ export class MySky {
   }
 
   /**
-   * Gets Discoverable JSON at the given path through MySky, if the user has given permissions to do so.
+   * Gets Discoverable JSON at the given path through MySky, if the user has given Read permissions to do so.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
@@ -275,7 +276,7 @@ export class MySky {
   }
 
   /**
-   * Sets Discoverable JSON at the given path through MySky, if the user has given permissions to do so.
+   * Sets Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
    *
    * @param path - The data path.
    * @param json - The json to set.
@@ -311,6 +312,57 @@ export class MySky {
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: json, dataLink };
+  }
+
+  /**
+   * Deletes Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An object containing the json data as well as the skylink for the data.
+   */
+  async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
+    validateString("path", path, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+
+    const opts = {
+      ...defaultSetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+    // Fetch the current value to find out the revision.
+    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+
+    // TODO: Refactor
+    let revision: bigint;
+    if (signedEntry.entry === null) {
+      revision = BigInt(0);
+    } else {
+      revision = signedEntry.entry.revision + BigInt(1);
+    }
+
+    // Throw if the revision is already the maximum value.
+    if (revision > MAX_REVISION) {
+      throw new Error("Current entry already has maximum allowed revision, could not update the entry");
+    }
+
+    // Build the registry value.
+    const entry: RegistryEntry = {
+      dataKey,
+      data: "deleted",
+      revision,
+    };
+
+    const signature = await this.signRegistryEntry(entry, path);
+
+    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
   }
 
   // ================

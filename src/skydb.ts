@@ -32,9 +32,9 @@ import {
   validateUint8ArrayLen,
 } from "./utils/validation";
 
-export const JSON_RESPONSE_VERSION = 2;
-
 export type JsonData = Record<string, unknown>;
+
+const JSON_RESPONSE_VERSION = 2;
 
 /**
  * Custom get JSON options.
