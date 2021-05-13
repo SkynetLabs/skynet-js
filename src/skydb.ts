@@ -16,6 +16,7 @@ import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
+import { formatSkylink } from "./skylink/format";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -110,7 +111,7 @@ export async function getJSON(
   if (typeof actualData !== "object" || data === null) {
     throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
   }
-  return { data: actualData as JsonData, dataLink };
+  return { data: actualData as JsonData, dataLink: formatSkylink(dataLink) };
 }
 
 /**
@@ -149,7 +150,7 @@ export async function setJSON(
   const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 
-  return { data: json, dataLink: skylink };
+  return { data: json, dataLink: formatSkylink(skylink) };
 }
 
 export async function getOrCreateRegistryEntry(
@@ -219,5 +220,5 @@ export async function getOrCreateRegistryEntry(
     data: trimUriPrefix(dataLink, uriSkynetPrefix),
     revision,
   };
-  return [entry, dataLink];
+  return [entry, formatSkylink(dataLink)];
 }

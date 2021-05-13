@@ -3,7 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
-import { defaultSkynetPortalUrl } from "./utils/url";
+import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
 
@@ -48,7 +48,7 @@ describe("getJSON", () => {
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toEqual(jsonData);
-    expect(dataLink).toEqual(skylink);
+    expect(dataLink).toEqual(`${uriSkynetPrefix}${skylink}`);
     expect(mock.history.get.length).toBe(2);
   });
 
@@ -69,7 +69,7 @@ describe("getJSON", () => {
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" });
     expect(data).toEqual(jsonData);
-    expect(dataLink).toEqual(skylink);
+    expect(dataLink).toEqual(`${uriSkynetPrefix}${skylink}`);
     expect(mock.history.get.length).toBe(2);
   });
 
