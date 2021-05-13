@@ -92,7 +92,7 @@ export async function getJSON(
   const dataLink = formatSkylink(rawDataLink);
 
   // If a cached data link is provided and the data link hasn't changed, return.
-  if (opts.cachedDataLink && dataLink === parseSkylink(opts.cachedDataLink)) {
+  if (opts.cachedDataLink && rawDataLink === parseSkylink(opts.cachedDataLink)) {
     return { data: null, dataLink };
   }
 

@@ -1,5 +1,6 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { trimPrefix } from "./utils/string";
+import { uriSkynetPrefix } from "./utils/url";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
@@ -46,11 +47,13 @@ describe(`Integration test for portal ${portal}`, () => {
     it("Should get existing SkyDB data", async () => {
       const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
       const dataKey = "dataKey1";
-      const expected = { message: "hi Marcin" };
+      const expectedData = { message: "hi Marcin" };
+      const expectedSkylink = `${uriSkynetPrefix}AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg`;
 
-      const { data: received } = await client.db.getJSON(publicKey, dataKey);
+      const { data: received, dataLink } = await client.db.getJSON(publicKey, dataKey);
 
-      expect(expected).toEqual(received);
+      expect(expectedData).toEqual(received);
+      expect(dataLink).toEqual(expectedSkylink);
     });
 
     it("Should get existing SkyDB data with unicode data key", async () => {
