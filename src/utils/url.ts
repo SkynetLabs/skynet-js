@@ -6,9 +6,9 @@ import { throwValidationError, validateString } from "./validation";
 
 export const defaultSkynetPortalUrl = "https://siasky.net";
 
-export const uriHandshakePrefix = "hns:";
-export const uriHandshakeResolverPrefix = "hnsres:";
-export const uriSkynetPrefix = "sia:";
+export const uriHandshakePrefix = "hns://";
+export const uriHandshakeResolverPrefix = "hnsres://";
+export const uriSkynetPrefix = "sia://";
 
 // TODO: This will be smarter. See
 // https://github.com/NebulousLabs/skynet-docs/issues/21.

@@ -1,8 +1,10 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
+
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, signEntry } from "./registry";
+import { uriSkynetPrefix } from "./utils/url";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
@@ -76,7 +78,7 @@ describe("getEntryLink", () => {
   it("should get the correct entry skylink", async () => {
     const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
     const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
-    const expectedSkylink = "sia:AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ";
+    const expectedSkylink = `${uriSkynetPrefix}AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ`;
 
     const skylink = await client.registry.getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });
 

@@ -123,7 +123,7 @@ describe("setJSON", () => {
     // set data
     const { data: returnedData, dataLink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
     expect(returnedData).toEqual(jsonData);
-    expect(returnedSkylink).toEqual(`sia:${skylink}`);
+    expect(returnedSkylink).toEqual(`${uriSkynetPrefix}${skylink}`);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);
