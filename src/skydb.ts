@@ -17,6 +17,7 @@ import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
+import { parseSkylink } from "./skylink/parse";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -87,10 +88,11 @@ export async function getJSON(
   if (entry === null) {
     return { data: null, dataLink: null };
   }
-  const dataLink = entry.data;
+  const rawDataLink = entry.data;
+  const dataLink = formatSkylink(rawDataLink);
 
   // If a cached data link is provided and the data link hasn't changed, return.
-  if (opts.cachedDataLink && dataLink === opts.cachedDataLink) {
+  if (opts.cachedDataLink && dataLink === parseSkylink(opts.cachedDataLink)) {
     return { data: null, dataLink };
   }
 
@@ -111,7 +113,7 @@ export async function getJSON(
   if (typeof actualData !== "object" || data === null) {
     throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
   }
-  return { data: actualData as JsonData, dataLink: formatSkylink(dataLink) };
+  return { data: actualData as JsonData, dataLink };
 }
 
 /**
