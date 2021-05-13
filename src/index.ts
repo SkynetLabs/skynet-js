@@ -12,7 +12,6 @@ export {
   extractDomainForPortal,
   getFullDomainUrlForPortal,
   uriHandshakePrefix,
-  uriHandshakeResolverPrefix,
   uriSkynetPrefix,
 } from "./utils/url";
 export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
