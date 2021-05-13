@@ -1,5 +1,5 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
-import { trimPrefix } from "./utils/string";
+import { trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
@@ -125,7 +125,7 @@ describe(`Integration test for portal ${portal}`, () => {
     it("Should return null for an inexistent entry", async () => {
       const { publicKey } = genKeyPairAndSeed();
 
-      // Try getting an inexistant entry.
+      // Try getting an inexistent entry.
       const { entry, signature } = await client.registry.getEntry(publicKey, "foo");
 
       expect(entry).toBeNull();
@@ -144,6 +144,10 @@ describe(`Integration test for portal ${portal}`, () => {
       await client.registry.setEntry(privateKey, entry);
 
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
+      expect(typeof returnedEntry!.data).not.toBe("string");
+      // @ts-expect-error We know the type of data here.
+      returnedEntry.data = uint8ArrayToStringUtf8(returnedEntry.data);
 
       expect(returnedEntry).toEqual(entry);
     });
@@ -160,6 +164,10 @@ describe(`Integration test for portal ${portal}`, () => {
       await client.registry.setEntry(privateKey, entry);
 
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
+      expect(typeof returnedEntry!.data).not.toBe("string");
+      // @ts-expect-error We know the type of data here.
+      returnedEntry.data = uint8ArrayToStringUtf8(returnedEntry.data);
 
       expect(returnedEntry).toEqual(entry);
     });
