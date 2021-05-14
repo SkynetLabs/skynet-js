@@ -1,5 +1,5 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
-import { trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
+import { stringToUint8ArrayUtf8, trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
@@ -122,6 +122,8 @@ describe(`Integration test for portal ${portal}`, () => {
   });
 
   describe("Registry end to end integration tests", () => {
+    const data = "AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg";
+
     it("Should return null for an inexistent entry", async () => {
       const { publicKey } = genKeyPairAndSeed();
 
@@ -132,12 +134,12 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(signature).toBeNull();
     });
 
-    it("Should set and get entries correctly", async () => {
+    it("Should set and get string entries correctly", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
 
       const entry = {
         dataKey,
-        data: "AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg",
+        data,
         revision: BigInt(0),
       };
 
@@ -148,6 +150,44 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(typeof returnedEntry!.data).not.toBe("string");
       // @ts-expect-error We know the type of data here.
       returnedEntry.data = uint8ArrayToStringUtf8(returnedEntry.data);
+
+      expect(returnedEntry).toEqual(entry);
+    });
+
+    it("Should set and get unicode entries correctly", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      const entry = {
+        dataKey,
+        data: "∂",
+        revision: BigInt(0),
+      };
+
+      await client.registry.setEntry(privateKey, entry);
+
+      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
+      expect(typeof returnedEntry!.data).not.toBe("string");
+      // @ts-expect-error We know the type of data here.
+      returnedEntry.data = uint8ArrayToStringUtf8(returnedEntry.data);
+
+      expect(returnedEntry).toEqual(entry);
+    });
+
+    it("Should set and get byte array entries correctly", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      const entry = {
+        dataKey,
+        data: stringToUint8ArrayUtf8(data),
+        revision: BigInt(0),
+      };
+
+      await client.registry.setEntry(privateKey, entry);
+
+      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
+      expect(typeof returnedEntry!.data).not.toBe("string");
 
       expect(returnedEntry).toEqual(entry);
     });

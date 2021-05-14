@@ -158,10 +158,8 @@ export async function getEntry(
   // Convert the revision from a string to bigint.
   const revision = BigInt(response.data.revision);
   const signature = Buffer.from(hexToUint8Array(response.data.signature));
-
   // Use empty array if the data is empty.
   let data = new Uint8Array([]);
-  // Try verifying the returned data as raw bytes.
   if (response.data.data) {
     data = hexToUint8Array(response.data.data);
   }
@@ -173,6 +171,8 @@ export async function getEntry(
     },
     signature,
   };
+
+  // Try verifying the returned data.
   if (
     sign.detached.verify(
       hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex),
@@ -181,31 +181,6 @@ export async function getEntry(
     )
   ) {
     return signedEntry;
-  }
-
-  // Try verifying the returned data as a string.
-  //
-  // Use empty array if the data is empty.
-  let dataStr = "";
-  if (response.data.data) {
-    dataStr = uint8ArrayToStringUtf8(hexToUint8Array(response.data.data));
-  }
-  const signedEntryDataStr = {
-    entry: {
-      dataKey,
-      data: dataStr,
-      revision,
-    },
-    signature,
-  };
-  if (
-    sign.detached.verify(
-      hashRegistryEntry(signedEntryDataStr.entry, opts.hashedDataKeyHex),
-      new Uint8Array(signedEntryDataStr.signature),
-      hexToUint8Array(publicKey)
-    )
-  ) {
-    return signedEntryDataStr;
   }
 
   // The response could not be verified.
