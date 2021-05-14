@@ -176,14 +176,13 @@ describe("getMetadata", () => {
     );
   });
 
-  // TODO: Add back in once the endpoint supports these headers.
-  // it("should throw if no headers were returned", async () => {
-  //   mock.onGet(skylinkUrl).replyOnce(200, {});
+  it("should throw if no headers were returned", async () => {
+    mock.onGet(skylinkUrl).replyOnce(200, {});
 
-  //   await expect(client.getMetadata(skylink)).rejects.toThrowError(
-  //     "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-  //   );
-  // });
+    await expect(client.getMetadata(skylink)).rejects.toThrowError(
+      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  });
 });
 
 describe("getFileContent", () => {

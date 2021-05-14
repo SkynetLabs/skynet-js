@@ -241,13 +241,11 @@ describe(`Integration test for portal ${portal}`, () => {
 
       // Get file metadata and check returned values.
 
-      const { metadata } = await client.getMetadata(skylink);
+      const { metadata, portalUrl, skylink: returnedSkylink } = await client.getMetadata(skylink);
 
       expect(metadata).toEqual(plaintextMetadata);
-      // TODO: Add back in once the endpoint supports these headers.
-      // expect(contentType).toEqual("text/plain; charset=utf-8");
-      // expect(portalUrl).toEqualPortalUrl(portal);
-      // expect(skylink).toEqual(returnedSkylink);
+      expect(portalUrl).toEqualPortalUrl(portal);
+      expect(skylink).toEqual(returnedSkylink);
     });
 
     it("Should get JSON file contents", async () => {
