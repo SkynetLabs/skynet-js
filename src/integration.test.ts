@@ -104,6 +104,7 @@ describe(`Integration test for portal ${portal}`, () => {
       await client.db.setJSON(privateKey, dataKey, json);
 
       const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
       expect(data).toEqual(json);
       expect(dataLink).toBeTruthy();
     });
