@@ -5,7 +5,17 @@
 [![Contributors](https://img.shields.io/github/contributors/NebulousLabs/skynet-js)](https://github.com/NebulousLabs/skynet-js/graphs/contributors)
 [![License](https://img.shields.io/github/license/NebulousLabs/skynet-js)](https://github.com/NebulousLabs/skynet-js)
 
-A Javascript module made to simplify communication with Sia Skynet portals from the browser.
+A Javascript module that:
+
+- facilitates communication with Sia Skynet portals from the browser
+- handles logging into and using MySky
+- provides useful functionality for working with Skynet such as parsing out skylinks from URLs
+
+## Updating to v4 from v3
+
+The latest beta major version is `v4`. There are many breaking changes from `v3`.
+
+Please consult [the update guide](https://siasky.net/docs/v4/?javascript--browser#updating-from-v3) for help migrating your code.
 
 ## Updating to v3 from v2
 
@@ -19,7 +29,7 @@ For documentation complete with examples, please see [the Skynet SDK docs](https
 
 We also have an [example tutorial about creating your first web app on Skynet](https://blog.sia.tech/creating-your-first-web-app-on-skynet-ec6f4fff405f)
 
-## How To Use skynet-js In Your Project
+## How To Use skynet-js In Your Web Project
 
 If you're thinking, "wait, how can I `import()` in the browser," then here is the answer:
 
@@ -44,14 +54,11 @@ Create folders `mkdir dist src`. Make sure you have your javascript files in `sr
 
 Compile with `npx webpack`! You will find the minified `main.js` in the `dist` folder.
 
-### Browser Utility Functions
-
-`skynet-js` provides functions that only make sense in the browser, and are covered in the special section [Browser JS API](https://siasky.net/docs/?javascript--browser#browser-js-api).
-
 ## Development
 
 1. Clone the repository
 1. Run `yarn`
+1. Run `yarn prepare` to install pre-commit hooks
 1. Run `yarn test` to run the tests
 
 Also see our [guide to contributing](https://github.com/NebulousLabs/.github/blob/master/CONTRIBUTING.md).
