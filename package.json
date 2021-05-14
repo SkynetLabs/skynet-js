@@ -7,8 +7,8 @@
   "module": "dist/mjs/index.js",
   "exports": {
     ".": {
-        "import": "./dist/mjs/index.js",
-        "require": "./dist/cjs/index.js"
+         "import": "./dist/mjs/index.js",
+         "require": "./dist/cjs/index.js"
     }
   },
   "files": [
@@ -25,12 +25,8 @@
     "lint:eslint": "eslint --ext .ts utils src --max-warnings 30",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",
-    "test": "jest --coverage"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
+    "test": "jest --coverage",
+    "prepare": "husky install"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
