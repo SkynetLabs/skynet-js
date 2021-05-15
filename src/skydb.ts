@@ -104,22 +104,19 @@ export async function getJSON(
 
   // Determine the data link.
   // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  let dataLink = entry.data;
-  if (typeof dataLink === "string") {
-    if (dataLink.length !== 46) {
-      throw new Error(`String entry.data response was not 46 bytes: ${dataLink}`);
-    }
+  if (typeof entry.data === "string") {
+    throw new Error("Expected returned entry data to be bytes");
+  }
+  let dataLink: string;
+  if (entry.data.length === 46) {
+    // Legacy data, convert to string.
+    dataLink = uint8ArrayToStringUtf8(entry.data);
+  } else if (entry.data.length === RAW_SKYLINK_SIZE) {
+    // Convert the bytes to a base64 skylink.
+    dataLink = byteArrayToBase64RawUrl(entry.data);
+    dataLink = trimSuffix(dataLink, "=");
   } else {
-    if (dataLink.length === 46) {
-      // Legacy data that was able to be verified as bytes, convert to string.
-      dataLink = uint8ArrayToStringUtf8(dataLink);
-    } else if (dataLink.length === RAW_SKYLINK_SIZE) {
-      // Convert the datalink to a base64 skylink.
-      dataLink = byteArrayToBase64RawUrl(dataLink);
-      dataLink = trimSuffix(dataLink, "=");
-    } else {
-      throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${dataLink}"`);
-    }
+    throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
   }
 
   // If a cached data link is provided and the data link hasn't changed, return.
