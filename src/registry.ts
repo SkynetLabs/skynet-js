@@ -5,7 +5,7 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { hexToUint8Array, isHexString, toHexString, trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
+import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
@@ -15,7 +15,7 @@ import {
   validateOptionalObject,
   validateString,
   validateUint8Array,
-  validateUnion,
+  validateAny,
 } from "./utils/validation";
 import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
 import { formatSkylink } from "./skylink/format";
@@ -421,7 +421,7 @@ export async function postSignedEntry(
 export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
   validateObject(name, value, valueKind);
   validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
-  validateUnion(
+  validateAny(
     [validateString, validateUint8Array],
     `${name}.data`,
     (value as RegistryEntry).data,
