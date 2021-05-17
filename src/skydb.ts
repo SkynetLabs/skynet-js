@@ -22,7 +22,7 @@ import {
 } from "./utils/string";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
-import { base64RawUrlToByteArray, byteArrayToBase64RawUrl } from "./utils/encoding";
+import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
 import {
   validateHexString,
@@ -113,7 +113,7 @@ export async function getJSON(
     dataLink = uint8ArrayToStringUtf8(entry.data);
   } else if (entry.data.length === RAW_SKYLINK_SIZE) {
     // Convert the bytes to a base64 skylink.
-    dataLink = byteArrayToBase64RawUrl(entry.data);
+    dataLink = uint8ArrayToBase64RawUrl(entry.data);
     dataLink = trimSuffix(dataLink, "=");
   } else {
     throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
@@ -248,7 +248,7 @@ export async function getOrCreateRegistryEntry(
   // TODO: Use decodeSkylink
   // Add padding.
   const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
-  const data = base64RawUrlToByteArray(paddedDataLink);
+  const data = base64RawUrlToUint8Array(paddedDataLink);
   validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
     dataKey,

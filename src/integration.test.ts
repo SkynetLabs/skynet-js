@@ -122,7 +122,7 @@ describe(`Integration test for portal ${portal}`, () => {
   });
 
   describe("Registry end to end integration tests", () => {
-    const data = "AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg";
+    const data = stringToUint8ArrayUtf8("AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg");
 
     it("Should return null for an inexistent entry", async () => {
       const { publicKey } = genKeyPairAndSeed();
@@ -147,9 +147,6 @@ describe(`Integration test for portal ${portal}`, () => {
 
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
       expect(returnedEntry).not.toBeNull();
-      expect(typeof returnedEntry!.data).not.toBe("string");
-      // @ts-expect-error We know the type of data here.
-      returnedEntry.data = uint8ArrayToStringUtf8(returnedEntry.data);
 
       expect(returnedEntry).toEqual(entry);
     });
@@ -159,7 +156,7 @@ describe(`Integration test for portal ${portal}`, () => {
 
       const entry = {
         dataKey,
-        data: "∂",
+        data: stringToUint8ArrayUtf8("∂"),
         revision: BigInt(0),
       };
 
@@ -167,27 +164,6 @@ describe(`Integration test for portal ${portal}`, () => {
 
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
       expect(returnedEntry).not.toBeNull();
-      expect(typeof returnedEntry!.data).not.toBe("string");
-      // @ts-expect-error We know the type of data here.
-      returnedEntry.data = uint8ArrayToStringUtf8(returnedEntry.data);
-
-      expect(returnedEntry).toEqual(entry);
-    });
-
-    it("Should set and get byte array entries correctly", async () => {
-      const { publicKey, privateKey } = genKeyPairAndSeed();
-
-      const entry = {
-        dataKey,
-        data: stringToUint8ArrayUtf8(data),
-        revision: BigInt(0),
-      };
-
-      await client.registry.setEntry(privateKey, entry);
-
-      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
-      expect(returnedEntry).not.toBeNull();
-      expect(typeof returnedEntry!.data).not.toBe("string");
 
       expect(returnedEntry).toEqual(entry);
     });
@@ -197,7 +173,7 @@ describe(`Integration test for portal ${portal}`, () => {
 
       const entry = {
         dataKey,
-        data: "",
+        data: new Uint8Array(),
         revision: BigInt(0),
       };
 
@@ -205,9 +181,6 @@ describe(`Integration test for portal ${portal}`, () => {
 
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
       expect(returnedEntry).not.toBeNull();
-      expect(typeof returnedEntry!.data).not.toBe("string");
-      // @ts-expect-error We know the type of data here.
-      returnedEntry.data = uint8ArrayToStringUtf8(returnedEntry.data);
 
       expect(returnedEntry).toEqual(entry);
     });

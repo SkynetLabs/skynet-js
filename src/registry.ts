@@ -15,7 +15,6 @@ import {
   validateOptionalObject,
   validateString,
   validateUint8Array,
-  validateAny,
 } from "./utils/validation";
 import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
 import { formatSkylink } from "./skylink/format";
@@ -75,7 +74,7 @@ const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
  */
 export type RegistryEntry = {
   dataKey: string;
-  data: string | Uint8Array;
+  data: Uint8Array;
   revision: bigint;
 };
 
@@ -383,12 +382,7 @@ export async function postSignedEntry(
     datakey = toHexString(hashDataKey(datakey));
   }
   // Convert the entry data to an array from either a string or raw bytes.
-  let entryData;
-  if (typeof entry.data === "string") {
-    entryData = Array.from(Buffer.from(entry.data));
-  } else {
-    entryData = Array.from(entry.data);
-  }
+  const entryData = Array.from(entry.data);
   const data = {
     publickey: {
       algorithm: "ed25519",
@@ -421,13 +415,7 @@ export async function postSignedEntry(
 export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
   validateObject(name, value, valueKind);
   validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
-  validateAny(
-    [validateString, validateUint8Array],
-    `${name}.data`,
-    (value as RegistryEntry).data,
-    `${valueKind} field`,
-    "string | Uint8Array"
-  );
+  validateUint8Array(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
   validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
 }
 
