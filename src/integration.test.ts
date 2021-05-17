@@ -230,7 +230,7 @@ describe(`Integration test for portal ${portal}`, () => {
 
     it("Should get plaintext file metadata", async () => {
       // TODO: Remove once the metadata changes are in prod.
-      const portal = "https://siasky.dev";
+      const portal = "https://siasky.xyz";
       const client = new SkynetClient(portal);
 
       // Upload the data to acquire its skylink.

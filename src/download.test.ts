@@ -161,7 +161,7 @@ describe("getMetadata", () => {
   const skynetFileMetadata = { filename: "sia.pdf" };
 
   it("should successfully fetch skynet file metadata from skylink", async () => {
-    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata);
+    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata, {});
 
     const { metadata } = await client.getMetadata(skylink);
 
