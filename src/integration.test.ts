@@ -57,8 +57,10 @@ describe(`Integration test for portal ${portal}`, () => {
       const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
       const dataKey = "dataKey3";
       const expected = { _data: { message: "hi there!" } };
+      const expectedEntryLink = "sia:AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw";
 
       const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+      expect(entryLink).toEqual(expectedEntryLink);
 
       const { data } = await client.getFileContent(entryLink);
 

@@ -120,10 +120,9 @@ export class MySky {
   }
 
   async checkLogin(): Promise<boolean> {
-    const [seedFound, permissionsResponse]: [
-      boolean,
-      CheckPermissionsResponse
-    ] = await this.connector.connection.remoteHandle().call("checkLogin", this.pendingPermissions);
+    const [seedFound, permissionsResponse]: [boolean, CheckPermissionsResponse] = await this.connector.connection
+      .remoteHandle()
+      .call("checkLogin", this.pendingPermissions);
 
     // Save granted and failed permissions.
     const { grantedPermissions, failedPermissions } = permissionsResponse;
@@ -192,10 +191,9 @@ export class MySky {
         // Send the UI the list of required permissions.
 
         // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
-        const [seedFoundResponse, permissionsResponse]: [
-          boolean,
-          CheckPermissionsResponse
-        ] = await uiConnection.remoteHandle().call("requestLoginAccess", this.pendingPermissions);
+        const [seedFoundResponse, permissionsResponse]: [boolean, CheckPermissionsResponse] = await uiConnection
+          .remoteHandle()
+          .call("requestLoginAccess", this.pendingPermissions);
         seedFound = seedFoundResponse;
 
         // Save failed permissions.
@@ -327,7 +325,7 @@ export class MySky {
    */
   async setDataLink(path: string, dataLink: string, customOptions?: CustomSetJSONOptions): Promise<void> {
     validateString("path", path, "parameter");
-    validateObject("dataLink", dataLink, "parameter");
+    validateString("dataLink", dataLink, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
 
     const opts = {
