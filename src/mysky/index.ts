@@ -44,9 +44,12 @@ const mySkyUiTitle = "MySky UI";
 const [mySkyUiW, mySkyUiH] = [600, 600];
 
 /**
- * @param this
- * @param skappDomain
- * @param customOptions
+ * Loads MySky. Note that this does not log in the user.
+ *
+ * @param this - The Skynet client.
+ * @param skappDomain - The domain of the host skapp. For this domain permissions will be requested and, by default, automatically granted.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - Loaded (but not logged-in) MySky instance.
  */
 export async function loadMySky(
   this: SkynetClient,
@@ -328,6 +331,7 @@ export class MySky {
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the json data as well as the skylink for the data.
+   * @throws - Will throw if the revision is already the maximum value.
    */
   async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
     validateString("path", path, "parameter");
