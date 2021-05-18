@@ -381,7 +381,7 @@ export async function postSignedEntry(
   if (!opts.hashedDataKeyHex) {
     datakey = toHexString(hashDataKey(datakey));
   }
-  // Convert the entry data to an array from either a string or raw bytes.
+  // Convert the entry data to an array from raw bytes.
   const entryData = Array.from(entry.data);
   const data = {
     publickey: {
