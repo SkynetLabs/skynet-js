@@ -43,7 +43,6 @@ export async function getJSON(
  * @param this - SkynetClient
  * @param userID - The public user ID.
  * @param path - The data path.
- * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry link.
  */
 export async function getEntryLink(this: SkynetClient, userID: string, path: string): Promise<string> {

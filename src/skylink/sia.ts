@@ -1,7 +1,7 @@
 import base32Decode from "base32-decode";
 
 import { hashAll } from "../crypto";
-import { base64RawUrlToByteArray, byteArrayToBase64RawUrl, encodePrefixedBytes } from "../utils/encoding";
+import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl, encodePrefixedBytes } from "../utils/encoding";
 import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
 import { validateHexString, validateNumber, validateUint8ArrayLen } from "../utils/validation";
 
@@ -44,7 +44,7 @@ export class SiaSkylink {
   }
 
   toString(): string {
-    const base64 = byteArrayToBase64RawUrl(this.toBytes());
+    const base64 = uint8ArrayToBase64RawUrl(this.toBytes());
     // Remove padding characters.
     return trimSuffix(base64, "=");
   }
@@ -52,6 +52,8 @@ export class SiaSkylink {
 
 /**
  * Checks if the given string is a v1 skylink.
+ *
+ * @param s
  */
 export function isSkylinkV1(s: string): boolean {
   const raw = decodeSkylink(s);
@@ -65,6 +67,8 @@ export function isSkylinkV1(s: string): boolean {
 
 /**
  * Checks if the given string is a v2 skylink.
+ *
+ * @param s
  */
 export function isSkylinkV2(s: string): boolean {
   // Decode the base into raw data.
@@ -79,6 +83,8 @@ export function isSkylinkV2(s: string): boolean {
 
 /**
  * Returns a boolean indicating if the Skylink is a V1 skylink
+ *
+ * @param bitfield
  */
 function isBitfieldSkylinkV1(bitfield: number): boolean {
   return (bitfield & 3) === 0;
@@ -86,6 +92,8 @@ function isBitfieldSkylinkV1(bitfield: number): boolean {
 
 /**
  * Returns a boolean indicating if the Skylink is a V2 skylink
+ *
+ * @param bitfield
  */
 function isBitfieldSkylinkV2(bitfield: number): boolean {
   // We compare against 1 here because a V2 skylink only uses the version
@@ -168,7 +176,7 @@ export function decodeSkylink(encoded: string): Uint8Array {
   } else if (encoded.length === BASE64_ENCODED_SKYLINK_SIZE) {
     // Add padding.
     encoded = `${encoded}==`;
-    bytes = base64RawUrlToByteArray(encoded);
+    bytes = base64RawUrlToUint8Array(encoded);
   } else {
     throw new Error(ERR_SKYLINK_INCORRECT_SIZE);
   }

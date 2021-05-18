@@ -152,6 +152,7 @@ export async function getJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The returned JSON and revision number.
  * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setJSON(
@@ -183,6 +184,17 @@ export async function setJSON(
   return { data: json, dataLink: skylink };
 }
 
+/**
+ * Gets the registry entry and data link or creates the entry if it doesn't exist.
+ *
+ * @param client - The Skynet client.
+ * @param publicKeyArray - The user public key.
+ * @param dataKey - The dat akey.
+ * @param json - The JSON to set.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The registry entry and corresponding data link.
+ * @throws - Will throw if the revision is already the maximum value.
+ */
 export async function getOrCreateRegistryEntry(
   client: SkynetClient,
   publicKeyArray: Uint8Array,
