@@ -5,7 +5,7 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { hexToUint8Array, isHexString, toHexString, trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
+import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
@@ -14,6 +14,7 @@ import {
   validateObject,
   validateOptionalObject,
   validateString,
+  validateUint8Array,
 } from "./utils/validation";
 import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
 import { formatSkylink } from "./skylink/format";
@@ -73,7 +74,7 @@ const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
  */
 export type RegistryEntry = {
   dataKey: string;
-  data: string;
+  data: Uint8Array;
   revision: bigint;
 };
 
@@ -153,32 +154,36 @@ export async function getEntry(
     );
   }
 
-  // Use empty string if the data is empty.
-  let data = "";
+  // Convert the revision from a string to bigint.
+  const revision = BigInt(response.data.revision);
+  const signature = Buffer.from(hexToUint8Array(response.data.signature));
+  // Use empty array if the data is empty.
+  let data = new Uint8Array([]);
   if (response.data.data) {
-    data = uint8ArrayToStringUtf8(hexToUint8Array(response.data.data));
+    data = hexToUint8Array(response.data.data);
   }
   const signedEntry = {
     entry: {
       dataKey,
       data,
-      // Convert the revision from a string to bigint.
-      revision: BigInt(response.data.revision),
+      revision,
     },
-    signature: Buffer.from(hexToUint8Array(response.data.signature)),
+    signature,
   };
+
+  // Try verifying the returned data.
   if (
-    signedEntry &&
-    !sign.detached.verify(
+    sign.detached.verify(
       hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex),
       new Uint8Array(signedEntry.signature),
       hexToUint8Array(publicKey)
     )
   ) {
-    throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
+    return signedEntry;
   }
 
-  return signedEntry;
+  // The response could not be verified.
+  throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
 }
 
 /**
@@ -374,18 +379,20 @@ export async function postSignedEntry(
   // Hash and hex encode the given data key if it is not a hash already.
   let datakey = entry.dataKey;
   if (!opts.hashedDataKeyHex) {
-    datakey = toHexString(hashDataKey(entry.dataKey));
+    datakey = toHexString(hashDataKey(datakey));
   }
+  // Convert the entry data to an array from raw bytes.
+  const entryData = Array.from(entry.data);
   const data = {
     publickey: {
       algorithm: "ed25519",
       key: Array.from(hexToUint8Array(publicKey)),
     },
     datakey,
-    // Set the revision as a string here since the value may be up to 64 bits.
-    // We remove the quotes later in transformRequest.
+    // Set the revision as a string here. The value may be up to 64 bits and the limit for a JS number is 53 bits.
+    // We remove the quotes later in transformRequest, as JSON does support 64 bit numbers.
     revision: entry.revision.toString(),
-    data: Array.from(Buffer.from(entry.data)),
+    data: entryData,
     signature: Array.from(signature),
   };
 
@@ -408,7 +415,7 @@ export async function postSignedEntry(
 export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
   validateObject(name, value, valueKind);
   validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
-  validateString(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
+  validateUint8Array(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
   validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
 }
 

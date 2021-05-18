@@ -27,7 +27,7 @@ import {
   JSONResponse,
   getRevisionFromSignedEntry,
 } from "../skydb";
-import { hexToUint8Array, trimUriPrefix } from "../utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
@@ -349,7 +349,7 @@ export class MySky {
     // Build the registry entry.
     const entry: RegistryEntry = {
       dataKey,
-      data: trimUriPrefix(dataLink, uriSkynetPrefix),
+      data: stringToUint8ArrayUtf8(trimUriPrefix(dataLink, uriSkynetPrefix)),
       revision,
     };
 

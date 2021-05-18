@@ -1,5 +1,5 @@
 import { deriveChildSeed, genKeyPairFromSeed, hashDataKey, hashRegistryEntry } from "./crypto";
-import { toHexString } from "./utils/string";
+import { stringToUint8ArrayUtf8, toHexString } from "./utils/string";
 
 describe("deriveChildSeed", () => {
   it("should correctly derive a child seed", () => {
@@ -54,7 +54,7 @@ describe("hashRegistryValue", () => {
     const hash = hashRegistryEntry(
       {
         dataKey: "HelloWorld",
-        data: "abc",
+        data: stringToUint8ArrayUtf8("abc"),
         revision: BigInt(123456789),
       },
       false
@@ -71,7 +71,7 @@ describe("hashRegistryValue", () => {
     const hash = hashRegistryEntry(
       {
         dataKey: "HelloWorld π",
-        data: "abc π",
+        data: stringToUint8ArrayUtf8("abc π"),
         revision: BigInt(123456789),
       },
       false
@@ -84,7 +84,7 @@ describe("hashRegistryValue", () => {
     const hash1 = hashRegistryEntry(
       {
         dataKey: "abcd",
-        data: "abc π",
+        data: stringToUint8ArrayUtf8("abc π"),
         revision: BigInt(123456789),
       },
       false
@@ -93,7 +93,7 @@ describe("hashRegistryValue", () => {
     const hash2 = hashRegistryEntry(
       {
         dataKey: "abcd",
-        data: "abc π",
+        data: stringToUint8ArrayUtf8("abc π"),
         revision: BigInt(123456789),
       },
       true
