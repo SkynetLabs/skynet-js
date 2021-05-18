@@ -7,7 +7,7 @@ import { sign } from "tweetnacl";
 import { RegistryEntry } from "./registry";
 import { hexToUint8Array, toHexString } from "./utils/string";
 import { validateNumber, validateString } from "./utils/validation";
-import { encodeBigintAsUint64, encodeUtf8String } from "./utils/encoding";
+import { encodeBigintAsUint64, encodePrefixedBytes, encodeUtf8String } from "./utils/encoding";
 
 export type Signature = Buffer;
 
@@ -125,7 +125,14 @@ export function hashRegistryEntry(registryEntry: RegistryEntry, hashedDataKeyHex
     dataKeyBytes = hashDataKey(registryEntry.dataKey);
   }
 
-  return hashAll(dataKeyBytes, encodeUtf8String(registryEntry.data), encodeBigintAsUint64(registryEntry.revision));
+  let dataBytes;
+  if (typeof registryEntry.data === "string") {
+    dataBytes = encodeUtf8String(registryEntry.data);
+  } else {
+    dataBytes = encodePrefixedBytes(registryEntry.data);
+  }
+
+  return hashAll(dataKeyBytes, dataBytes, encodeBigintAsUint64(registryEntry.revision));
 }
 
 /**

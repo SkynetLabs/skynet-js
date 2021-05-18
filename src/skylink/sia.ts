@@ -11,7 +11,7 @@ import { validateHexString, validateNumber, validateUint8ArrayLen } from "../uti
 const BASE32_ENCODED_SKYLINK_SIZE = 55;
 
 /**
- * The size of the Skylink after it has been // encoded using base64.
+ * The size of the Skylink after it has been encoded using base64.
  */
 const BASE64_ENCODED_SKYLINK_SIZE = 46;
 
@@ -24,7 +24,7 @@ const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
 /**
  * The raw size of the data that gets put into a link.
  */
-const RAW_SKYLINK_SIZE = 34;
+export const RAW_SKYLINK_SIZE = 34;
 
 export class SiaSkylink {
   constructor(public bitfield: number, public merkleRoot: Uint8Array) {

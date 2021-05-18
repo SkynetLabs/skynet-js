@@ -13,7 +13,20 @@ jobs:
     strategy:
       matrix:
         server:
-          [eu-fin-1, eu-fin-2, eu-ger-1, eu-ger-2, eu-ger-3, eu-ger-4, us-or-1, us-or-2, us-pa-1, us-pa-2, us-va-1]
+          [
+            as-hk-1,
+            eu-fin-2,
+            eu-ger-3,
+            eu-ger-4,
+            eu-ger-5,
+            eu-ger-6,
+            us-or-1,
+            us-or-2,
+            us-pa-2,
+            us-va-1,
+            us-va-2,
+            us-va-3,
+          ]
 
     steps:
       - uses: actions/checkout@v2

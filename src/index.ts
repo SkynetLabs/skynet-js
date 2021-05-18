@@ -2,11 +2,13 @@ export { SkynetClient } from "./client";
 export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
 export { getEntryUrlForPortal, signEntry } from "./registry";
-export { getRelativeFilePath, getRootDirectory } from "./utils/file";
-export { MAX_REVISION } from "./utils/number";
+export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
 export { convertSkylinkToBase32 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
+export { getRelativeFilePath, getRootDirectory } from "./utils/file";
+export { MAX_REVISION } from "./utils/number";
+export { stringToUint8ArrayUtf8, uint8ArrayToStringUtf8 } from "./utils/string";
 export {
   defaultPortalUrl,
   defaultSkynetPortalUrl,
@@ -16,8 +18,7 @@ export {
   uriHandshakeResolverPrefix,
   uriSkynetPrefix,
 } from "./utils/url";
-export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
-// Re-export Permissions.
+// Re-export Permission API.
 export {
   Permission,
   PermCategory,

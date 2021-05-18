@@ -5,12 +5,38 @@ import { stringToUint8ArrayUtf8 } from "./string";
 
 export function base64RawUrlToByteArray(s: string): Uint8Array {
   // Convert from URL encoding.
-  s = s.replace(/\-/g, "+").replace(/\_/g, "/");
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
   const bytes = toByteArray(s);
   return bytes;
 }
 
 export function byteArrayToBase64RawUrl(bytes: Uint8Array): string {
+  let base64 = fromByteArray(bytes);
+  // Convert to URL encoding.
+  base64 = base64.replace(/\+/g, "-").replace(/\//g, "_");
+  return base64;
+}
+
+/**
+ * Decodes the string encoded using base64 raw URL encoding to bytes.
+ *
+ * @param s - The encoded string.
+ * @returns - The decoded bytes.
+ */
+export function base64RawUrlToUint8Array(s: string): Uint8Array {
+  // Convert from URL encoding.
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  const bytes = toByteArray(s);
+  return bytes;
+}
+
+/**
+ * Encodes the bytes to a string encoded using base64 raw URL encoding.
+ *
+ * @param bytes - The bytes to encode.
+ * @returns - The encoded string.
+ */
+export function uint8ArrayToBase64RawUrl(bytes: Uint8Array): string {
   let base64 = fromByteArray(bytes);
   // Convert to URL encoding.
   base64 = base64.replace(/\+/g, "-").replace(/\//g, "_");
