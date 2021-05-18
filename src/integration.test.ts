@@ -1,6 +1,6 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
-import { trimPrefix } from "./utils/string";
 import { uriSkynetPrefix } from "./utils/url";
+import { stringToUint8ArrayUtf8, trimPrefix } from "./utils/string";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
@@ -45,15 +45,27 @@ describe(`Integration test for portal ${portal}`, () => {
 
   describe("SkyDB end to end integration tests", () => {
     it("Should get existing SkyDB data", async () => {
-      const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
+      const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
       const dataKey = "dataKey1";
-      const expectedData = { message: "hi Marcin" };
-      const expectedSkylink = `${uriSkynetPrefix}AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg`;
+      const expectedDataLink = `${uriSkynetPrefix}AACDPHoC2DCV_kLGUdpdRJr3CcxCmKadLGPi6OAMl7d48w`;
+      const expectedData = { message: "hi there" };
 
       const { data: received, dataLink } = await client.db.getJSON(publicKey, dataKey);
 
       expect(expectedData).toEqual(received);
-      expect(dataLink).toEqual(expectedSkylink);
+      expect(dataLink).toEqual(expectedDataLink);
+    });
+
+    it("Should get existing SkyDB data using entry link", async () => {
+      const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+      const dataKey = "dataKey3";
+      const expected = { _data: { message: "hi there!" } };
+
+      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+
+      const { data } = await client.getFileContent(entryLink);
+
+      expect(data).toEqual(expect.objectContaining(expected));
     });
 
     it("Should get existing SkyDB data with unicode data key", async () => {
@@ -107,34 +119,55 @@ describe(`Integration test for portal ${portal}`, () => {
       await client.db.setJSON(privateKey, dataKey, json);
 
       const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
       expect(data).toEqual(json);
       expect(dataLink).toBeTruthy();
     });
   });
 
   describe("Registry end to end integration tests", () => {
+    const data = stringToUint8ArrayUtf8("AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg");
+
     it("Should return null for an inexistent entry", async () => {
       const { publicKey } = genKeyPairAndSeed();
 
-      // Try getting an inexistant entry.
+      // Try getting an inexistent entry.
       const { entry, signature } = await client.registry.getEntry(publicKey, "foo");
 
       expect(entry).toBeNull();
       expect(signature).toBeNull();
     });
 
-    it("Should set and get entries correctly", async () => {
+    it("Should set and get string entries correctly", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
 
       const entry = {
         dataKey,
-        data: "foo",
+        data,
         revision: BigInt(0),
       };
 
       await client.registry.setEntry(privateKey, entry);
 
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
+
+      expect(returnedEntry).toEqual(entry);
+    });
+
+    it("Should set and get unicode entries correctly", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      const entry = {
+        dataKey,
+        data: stringToUint8ArrayUtf8("∂"),
+        revision: BigInt(0),
+      };
+
+      await client.registry.setEntry(privateKey, entry);
+
+      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
 
       expect(returnedEntry).toEqual(entry);
     });
@@ -144,13 +177,14 @@ describe(`Integration test for portal ${portal}`, () => {
 
       const entry = {
         dataKey,
-        data: "",
+        data: new Uint8Array(),
         revision: BigInt(0),
       };
 
       await client.registry.setEntry(privateKey, entry);
 
       const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
 
       expect(returnedEntry).toEqual(entry);
     });

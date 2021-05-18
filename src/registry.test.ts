@@ -5,6 +5,7 @@ import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, signEntry } from "./registry";
 import { uriSkynetPrefix } from "./utils/url";
+import { stringToUint8ArrayUtf8 } from "./utils/string";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
@@ -132,8 +133,9 @@ describe("setEntry", () => {
 
 describe("signEntry", () => {
   it("Should throw if we try to sign an entry with a prehashed data key that is not in hex format", async () => {
-    await expect(
-      signEntry(privateKey, { data: "test", dataKey: "test", revision: BigInt(0) }, true)
-    ).rejects.toThrowError("Expected parameter 'str' to be a hex-encoded string, was 'test'");
+    const entry = { data: stringToUint8ArrayUtf8("test"), dataKey: "test", revision: BigInt(0) };
+    await expect(signEntry(privateKey, entry, true)).rejects.toThrowError(
+      "Expected parameter 'str' to be a hex-encoded string, was 'test'"
+    );
   });
 });

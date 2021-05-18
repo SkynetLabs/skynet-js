@@ -1,6 +1,7 @@
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
+import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import {
   defaultGetEntryOptions,
   defaultSetEntryOptions,
@@ -9,15 +10,29 @@ import {
   SignedRegistryEntry,
   CustomSetEntryOptions,
 } from "./registry";
+import { RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/url";
-import { hexToUint8Array, trimUriPrefix, toHexString, stringToUint8ArrayUtf8 } from "./utils/string";
-import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
-import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
-import { validateHexString, validateObject, validateOptionalObject, validateString } from "./utils/validation";
-import { defaultBaseOptions, extractOptions } from "./utils/options";
+import {
+  hexToUint8Array,
+  trimUriPrefix,
+  toHexString,
+  stringToUint8ArrayUtf8,
+  trimSuffix,
+  uint8ArrayToStringUtf8,
+} from "./utils/string";
 import { formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
+import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
+import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl } from "./utils/encoding";
+import { defaultBaseOptions, extractOptions } from "./utils/options";
+import {
+  validateHexString,
+  validateObject,
+  validateOptionalObject,
+  validateString,
+  validateUint8ArrayLen,
+} from "./utils/validation";
 
 export const JSON_RESPONSE_VERSION = 2;
 
@@ -88,7 +103,23 @@ export async function getJSON(
   if (entry === null) {
     return { data: null, dataLink: null };
   }
-  const rawDataLink = entry.data;
+
+  // Determine the data link.
+  // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
+  if (typeof entry.data === "string") {
+    throw new Error("Expected returned entry data to be bytes");
+  }
+  let rawDataLink: string;
+  if (entry.data.length === 46) {
+    // Legacy data, convert to string.
+    rawDataLink = uint8ArrayToStringUtf8(entry.data);
+  } else if (entry.data.length === RAW_SKYLINK_SIZE) {
+    // Convert the bytes to a base64 skylink.
+    rawDataLink = uint8ArrayToBase64RawUrl(entry.data);
+    rawDataLink = trimSuffix(rawDataLink, "=");
+  } else {
+    throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
+  }
   const dataLink = formatSkylink(rawDataLink);
 
   // If a cached data link is provided and the data link hasn't changed, return.
@@ -171,14 +202,14 @@ export async function getOrCreateRegistryEntry(
   };
 
   // Set the hidden _data and _v fields.
-  const data = { _data: json, _v: JSON_RESPONSE_VERSION };
+  const fullData = { _data: json, _v: JSON_RESPONSE_VERSION };
 
   // Create the data to upload to acquire its skylink.
   let dataKeyHex = dataKey;
   if (!opts.hashedDataKeyHex) {
     dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
   }
-  const file = new File([JSON.stringify(data)], `dk:${dataKeyHex}`, { type: "application/json" });
+  const file = new File([JSON.stringify(fullData)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.
   const uploadOpts = extractOptions(opts, defaultUploadOptions);
@@ -217,9 +248,14 @@ export async function getOrCreateRegistryEntry(
 
   // Build the registry value.
   const dataLink = skyfile.skylink;
+  // TODO: Use decodeSkylink
+  // Add padding.
+  const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
+  const data = base64RawUrlToUint8Array(paddedDataLink);
+  validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
     dataKey,
-    data: trimUriPrefix(dataLink, uriSkynetPrefix),
+    data,
     revision,
   };
   return [entry, formatSkylink(dataLink)];

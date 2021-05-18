@@ -22,8 +22,8 @@ const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 
 const attachment = "?attachment=true";
 const expectedUrl = `${portalUrl}/${skylink}`;
-const expectedHnsUrl = `${portalUrl}/hns/${hnsLink}`;
-const expectedHnsUrlSubdomain = `https://${hnsLink}.hns.siasky.net`;
+const expectedHnsUrl = `https://${hnsLink}.hns.siasky.net`;
+const expectedHnsUrlNoSubdomain = `${portalUrl}/hns/${hnsLink}`;
 const expectedHnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
 
 const mockLocationAssign = jest.fn();
@@ -73,10 +73,13 @@ describe("downloadFileHns", () => {
 });
 
 describe("getHnsUrl", () => {
-  it.each(validHnsLinkVariations)("should return correctly formed hns URL using hns link %s", async (input) => {
-    expect(await client.getHnsUrl(input)).toEqual(expectedHnsUrl);
-    expect(await client.getHnsUrl(input, { subdomain: true })).toEqual(expectedHnsUrlSubdomain);
-  });
+  it.each(validHnsLinkVariations)(
+    "should return correctly formed non-subdomain hns URL using hns link %s",
+    async (input) => {
+      expect(await client.getHnsUrl(input)).toEqual(expectedHnsUrl);
+      expect(await client.getHnsUrl(input, { subdomain: false })).toEqual(expectedHnsUrlNoSubdomain);
+    }
+  );
 
   it("should return correctly formed hns URL with forced download", async () => {
     const url = await client.getHnsUrl(hnsLink, { download: true });
@@ -287,13 +290,12 @@ describe("downloadFileHns", () => {
 
       await client.downloadFileHns(input);
 
-      expect(mockLocationAssign).toHaveBeenCalledWith("https://siasky.net/hns/foo?attachment=true");
+      expect(mockLocationAssign).toHaveBeenCalledWith(`${expectedHnsUrl}?attachment=true`);
     }
   );
 });
 
 describe("openFileHns", () => {
-  const hnsUrl = `${portalUrl}/hns/${hnsLink}`;
   let mock: MockAdapter;
 
   beforeEach(() => {
@@ -313,7 +315,7 @@ describe("openFileHns", () => {
       expect(mock.history.get.length).toBe(0);
 
       expect(windowOpen).toHaveBeenCalledTimes(1);
-      expect(windowOpen).toHaveBeenCalledWith(hnsUrl, "_blank");
+      expect(windowOpen).toHaveBeenCalledWith(expectedHnsUrl, "_blank");
     }
   });
 });
