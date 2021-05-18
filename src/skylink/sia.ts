@@ -6,12 +6,12 @@ import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } fr
 import { validateHexString, validateNumber, validateUint8ArrayLen } from "../utils/validation";
 
 /**
- * The size of the Skylink after it has been encoded using base32.
+ * The string length of the Skylink after it has been encoded using base32.
  */
 const BASE32_ENCODED_SKYLINK_SIZE = 55;
 
 /**
- * The size of the Skylink after it has been encoded using base64.
+ * The string length of the Skylink after it has been encoded using base64.
  */
 const BASE64_ENCODED_SKYLINK_SIZE = 46;
 
@@ -22,7 +22,7 @@ const BASE64_ENCODED_SKYLINK_SIZE = 46;
 const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
 
 /**
- * The raw size of the data that gets put into a link.
+ * The raw size in bytes of the data that gets put into a link.
  */
 export const RAW_SKYLINK_SIZE = 34;
 
