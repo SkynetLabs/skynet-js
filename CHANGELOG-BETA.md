@@ -4,6 +4,15 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.6-beta]
+
+### Changed
+
+- **[Breaking change]** `getFileContent` and `getFileContentHns` no longer return metadata objects.
+- **[Breaking change]** Remove `noResponseMetadata` custom option from download and HNS download methods.
+- **[Breaking change]** `getMetadata` now takes a `CustomGetMetadataOptions` object for custom options.
+- **[Breaking change]** Rename `resolveHns` option `endpointDownloadHnsres` to `endpointResolveHns`.
+
 ## [4.0.5-beta]
 
 ### Added
