@@ -102,6 +102,8 @@ const defaultDownloadHnsOptions = {
   ...defaultDownloadOptions,
   endpointDownloadHns: "hns",
   hnsSubdomain: "hns",
+  // Default to subdomain format for HNS URLs.
+  subdomain: true,
 };
 const defaultResolveHnsOptions = {
   ...defaultBaseOptions,
@@ -549,6 +551,9 @@ export async function resolveHns(
   return response.data;
 }
 
+/**
+ * @param response
+ */
 function validateGetMetadataResponse(response: AxiosResponse): void {
   try {
     if (!response.data) {
@@ -561,6 +566,9 @@ function validateGetMetadataResponse(response: AxiosResponse): void {
   }
 }
 
+/**
+ * @param response
+ */
 function validateResolveHnsResponse(response: AxiosResponse): void {
   try {
     if (!response.data) {
