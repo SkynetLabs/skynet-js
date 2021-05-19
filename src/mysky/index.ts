@@ -112,7 +112,7 @@ export class MySky {
   /**
    * Loads the given DACs.
    *
-   * @param {...any} dacs
+   * @param dacs - The DAC library instances to call `init` on.
    */
   async loadDacs(...dacs: DacLibrary[]): Promise<void> {
     const promises: Promise<void>[] = [];
@@ -330,7 +330,7 @@ export class MySky {
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
-   * @returns - An object containing the json data as well as the skylink for the data.
+   * @returns - An empty promise.
    * @throws - Will throw if the revision is already the maximum value.
    */
   async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
