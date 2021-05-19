@@ -25,13 +25,12 @@ import {
   getOrCreateRegistryEntry,
   JsonData,
   JSONResponse,
-  getRevisionFromSignedEntry,
+  getRevisionFromEntry,
+  getDeletionRegistryEntry,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
-import { RAW_SKYLINK_SIZE } from "../skylink/sia";
 import { popupCenter } from "./utils";
-import { MAX_REVISION } from "../utils/number";
 import { extractOptions } from "../utils/options";
 import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix } from "../utils/string";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
@@ -311,13 +310,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const [entry, dataLink] = await getOrCreateRegistryEntry(
-      this.connector.client,
-      hexToUint8Array(publicKey),
-      dataKey,
-      json,
-      opts
-    );
+    const [entry, dataLink] = await getOrCreateRegistryEntry(this.connector.client, publicKey, dataKey, json, opts);
 
     const signature = await this.signRegistryEntry(entry, path);
 
@@ -354,7 +347,7 @@ export class MySky {
     // TODO: Can remove this once we start caching the latest revision.
     const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
     const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-    const revision = getRevisionFromSignedEntry(signedEntry);
+    const revision = getRevisionFromEntry(signedEntry.entry);
 
     // Build the registry entry.
     const entry: RegistryEntry = {
@@ -391,30 +384,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    // Fetch the current value to find out the revision.
-    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-    const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-
-    // TODO: Refactor
-    let revision: bigint;
-    if (signedEntry.entry === null) {
-      revision = BigInt(0);
-    } else {
-      revision = signedEntry.entry.revision + BigInt(1);
-    }
-
-    // Throw if the revision is already the maximum value.
-    if (revision > MAX_REVISION) {
-      throw new Error("Current entry already has maximum allowed revision, could not update the entry");
-    }
-
-    // Build the registry value. Use empty bytes for the data.
-    const data = new Uint8Array(RAW_SKYLINK_SIZE);
-    const entry: RegistryEntry = {
-      dataKey,
-      data,
-      revision,
-    };
+    const entry = await getDeletionRegistryEntry(this.connector.client, publicKey, dataKey, opts);
 
     const signature = await this.signRegistryEntry(entry, path);
 

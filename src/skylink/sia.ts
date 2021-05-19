@@ -4,8 +4,15 @@ import { encodePrefixedBytes } from "../utils/encoding";
 import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
 import { validateHexString, validateNumber, validateUint8ArrayLen } from "../utils/validation";
 
-// The raw size of the data that gets put into a link.
+/**
+ * The raw size of the data that gets put into a link.
+ */
 export const RAW_SKYLINK_SIZE = 34;
+
+/**
+ * An empty skylink.
+ */
+export const EMPTY_SKYLINK = new Uint8Array(RAW_SKYLINK_SIZE);
 
 export class SiaSkylink {
   constructor(public bitfield: number, public merkleRoot: Uint8Array) {
