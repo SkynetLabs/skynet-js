@@ -61,8 +61,8 @@ describe(`Integration test for portal ${portal}`, () => {
       const dataKey = "dataKey3";
       const expectedJson = { message: "hi there!" };
       const expectedData = { _data: expectedJson };
-      const expectedEntryLink = "sia:AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw";
-      const expectedDataLink = "AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw";
+      const expectedEntryLink = `${uriSkynetPrefix}AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw`;
+      const expectedDataLink = `${uriSkynetPrefix}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
 
       const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
       expect(entryLink).toEqual(expectedEntryLink);
