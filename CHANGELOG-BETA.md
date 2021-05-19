@@ -4,6 +4,17 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.7-beta]
+
+## Changed
+
+- **[Breaking change]** Registry entries now take `data` that is `Uint8Array` instead of `string`.
+- **[Breaking change]** `getHnsUrl` now defaults to `subdomain: true`.
+
+## Added
+
+- Added `mySky.setDataLink`.
+
 ## [4.0.6-beta]
 
 ### Changed
