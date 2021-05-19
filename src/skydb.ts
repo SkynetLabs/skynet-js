@@ -228,6 +228,24 @@ export async function getOrCreateRegistryEntry(
     skyfilePromise,
   ]);
 
+  const revision = getRevisionFromSignedEntry(signedEntry);
+
+  // Build the registry entry.
+  const dataLink = skyfile.skylink;
+  // TODO: Use decodeSkylink
+  // Add padding.
+  const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
+  const data = base64RawUrlToUint8Array(paddedDataLink);
+  validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
+  const entry: RegistryEntry = {
+    dataKey,
+    data,
+    revision,
+  };
+  return [entry, dataLink];
+}
+
+export function getRevisionFromSignedEntry(signedEntry: SignedRegistryEntry): bigint {
   let revision: bigint;
   if (signedEntry.entry === null) {
     revision = BigInt(0);
@@ -243,17 +261,5 @@ export async function getOrCreateRegistryEntry(
   // Assert the input is 64 bits.
   assertUint64(revision);
 
-  // Build the registry value.
-  const dataLink = skyfile.skylink;
-  // TODO: Use decodeSkylink
-  // Add padding.
-  const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
-  const data = base64RawUrlToUint8Array(paddedDataLink);
-  validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
-  const entry: RegistryEntry = {
-    dataKey,
-    data,
-    revision,
-  };
-  return [entry, dataLink];
+  return revision;
 }

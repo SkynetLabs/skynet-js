@@ -25,6 +25,7 @@ import {
   getOrCreateRegistryEntry,
   JsonData,
   JSONResponse,
+  getRevisionFromSignedEntry,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
@@ -32,8 +33,9 @@ import { RAW_SKYLINK_SIZE } from "../skylink/sia";
 import { popupCenter } from "./utils";
 import { MAX_REVISION } from "../utils/number";
 import { extractOptions } from "../utils/options";
-import { hexToUint8Array } from "../utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix } from "../utils/string";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
+import { uriSkynetPrefix } from "../utils/url";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
@@ -323,6 +325,48 @@ export class MySky {
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: json, dataLink };
+  }
+
+  /**
+   * Sets entry at the given path to point to the data link. Like setJSON, but it doesn't upload a file.
+   *
+   * @param path - The data path.
+   * @param dataLink - The data link to set at the path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An empty promise.
+   */
+  async setDataLink(path: string, dataLink: string, customOptions?: CustomSetJSONOptions): Promise<void> {
+    validateString("path", path, "parameter");
+    validateString("dataLink", dataLink, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+
+    const opts = {
+      ...defaultSetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+    // Get the latest entry.
+    // TODO: Can remove this once we start caching the latest revision.
+    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+    const revision = getRevisionFromSignedEntry(signedEntry);
+
+    // Build the registry entry.
+    const entry: RegistryEntry = {
+      dataKey,
+      data: stringToUint8ArrayUtf8(trimUriPrefix(dataLink, uriSkynetPrefix)),
+      revision,
+    };
+
+    const signature = await this.signRegistryEntry(entry, path);
+
+    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
   }
 
   /**
