@@ -33,7 +33,14 @@ export async function extractDomain(this: SkynetClient, fullDomain: string): Pro
 
 /**
  * Create a new popup window. From SkyID.
+ *
+ * @param url - The URL to open.
+ * @param title - The title of the popup window.
+ * @param w - The width of the popup window.
+ * @param h - the height of the popup window.
+ * @returns - The window.
  */
+/* istanbul ignore next */
 export function popupCenter(url: string, title: string, w: number, h: number): Window {
   url = ensureUrl(url);
 

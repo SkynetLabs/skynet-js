@@ -1,7 +1,7 @@
 import { fromByteArray } from "base64-js";
 import { hashAll } from "../crypto";
 import { encodePrefixedBytes } from "../utils/encoding";
-import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
 import { validateHexString, validateNumber, validateString, validateUint8ArrayLen } from "../utils/validation";
 
 // The raw size of the data that gets put into a link.
