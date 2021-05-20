@@ -2,7 +2,7 @@ import { fromByteArray } from "base64-js";
 import { hashAll } from "../crypto";
 import { encodePrefixedBytes } from "../utils/encoding";
 import { hexToUint8Array, isASCIIString, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
-import { validateHexString, validateNumber, validateUint8ArrayLen } from "../utils/validation";
+import { validateHexString, validateNumber, validateString, validateUint8ArrayLen } from "../utils/validation";
 
 // The raw size of the data that gets put into a link.
 export const RAW_SKYLINK_SIZE = 34;
@@ -43,7 +43,8 @@ const SPECIFIER_LEN = 16;
  * @returns - The specifier, if valid.
  */
 export function newSpecifier(name: string): Uint8Array {
-  validateSpecifier(name);
+  validateString("name", name, "parameter");
+
   const specifier = new Uint8Array(SPECIFIER_LEN);
   specifier.set(stringToUint8ArrayUtf8(name));
   return specifier;
@@ -101,21 +102,4 @@ export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): Sia
  */
 function deriveRegistryEntryID(pubKey: SiaPublicKey, tweak: Uint8Array): Uint8Array {
   return hashAll(pubKey.marshalSia(), tweak);
-}
-
-/**
- * Performs validation checks on the specifier name, it panics when the input is
- * invalid seeing we want to catch this on runtime.
- * Matches `validateSpecifier` in sia.
- *
- * @param name - The specifier name.
- * @throws - Will throw if the specifier name is not valid.
- */
-function validateSpecifier(name: string) {
-  if (!isASCIIString(name)) {
-    throw new Error("specifier has to be ASCII");
-  }
-  if (name.length > SPECIFIER_LEN) {
-    throw new Error("specifier max length exceeded");
-  }
 }
