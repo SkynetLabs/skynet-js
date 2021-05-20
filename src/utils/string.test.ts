@@ -5,7 +5,6 @@ import { uriHandshakePrefix } from "./url";
 import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
 
 const hnsLink = "doesn";
-const hnsresLink = "doesn";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
