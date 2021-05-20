@@ -19,7 +19,6 @@ const validSkylinkVariations = combineStrings(
   ["", "#", "#foo", "#foo?bar"]
 );
 const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
-const validHnsresLinkVariations = [hnsLink, `hnsres:${hnsLink}`, `hnsres://${hnsLink}`];
 
 const attachment = "?attachment=true";
 const expectedUrl = `${portalUrl}/${skylink}`;
@@ -90,12 +89,9 @@ describe("getHnsUrl", () => {
 });
 
 describe("getHnsresUrl", () => {
-  it.each(validHnsresLinkVariations)(
-    "should return correctly formed hnsres URL using hnsres link %s",
-    async (input) => {
-      expect(await client.getHnsresUrl(input)).toEqual(expectedHnsresUrl);
-    }
-  );
+  it.each(validHnsLinkVariations)("should return correctly formed hnsres URL using hnsres link %s", async (input) => {
+    expect(await client.getHnsresUrl(input)).toEqual(expectedHnsresUrl);
+  });
 });
 
 describe("getSkylinkUrl", () => {
@@ -333,12 +329,12 @@ describe("resolveHns", () => {
     mock.onGet(expectedHnsresUrl).replyOnce(200, { skylink });
   });
 
-  it.each(validHnsresLinkVariations)(
+  it.each(validHnsLinkVariations)(
     "should call axios.get with the portal and hnsres link for %s and return the json body",
-    async (hnsresLink) => {
+    async (hnsLink) => {
       mock.resetHistory();
 
-      const data = await client.resolveHns(hnsresLink);
+      const data = await client.resolveHns(hnsLink);
 
       expect(mock.history.get.length).toBe(1);
       expect(data.skylink).toEqual(skylink);

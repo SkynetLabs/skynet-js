@@ -14,7 +14,6 @@ export {
   extractDomainForPortal,
   getFullDomainUrlForPortal,
   uriHandshakePrefix,
-  uriHandshakeResolverPrefix,
   uriSkynetPrefix,
 } from "./utils/url";
 // Re-export Permission API.

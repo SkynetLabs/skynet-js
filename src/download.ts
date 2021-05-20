@@ -5,7 +5,7 @@ import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { trimUriPrefix } from "./utils/string";
-import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/url";
+import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix } from "./utils/url";
 import { validateOptionalObject, validateString } from "./utils/validation";
 
 /**
@@ -313,7 +313,7 @@ export async function getHnsresUrl(
 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
-  domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
+  domain = trimUriPrefix(domain, uriHandshakePrefix);
   const portalUrl = await this.portalUrl();
 
   return makeUrl(portalUrl, opts.endpointResolveHns, domain);

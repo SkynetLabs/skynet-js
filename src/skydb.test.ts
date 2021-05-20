@@ -3,13 +3,14 @@ import MockAdapter from "axios-mock-adapter";
 
 import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
-import { defaultSkynetPortalUrl } from "./utils/url";
+import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
+const sialink = `${uriSkynetPrefix}${skylink}`;
 const jsonData = { data: "thisistext" };
 const fullJsonData = { _data: jsonData, _v: 2 };
 const legacyJsonData = jsonData;
@@ -23,6 +24,7 @@ const registryLookupUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
 const uploadUrl = `${portalUrl}/skynet/skyfile`;
 const skylinkUrl = getSkylinkUrlForPortal(portalUrl, skylink);
 
+// Hex-encoded skylink.
 const data = "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367";
 const revision = 11;
 const entryData = {
@@ -48,7 +50,7 @@ describe("getJSON", () => {
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toEqual(jsonData);
-    expect(dataLink).toEqual(skylink);
+    expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(2);
   });
 
@@ -58,7 +60,7 @@ describe("getJSON", () => {
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: skylink });
     expect(data).toBeNull();
-    expect(dataLink).toEqual(skylink);
+    expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(1);
   });
 
@@ -69,7 +71,7 @@ describe("getJSON", () => {
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" });
     expect(data).toEqual(jsonData);
-    expect(dataLink).toEqual(skylink);
+    expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(2);
   });
 
@@ -123,7 +125,7 @@ describe("setJSON", () => {
     // set data
     const { data: returnedData, dataLink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
     expect(returnedData).toEqual(jsonData);
-    expect(returnedSkylink).toEqual(`sia:${skylink}`);
+    expect(returnedSkylink).toEqual(sialink);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(1);

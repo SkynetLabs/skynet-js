@@ -1,6 +1,7 @@
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
+import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import {
   defaultGetEntryOptions,
   defaultSetEntryOptions,
@@ -20,8 +21,9 @@ import {
   trimSuffix,
   uint8ArrayToStringUtf8,
 } from "./utils/string";
+import { formatSkylink } from "./skylink/format";
+import { parseSkylink } from "./skylink/parse";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
-import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
 import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
 import {
@@ -107,20 +109,21 @@ export async function getJSON(
   if (typeof entry.data === "string") {
     throw new Error("Expected returned entry data to be bytes");
   }
-  let dataLink: string;
+  let rawDataLink: string;
   if (entry.data.length === 46) {
     // Legacy data, convert to string.
-    dataLink = uint8ArrayToStringUtf8(entry.data);
+    rawDataLink = uint8ArrayToStringUtf8(entry.data);
   } else if (entry.data.length === RAW_SKYLINK_SIZE) {
     // Convert the bytes to a base64 skylink.
-    dataLink = uint8ArrayToBase64RawUrl(entry.data);
-    dataLink = trimSuffix(dataLink, "=");
+    rawDataLink = uint8ArrayToBase64RawUrl(entry.data);
+    rawDataLink = trimSuffix(rawDataLink, "=");
   } else {
     throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
   }
+  const dataLink = formatSkylink(rawDataLink);
 
   // If a cached data link is provided and the data link hasn't changed, return.
-  if (opts.cachedDataLink && dataLink === opts.cachedDataLink) {
+  if (opts.cachedDataLink && rawDataLink === parseSkylink(opts.cachedDataLink)) {
     return { data: null, dataLink };
   }
 
@@ -180,7 +183,7 @@ export async function setJSON(
   const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 
-  return { data: json, dataLink: skylink };
+  return { data: json, dataLink: formatSkylink(skylink) };
 }
 
 export async function getOrCreateRegistryEntry(
@@ -242,7 +245,7 @@ export async function getOrCreateRegistryEntry(
     data,
     revision,
   };
-  return [entry, dataLink];
+  return [entry, formatSkylink(dataLink)];
 }
 
 export function getRevisionFromSignedEntry(signedEntry: SignedRegistryEntry): bigint {

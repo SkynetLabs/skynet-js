@@ -1,8 +1,10 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
+
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, signEntry } from "./registry";
+import { uriSkynetPrefix } from "./utils/url";
 import { stringToUint8ArrayUtf8 } from "./utils/string";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
@@ -60,7 +62,7 @@ describe("getEntry", () => {
 
   it("Should throw an error if the public key is not hex-encoded", async () => {
     await expect(client.registry.getEntry("foo", dataKey)).rejects.toThrowError(
-      "Given public key 'foo' is not a valid hex-encoded string or contains an invalid prefix"
+      "Expected parameter 'publicKey' to be a hex-encoded string with a valid prefix, was 'foo'"
     );
   });
 
@@ -77,7 +79,7 @@ describe("getEntryLink", () => {
   it("should get the correct entry link", async () => {
     const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
     const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
-    const expectedEntryLink = "sia:AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ";
+    const expectedEntryLink = `${uriSkynetPrefix}AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ`;
 
     const entryLink = await client.registry.getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });
 
