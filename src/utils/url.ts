@@ -30,9 +30,8 @@ export function defaultPortalUrl(): string {
  * @returns - The final URL.
  */
 export function addPath(url: string, path: string): string {
-  if (!path) {
-    return url;
-  }
+  validateString("url", url, "parameter");
+  validateString("path", path, "parameter");
   path = trimForwardSlash(path);
 
   let str;
