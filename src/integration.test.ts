@@ -1,5 +1,6 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { stringToUint8ArrayUtf8, trimPrefix } from "./utils/string";
+import { uriSkynetPrefix } from "./utils/url";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
@@ -46,23 +47,33 @@ describe(`Integration test for portal ${portal}`, () => {
     it("Should get existing SkyDB data", async () => {
       const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
       const dataKey = "dataKey1";
-      const expected = { message: "hi there" };
+      const expectedDataLink = `${uriSkynetPrefix}AACDPHoC2DCV_kLGUdpdRJr3CcxCmKadLGPi6OAMl7d48w`;
+      const expectedData = { message: "hi there" };
 
-      const { data: received } = await client.db.getJSON(publicKey, dataKey);
+      const { data: received, dataLink } = await client.db.getJSON(publicKey, dataKey);
 
-      expect(expected).toEqual(received);
+      expect(expectedData).toEqual(received);
+      expect(dataLink).toEqual(expectedDataLink);
     });
 
     it("Should get existing SkyDB data using entry link", async () => {
       const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
       const dataKey = "dataKey3";
-      const expected = { _data: { message: "hi there!" } };
+      const expectedJson = { message: "hi there!" };
+      const expectedData = { _data: expectedJson };
+      const expectedEntryLink = `${uriSkynetPrefix}AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw`;
+      const expectedDataLink = `${uriSkynetPrefix}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
 
       const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+      expect(entryLink).toEqual(expectedEntryLink);
 
       const { data } = await client.getFileContent(entryLink);
 
-      expect(data).toEqual(expect.objectContaining(expected));
+      expect(data).toEqual(expect.objectContaining(expectedData));
+
+      const { data: json, dataLink } = await client.db.getJSON(publicKey, dataKey);
+      expect(dataLink).toEqual(expectedDataLink);
+      expect(json).toEqual(expectedJson);
     });
 
     it("Should get existing SkyDB data with unicode data key", async () => {
