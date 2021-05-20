@@ -20,7 +20,7 @@ export function convertSkylinkToBase32(skylink: string): string {
  * @returns - The formatted skylink.
  */
 export function formatSkylink(skylink: string): string {
-  if (skylink == "") {
+  if (skylink === "") {
     return skylink;
   }
   if (!skylink.startsWith(uriSkynetPrefix)) {

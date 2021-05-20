@@ -9,6 +9,7 @@ import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/s
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
+  throwValidationError,
   validateBigint,
   validateHexString,
   validateObject,
@@ -243,9 +244,7 @@ export function getEntryUrlForPortal(
 
   // Trim the prefix if it was passed in.
   publicKey = trimPrefix(publicKey, "ed25519:");
-  if (!isHexString(publicKey)) {
-    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
-  }
+  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
 
   // Hash and hex encode the given data key if it is not a hash already.
   let dataKeyHashHex = dataKey;
@@ -292,9 +291,7 @@ export async function getEntryLink(
 
   // Trim the prefix if it was passed in.
   publicKey = trimPrefix(publicKey, "ed25519:");
-  if (!isHexString(publicKey)) {
-    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
-  }
+  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
 
   const siaPublicKey = newEd25519PublicKey(publicKey);
   let tweak;
@@ -441,4 +438,18 @@ function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
   }
 
   throw err;
+}
+
+/**
+ * Validates the given value as a hex-encoded public key.
+ *
+ * @param name - The name of the value.
+ * @param publicKey - The public key.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @throws - Will throw if not a valid hex-encoded public key.
+ */
+function validateTrimmedPublicKey(name: string, publicKey: string, valueKind: string): void {
+  if (!isHexString(publicKey)) {
+    throwValidationError(name, publicKey, valueKind, "a hex-encoded string with a valid prefix");
+  }
 }

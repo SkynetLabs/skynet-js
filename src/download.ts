@@ -1,13 +1,13 @@
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
+import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { trimUriPrefix } from "./utils/string";
-import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/url";
+import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
+import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix } from "./utils/url";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
-import { JsonData } from "./skydb";
 
 /**
  * Custom download options.
@@ -315,7 +315,7 @@ export async function getHnsresUrl(
 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
-  domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
+  domain = trimUriPrefix(domain, uriHandshakePrefix);
   const portalUrl = await this.portalUrl();
 
   return makeUrl(portalUrl, opts.endpointResolveHns, domain);
