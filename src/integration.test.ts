@@ -1,5 +1,5 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
-import { stringToUint8ArrayUtf8, trimPrefix, uint8ArrayToStringUtf8 } from "./utils/string";
+import { stringToUint8ArrayUtf8, trimPrefix } from "./utils/string";
 import { uriSkynetPrefix } from "./utils/url";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
@@ -337,20 +337,22 @@ describe(`Integration test for portal ${portal}`, () => {
   });
 
   describe("resolveHns", () => {
-    it("Resolving an HNS name to a skylink should work", async () => {
+    it("Should resolve an HNS name with an underlying skyns link to a skylink", async () => {
       // Use an HNS we own that we don't plan on changing soon.
       const domain = "mayonnaise";
-      const expectedSkylink = `${uriSkynetPrefix}AQCfQDiv3fIlaKsTRux8h2g2d1euMPM_DzpjnaeE9ZWp3A`;
+      const expectedEntryLink = `${uriSkynetPrefix}AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA`;
+      const dataKey = "43c8a9b01609544ab152dad397afc3b56c1518eb546750dbc6cad5944fec0292";
+      const publicKey = "cbf97df45c9f166e893e164be714a4aee840d3a421f66e52f6b9e2a5009cfabc";
       const expectedData = {
         registry: {
-          publickey: "ed25519:519cf70a886069eaff97a94f74eba880ac44509b6969beca4c59298e83a9364c",
-          datakey: "43c8a9b01609544ab152dad397afc3b56c1518eb546750dbc6cad5944fec0292",
+          publickey: `ed25519:${publicKey}`,
+          datakey: dataKey,
         },
       };
 
       const { data, skylink } = await client.resolveHns(domain);
 
-      expect(skylink).toEqual(expectedSkylink);
+      expect(skylink).toEqual(expectedEntryLink);
       expect(data).toEqual(expectedData);
     });
   });

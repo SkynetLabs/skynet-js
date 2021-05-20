@@ -26,6 +26,7 @@ import {
   JsonData,
   JSONResponse,
   getRevisionFromSignedEntry,
+  getDataLinkRegistryEntry,
 } from "../skydb";
 import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix } from "../utils/string";
 import { Signature } from "../crypto";
@@ -344,21 +345,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    // Get the latest entry.
-    // TODO: Can remove this once we start caching the latest revision.
-    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-    const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-    const revision = getRevisionFromSignedEntry(signedEntry);
-
-    // Add padding
-    const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
-
-    // Build the registry entry.
-    const entry: RegistryEntry = {
-      dataKey,
-      data: base64RawUrlToUint8Array(paddedDataLink),
-      revision,
-    };
+    const entry = await getDataLinkRegistryEntry(this.connector.client, publicKey, dataKey, dataLink, opts);
 
     const signature = await this.signRegistryEntry(entry, path);
 
