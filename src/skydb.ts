@@ -155,6 +155,7 @@ export async function getJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.
  * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The returned JSON and revision number.
  * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setJSON(
