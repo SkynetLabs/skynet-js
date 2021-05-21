@@ -16,7 +16,7 @@ import {
   resolveHns,
 } from "./download";
 import { getEntryLink as fileGetEntryLink, getJSON as fileGetJSON } from "./file";
-import { deleteJSON, getJSON, setJSON } from "./skydb";
+import { deleteJSON, getJSON, setJSON, setDataLink } from "./skydb";
 import { getEntry, getEntryUrl, getEntryLink, setEntry, postSignedEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
@@ -121,6 +121,7 @@ export class SkynetClient {
     deleteJSON: deleteJSON.bind(this),
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
+    setDataLink: setDataLink.bind(this),
   };
 
   // SkyDB helpers

@@ -25,17 +25,14 @@ import {
   getOrCreateRegistryEntry,
   JsonData,
   JSONResponse,
-  getRevisionFromEntry,
+  getDataLinkRegistryEntry,
   getDeletionRegistryEntry,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
-import { trimUriPrefix } from "../utils/string";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
-import { uriSkynetPrefix } from "../utils/url";
-import { base64RawUrlToUint8Array } from "../utils/encoding";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
@@ -66,8 +63,13 @@ export async function loadMySky(
 export class MySky {
   static instance: MySky | null = null;
 
+  // Holds the loaded DACs.
   dacs: DacLibrary[] = [];
+
+  // Holds the currently granted permissions.
   grantedPermissions: Permission[] = [];
+
+  // Holds permissions that have not been granted.
   pendingPermissions: Permission[];
 
   // ============
@@ -344,21 +346,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    // Get the latest entry.
-    // TODO: Can remove this once we start caching the latest revision.
-    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-    const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-    const revision = getRevisionFromEntry(signedEntry.entry);
-
-    // Add padding
-    const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
-
-    // Build the registry entry.
-    const entry: RegistryEntry = {
-      dataKey,
-      data: base64RawUrlToUint8Array(paddedDataLink),
-      revision,
-    };
+    const entry = await getDataLinkRegistryEntry(this.connector.client, publicKey, dataKey, dataLink, opts);
 
     const signature = await this.signRegistryEntry(entry, path);
 

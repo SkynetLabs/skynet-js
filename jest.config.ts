@@ -10,10 +10,13 @@ const config: Config.InitialOptions = {
   // TS-Jest setup
   preset: "ts-jest",
 
-  // from old package.json
+  // From old package.json.
   testTimeout: 60000,
+  // Automatically clear mock calls and instances between every test
   clearMocks: true,
+  // An array of glob patterns indicating a set of files for which coverage information should be collected
   collectCoverageFrom: ["**/*.ts"],
+  // An object that configures minimum threshold enforcement for coverage results
   coverageThreshold: {
     global: {
       branches: 70,
@@ -22,6 +25,7 @@ const config: Config.InitialOptions = {
       statements: 70,
     },
   },
+  // The root directory that Jest should scan for tests and modules within
   rootDir: "src",
 
   // All imported modules in your tests should be mocked automatically
@@ -33,14 +37,8 @@ const config: Config.InitialOptions = {
   // The directory where Jest should store its cached dependency information
   // cacheDirectory: "C:\\Users\\dgh\\AppData\\Local\\Temp\\jest",
 
-  // Automatically clear mock calls and instances between every test
-  // clearMocks: false,
-
   // Indicates whether the coverage information should be collected while executing the test
   // collectCoverage: false,
-
-  // An array of glob patterns indicating a set of files for which coverage information should be collected
-  // collectCoverageFrom: undefined,
 
   // The directory where Jest should output its coverage files
   coverageDirectory: "../coverage",
@@ -51,7 +49,7 @@ const config: Config.InitialOptions = {
   // ],
 
   // Indicates which provider should be used to instrument code for coverage
-  coverageProvider: "v8",
+  coverageProvider: "babel",
 
   // A list of reporter names that Jest uses when writing coverage reports
   // coverageReporters: [
@@ -60,9 +58,6 @@ const config: Config.InitialOptions = {
   //   "lcov",
   //   "clover"
   // ],
-
-  // An object that configures minimum threshold enforcement for coverage results
-  // coverageThreshold: undefined,
 
   // A path to a custom dependency extractor
   // dependencyExtractor: undefined,
@@ -132,9 +127,6 @@ const config: Config.InitialOptions = {
 
   // Automatically restore mock state between every test
   // restoreMocks: false,
-
-  // The root directory that Jest should scan for tests and modules within
-  // rootDir: undefined,
 
   // A list of paths to directories that Jest should use to search for files in
   // roots: [

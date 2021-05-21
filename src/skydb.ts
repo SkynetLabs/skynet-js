@@ -252,6 +252,67 @@ export async function getDeletionRegistryEntry(
   return entry;
 }
 
+export async function setDataLink(
+  this: SkynetClient,
+  privateKey: string,
+  dataKey: string,
+  dataLink: string,
+  customOptions?: CustomSetJSONOptions
+): Promise<void> {
+  validateHexString("privateKey", privateKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateString("dataLink", dataLink, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+
+  const opts = {
+    ...defaultSetJSONOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+
+  const entry = await getDataLinkRegistryEntry(this, toHexString(publicKeyArray), dataKey, dataLink, opts);
+
+  // Update the registry.
+  const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+  await this.registry.setEntry(privateKey, entry, setEntryOpts);
+}
+
+export async function getDataLinkRegistryEntry(
+  client: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  dataLink: string,
+  customOptions?: CustomSetJSONOptions
+): Promise<RegistryEntry> {
+  // Not publicly available, don't validate input.
+
+  const opts = {
+    ...defaultSetJSONOptions,
+    ...client.customOptions,
+    ...customOptions,
+  };
+
+  // Get the latest entry.
+  // TODO: Can remove this once we start caching the latest revision.
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const signedEntry = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+  const revision = getRevisionFromEntry(signedEntry.entry);
+
+  // Add padding
+  const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
+
+  // Build the registry entry.
+  const entry: RegistryEntry = {
+    dataKey,
+    data: base64RawUrlToUint8Array(paddedDataLink),
+    revision,
+  };
+
+  return entry;
+}
+
 /**
  * Gets the registry entry and data link or creates the entry if it doesn't exist.
  *

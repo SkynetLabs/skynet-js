@@ -1,12 +1,13 @@
 import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
+import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { trimUriPrefix } from "./utils/string";
+import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix } from "./utils/url";
-import { validateOptionalObject, validateString } from "./utils/validation";
+import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 
 /**
  * Custom download options.
@@ -79,6 +80,7 @@ export type GetMetadataResponse = {
  * @property skylink - 46-character skylink.
  */
 export type ResolveHnsResponse = {
+  data: JsonData;
   skylink: string;
 };
 
@@ -511,13 +513,13 @@ export async function openFileHns(
 }
 
 /**
- * Resolves the given HNS domain to its TXT record and returns the data.
+ * Resolves the given HNS domain to its skylink and returns it and the raw data.
  *
  * @param this - SkynetClient
  * @param domain - Handshake resolver domain.
  * @param [customOptions={}] - Additional settings that can optionally be set.
  * @param [customOptions.endpointResolveHns="/hnsres"] - The relative URL path of the portal endpoint to contact.
- * @returns - The data for the TXT record.
+ * @returns - The raw data and corresponding skylink.
  * @throws - Will throw if the input domain is not a string.
  */
 export async function resolveHns(
@@ -541,7 +543,14 @@ export async function resolveHns(
 
   validateResolveHnsResponse(response);
 
-  return response.data;
+  if (response.data.skylink) {
+    return { data: response.data, skylink: response.data.skylink };
+  } else {
+    const skylink = await this.registry.getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
+      hashedDataKeyHex: true,
+    });
+    return { data: response.data, skylink };
+  }
 }
 
 /**
@@ -568,7 +577,20 @@ function validateResolveHnsResponse(response: AxiosResponse): void {
       throw new Error("response.data field missing");
     }
 
-    validateString("response.data.skylink", response.data.skylink, "upload response field");
+    if (response.data.skylink) {
+      validateString("response.data.skylink", response.data.skylink, "resolveHns response field");
+    } else if (response.data.registry) {
+      validateObject("response.data.registry", response.data.registry, "resolveHns response field");
+      validateString("response.data.registry.publickey", response.data.registry.publickey, "resolveHns response field");
+      validateString("response.data.registry.datakey", response.data.registry.datakey, "resolveHns response field");
+    } else {
+      throwValidationError(
+        "response.data",
+        response.data,
+        "response data object",
+        "object containing skylink or registry field"
+      );
+    }
   } catch (err) {
     throw new Error(
       `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
