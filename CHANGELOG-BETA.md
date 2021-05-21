@@ -4,14 +4,35 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.8-beta]
+
+### Changed
+
+- **[Breaking change]** - The `sia:` skylink prefix has been changed to `sia://`.
+- **[Breaking change]** - Added missing `sia://` prefixes to the skylinks returned from SkyDB and MySky.
+- The `resolveHNS` method now works for Handshake domains with `skyns://` HNS entries.
+
+### Added
+
+- Added `db.deleteJSON` and `mySky.deleteJSON`.
+- Added `db.setDataLink`.
+- Added `isSkylinkV1` and `isSkylinkV2`.
+- Added `file.getEntryLink`.
+- `getMetadata` now returns the skylink and portal URL again, as it did prior to `4.0.6-beta`.
+- Exported `Keypair` and `KeyPairAndSeed` crypto types.
+
+### Removed
+
+- **[Breaking change]** Removed `uriHandshakeResolverPrefix`.
+
 ## [4.0.7-beta]
 
-## Changed
+### Changed
 
 - **[Breaking change]** Registry entries now take `data` that is `Uint8Array` instead of `string`.
 - **[Breaking change]** `getHnsUrl` now defaults to `subdomain: true`.
 
-## Added
+### Added
 
 - Added `mySky.setDataLink`.
 
@@ -23,6 +44,10 @@ For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 - **[Breaking change]** Remove `noResponseMetadata` custom option from download and HNS download methods.
 - **[Breaking change]** `getMetadata` now takes a `CustomGetMetadataOptions` object for custom options.
 - **[Breaking change]** Rename `resolveHns` option `endpointDownloadHnsres` to `endpointResolveHns`.
+
+### Removed
+
+- **[Breaking change]** `getMetadata` now only returns the metadata, and not the content-type, skylink, or portal URL.
 
 ## [4.0.5-beta]
 
