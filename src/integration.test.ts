@@ -1,6 +1,6 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
-import { uriSkynetPrefix } from "./utils/url";
 import { stringToUint8ArrayUtf8, trimPrefix } from "./utils/string";
+import { uriSkynetPrefix } from "./utils/url";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
