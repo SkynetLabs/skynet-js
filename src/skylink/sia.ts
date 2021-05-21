@@ -1,11 +1,35 @@
-import { fromByteArray } from "base64-js";
+import base32Decode from "base32-decode";
+
 import { hashAll } from "../crypto";
-import { encodePrefixedBytes } from "../utils/encoding";
+import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl, encodePrefixedBytes } from "../utils/encoding";
 import { hexToUint8Array, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
 import { validateHexString, validateNumber, validateString, validateUint8ArrayLen } from "../utils/validation";
 
-// The raw size of the data that gets put into a link.
+/**
+ * The string length of the Skylink after it has been encoded using base32.
+ */
+const BASE32_ENCODED_SKYLINK_SIZE = 55;
+
+/**
+ * The string length of the Skylink after it has been encoded using base64.
+ */
+const BASE64_ENCODED_SKYLINK_SIZE = 46;
+
+/**
+ * Returned when a string could not be decoded into a Skylink due to it having
+ * an incorrect size.
+ */
+const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
+
+/**
+ * The raw size in bytes of the data that gets put into a link.
+ */
 export const RAW_SKYLINK_SIZE = 34;
+
+/**
+ * An empty skylink.
+ */
+export const EMPTY_SKYLINK = new Uint8Array(RAW_SKYLINK_SIZE);
 
 export class SiaSkylink {
   constructor(public bitfield: number, public merkleRoot: Uint8Array) {
@@ -25,12 +49,61 @@ export class SiaSkylink {
   }
 
   toString(): string {
-    let base64 = fromByteArray(this.toBytes());
-    // Change to URL encoding.
-    base64 = base64.replace(/\+/g, "-").replace(/\//g, "_");
+    const base64 = uint8ArrayToBase64RawUrl(this.toBytes());
     // Remove padding characters.
     return trimSuffix(base64, "=");
   }
+}
+
+/**
+ * Checks if the given string is a v1 skylink.
+ *
+ * @param s
+ */
+export function isSkylinkV1(s: string): boolean {
+  const raw = decodeSkylink(s);
+
+  // Load and check the bitfield.
+  const view = new DataView(raw.buffer);
+  const bitfield = view.getUint16(0, true);
+
+  return isBitfieldSkylinkV1(bitfield);
+}
+
+/**
+ * Checks if the given string is a v2 skylink.
+ *
+ * @param s
+ */
+export function isSkylinkV2(s: string): boolean {
+  // Decode the base into raw data.
+  const raw = decodeSkylink(s);
+
+  // Load and check the bitfield.
+  const view = new DataView(raw.buffer);
+  const bitfield = view.getUint16(0, true);
+
+  return isBitfieldSkylinkV2(bitfield);
+}
+
+/**
+ * Returns a boolean indicating if the Skylink is a V1 skylink
+ *
+ * @param bitfield
+ */
+function isBitfieldSkylinkV1(bitfield: number): boolean {
+  return (bitfield & 3) === 0;
+}
+
+/**
+ * Returns a boolean indicating if the Skylink is a V2 skylink
+ *
+ * @param bitfield
+ */
+function isBitfieldSkylinkV2(bitfield: number): boolean {
+  // We compare against 1 here because a V2 skylink only uses the version
+  // bits. All other bits should be set to 0.
+  return bitfield == 1;
 }
 
 const SPECIFIER_LEN = 16;
@@ -91,6 +164,35 @@ export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): Sia
   const bitfield = version - 1;
   const merkleRoot = deriveRegistryEntryID(siaPublicKey, tweak);
   return new SiaSkylink(bitfield, merkleRoot);
+}
+
+/**
+ * A helper function that decodes the given string representation of a skylink
+ * into raw bytes. It either performs a base32 decoding, or base64 decoding,
+ * depending on the length.
+ *
+ * @param encoded - The encoded string.
+ * @returns - The decoded raw bytes.
+ */
+export function decodeSkylink(encoded: string): Uint8Array {
+  let bytes;
+  if (encoded.length === BASE32_ENCODED_SKYLINK_SIZE) {
+    encoded = encoded.toUpperCase();
+    bytes = new Uint8Array(base32Decode(encoded, "RFC4648-HEX"));
+  } else if (encoded.length === BASE64_ENCODED_SKYLINK_SIZE) {
+    // Add padding.
+    encoded = `${encoded}==`;
+    bytes = base64RawUrlToUint8Array(encoded);
+  } else {
+    throw new Error(ERR_SKYLINK_INCORRECT_SIZE);
+  }
+
+  // Sanity check the size of the given data.
+  if (bytes.length != RAW_SKYLINK_SIZE) {
+    throw new Error("failed to load skylink data");
+  }
+
+  return bytes;
 }
 
 /**

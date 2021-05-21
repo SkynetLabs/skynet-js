@@ -5,6 +5,7 @@ export { getEntryUrlForPortal, signEntry } from "./registry";
 export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
 export { convertSkylinkToBase32 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
+export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
 export { getRelativeFilePath, getRootDirectory } from "./utils/file";
 export { MAX_REVISION } from "./utils/number";
 export { stringToUint8ArrayUtf8, uint8ArrayToStringUtf8 } from "./utils/string";
@@ -31,7 +32,7 @@ export {
 // Export types.
 
 export type { CustomClientOptions, RequestConfig } from "./client";
-export type { Signature } from "./crypto";
+export type { KeyPair, KeyPairAndSeed, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomConnectorOptions, MySky } from "./mysky";
 export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";

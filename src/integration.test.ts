@@ -131,6 +131,60 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(data).toEqual(json);
       expect(dataLink).toBeTruthy();
     });
+
+    it("Should be able to delete an existing entry", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const json = { data: "thisistext" };
+
+      await client.db.setJSON(privateKey, dataKey, json);
+
+      const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
+      expect(data).toEqual(json);
+      expect(dataLink).toBeTruthy();
+
+      await client.db.deleteJSON(privateKey, dataKey);
+
+      const { data: data2, dataLink: dataLink2 } = await client.db.getJSON(publicKey, dataKey);
+
+      expect(data2).toBeNull();
+      expect(dataLink2).toBeNull();
+    });
+
+    it("Should be able to set a new entry as deleted and then write over it", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      await client.db.deleteJSON(privateKey, dataKey);
+
+      // Get the entry link.
+      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+
+      // Downloading the entry link should return a 404.
+      // TODO: Should getFileContent return `null` on 404?
+      try {
+        await client.getFileContent(entryLink);
+        throw new Error("getFileContent should not have succeeded");
+      } catch (err) {
+        expect(err.response.status).toEqual(404);
+      }
+
+      // The SkyDB entry should be null.
+      const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
+      expect(data).toBeNull();
+      expect(dataLink).toBeNull();
+
+      // Write to the entry.
+      const json = { data: "thisistext" };
+      await client.db.setJSON(privateKey, dataKey, json);
+
+      // The entry should be readable.
+
+      const { data: data2, dataLink: dataLink2 } = await client.db.getJSON(publicKey, dataKey);
+
+      expect(data2).toEqual(json);
+      expect(dataLink2).toBeTruthy();
+    });
   });
 
   describe("Registry end to end integration tests", () => {
@@ -273,10 +327,6 @@ describe(`Integration test for portal ${portal}`, () => {
     });
 
     it("Should get plaintext file metadata", async () => {
-      // TODO: Remove once the metadata changes are in prod.
-      const portal = "https://siasky.dev";
-      const client = new SkynetClient(portal);
-
       // Upload the data to acquire its skylink.
 
       const file = new File([fileData], dataKey, { type: plaintextType });
@@ -285,13 +335,11 @@ describe(`Integration test for portal ${portal}`, () => {
 
       // Get file metadata and check returned values.
 
-      const { metadata } = await client.getMetadata(skylink);
+      const { metadata, portalUrl, skylink: returnedSkylink } = await client.getMetadata(skylink);
 
       expect(metadata).toEqual(plaintextMetadata);
-      // TODO: Add back in once the endpoint supports these headers.
-      // expect(contentType).toEqual("text/plain; charset=utf-8");
-      // expect(portalUrl).toEqualPortalUrl(portal);
-      // expect(skylink).toEqual(returnedSkylink);
+      expect(portalUrl).toEqualPortalUrl(portal);
+      expect(skylink).toEqual(returnedSkylink);
     });
 
     it("Should get JSON file contents", async () => {
