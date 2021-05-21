@@ -10,7 +10,7 @@ import {
   SignedRegistryEntry,
   CustomSetEntryOptions,
 } from "./registry";
-import { RAW_SKYLINK_SIZE } from "./skylink/sia";
+import { EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { assertUint64, MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/url";
 import {
@@ -33,10 +33,11 @@ import {
   validateString,
   validateUint8ArrayLen,
 } from "./utils/validation";
-
-export const JSON_RESPONSE_VERSION = 2;
+import { areEqualUint8Arrays } from "./utils/array";
 
 export type JsonData = Record<string, unknown>;
+
+const JSON_RESPONSE_VERSION = 2;
 
 /**
  * Custom get JSON options.
@@ -100,7 +101,7 @@ export async function getJSON(
   // Lookup the registry entry.
   const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
   const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
-  if (entry === null) {
+  if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return { data: null, dataLink: null };
   }
 
@@ -178,13 +179,77 @@ export async function setJSON(
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
 
-  const [entry, skylink] = await getOrCreateRegistryEntry(this, publicKeyArray, dataKey, json, opts);
+  const [entry, dataLink] = await getOrCreateRegistryEntry(this, toHexString(publicKeyArray), dataKey, json, opts);
 
   // Update the registry.
   const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 
-  return { data: json, dataLink: formatSkylink(skylink) };
+  return { data: json, dataLink: formatSkylink(dataLink) };
+}
+
+/**
+ * Deletes a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @throws - Will throw if the input keys are not valid strings.
+ */
+export async function deleteJSON(
+  this: SkynetClient,
+  privateKey: string,
+  dataKey: string,
+  customOptions?: CustomSetJSONOptions
+): Promise<void> {
+  validateHexString("privateKey", privateKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+
+  const opts = {
+    ...defaultSetJSONOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+
+  const entry = await getDeletionRegistryEntry(this, toHexString(publicKeyArray), dataKey, opts);
+
+  // Update the registry.
+  const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+  await this.registry.setEntry(privateKey, entry, setEntryOpts);
+}
+
+export async function getDeletionRegistryEntry(
+  client: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetJSONOptions
+): Promise<RegistryEntry> {
+  // Not publicly available, don't validate input.
+
+  const opts = {
+    ...defaultGetJSONOptions,
+    ...client.customOptions,
+    ...customOptions,
+  };
+
+  // Fetch the current value to find out the revision.
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const signedEntry = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+  const revision = getRevisionFromEntry(signedEntry.entry);
+
+  // Build the registry value. Use empty bytes for the data.
+  const data = new Uint8Array(RAW_SKYLINK_SIZE);
+  const entry: RegistryEntry = {
+    dataKey,
+    data,
+    revision,
+  };
+
+  return entry;
 }
 
 /**
@@ -200,7 +265,7 @@ export async function setJSON(
  */
 export async function getOrCreateRegistryEntry(
   client: SkynetClient,
-  publicKeyArray: Uint8Array,
+  publicKey: string,
   dataKey: string,
   json: JsonData,
   customOptions?: CustomSetJSONOptions
@@ -231,11 +296,7 @@ export async function getOrCreateRegistryEntry(
   //
   // Start getEntry, do not block.
   const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-  const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(
-    toHexString(publicKeyArray),
-    dataKey,
-    getEntryOpts
-  );
+  const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
 
   // Block until both getEntry and uploadFile are finished.
   const [signedEntry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
@@ -243,7 +304,7 @@ export async function getOrCreateRegistryEntry(
     skyfilePromise,
   ]);
 
-  const revision = getRevisionFromSignedEntry(signedEntry);
+  const revision = getRevisionFromEntry(signedEntry.entry);
 
   // Build the registry entry.
   const dataLink = skyfile.skylink;
@@ -260,12 +321,12 @@ export async function getOrCreateRegistryEntry(
   return [entry, formatSkylink(dataLink)];
 }
 
-export function getRevisionFromSignedEntry(signedEntry: SignedRegistryEntry): bigint {
+export function getRevisionFromEntry(entry: RegistryEntry | null): bigint {
   let revision: bigint;
-  if (signedEntry.entry === null) {
+  if (entry === null) {
     revision = BigInt(0);
   } else {
-    revision = signedEntry.entry.revision + BigInt(1);
+    revision = entry.revision + BigInt(1);
   }
 
   // Throw if the revision is already the maximum value.

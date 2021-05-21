@@ -26,6 +26,11 @@ const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
  */
 export const RAW_SKYLINK_SIZE = 34;
 
+/**
+ * An empty skylink.
+ */
+export const EMPTY_SKYLINK = new Uint8Array(RAW_SKYLINK_SIZE);
+
 export class SiaSkylink {
   constructor(public bitfield: number, public merkleRoot: Uint8Array) {
     validateNumber("bitfield", bitfield, "constructor parameter");

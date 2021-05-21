@@ -25,14 +25,15 @@ import {
   getOrCreateRegistryEntry,
   JsonData,
   JSONResponse,
-  getRevisionFromSignedEntry,
+  getRevisionFromEntry,
+  getDeletionRegistryEntry,
 } from "../skydb";
-import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix } from "../utils/string";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
-import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 import { extractOptions } from "../utils/options";
+import { trimUriPrefix } from "../utils/string";
+import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 import { uriSkynetPrefix } from "../utils/url";
 import { base64RawUrlToUint8Array } from "../utils/encoding";
 
@@ -44,6 +45,14 @@ const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
 const [mySkyUiW, mySkyUiH] = [600, 600];
 
+/**
+ * Loads MySky. Note that this does not log in the user.
+ *
+ * @param this - The Skynet client.
+ * @param skappDomain - The domain of the host skapp. For this domain permissions will be requested and, by default, automatically granted.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - Loaded (but not logged-in) MySky instance.
+ */
 export async function loadMySky(
   this: SkynetClient,
   skappDomain?: string,
@@ -104,6 +113,8 @@ export class MySky {
 
   /**
    * Loads the given DACs.
+   *
+   * @param dacs - The DAC library instances to call `init` on.
    */
   async loadDacs(...dacs: DacLibrary[]): Promise<void> {
     const promises: Promise<void>[] = [];
@@ -236,7 +247,7 @@ export class MySky {
   }
 
   /**
-   * Gets Discoverable JSON at the given path through MySky, if the user has given permissions to do so.
+   * Gets Discoverable JSON at the given path through MySky, if the user has given Read permissions to do so.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
@@ -278,7 +289,7 @@ export class MySky {
   }
 
   /**
-   * Sets Discoverable JSON at the given path through MySky, if the user has given permissions to do so.
+   * Sets Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
    *
    * @param path - The data path.
    * @param json - The json to set.
@@ -300,13 +311,7 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const [entry, dataLink] = await getOrCreateRegistryEntry(
-      this.connector.client,
-      hexToUint8Array(publicKey),
-      dataKey,
-      json,
-      opts
-    );
+    const [entry, dataLink] = await getOrCreateRegistryEntry(this.connector.client, publicKey, dataKey, json, opts);
 
     const signature = await this.signRegistryEntry(entry, path);
 
@@ -343,7 +348,7 @@ export class MySky {
     // TODO: Can remove this once we start caching the latest revision.
     const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
     const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-    const revision = getRevisionFromSignedEntry(signedEntry);
+    const revision = getRevisionFromEntry(signedEntry.entry);
 
     // Add padding
     const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
@@ -354,6 +359,36 @@ export class MySky {
       data: base64RawUrlToUint8Array(paddedDataLink),
       revision,
     };
+
+    const signature = await this.signRegistryEntry(entry, path);
+
+    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+  }
+
+  /**
+   * Deletes Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An empty promise.
+   * @throws - Will throw if the revision is already the maximum value.
+   */
+  async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
+    validateString("path", path, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+
+    const opts = {
+      ...defaultSetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+    const entry = await getDeletionRegistryEntry(this.connector.client, publicKey, dataKey, opts);
 
     const signature = await this.signRegistryEntry(entry, path);
 
