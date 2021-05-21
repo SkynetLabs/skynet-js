@@ -5,7 +5,7 @@ import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { trimUriPrefix } from "./utils/string";
-import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix, uriHandshakeResolverPrefix } from "./utils/url";
+import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix } from "./utils/url";
 import { validateOptionalObject, validateString } from "./utils/validation";
 
 /**
@@ -50,7 +50,6 @@ export type CustomHnsResolveOptions = BaseCustomOptions & {
  *
  * @property data - The returned file content. Its type is stored in contentType.
  * @property contentType - The type of the content.
- * @property metadata - The metadata in JSON format.
  * @property portalUrl - The URL of the portal.
  * @property skylink - 46-character skylink.
  */
@@ -64,17 +63,14 @@ export type GetFileContentResponse<T = unknown> = {
 /**
  * The response for a get metadata request.
  *
- * @property contentType - The type of the content.
  * @property metadata - The metadata in JSON format.
  * @property portalUrl - The URL of the portal.
  * @property skylink - 46-character skylink.
  */
 export type GetMetadataResponse = {
   metadata: Record<string, unknown>;
-  // TODO: Add back in once the endpoint supports these headers.
-  // contentType: string;
-  // portalUrl: string;
-  // skylink: string;
+  portalUrl: string;
+  skylink: string;
 };
 
 /**
@@ -313,7 +309,7 @@ export async function getHnsresUrl(
 
   const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
 
-  domain = trimUriPrefix(domain, uriHandshakeResolverPrefix);
+  domain = trimUriPrefix(domain, uriHandshakePrefix);
   const portalUrl = await this.portalUrl();
 
   return makeUrl(portalUrl, opts.endpointResolveHns, domain);
@@ -357,19 +353,16 @@ export async function getMetadata(
 
   const metadata = response.data;
 
-  // TODO: Add back in once the endpoint supports these headers.
+  if (typeof response.headers === "undefined") {
+    throw new Error(
+      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  }
 
-  // if (typeof response.headers === "undefined") {
-  //   throw new Error(
-  //     "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-  //   );
-  // }
+  const portalUrl = response.headers["skynet-portal-api"] ?? "";
+  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
 
-  // const contentType = response.headers["content-type"] ?? "";
-  // const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  // const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
-
-  return { metadata };
+  return { metadata, portalUrl, skylink };
 }
 
 /**

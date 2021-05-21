@@ -9,6 +9,7 @@ import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/s
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
+  throwValidationError,
   validateBigint,
   validateHexString,
   validateObject,
@@ -243,9 +244,7 @@ export function getEntryUrlForPortal(
 
   // Trim the prefix if it was passed in.
   publicKey = trimPrefix(publicKey, "ed25519:");
-  if (!isHexString(publicKey)) {
-    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
-  }
+  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
 
   // Hash and hex encode the given data key if it is not a hash already.
   let dataKeyHashHex = dataKey;
@@ -292,9 +291,7 @@ export async function getEntryLink(
 
   // Trim the prefix if it was passed in.
   publicKey = trimPrefix(publicKey, "ed25519:");
-  if (!isHexString(publicKey)) {
-    throw new Error(`Given public key '${publicKey}' is not a valid hex-encoded string or contains an invalid prefix`);
-  }
+  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
 
   const siaPublicKey = newEd25519PublicKey(publicKey);
   let tweak;
@@ -344,6 +341,14 @@ export async function setEntry(
   return await this.registry.postSignedEntry(toHexString(publicKeyArray), entry, signature, opts);
 }
 
+/**
+ * Signs the entry with the given private key.
+ *
+ * @param privateKey - The user private key.
+ * @param entry - The entry to sign.
+ * @param hashedDataKeyHex - Whether the data key is already hashed and in hex format. If not, we hash the data key.
+ * @returns - The signature.
+ */
 export async function signEntry(
   privateKey: string,
   entry: RegistryEntry,
@@ -358,6 +363,16 @@ export async function signEntry(
   return sign(hashRegistryEntry(entry, hashedDataKeyHex), privateKeyArray);
 }
 
+/**
+ * Posts the entry with the given public key and signature to Skynet.
+ *
+ * @param this - The Skynet client.
+ * @param publicKey - The user public key.
+ * @param entry - The entry to set.
+ * @param signature - The signature.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - An empty promise.
+ */
 export async function postSignedEntry(
   this: SkynetClient,
   publicKey: string,
@@ -412,6 +427,13 @@ export async function postSignedEntry(
   });
 }
 
+/**
+ * Validates the given registry entry.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ */
 export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
   validateObject(name, value, valueKind);
   validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
@@ -441,4 +463,18 @@ function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
   }
 
   throw err;
+}
+
+/**
+ * Validates the given value as a hex-encoded public key.
+ *
+ * @param name - The name of the value.
+ * @param publicKey - The public key.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @throws - Will throw if not a valid hex-encoded public key.
+ */
+function validateTrimmedPublicKey(name: string, publicKey: string, valueKind: string): void {
+  if (!isHexString(publicKey)) {
+    throwValidationError(name, publicKey, valueKind, "a hex-encoded string with a valid prefix");
+  }
 }

@@ -1,4 +1,5 @@
 import { convertSkylinkToBase32, formatSkylink } from "./format";
+import { uriSkynetPrefix } from "../utils/url";
 
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
@@ -13,7 +14,7 @@ describe("convertSkylinkToBase32", () => {
 
 describe("formatSkylink", () => {
   it("should ensure the skylink starts with the prefix", () => {
-    const prefixedSkylink = `sia:${skylink}`;
+    const prefixedSkylink = `${uriSkynetPrefix}${skylink}`;
 
     expect(formatSkylink(skylink)).toEqual(prefixedSkylink);
     expect(formatSkylink(prefixedSkylink)).toEqual(prefixedSkylink);

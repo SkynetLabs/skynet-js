@@ -32,9 +32,10 @@ import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
-import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix } from "../utils/string";
+import { trimUriPrefix } from "../utils/string";
 import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
 import { uriSkynetPrefix } from "../utils/url";
+import { base64RawUrlToUint8Array } from "../utils/encoding";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
@@ -349,10 +350,13 @@ export class MySky {
     const signedEntry = await this.connector.client.registry.getEntry(publicKey, dataKey, getEntryOpts);
     const revision = getRevisionFromEntry(signedEntry.entry);
 
+    // Add padding
+    const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
+
     // Build the registry entry.
     const entry: RegistryEntry = {
       dataKey,
-      data: stringToUint8ArrayUtf8(trimUriPrefix(dataLink, uriSkynetPrefix)),
+      data: base64RawUrlToUint8Array(paddedDataLink),
       revision,
     };
 
