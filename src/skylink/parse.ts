@@ -83,7 +83,7 @@ export function parseSkylink(skylinkUrl: string, customOptions?: ParseSkylinkOpt
   const path = matchPathname[SKYLINK_PATH_MATCH_POSITION];
 
   if (opts.includePath) return trimForwardSlash(skylinkAndPath);
-  else if (opts.onlyPath) return trimForwardSlash(path);
+  else if (opts.onlyPath) return path;
   else return matchPathname[SKYLINK_DIRECT_MATCH_POSITION];
 }
 
@@ -107,7 +107,7 @@ export function parseSkylinkBase32(skylinkUrl: string, customOptions?: ParseSkyl
   const matchHostname = parsed.hostname.match(SKYLINK_SUBDOMAIN_REGEX);
   if (matchHostname) {
     if (opts.onlyPath) {
-      return trimForwardSlash(trimSuffix(parsed.pathname, "/"));
+      return trimSuffix(parsed.pathname, "/");
     }
     return matchHostname[SKYLINK_DIRECT_MATCH_POSITION];
   }

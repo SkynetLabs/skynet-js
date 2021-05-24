@@ -18,10 +18,7 @@ describe("parseSkylink", () => {
 
     // Check that we extract the path correctly.
     const path = extractNonSkylinkPath(fullSkylink, skylink);
-    let fullPath = skylink;
-    if (path !== "") {
-      fullPath = `${skylink}/${path}`;
-    }
+    const fullPath = `${skylink}${path}`;
 
     expect(parseSkylink(fullSkylink, { includePath: true })).toEqual(fullPath);
     expect(parseSkylink(fullSkylink, { onlyPath: true })).toEqual(path);

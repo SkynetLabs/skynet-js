@@ -3,6 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
 import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
+import { trimForwardSlash } from "./utils/string";
 
 const portalUrl = defaultSkynetPortalUrl;
 const hnsLink = "foo";
@@ -41,12 +42,7 @@ describe("downloadFile", () => {
 
     const path = extractNonSkylinkPath(fullSkylink, skylink);
 
-    let fullExpectedUrl;
-    if (path !== "") {
-      fullExpectedUrl = `${expectedUrl}/${path}${attachment}`;
-    } else {
-      fullExpectedUrl = `${expectedUrl}${attachment}`;
-    }
+    let fullExpectedUrl = `${expectedUrl}${path}${attachment}`;
     // Change ?attachment=true to &attachment=true if need be.
     if ((fullExpectedUrl.match(/\?/g) || []).length > 1) {
       fullExpectedUrl = fullExpectedUrl.replace(attachment, "&attachment=true");
@@ -109,7 +105,7 @@ describe("getSkylinkUrl", () => {
 
       let expectedPathUrl = expectedUrl;
       if (path !== "") {
-        expectedPathUrl = `${expectedUrl}/${path}`;
+        expectedPathUrl = `${expectedUrl}${path}`;
       }
       expect(await client.getSkylinkUrl(fullSkylink)).toEqual(expectedPathUrl);
     }
@@ -135,7 +131,8 @@ describe("getSkylinkUrl", () => {
   const expectedBase32 = `https://${skylinkBase32}.siasky.net/`;
 
   it.each(validSkylinkVariations)("should convert base64 skylink to base32 using skylink %s", async (fullSkylink) => {
-    const path = extractNonSkylinkPath(fullSkylink, skylink);
+    let path = extractNonSkylinkPath(fullSkylink, skylink);
+    path = trimForwardSlash(path);
     const url = await client.getSkylinkUrl(fullSkylink, { subdomain: true });
 
     expect(url).toEqual(`${expectedBase32}${path}`);
@@ -284,10 +281,7 @@ describe("openFile", () => {
       const path = extractNonSkylinkPath(fullSkylink, skylink);
       await client.openFile(fullSkylink);
 
-      let expectedPathUrl = expectedUrl;
-      if (path !== "") {
-        expectedPathUrl = `${expectedUrl}/${path}`;
-      }
+      const expectedPathUrl = `${expectedUrl}${path}`;
       expect(windowOpen).toHaveBeenCalledTimes(1);
       expect(windowOpen).toHaveBeenCalledWith(expectedPathUrl, "_blank");
     }
