@@ -18,7 +18,10 @@ describe("parseSkylink", () => {
 
     // Check that we extract the path correctly.
     const path = extractNonSkylinkPath(fullSkylink, skylink);
-    const fullPath = `${skylink}${path}`;
+    let fullPath = skylink;
+    if (path !== "") {
+      fullPath = `${skylink}/${path}`;
+    }
 
     expect(parseSkylink(fullSkylink, { includePath: true })).toEqual(fullPath);
     expect(parseSkylink(fullSkylink, { onlyPath: true })).toEqual(path);
@@ -38,8 +41,9 @@ describe("parseSkylink", () => {
     expect(parseSkylinkBase32(fullSkylink)).toEqual(skylinkBase32);
 
     // Test the fromSubdomain and onlyPath options together.
-    const path = extractNonSkylinkPath(fullSkylink, ""); // Don't need to remove the skylink from the path portion here.
-    expect(parseSkylink(fullSkylink, { fromSubdomain: true, onlyPath: true })).toEqual(path);
+    const expectedPath = extractNonSkylinkPath(fullSkylink, ""); // Don't need to remove the skylink from the path portion here.
+    const path = parseSkylink(fullSkylink, { fromSubdomain: true, onlyPath: true });
+    expect(path).toEqual(expectedPath);
   });
 
   it("should return null on invalid skylink", () => {

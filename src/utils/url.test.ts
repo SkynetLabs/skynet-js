@@ -7,17 +7,25 @@ const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 
 describe("addUrlQuery", () => {
-  it("Should return correctly formed URLs with query parameters", () => {
-    expect(addUrlQuery(portalUrl, { filename: "test" })).toEqual(`${portalUrl}?filename=test`);
-    expect(addUrlQuery(`${portalUrl}/path/`, { download: true })).toEqual(`${portalUrl}/path/?download=true`);
-    expect(addUrlQuery(`${portalUrl}/skynet/`, { foo: 1, bar: 2 })).toEqual(`${portalUrl}/skynet/?foo=1&bar=2`);
-    expect(addUrlQuery(`${portalUrl}/`, { attachment: true })).toEqual(`${portalUrl}/?attachment=true`);
-    expect(addUrlQuery(`${portalUrl}?foo=bar`, { attachment: true })).toEqual(`${portalUrl}?foo=bar&attachment=true`);
-    expect(addUrlQuery(`${portalUrl}/?attachment=true`, { foo: "bar" })).toEqual(
-      `${portalUrl}/?attachment=true&foo=bar`
-    );
-    expect(addUrlQuery(`${portalUrl}#foobar`, { foo: "bar" })).toEqual(`${portalUrl}?foo=bar#foobar`);
-  });
+  const parts: Array<[string, Record<string, unknown>, string]> = [
+    [portalUrl, { filename: "test" }, `${portalUrl}/?filename=test`],
+    [portalUrl, { attachment: true }, `${portalUrl}/?attachment=true`],
+    [`${portalUrl}/path`, { download: true }, `${portalUrl}/path?download=true`],
+    [`${portalUrl}/path/`, { download: true }, `${portalUrl}/path/?download=true`],
+    [`${portalUrl}/skynet/`, { foo: 1, bar: 2 }, `${portalUrl}/skynet/?foo=1&bar=2`],
+    [`${portalUrl}/`, { attachment: true }, `${portalUrl}/?attachment=true`],
+    [`${portalUrl}?foo=bar`, { attachment: true }, `${portalUrl}/?foo=bar&attachment=true`],
+    [`${portalUrl}/?attachment=true`, { foo: "bar" }, `${portalUrl}/?attachment=true&foo=bar`],
+    [`${portalUrl}#foobar`, { foo: "bar" }, `${portalUrl}/?foo=bar#foobar`],
+  ];
+
+  it.each(parts)(
+    "Should call addUrlQuery with URL %s and parameters %s and form URL %s",
+    (inputUrl, params, expectedUrl) => {
+      const url = addUrlQuery(inputUrl, params);
+      expect(url).toEqual(expectedUrl);
+    }
+  );
 });
 
 describe("getFullDomainUrlForPortal", () => {

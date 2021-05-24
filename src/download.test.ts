@@ -22,7 +22,7 @@ const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
 
 const attachment = "?attachment=true";
 const expectedUrl = `${portalUrl}/${skylink}`;
-const expectedHnsUrl = `https://${hnsLink}.hns.siasky.net`;
+const expectedHnsUrl = `https://${hnsLink}.hns.siasky.net/`;
 const expectedHnsUrlNoSubdomain = `${portalUrl}/hns/${hnsLink}`;
 const expectedHnsresUrl = `${portalUrl}/hnsres/${hnsLink}`;
 
@@ -41,7 +41,12 @@ describe("downloadFile", () => {
 
     const path = extractNonSkylinkPath(fullSkylink, skylink);
 
-    let fullExpectedUrl = `${expectedUrl}${path}${attachment}`;
+    let fullExpectedUrl;
+    if (path !== "") {
+      fullExpectedUrl = `${expectedUrl}/${path}${attachment}`;
+    } else {
+      fullExpectedUrl = `${expectedUrl}${attachment}`;
+    }
     // Change ?attachment=true to &attachment=true if need be.
     if ((fullExpectedUrl.match(/\?/g) || []).length > 1) {
       fullExpectedUrl = fullExpectedUrl.replace(attachment, "&attachment=true");
@@ -102,7 +107,11 @@ describe("getSkylinkUrl", () => {
     async (fullSkylink) => {
       const path = extractNonSkylinkPath(fullSkylink, skylink);
 
-      expect(await client.getSkylinkUrl(fullSkylink)).toEqual(`${expectedUrl}${path}`);
+      let expectedPathUrl = expectedUrl;
+      if (path !== "") {
+        expectedPathUrl = `${expectedUrl}/${path}`;
+      }
+      expect(await client.getSkylinkUrl(fullSkylink)).toEqual(expectedPathUrl);
     }
   );
 
@@ -123,7 +132,7 @@ describe("getSkylinkUrl", () => {
     expect(url).toEqual(`${expectedUrl}/foo%3Fbar${attachment}`);
   });
 
-  const expectedBase32 = `https://${skylinkBase32}.siasky.net`;
+  const expectedBase32 = `https://${skylinkBase32}.siasky.net/`;
 
   it.each(validSkylinkVariations)("should convert base64 skylink to base32 using skylink %s", async (fullSkylink) => {
     const path = extractNonSkylinkPath(fullSkylink, skylink);
@@ -275,8 +284,12 @@ describe("openFile", () => {
       const path = extractNonSkylinkPath(fullSkylink, skylink);
       await client.openFile(fullSkylink);
 
+      let expectedPathUrl = expectedUrl;
+      if (path !== "") {
+        expectedPathUrl = `${expectedUrl}/${path}`;
+      }
       expect(windowOpen).toHaveBeenCalledTimes(1);
-      expect(windowOpen).toHaveBeenCalledWith(`${expectedUrl}${path}`, "_blank");
+      expect(windowOpen).toHaveBeenCalledWith(expectedPathUrl, "_blank");
     }
   );
 });
