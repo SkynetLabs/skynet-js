@@ -16,7 +16,13 @@ import type { CustomUserIDOptions } from "skynet-mysky-utils";
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { defaultGetEntryOptions, defaultSetEntryOptions, RegistryEntry } from "../registry";
+import {
+  CustomGetEntryOptions,
+  CustomSetEntryOptions,
+  defaultGetEntryOptions,
+  defaultSetEntryOptions,
+  RegistryEntry,
+} from "../registry";
 import {
   defaultGetJSONOptions,
   defaultSetJSONOptions,
@@ -25,22 +31,34 @@ import {
   getOrCreateRegistryEntry,
   JsonData,
   JSONResponse,
-  getDataLinkRegistryEntry,
-  getDeletionRegistryEntry,
+  getNextRegistryEntry,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
-import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
+import {
+  throwValidationError,
+  validateObject,
+  validateOptionalObject,
+  validateString,
+  validateUint8Array,
+} from "../utils/validation";
+import { decodeSkylink, RAW_SKYLINK_SIZE } from "../skylink/sia";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
 export const mySkyAlphaDomain = "sandbridge.hns";
 
+export const MAX_ENTRY_LENGTH = 70;
+
 const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
 const [mySkyUiW, mySkyUiH] = [600, 600];
+
+export type EntryData = {
+  data: Uint8Array | null;
+};
 
 /**
  * Loads MySky. Note that this does not log in the user.
@@ -346,7 +364,14 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const entry = await getDataLinkRegistryEntry(this.connector.client, publicKey, dataKey, dataLink, opts);
+    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const entry = await getNextRegistryEntry(
+      this.connector.client,
+      publicKey,
+      dataKey,
+      decodeSkylink(dataLink),
+      getEntryOpts
+    );
 
     const signature = await this.signRegistryEntry(entry, path);
 
@@ -376,12 +401,90 @@ export class MySky {
     const dataKey = deriveDiscoverableTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const entry = await getDeletionRegistryEntry(this.connector.client, publicKey, dataKey, opts);
+    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const entry = await getNextRegistryEntry(
+      this.connector.client,
+      publicKey,
+      dataKey,
+      new Uint8Array(RAW_SKYLINK_SIZE),
+      getEntryOpts
+    );
 
     const signature = await this.signRegistryEntry(entry, path);
 
     const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+  }
+
+  /**
+   * Gets the raw registry entry data for the given path, if the user has given READ permissions.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - The entry data.
+   */
+  async getEntryData(path: string, customOptions: CustomGetEntryOptions): Promise<EntryData> {
+    validateString("path", path, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+
+    const opts = {
+      ...defaultGetEntryOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+    const { entry } = await this.connector.client.registry.getEntry(publicKey, dataKey, opts);
+    if (!entry) {
+      return { data: null };
+    }
+    return { data: entry.data };
+  }
+
+  /**
+   * Sets the entry data at the given path, if the user has given WRITE permissions.
+   *
+   * @param path - The data path.
+   * @param data - The raw entry data to set.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - The entry data.
+   * @throws - Will throw if the length of the data is > 70 bytes.
+   */
+  async setEntryData(path: string, data: Uint8Array, customOptions: CustomSetEntryOptions): Promise<EntryData> {
+    validateString("path", path, "parameter");
+    validateUint8Array("data", data, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+
+    if (data.length > MAX_ENTRY_LENGTH) {
+      throwValidationError(
+        "data",
+        data,
+        "parameter",
+        `'Uint8Array' of length <= ${MAX_ENTRY_LENGTH}, was length ${data.length}`
+      );
+    }
+
+    const opts = {
+      ...defaultSetEntryOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const entry = await getNextRegistryEntry(this.connector.client, publicKey, dataKey, data, getEntryOpts);
+
+    const signature = await this.signRegistryEntry(entry, path);
+
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, opts);
+
+    return { data: entry.data };
   }
 
   // ================

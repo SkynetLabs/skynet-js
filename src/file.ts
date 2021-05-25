@@ -1,6 +1,7 @@
 import { SkynetClient } from "./client";
+import { EntryData } from "./mysky";
 import { deriveDiscoverableTweak } from "./mysky/tweak";
-import { defaultGetEntryOptions } from "./registry";
+import { CustomGetEntryOptions, defaultGetEntryOptions } from "./registry";
 import { CustomGetJSONOptions, defaultGetJSONOptions, JSONResponse } from "./skydb";
 import { validateOptionalObject, validateString } from "./utils/validation";
 
@@ -54,4 +55,39 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
   return await this.registry.getEntryLink(userID, dataKey, opts);
+}
+
+/**
+ * Gets the entry data for the entry at the given data path, for the given
+ * public user ID.
+ *
+ * @param this - SkynetClient
+ * @param userID - The public user ID.
+ * @param path - The data path.
+ * @returns - The entry data.
+ */
+export async function getEntryData(
+  this: SkynetClient,
+  userID: string,
+  path: string,
+  customOptions?: CustomGetEntryOptions
+): Promise<EntryData> {
+  validateString("userID", userID, "parameter");
+  validateString("path", path, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+
+  const opts = {
+    ...defaultGetEntryOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const dataKey = deriveDiscoverableTweak(path);
+  opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+  const { entry } = await this.registry.getEntry(userID, dataKey, opts);
+  if (!entry) {
+    return { data: null };
+  }
+  return { data: entry.data };
 }

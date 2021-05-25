@@ -2,7 +2,8 @@ import base32Decode from "base32-decode";
 
 import { hashAll } from "../crypto";
 import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl, encodePrefixedBytes } from "../utils/encoding";
-import { hexToUint8Array, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, trimSuffix, trimUriPrefix } from "../utils/string";
+import { uriSkynetPrefix } from "../utils/url";
 import { validateHexString, validateNumber, validateString, validateUint8ArrayLen } from "../utils/validation";
 
 /**
@@ -175,6 +176,8 @@ export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): Sia
  * @returns - The decoded raw bytes.
  */
 export function decodeSkylink(encoded: string): Uint8Array {
+  encoded = trimUriPrefix(encoded, uriSkynetPrefix);
+
   let bytes;
   if (encoded.length === BASE32_ENCODED_SKYLINK_SIZE) {
     encoded = encoded.toUpperCase();
