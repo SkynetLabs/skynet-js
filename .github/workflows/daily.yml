@@ -52,6 +52,7 @@ jobs:
     name: Daily Dev Server Test
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         dev-server: [siasky.dev, siasky.xyz]
 
