@@ -11,6 +11,7 @@ jobs:
     name: Daily Server Test
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         server:
           [
@@ -20,6 +21,11 @@ jobs:
             eu-ger-4,
             eu-ger-5,
             eu-ger-6,
+            eu-ger-7,
+            eu-ger-8,
+            eu-pol-1,
+            eu-pol-2,
+            eu-pol-3,
             us-or-1,
             us-or-2,
             us-pa-2,
@@ -30,8 +36,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2
         with:
           node-version: "16"
 
@@ -47,15 +52,15 @@ jobs:
     name: Daily Dev Server Test
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         dev-server: [siasky.dev, siasky.xyz]
 
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2
         with:
-          node-version: "14"
+          node-version: "16"
 
       - name: Install dependencies
         run: yarn
