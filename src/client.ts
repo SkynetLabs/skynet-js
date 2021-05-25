@@ -226,6 +226,7 @@ export class SkynetClient {
 
     // Build headers.
     const headers = { ...config.headers };
+    // Set some headers from common options.
     if (config.customUserAgent) {
       headers["User-Agent"] = config.customUserAgent;
     }

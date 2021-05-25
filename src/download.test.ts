@@ -241,6 +241,18 @@ describe("getFileContent", () => {
       "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
     );
   });
+
+  it("should set range header if range option is set", async () => {
+    mock.onGet(expectedUrl).replyOnce(200, skynetFileContents, fullHeaders);
+
+    const range = "4000-5000";
+    await client.getFileContent(skylink, { range });
+
+    expect(mock.history.get.length).toBe(1);
+    const request = mock.history.get[0];
+
+    expect(request.headers["Range"]).toEqual(range);
+  });
 });
 
 describe("getFileContentHns", () => {
