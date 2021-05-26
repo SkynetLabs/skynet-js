@@ -1,15 +1,41 @@
+import base32Decode from "base32-decode";
+import base32Encode from "base32-encode";
 import { fromByteArray, toByteArray } from "base64-js";
 
 import { assertUint64 } from "./number";
 import { stringToUint8ArrayUtf8 } from "./string";
 
 /**
- * Decodes the string encoded using base64 raw URL encoding to bytes.
+ * Decodes the skylink encoded using base32 encoding to bytes.
  *
- * @param s - The encoded string.
+ * @param s - The encoded skylink.
  * @returns - The decoded bytes.
  */
-export function base64RawUrlToUint8Array(s: string): Uint8Array {
+export function decodeSkylinkBase32(s: string): Uint8Array {
+  s = s.toUpperCase();
+  const bytes = base32Decode(s, "RFC4648-HEX");
+  return new Uint8Array(bytes);
+}
+
+/**
+ * Encodes the bytes to a skylink encoded using base32 encoding.
+ *
+ * @param bytes - The bytes to encode.
+ * @returns - The encoded skylink.
+ */
+export function encodeSkylinkBase32(bytes: Uint8Array): string {
+  return base32Encode(bytes, "RFC4648-HEX", { padding: false }).toLowerCase();
+}
+
+/**
+ * Decodes the skylink encoded using base64 raw URL encoding to bytes.
+ *
+ * @param s - The encoded skylink.
+ * @returns - The decoded bytes.
+ */
+export function decodeSkylinkBase64(s: string): Uint8Array {
+  // Add padding.
+  s = `${s}==`;
   // Convert from URL encoding.
   s = s.replace(/-/g, "+").replace(/_/g, "/");
   const bytes = toByteArray(s);
@@ -17,16 +43,17 @@ export function base64RawUrlToUint8Array(s: string): Uint8Array {
 }
 
 /**
- * Encodes the bytes to a string encoded using base64 raw URL encoding.
+ * Encodes the bytes to a skylink encoded using base64 raw URL encoding.
  *
  * @param bytes - The bytes to encode.
- * @returns - The encoded string.
+ * @returns - The encoded skylink.
  */
-export function uint8ArrayToBase64RawUrl(bytes: Uint8Array): string {
+export function encodeSkylinkBase64(bytes: Uint8Array): string {
   let base64 = fromByteArray(bytes);
   // Convert to URL encoding.
   base64 = base64.replace(/\+/g, "-").replace(/\//g, "_");
-  return base64;
+  // Remove trailing "==".
+  return base64.slice(0, -2);
 }
 
 /**
