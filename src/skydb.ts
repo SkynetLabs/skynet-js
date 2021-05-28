@@ -10,8 +10,8 @@ import {
   SignedRegistryEntry,
   CustomSetEntryOptions,
 } from "./registry";
-import { EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
-import { assertUint64, MAX_REVISION } from "./utils/number";
+import { decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
+import { MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/url";
 import {
   hexToUint8Array,
@@ -213,43 +213,30 @@ export async function deleteJSON(
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
 
-  const entry = await getDeletionRegistryEntry(this, toHexString(publicKeyArray), dataKey, opts);
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const entry = await getNextRegistryEntry(
+    this,
+    toHexString(publicKeyArray),
+    dataKey,
+    new Uint8Array(RAW_SKYLINK_SIZE),
+    getEntryOpts
+  );
 
   // Update the registry.
   const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 }
 
-export async function getDeletionRegistryEntry(
-  client: SkynetClient,
-  publicKey: string,
-  dataKey: string,
-  customOptions?: CustomGetJSONOptions
-): Promise<RegistryEntry> {
-  // Not publicly available, don't validate input.
-
-  const opts = {
-    ...defaultGetJSONOptions,
-    ...client.customOptions,
-    ...customOptions,
-  };
-
-  // Fetch the current value to find out the revision.
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-  const signedEntry = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-  const revision = getRevisionFromEntry(signedEntry.entry);
-
-  // Build the registry value. Use empty bytes for the data.
-  const data = new Uint8Array(RAW_SKYLINK_SIZE);
-  const entry: RegistryEntry = {
-    dataKey,
-    data,
-    revision,
-  };
-
-  return entry;
-}
-
+/**
+ * Sets the datalink for the entry at the given private key and data key.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param dataLink - The data link to set at the entry.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @throws - Will throw if the input keys are not valid strings
+ */
 export async function setDataLink(
   this: SkynetClient,
   privateKey: string,
@@ -270,40 +257,55 @@ export async function setDataLink(
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
 
-  const entry = await getDataLinkRegistryEntry(this, toHexString(publicKeyArray), dataKey, dataLink, opts);
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const entry = await getNextRegistryEntry(
+    this,
+    toHexString(publicKeyArray),
+    dataKey,
+    decodeSkylink(dataLink),
+    getEntryOpts
+  );
 
   // Update the registry.
   const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 }
 
-export async function getDataLinkRegistryEntry(
+/**
+ * Gets the next entry for the given public key and data key, setting the data to be the given data and the revision number accordingly.
+ *
+ * @param client - The Skynet client.
+ * @param publicKey - The user public key.
+ * @param dataKey - The dat akey.
+ * @param data - The data to set.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The registry entry and corresponding data link.
+ * @throws - Will throw if the revision is already the maximum value.
+ */
+export async function getNextRegistryEntry(
   client: SkynetClient,
   publicKey: string,
   dataKey: string,
-  dataLink: string,
-  customOptions?: CustomSetJSONOptions
+  data: Uint8Array,
+  customOptions?: CustomGetEntryOptions
 ): Promise<RegistryEntry> {
   // Not publicly available, don't validate input.
 
   const opts = {
-    ...defaultSetJSONOptions,
+    ...defaultGetEntryOptions,
     ...client.customOptions,
     ...customOptions,
   };
 
   // Get the latest entry.
   // TODO: Can remove this once we start caching the latest revision.
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-  const signedEntry = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-  const revision = getRevisionFromEntry(signedEntry.entry);
-
-  dataLink = trimUriPrefix(dataLink, uriSkynetPrefix);
+  const signedEntry = await client.registry.getEntry(publicKey, dataKey, opts);
+  const revision = getNextRevisionFromEntry(signedEntry.entry);
 
   // Build the registry entry.
   const entry: RegistryEntry = {
     dataKey,
-    data: decodeSkylinkBase64(dataLink),
+    data,
     revision,
   };
 
@@ -314,7 +316,7 @@ export async function getDataLinkRegistryEntry(
  * Gets the registry entry and data link or creates the entry if it doesn't exist.
  *
  * @param client - The Skynet client.
- * @param publicKeyArray - The user public key.
+ * @param publicKey - The user public key.
  * @param dataKey - The dat akey.
  * @param json - The JSON to set.
  * @param [customOptions] - Additional settings that can optionally be set.
@@ -362,7 +364,7 @@ export async function getOrCreateRegistryEntry(
     skyfilePromise,
   ]);
 
-  const revision = getRevisionFromEntry(signedEntry.entry);
+  const revision = getNextRevisionFromEntry(signedEntry.entry);
 
   // Build the registry entry.
   const dataLink = trimUriPrefix(skyfile.skylink, uriSkynetPrefix);
@@ -376,7 +378,14 @@ export async function getOrCreateRegistryEntry(
   return [entry, formatSkylink(dataLink)];
 }
 
-export function getRevisionFromEntry(entry: RegistryEntry | null): bigint {
+/**
+ * Gets the next revision from a returned entry (or 0 if the entry was not found).
+ *
+ * @param entry - The returned registry entry.
+ * @returns - The revision.
+ * @throws - Will throw if the next revision would be beyond the maximum allowed value.
+ */
+export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
   let revision: bigint;
   if (entry === null) {
     revision = BigInt(0);
@@ -388,9 +397,6 @@ export function getRevisionFromEntry(entry: RegistryEntry | null): bigint {
   if (revision > MAX_REVISION) {
     throw new Error("Current entry already has maximum allowed revision, could not update the entry");
   }
-
-  // Assert the input is 64 bits.
-  assertUint64(revision);
 
   return revision;
 }
