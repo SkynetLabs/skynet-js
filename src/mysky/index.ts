@@ -187,11 +187,11 @@ export class MySky {
     // Close the child iframe.
     const frame = this.connector.childFrame;
     if (frame) {
+      // The parent node should always exist. Sanity check + make TS happy.
       if (!frame.parentNode) {
         throw new Error("'childFrame.parentNode' was not set");
       }
-
-      frame.parentNode.removeChild(this.connector.childFrame);
+      frame.parentNode.removeChild(frame);
     }
   }
 

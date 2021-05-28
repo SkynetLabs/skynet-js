@@ -59,7 +59,7 @@ export class SiaSkylink {
    * @returns - The sia skylink.
    * @throws - Will throw if the data has an unexpected size.
    */
-  static loadBytes(data: Uint8Array): SiaSkylink {
+  static fromBytes(data: Uint8Array): SiaSkylink {
     // Sanity check the size of the given data.
     if (data.length !== RAW_SKYLINK_SIZE) {
       throw new Error("Failed to load skylink data");
@@ -86,9 +86,9 @@ export class SiaSkylink {
    * @returns - The sia skylink.
    * @throws - Will throw if the data has an unexpected size.
    */
-  static loadString(skylink: string): SiaSkylink {
+  static fromString(skylink: string): SiaSkylink {
     const bytes = decodeSkylink(skylink);
-    return SiaSkylink.loadBytes(bytes);
+    return SiaSkylink.fromBytes(bytes);
   }
 }
 

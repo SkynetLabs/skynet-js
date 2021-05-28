@@ -182,7 +182,7 @@ export async function uploadLargeFile(
   skylink = Buffer.from(skylink, "base64").toString("utf-8");
 
   // Get the remaining fields.
-  const siaSkylink = SiaSkylink.loadString(skylink);
+  const siaSkylink = SiaSkylink.fromString(skylink);
   const merkleroot = toHexString(siaSkylink.merkleRoot);
   const bitfield = siaSkylink.bitfield;
 
@@ -407,7 +407,7 @@ function validateLargeUploadResponse(response: AxiosResponse): void {
     }
 
     const metadata = response.headers["upload-metadata"];
-    validateString(`response.headers["upload-metadata"]`, metadata, "upload response field");
+    validateString('response.headers["upload-metadata"]', metadata, "upload response field");
   } catch (err) {
     throw new Error(
       `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
