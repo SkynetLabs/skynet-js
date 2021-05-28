@@ -65,8 +65,7 @@ export class SiaSkylink {
       throw new Error("Failed to load skylink data");
     }
 
-    const buf = data.buffer;
-    const view = new DataView(buf);
+    const view = new DataView(data.buffer);
 
     // Load the bitfield.
     const bitfield = view.getUint16(0, true);

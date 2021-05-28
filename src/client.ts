@@ -54,7 +54,6 @@ export type CustomClientOptions = {
  * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
  * @property [method] - The request method.
  * @property [query] - Query parameters.
- * @property [timeout] - Request timeout. May be deprecated.
  * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
  * @property [headers] - Any request headers to set.
  * @property [transformRequest] - A function that allows manually transforming the request.
@@ -67,7 +66,6 @@ export type RequestConfig = CustomClientOptions & {
   method?: Method;
   headers?: Headers;
   query?: Record<string, unknown>;
-  timeout?: number; // TODO: remove
   extraPath?: string;
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;

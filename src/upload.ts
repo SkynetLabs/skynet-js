@@ -160,7 +160,7 @@ export async function uploadFileRequest(
 export async function uploadLargeFile(
   this: SkynetClient,
   // TODO: Change in Node?
-  file: File,
+  file: File | Buffer,
   customOptions?: CustomLargeUploadOptions
 ): Promise<UploadRequestResponse> {
   // Validation is done in `uploadLargeFileRequest`.
@@ -203,7 +203,7 @@ export async function uploadLargeFile(
  */
 export async function uploadLargeFileRequest(
   this: SkynetClient,
-  file: File,
+  file: File | Buffer,
   customOptions?: CustomLargeUploadOptions
 ): Promise<AxiosResponse> {
   // TODO: Accept Buffer in Node?
@@ -216,8 +216,9 @@ export async function uploadLargeFileRequest(
   const url = await buildRequestUrl(this, opts.endpointLargeUpload);
   const headers = buildRequestHeaders(opts.customUserAgent, opts.customCookie);
 
-  file = ensureFileObjectConsistency(file);
-  let filename = file.name;
+  // file = ensureFileObjectConsistency(file);
+  // let filename = file.name;
+  let filename = "asdf";
   if (opts.customFilename) {
     filename = opts.customFilename;
   }
@@ -240,7 +241,8 @@ export async function uploadLargeFileRequest(
       retryDelays: opts.retryDelays,
       metadata: {
         filename,
-        filetype: file.type,
+        // filetype: file.type,
+        filetype: "application/plain",
       },
       headers,
       onProgress,
@@ -267,6 +269,7 @@ export async function uploadLargeFileRequest(
       },
     };
 
+    // @ts-ignore
     const upload = new Upload(file, tusOpts);
     upload.start();
   });
