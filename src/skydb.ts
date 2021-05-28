@@ -101,18 +101,20 @@ export async function getJSON(
   const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
   const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
 
-  const cacheKey = `${publicKey}/${dataKey}`;
-  const newRevision = entry?.revision ?? BigInt(-1);
+  // Calculate the new revision and get the cached revision.
+  const revision = entry?.revision ?? BigInt(-1);
+  const newRevision = incrementRevision(revision);
+  const cacheKey = getCacheKey(publicKey, dataKey);
+  const cachedRevision = this.revisionNumberCache[cacheKey];
 
-  if (
-    Object.prototype.hasOwnProperty.call(this.revisionNumberCache, cacheKey) &&
-    this.revisionNumberCache[cacheKey] > newRevision
-  ) {
+  if (cachedRevision && cachedRevision > newRevision) {
     throw new Error("A higher revision number for this userID and path is already cached");
   }
 
+  // Update the cached revision.
   this.revisionNumberCache[cacheKey] = newRevision;
 
+  // Return null if the entry was not found or if it contained a sentinel value indicating deletion.
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return { data: null, dataLink: null };
   }
@@ -359,21 +361,13 @@ export async function getOrCreateRegistryEntry(
   }
   const file = new File([JSON.stringify(fullData)], `dk:${dataKeyHex}`, { type: "application/json" });
 
-  // Start file upload, do not block.
+  // Do file upload.
   const uploadOpts = extractOptions(opts, defaultUploadOptions);
-  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
+  const skyfile = await client.uploadFile(file, uploadOpts);
 
-  // Block until uploadFile is finished.
-  const [skyfile] = await Promise.all<UploadRequestResponse>([skyfilePromise]);
-
-  const revision: bigint = (client.revisionNumberCache[`${publicKey}/${dataKey}`] ?? BigInt(-1)) + BigInt(1);
-
-  assertUint64(revision);
-
-  // Throw if the revision is already the maximum value.
-  if (revision > MAX_REVISION) {
-    throw new Error("Current entry already has maximum allowed revision, could not update the entry");
-  }
+  // Get the new revision by incrementing the one in the cache, or use 0 if not cached.
+  let revision: bigint = client.revisionNumberCache[getCacheKey(publicKey, dataKey)] ?? BigInt(-1);
+  revision = incrementRevision(revision);
 
   // Build the registry entry.
   const dataLink = trimUriPrefix(skyfile.skylink, uriSkynetPrefix);
@@ -387,13 +381,21 @@ export async function getOrCreateRegistryEntry(
   return [entry, formatSkylink(dataLink)];
 }
 
+function getCacheKey(publicKey: string, dataKey: string): string {
+  return `${publicKey}/${dataKey}`;
+}
+
 export function getRevisionFromEntry(entry: RegistryEntry | null): bigint {
-  let revision: bigint;
-  if (entry === null) {
-    revision = BigInt(0);
-  } else {
-    revision = entry.revision + BigInt(1);
+  let revision = BigInt(-1);
+  if (entry !== null) {
+    revision = entry.revision;
   }
+
+  return incrementRevision(revision);
+}
+
+function incrementRevision(revision: bigint): bigint {
+  revision = revision + BigInt(1);
 
   // Throw if the revision is already the maximum value.
   if (revision > MAX_REVISION) {
