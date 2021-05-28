@@ -5,15 +5,17 @@ import { fromByteArray, toByteArray } from "base64-js";
 import { assertUint64 } from "./number";
 import { stringToUint8ArrayUtf8 } from "./string";
 
+const BASE32_ENCODING_VARIANT = "RFC4648-HEX";
+
 /**
  * Decodes the skylink encoded using base32 encoding to bytes.
  *
  * @param s - The encoded skylink.
  * @returns - The decoded bytes.
  */
-export function decodeSkylinkBase32(s: string): Uint8Array {
-  s = s.toUpperCase();
-  const bytes = base32Decode(s, "RFC4648-HEX");
+export function decodeSkylinkBase32(skylink: string): Uint8Array {
+  skylink = skylink.toUpperCase();
+  const bytes = base32Decode(skylink, BASE32_ENCODING_VARIANT);
   return new Uint8Array(bytes);
 }
 
@@ -24,7 +26,7 @@ export function decodeSkylinkBase32(s: string): Uint8Array {
  * @returns - The encoded skylink.
  */
 export function encodeSkylinkBase32(bytes: Uint8Array): string {
-  return base32Encode(bytes, "RFC4648-HEX", { padding: false }).toLowerCase();
+  return base32Encode(bytes, BASE32_ENCODING_VARIANT, { padding: false }).toLowerCase();
 }
 
 /**
@@ -33,13 +35,12 @@ export function encodeSkylinkBase32(bytes: Uint8Array): string {
  * @param s - The encoded skylink.
  * @returns - The decoded bytes.
  */
-export function decodeSkylinkBase64(s: string): Uint8Array {
+export function decodeSkylinkBase64(skylink: string): Uint8Array {
   // Add padding.
-  s = `${s}==`;
+  skylink = `${skylink}==`;
   // Convert from URL encoding.
-  s = s.replace(/-/g, "+").replace(/_/g, "/");
-  const bytes = toByteArray(s);
-  return bytes;
+  skylink = skylink.replace(/-/g, "+").replace(/_/g, "/");
+  return toByteArray(skylink);
 }
 
 /**
@@ -52,7 +53,8 @@ export function encodeSkylinkBase64(bytes: Uint8Array): string {
   let base64 = fromByteArray(bytes);
   // Convert to URL encoding.
   base64 = base64.replace(/\+/g, "-").replace(/\//g, "_");
-  // Remove trailing "==".
+  // Remove trailing "==". This will always be present as the skylink encoding
+  // gets padded so that the string is a multiple of 4 characters in length.
   return base64.slice(0, -2);
 }
 
