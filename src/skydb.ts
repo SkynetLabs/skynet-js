@@ -101,6 +101,19 @@ export async function getJSON(
   // Lookup the registry entry.
   const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
   const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
+
+  const cacheKey = `${publicKey}/${dataKey}`;
+  const newRevision = entry?.revision ?? BigInt(-1);
+
+  if (
+    Object.prototype.hasOwnProperty.call(this.revisionNumberCache, cacheKey) &&
+    this.revisionNumberCache[cacheKey] > newRevision
+  ) {
+    throw new Error("A higher revision number for this userID and path is already cached");
+  }
+
+  this.revisionNumberCache[cacheKey] = newRevision;
+
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return { data: null, dataLink: null };
   }
@@ -353,19 +366,17 @@ export async function getOrCreateRegistryEntry(
   const uploadOpts = extractOptions(opts, defaultUploadOptions);
   const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
 
-  // Fetch the current value to find out the revision.
-  //
-  // Start getEntry, do not block.
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-  const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+  // Block until uploadFile is finished.
+  const [skyfile] = await Promise.all<UploadRequestResponse>([skyfilePromise]);
 
-  // Block until both getEntry and uploadFile are finished.
-  const [signedEntry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
-    entryPromise,
-    skyfilePromise,
-  ]);
+  const revision: bigint = (client.revisionNumberCache[`${publicKey}/${dataKey}`] ?? BigInt(-1)) + BigInt(1);
 
-  const revision = getRevisionFromEntry(signedEntry.entry);
+  assertUint64(revision);
+
+  // Throw if the revision is already the maximum value.
+  if (revision > MAX_REVISION) {
+    throw new Error("Current entry already has maximum allowed revision, could not update the entry");
+  }
 
   // Build the registry entry.
   const dataLink = skyfile.skylink;

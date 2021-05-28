@@ -78,6 +78,9 @@ export class SkynetClient {
   // The given portal URL, if one was passed in to `new SkynetClient()`.
   protected givenPortalUrl?: string;
 
+  // Holds the cached revision numbers
+  revisionNumberCache: { [key: string]: bigint } = {};
+
   // Set methods (defined in other files).
 
   // Upload
