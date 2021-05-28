@@ -89,6 +89,23 @@ export function validateString(name: string, value: unknown, valueKind: string):
 }
 
 /**
+ * Validates the given value as a string of the given length.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @param len - The length to check.
+ * @throws - Will throw if not a valid string of the given length.
+ */
+export function validateStringLen(name: string, value: unknown, valueKind: string, len: number): void {
+  validateString(name, value, valueKind);
+  const actualLen = (value as string).length;
+  if (actualLen !== len) {
+    throwValidationError(name, value, valueKind, `'string' of length ${len}, was length ${actualLen}`);
+  }
+}
+
+/**
  * Validates the given value as a hex-encoded string.
  *
  * @param name - The name of the value.

@@ -18,13 +18,12 @@ import {
   trimUriPrefix,
   toHexString,
   stringToUint8ArrayUtf8,
-  trimSuffix,
   uint8ArrayToStringUtf8,
 } from "./utils/string";
 import { formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
-import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl } from "./utils/encoding";
+import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
 import {
   validateHexString,
@@ -116,8 +115,7 @@ export async function getJSON(
     rawDataLink = uint8ArrayToStringUtf8(entry.data);
   } else if (entry.data.length === RAW_SKYLINK_SIZE) {
     // Convert the bytes to a base64 skylink.
-    rawDataLink = uint8ArrayToBase64RawUrl(entry.data);
-    rawDataLink = trimSuffix(rawDataLink, "=");
+    rawDataLink = encodeSkylinkBase64(entry.data);
   } else {
     throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
   }
@@ -369,11 +367,8 @@ export async function getOrCreateRegistryEntry(
   const revision = getNextRevisionFromEntry(signedEntry.entry);
 
   // Build the registry entry.
-  const dataLink = skyfile.skylink;
-  // TODO: Use decodeSkylink
-  // Add padding.
-  const paddedDataLink = `${trimUriPrefix(dataLink, uriSkynetPrefix)}==`;
-  const data = base64RawUrlToUint8Array(paddedDataLink);
+  const dataLink = trimUriPrefix(skyfile.skylink, uriSkynetPrefix);
+  const data = decodeSkylinkBase64(dataLink);
   validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
     dataKey,

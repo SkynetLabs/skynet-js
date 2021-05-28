@@ -3,7 +3,7 @@ export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto
 export { getSkylinkUrlForPortal } from "./download";
 export { getEntryUrlForPortal, signEntry } from "./registry";
 export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
-export { convertSkylinkToBase32 } from "./skylink/format";
+export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
 export { getRelativeFilePath, getRootDirectory } from "./utils/file";

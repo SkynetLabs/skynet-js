@@ -14,14 +14,16 @@ import { throwValidationError, validateObject, validateOptionalObject, validateS
  *
  * @property [endpointDownload] - The relative URL path of the portal endpoint to contact.
  * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
- * @property [path=""] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
- * @property [query={}] - A query object to convert to a query parameter string and append to the URL.
+ * @property [path] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
+ * @property [range] - The Range request header to set for the download. Not applicable for in-borwser downloads.
+ * @property [query] - A query object to convert to a query parameter string and append to the URL.
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
  */
 export type CustomDownloadOptions = BaseCustomOptions & {
   endpointDownload?: string;
   download?: boolean;
   path?: string;
+  range?: string;
   query?: Record<string, unknown>;
   subdomain?: boolean;
 };
@@ -89,6 +91,7 @@ export const defaultDownloadOptions = {
   endpointDownload: "/",
   download: false,
   path: undefined,
+  range: undefined,
   query: undefined,
   subdomain: false,
 };
@@ -433,12 +436,15 @@ export async function getFileContentRequest<T = unknown>(
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
+  const headers = opts.range ? { Range: opts.range } : undefined;
+
   // GET request the data at the skylink.
   const response = await this.executeRequest({
     ...opts,
     endpointPath: opts.endpointDownload,
     method: "get",
     url,
+    headers,
   });
 
   if (typeof response.data === "undefined") {
