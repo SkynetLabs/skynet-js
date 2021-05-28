@@ -6,10 +6,11 @@ import { CustomGetJSONOptions, defaultGetJSONOptions, JSONResponse } from "./sky
 import { validateOptionalObject, validateString } from "./utils/validation";
 
 /**
- * Gets Discoverable JSON at the given data path for the given public user ID.
+ * Gets Discoverable JSON set with MySky at the given data path for the given
+ * public user ID.
  *
  * @param this - SkynetClient
- * @param userID - The public user ID.
+ * @param userID - The MySky public user ID.
  * @param path - The data path.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the json data as well as the skylink for the data.
@@ -37,12 +38,12 @@ export async function getJSON(
 }
 
 /**
- * Gets the entry link for the entry at the given data path, for the given
- * public user ID. This is a v2 skylink. This link stays the same even if the
- * content at the entry changes.
+ * Gets the entry link for the entry set with MySky at the given data path, for
+ * the given public user ID. This is a v2 skylink. This link stays the same even
+ * if the content at the entry changes.
  *
  * @param this - SkynetClient
- * @param userID - The public user ID.
+ * @param userID - The MySky public user ID.
  * @param path - The data path.
  * @returns - The entry link.
  */
@@ -58,12 +59,13 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
 }
 
 /**
- * Gets the entry data for the entry at the given data path, for the given
- * public user ID.
+ * Gets the entry data for the entry set with MySky at the given data path, for
+ * the given public user ID.
  *
  * @param this - SkynetClient
- * @param userID - The public user ID.
+ * @param userID - The MySky public user ID.
  * @param path - The data path.
+ * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  */
 export async function getEntryData(
