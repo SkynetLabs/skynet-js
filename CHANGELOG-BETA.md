@@ -29,7 +29,7 @@ For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
 ### Changed
 
-- **[Breaking change]** Registry entries now take `data` that is `Uint8Array` instead of `string`.
+- **[Breaking change]** Registry entries now contain `data` that is type `Uint8Array` instead of `string`.
 - **[Breaking change]** `getHnsUrl` now defaults to `subdomain: true`.
 
 ### Added
@@ -47,7 +47,7 @@ For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
 ### Removed
 
-- **[Breaking change]** `getMetadata` now only returns the metadata, and not the content-type, skylink, or portal URL.
+- **[Breaking change]** `getMetadata` now only returns the metadata, and not the content-type, skylink, or portal URL. (Note: The skylink and portal URL were added back in `v4.0.8-beta`.)
 
 ## [4.0.5-beta]
 

@@ -1,19 +1,17 @@
-import base32Decode from "base32-decode";
-
 import { hashAll } from "../crypto";
-import { base64RawUrlToUint8Array, uint8ArrayToBase64RawUrl, encodePrefixedBytes } from "../utils/encoding";
-import { hexToUint8Array, stringToUint8ArrayUtf8, trimSuffix } from "../utils/string";
+import { decodeSkylinkBase64, encodeSkylinkBase64, encodePrefixedBytes, decodeSkylinkBase32 } from "../utils/encoding";
+import { hexToUint8Array, stringToUint8ArrayUtf8 } from "../utils/string";
 import { validateHexString, validateNumber, validateString, validateUint8ArrayLen } from "../utils/validation";
 
 /**
  * The string length of the Skylink after it has been encoded using base32.
  */
-const BASE32_ENCODED_SKYLINK_SIZE = 55;
+export const BASE32_ENCODED_SKYLINK_SIZE = 55;
 
 /**
  * The string length of the Skylink after it has been encoded using base64.
  */
-const BASE64_ENCODED_SKYLINK_SIZE = 46;
+export const BASE64_ENCODED_SKYLINK_SIZE = 46;
 
 /**
  * Returned when a string could not be decoded into a Skylink due to it having
@@ -49,9 +47,7 @@ export class SiaSkylink {
   }
 
   toString(): string {
-    const base64 = uint8ArrayToBase64RawUrl(this.toBytes());
-    // Remove padding characters.
-    return trimSuffix(base64, "=");
+    return encodeSkylinkBase64(this.toBytes());
   }
 }
 
@@ -177,12 +173,9 @@ export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): Sia
 export function decodeSkylink(encoded: string): Uint8Array {
   let bytes;
   if (encoded.length === BASE32_ENCODED_SKYLINK_SIZE) {
-    encoded = encoded.toUpperCase();
-    bytes = new Uint8Array(base32Decode(encoded, "RFC4648-HEX"));
+    bytes = decodeSkylinkBase32(encoded);
   } else if (encoded.length === BASE64_ENCODED_SKYLINK_SIZE) {
-    // Add padding.
-    encoded = `${encoded}==`;
-    bytes = base64RawUrlToUint8Array(encoded);
+    bytes = decodeSkylinkBase64(encoded);
   } else {
     throw new Error(ERR_SKYLINK_INCORRECT_SIZE);
   }
