@@ -16,38 +16,43 @@ import {
 import { toHexString, trimSuffix } from "./utils/string";
 import { SiaSkylink } from "./skylink/sia";
 
-// 4MiB * dataPieces - encryptionOverhead, set in skyd.
-const DEFAULT_TUS_CHUNK_SIZE = (1 << 22) * 10;
+/**
+ * The tus chunk size is 4MiB * dataPieces - encryptionOverhead, set in skyd.
+ */
+const TUS_CHUNK_SIZE = (1 << 22) * 10;
 
-const DEFAULT_TUS_RETRY_DELAYS = [0, 3000, 5000, 10000, 20000];
+/**
+ * The retry delays, in ms. Data is stored in skyd for up to 20 minutes, so the
+ * total delays should not exceed that length of time.
+ */
+const DEFAULT_TUS_RETRY_DELAYS = [0, 5_000, 15_000, 60_000, 300_000, 600_000];
+
+/**
+ * The portal file field name.
+ */
+const PORTAL_FILE_FIELD_NAME = "file";
+/**
+ * The portal directory file field name.
+ */
+const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
 
 /**
  * Custom upload options.
  *
  * @property [endpointUpload] - The relative URL path of the portal endpoint to contact.
- * @property [portalFileFieldname="file"] - The file fieldname for uploading files on this portal.
- * @property [portalDirectoryfilefieldname="files[]"] - The file fieldname for uploading directories on this portal.
+ * @property [endpointLargeUpload] - The relative URL path of the portal endpoint to contact for large uploads.
+ * @property [endpointLargeUploadId] - The relative URL path of the portal endpoint to contact for large uploads to retrieve the skylink on success.
  * @property [customFilename] - The custom filename to use when uploading files.
- * @property [query] - Query parameters. Allows passing in parameters that haven't been implemented in the SDK yet.
+ * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
+ * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
  */
 export type CustomUploadOptions = BaseCustomOptions & {
   endpointUpload?: string;
-  portalFileFieldname?: string;
-  portalDirectoryFileFieldname?: string;
-  customFilename?: string;
-  query?: Record<string, unknown>;
-};
-
-/**
- * Custom large upload options.
- *
- * @property [endpointLargeUpload] - The relative URL path of the portal endpoint to contact.
- */
-export type CustomLargeUploadOptions = BaseCustomOptions & {
   endpointLargeUpload?: string;
   endpointLargeUploadId?: string;
+
   customFilename?: string;
-  chunkSize?: number;
+  largeFileSize?: number;
   retryDelays?: number[];
 };
 
@@ -66,18 +71,13 @@ export type UploadRequestResponse = {
 
 export const defaultUploadOptions = {
   ...defaultBaseOptions,
-  endpointUpload: "/skynet/skyfile",
-  portalFileFieldname: "file",
-  portalDirectoryFileFieldname: "files[]",
-  customFilename: "",
-  query: undefined,
-};
 
-export const defaultLargeUploadOptions = {
-  ...defaultBaseOptions,
+  endpointUpload: "/skynet/skyfile",
   endpointLargeUpload: "/skynet/tus",
   endpointLargeUploadId: "/skynet/upload/tus",
-  chunkSize: DEFAULT_TUS_CHUNK_SIZE,
+
+  customFilename: "",
+  largeFileSize: TUS_CHUNK_SIZE,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
 };
 
@@ -87,7 +87,8 @@ export const defaultLargeUploadOptions = {
  * @param this - SkynetClient
  * @param file - The file to upload.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointUpload="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact for small uploads.
+ * @param [customOptions.endpointLargeUpload="/skynet/tus"] - The relative URL path of the portal endpoint to contact for large uploads.
  * @returns - The returned skylink.
  * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
  */
@@ -96,9 +97,33 @@ export async function uploadFile(
   file: File,
   customOptions?: CustomUploadOptions
 ): Promise<UploadRequestResponse> {
-  // Validation is done in `uploadFileRequest`.
+  // Validation is done in `uploadFileRequest` or `uploadLargeFileRequest`.
 
-  const response = await this.uploadFileRequest(file, customOptions);
+  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
+
+  if (file.size < opts.largeFileSize) {
+    return this.uploadSmallFile(file, opts);
+  } else {
+    return this.uploadLargeFile(file, opts);
+  }
+}
+
+/**
+ * Uploads a small file to Skynet.
+ *
+ * @param this - SkynetClient
+ * @param file - The file to upload.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointUpload="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The returned skylink.
+ * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
+ */
+export async function uploadSmallFile(
+  this: SkynetClient,
+  file: File,
+  customOptions: CustomUploadOptions
+): Promise<UploadRequestResponse> {
+  const response = await this.uploadSmallFileRequest(file, customOptions);
 
   // Sanity check.
   validateUploadResponse(response);
@@ -111,7 +136,7 @@ export async function uploadFile(
 }
 
 /**
- * Makes a request to upload a file to Skynet.
+ * Makes a request to upload a small file to Skynet.
  *
  * @param this - SkynetClient
  * @param file - The file to upload.
@@ -119,7 +144,7 @@ export async function uploadFile(
  * @param [customOptions.endpointPath="/skynet/skyfile"] - The relative URL path of the portal endpoint to contact.
  * @returns - The upload response.
  */
-export async function uploadFileRequest(
+export async function uploadSmallFileRequest(
   this: SkynetClient,
   file: File,
   customOptions?: CustomUploadOptions
@@ -132,9 +157,9 @@ export async function uploadFileRequest(
 
   file = ensureFileObjectConsistency(file);
   if (opts.customFilename) {
-    formData.append(opts.portalFileFieldname, file, opts.customFilename);
+    formData.append(PORTAL_FILE_FIELD_NAME, file, opts.customFilename);
   } else {
-    formData.append(opts.portalFileFieldname, file);
+    formData.append(PORTAL_FILE_FIELD_NAME, file);
   }
 
   const response = await this.executeRequest({
@@ -153,15 +178,14 @@ export async function uploadFileRequest(
  * @param this - SkynetClient
  * @param file - The file to upload.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointLargeUpload="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
  * @returns - The returned skylink.
  * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
  */
 export async function uploadLargeFile(
   this: SkynetClient,
-  // TODO: Change in Node?
-  file: File | Buffer,
-  customOptions?: CustomLargeUploadOptions
+  file: File,
+  customOptions?: CustomUploadOptions
 ): Promise<UploadRequestResponse> {
   // Validation is done in `uploadLargeFileRequest`.
 
@@ -198,23 +222,23 @@ export async function uploadLargeFile(
  * @param this - SkynetClient
  * @param file - The file to upload.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @param [customOptions.endpointPath="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
+ * @param [customOptions.endpointLargeUpload="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
  * @returns - The upload response.
  */
 export async function uploadLargeFileRequest(
   this: SkynetClient,
-  file: File | Buffer,
-  customOptions?: CustomLargeUploadOptions
+  file: File,
+  customOptions?: CustomUploadOptions
 ): Promise<AxiosResponse> {
   // TODO: Accept Buffer in Node?
   // validateFile("file", file, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultLargeUploadOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
 
-  const opts = { ...defaultLargeUploadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
 
   // TODO: Add back upload options once they are implemented in skyd.
   const url = await buildRequestUrl(this, opts.endpointLargeUpload);
-  const headers = buildRequestHeaders(opts.customUserAgent, opts.customCookie);
+  const headers = buildRequestHeaders(undefined, opts.customUserAgent, opts.customCookie);
 
   // file = ensureFileObjectConsistency(file);
   // let filename = file.name;
@@ -237,7 +261,7 @@ export async function uploadLargeFileRequest(
   return new Promise((resolve, reject) => {
     const tusOpts = {
       endpoint: url,
-      chunkSize: opts.chunkSize,
+      chunkSize: TUS_CHUNK_SIZE,
       retryDelays: opts.retryDelays,
       metadata: {
         filename,
@@ -269,7 +293,6 @@ export async function uploadLargeFileRequest(
       },
     };
 
-    // @ts-ignore
     const upload = new Upload(file, tusOpts);
     upload.start();
   });
@@ -332,7 +355,7 @@ export async function uploadDirectoryRequest(
   const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {
     file = ensureFileObjectConsistency(file as File);
-    formData.append(opts.portalDirectoryFileFieldname, file as File, path);
+    formData.append(PORTAL_DIRECTORY_FILE_FIELD_NAME, file as File, path);
   });
 
   const response = await this.executeRequest({

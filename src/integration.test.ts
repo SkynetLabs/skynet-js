@@ -422,35 +422,4 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(data).toEqual(expectedData);
     });
   });
-
-  // TODO: Doesn't work in Node. See
-  // https://github.com/tus/tus-js-client/issues/252#issuecomment-821181951.
-  // This endpoint has been tested manually for now.
-  describe("Large upload integration tests", () => {
-    // TODO: Remove.
-    const client = new SkynetClient("https://siasky.xyz");
-    const fileData = "testing";
-    const filename = "name";
-    const filetype = "application/plain";
-    const file = Buffer.from(fileData);
-
-    it("Should be able to upload and download a small file uploaded using the large upload method", async () => {
-      // Upload the data using the large file upload.
-
-      const resp = await client.uploadLargeFile(file);
-      expect(resp.skylink).not.toEqual("");
-
-      // Get file metadata and check filename.
-
-      const { metadata } = await client.getMetadata(resp.skylink);
-      expect(metadata.filename).toEqual(filename);
-      // @ts-ignore
-      expect(metadata.subfiles[filename].contenttype);
-
-      // TODO: Compare skylink, merkleroot, and bitfield against result of old endpoint.
-
-      const resp2 = await client.uploadFile(file);
-      expect(resp).toEqual(resp2);
-    });
-  });
 });

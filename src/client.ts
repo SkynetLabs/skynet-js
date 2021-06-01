@@ -6,7 +6,8 @@ import {
   uploadLargeFile,
   uploadDirectory,
   uploadDirectoryRequest,
-  uploadFileRequest,
+  uploadSmallFile,
+  uploadSmallFileRequest,
   uploadLargeFileRequest,
 } from "./upload";
 import {
@@ -89,8 +90,9 @@ export class SkynetClient {
   // Upload
 
   uploadFile = uploadFile;
-  protected uploadFileRequest = uploadFileRequest;
-  uploadLargeFile = uploadLargeFile;
+  protected uploadSmallFile = uploadSmallFile;
+  protected uploadSmallFileRequest = uploadSmallFileRequest;
+  protected uploadLargeFile = uploadLargeFile;
   protected uploadLargeFileRequest = uploadLargeFileRequest;
   uploadDirectory = uploadDirectory;
   protected uploadDirectoryRequest = uploadDirectoryRequest;
