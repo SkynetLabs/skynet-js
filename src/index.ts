@@ -1,8 +1,14 @@
 export { SkynetClient } from "./client";
-export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
+export { HASH_LENGTH, deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
 export { getEntryUrlForPortal, signEntry } from "./registry";
 export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
+export {
+  deriveEncryptedFileKeyEntropy,
+  deriveEncryptedFileSeed,
+  deriveEncryptedFileTweak,
+} from "./mysky/encrypted_files";
+export { deriveDiscoverableFileTweak } from "./mysky/tweak";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
@@ -17,6 +23,7 @@ export {
   uriHandshakePrefix,
   uriSkynetPrefix,
 } from "./utils/url";
+
 // Re-export Permission API.
 export {
   Permission,

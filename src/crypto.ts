@@ -2,10 +2,10 @@ import { misc, codec } from "sjcl";
 import { Buffer } from "buffer";
 import { blake2bFinal, blake2bInit, blake2bUpdate } from "blakejs";
 import randomBytes from "randombytes";
-import { sign } from "tweetnacl";
+import { hash, sign } from "tweetnacl";
 
 import { RegistryEntry } from "./registry";
-import { hexToUint8Array, toHexString } from "./utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString } from "./utils/string";
 import { validateNumber, validateString } from "./utils/validation";
 import { encodeBigintAsUint64, encodePrefixedBytes, encodeUtf8String } from "./utils/encoding";
 
@@ -30,6 +30,8 @@ export type KeyPair = {
 export type KeyPairAndSeed = KeyPair & {
   seed: string;
 };
+
+export const HASH_LENGTH = 32;
 
 /**
  * Returns a blake2b 256bit hasher. See `NewHash` in Sia.
@@ -94,12 +96,13 @@ export function genKeyPairFromSeed(seed: string): KeyPair {
  */
 export function hashAll(...args: Uint8Array[]): Uint8Array {
   const hasher = newHash();
-  for (let i = 0; i < args.length; i++) {
-    blake2bUpdate(hasher, args[i]);
+  for (const arg of args) {
+    blake2bUpdate(hasher, arg);
   }
   return blake2bFinal(hasher);
 }
 
+// TODO: Is this the same as hashString?
 /**
  * Hash the given data key.
  *
@@ -128,6 +131,20 @@ export function hashRegistryEntry(registryEntry: RegistryEntry, hashedDataKeyHex
   const dataBytes = encodePrefixedBytes(registryEntry.data);
 
   return hashAll(dataKeyBytes, dataBytes, encodeBigintAsUint64(registryEntry.revision));
+}
+
+/**
+ * Hashes the given string or byte array using sha512.
+ *
+ * @param message - The string or byte array to hash.
+ * @returns - The resulting hash.
+ */
+export function sha512(message: Uint8Array | string): Uint8Array {
+  if (typeof message === "string") {
+    return hash(stringToUint8ArrayUtf8(message));
+  } else {
+    return hash(message);
+  }
 }
 
 /**

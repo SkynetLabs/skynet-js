@@ -33,8 +33,14 @@ import {
   validateUint8ArrayLen,
 } from "./utils/validation";
 import { areEqualUint8Arrays } from "./utils/array";
+import { ResponseType } from "axios";
 
 export type JsonData = Record<string, unknown>;
+
+export type JsonFullData = {
+  _data: JsonData;
+  _v: number;
+};
 
 const JSON_RESPONSE_VERSION = 2;
 
@@ -72,6 +78,15 @@ export type JSONResponse = {
   dataLink: string | null;
 };
 
+export type RawBytesResponse = {
+  data: Uint8Array | null;
+  dataLink: string | null;
+};
+
+// ====
+// JSON
+// ====
+
 /**
  * Gets the JSON object corresponding to the publicKey and dataKey.
  *
@@ -79,7 +94,7 @@ export type JSONResponse = {
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
 export async function getJSON(
@@ -135,7 +150,7 @@ export async function getJSON(
   }
 
   if (!(data["_data"] && data["_v"])) {
-    // Legacy data prior to v4, return as-is.
+    // Legacy data prior to skynet-js v4, return as-is.
     return { data, dataLink };
   }
 
@@ -154,7 +169,7 @@ export async function getJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and data link.
  * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setJSON(
@@ -271,6 +286,138 @@ export async function setDataLink(
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 }
 
+// =========
+// Raw Bytes
+// =========
+
+/**
+ * Gets the raw bytes corresponding to the publicKey and dataKey. The caller is responsible for setting any metadata in the bytes.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The returned bytes and data link.
+ * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
+ */
+// TODO: Should we expose this in the API?
+export async function getRawBytes(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  // TODO: Take a new options type?
+  customOptions?: CustomGetJSONOptions
+): Promise<RawBytesResponse> {
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+  // Rest of validation is done in `getEntry`.
+
+  const opts = {
+    ...defaultGetJSONOptions,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  // Lookup the registry entry.
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
+  if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
+    return { data: null, dataLink: null };
+  }
+
+  // Determine the data link.
+  // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
+  if (typeof entry.data === "string") {
+    throw new Error("Expected returned entry data to be bytes");
+  }
+  let rawDataLink: string;
+  if (entry.data.length === RAW_SKYLINK_SIZE) {
+    // Convert the bytes to a base64 skylink.
+    rawDataLink = encodeSkylinkBase64(entry.data);
+  } else {
+    throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
+  }
+  const dataLink = formatSkylink(rawDataLink);
+
+  // If a cached data link is provided and the data link hasn't changed, return.
+  if (opts.cachedDataLink && rawDataLink === parseSkylink(opts.cachedDataLink)) {
+    return { data: null, dataLink };
+  }
+
+  // Download the data in the returned data link.
+  const downloadOpts = { ...extractOptions(opts, defaultDownloadOptions), responseType: "arraybuffer" as ResponseType };
+  const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
+
+  return { data: new Uint8Array(buffer), dataLink };
+}
+
+/**
+ * Gets the registry entry for the given raw bytes or creates the entry if it doesn't exist.
+ *
+ * @param client - The Skynet client.
+ * @param publicKey - The user public key.
+ * @param dataKey - The dat akey.
+ * @param data - The raw byte data to set.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The registry entry and corresponding data link.
+ * @throws - Will throw if the revision is already the maximum value.
+ */
+// TODO: Rename & refactor after the SkyDB caching refactor.
+export async function getOrCreateRawBytesRegistryEntry(
+  client: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  data: Uint8Array,
+  customOptions?: CustomSetJSONOptions
+): Promise<RegistryEntry> {
+  // Not publicly available, don't validate input.
+
+  const opts = {
+    ...defaultSetJSONOptions,
+    ...client.customOptions,
+    ...customOptions,
+  };
+
+  // Create the data to upload to acquire its skylink.
+  let dataKeyHex = dataKey;
+  if (!opts.hashedDataKeyHex) {
+    dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
+  }
+  const file = new File([data], `dk:${dataKeyHex}`, { type: "application/octet-stream" });
+
+  // Start file upload, do not block.
+  const uploadOpts = extractOptions(opts, defaultUploadOptions);
+  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
+
+  // Fetch the current value to find out the revision.
+  //
+  // Start getEntry, do not block.
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+
+  // Block until both getEntry and uploadFile are finished.
+  const [signedEntry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
+    entryPromise,
+    skyfilePromise,
+  ]);
+
+  const revision = getNextRevisionFromEntry(signedEntry.entry);
+
+  // Build the registry entry.
+  const dataLink = trimUriPrefix(skyfile.skylink, uriSkynetPrefix);
+  const rawDataLink = decodeSkylinkBase64(dataLink);
+  validateUint8ArrayLen("rawDataLink", rawDataLink, "skylink byte array", RAW_SKYLINK_SIZE);
+  const entry: RegistryEntry = {
+    dataKey,
+    data: rawDataLink,
+    revision,
+  };
+  return entry;
+}
+
+// =======
+// Helpers
+// =======
+
 /**
  * Gets the next entry for the given public key and data key, setting the data to be the given data and the revision number accordingly.
  *
@@ -339,7 +486,7 @@ export async function getOrCreateRegistryEntry(
   };
 
   // Set the hidden _data and _v fields.
-  const fullData = { _data: json, _v: JSON_RESPONSE_VERSION };
+  const fullData: JsonFullData = { _data: json, _v: JSON_RESPONSE_VERSION };
 
   // Create the data to upload to acquire its skylink.
   let dataKeyHex = dataKey;

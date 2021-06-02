@@ -16,13 +16,7 @@ import type { CustomUserIDOptions } from "skynet-mysky-utils";
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import {
-  CustomGetEntryOptions,
-  CustomSetEntryOptions,
-  defaultGetEntryOptions,
-  defaultSetEntryOptions,
-  RegistryEntry,
-} from "../registry";
+import { CustomGetEntryOptions, defaultGetEntryOptions, defaultSetEntryOptions, RegistryEntry } from "../registry";
 import {
   defaultGetJSONOptions,
   defaultSetJSONOptions,
@@ -32,19 +26,29 @@ import {
   JsonData,
   JSONResponse,
   getNextRegistryEntry,
+  getOrCreateRawBytesRegistryEntry,
 } from "../skydb";
 import { Signature } from "../crypto";
-import { deriveDiscoverableTweak } from "./tweak";
+import { deriveDiscoverableFileTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
 import {
   throwValidationError,
+  validateBoolean,
   validateObject,
   validateOptionalObject,
   validateString,
   validateUint8Array,
 } from "../utils/validation";
 import { decodeSkylink, RAW_SKYLINK_SIZE } from "../skylink/sia";
+import {
+  decryptJSONFile,
+  deriveEncryptedFileKeyEntropy,
+  deriveEncryptedFileTweak,
+  EncryptedJSONResponse,
+  ENCRYPTED_JSON_RESPONSE_VERSION,
+  encryptJSONFile,
+} from "./encrypted_files";
 
 export const mySkyDomain = "skynet-mysky.hns";
 export const mySkyDevDomain = "skynet-mysky-dev.hns";
@@ -152,9 +156,10 @@ export class MySky {
   }
 
   async checkLogin(): Promise<boolean> {
-    const [seedFound, permissionsResponse]: [boolean, CheckPermissionsResponse] = await this.connector.connection
-      .remoteHandle()
-      .call("checkLogin", this.pendingPermissions);
+    const [seedFound, permissionsResponse]: [
+      boolean,
+      CheckPermissionsResponse
+    ] = await this.connector.connection.remoteHandle().call("checkLogin", this.pendingPermissions);
 
     // Save granted and failed permissions.
     const { grantedPermissions, failedPermissions } = permissionsResponse;
@@ -223,9 +228,10 @@ export class MySky {
         // Send the UI the list of required permissions.
 
         // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
-        const [seedFoundResponse, permissionsResponse]: [boolean, CheckPermissionsResponse] = await uiConnection
-          .remoteHandle()
-          .call("requestLoginAccess", this.pendingPermissions);
+        const [seedFoundResponse, permissionsResponse]: [
+          boolean,
+          CheckPermissionsResponse
+        ] = await uiConnection.remoteHandle().call("requestLoginAccess", this.pendingPermissions);
         seedFound = seedFoundResponse;
 
         // Save failed permissions.
@@ -284,7 +290,7 @@ export class MySky {
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     return await this.connector.client.db.getJSON(publicKey, dataKey, opts);
@@ -301,7 +307,7 @@ export class MySky {
     validateString("path", path, "parameter");
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     const opts = defaultGetEntryOptions;
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
@@ -328,7 +334,7 @@ export class MySky {
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const [entry, dataLink] = await getOrCreateRegistryEntry(this.connector.client, publicKey, dataKey, json, opts);
@@ -361,7 +367,7 @@ export class MySky {
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
@@ -398,7 +404,7 @@ export class MySky {
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
@@ -434,7 +440,7 @@ export class MySky {
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const { entry } = await this.connector.client.registry.getEntry(publicKey, dataKey, opts);
@@ -456,7 +462,7 @@ export class MySky {
   async setEntryData(path: string, data: Uint8Array, customOptions?: CustomSetJSONOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
     validateUint8Array("data", data, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
 
     if (data.length > MAX_ENTRY_LENGTH) {
       throwValidationError(
@@ -474,7 +480,7 @@ export class MySky {
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
@@ -486,6 +492,103 @@ export class MySky {
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: entry.data };
+  }
+
+  // ===============
+  // Encrypted Files
+  // ===============
+
+  /**
+   * Lets you get the share-able path seed, which can be passed to
+   * file.getEncryptedJSON. Requires read permission on the path.
+   *
+   * @param path - The given path.
+   * @param isDirectory - Whether the path is a directory.
+   * @returns - The seed for the path.
+   */
+  async getEncryptedFileSeed(path: string, isDirectory: boolean): Promise<string> {
+    validateString("path", path, "parameter");
+    validateBoolean("isDirectory", isDirectory, "parameter");
+
+    return await this.connector.connection.remoteHandle().call("getEncryptedFileSeed", path, isDirectory);
+  }
+
+  /**
+   * Gets Encrypted JSON at the given path through MySky, if the user has given Read permissions to do so.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An object containing the decrypted json data.
+   */
+  async getEncryptedJSON(path: string, customOptions?: CustomGetJSONOptions): Promise<EncryptedJSONResponse> {
+    validateString("path", path, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+
+    const opts = {
+      ...defaultGetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    // Call MySky which checks for read permissions on the path.
+    const publicKey = await this.userID();
+    const pathSeed = await this.getEncryptedFileSeed(path, false);
+    const dataKey = deriveEncryptedFileTweak(pathSeed);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
+
+    const { data } = await this.connector.client.db.getRawBytes(publicKey, dataKey, opts);
+    if (data === null) {
+      return { data: null };
+    }
+    const { _data: json } = decryptJSONFile(data, encryptionKey);
+
+    return { data: json };
+  }
+
+  /**
+   * Sets Encrypted JSON at the given path through MySky, if the user has given Write permissions to do so.
+   *
+   * @param path - The data path.
+   * @param json - The json to encrypt and set.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An object containing the original json data.
+   */
+  async setEncryptedJSON(
+    path: string,
+    json: JsonData,
+    customOptions?: CustomSetJSONOptions
+  ): Promise<EncryptedJSONResponse> {
+    validateString("path", path, "parameter");
+    validateObject("json", json, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+
+    const opts = {
+      ...defaultSetJSONOptions,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    // Call MySky which checks for read permissions on the path.
+    const publicKey = await this.userID();
+    const pathSeed = await this.getEncryptedFileSeed(path, false);
+    const dataKey = deriveEncryptedFileTweak(pathSeed);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
+
+    // Pad and encrypt json file.
+    const fullData = { _data: json, _v: ENCRYPTED_JSON_RESPONSE_VERSION };
+    const data = encryptJSONFile(fullData, encryptionKey);
+
+    const entry = await getOrCreateRawBytesRegistryEntry(this.connector.client, publicKey, dataKey, data, opts);
+
+    // Call MySky which checks for write permissions on the path.
+    const signature = await this.signEncryptedRegistryEntry(entry, path);
+
+    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+
+    return { data: json };
   }
 
   // ================
@@ -554,5 +657,9 @@ export class MySky {
 
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
     return await this.connector.connection.remoteHandle().call("signRegistryEntry", entry, path);
+  }
+
+  protected async signEncryptedRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
+    return await this.connector.connection.remoteHandle().call("signEncryptedRegistryEntry", entry, path);
   }
 }

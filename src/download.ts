@@ -1,4 +1,4 @@
-import { AxiosResponse } from "axios";
+import { AxiosResponse, ResponseType } from "axios";
 import { SkynetClient } from "./client";
 
 import { JsonData } from "./skydb";
@@ -16,6 +16,7 @@ import { throwValidationError, validateObject, validateOptionalObject, validateS
  * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
  * @property [path] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
  * @property [range] - The Range request header to set for the download. Not applicable for in-borwser downloads.
+ * @property [responseType] - The response type.
  * @property [query] - A query object to convert to a query parameter string and append to the URL.
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
  */
@@ -24,6 +25,7 @@ export type CustomDownloadOptions = BaseCustomOptions & {
   download?: boolean;
   path?: string;
   range?: string;
+  responseType?: ResponseType;
   query?: Record<string, unknown>;
   subdomain?: boolean;
 };
@@ -92,6 +94,7 @@ export const defaultDownloadOptions = {
   download: false,
   path: undefined,
   range: undefined,
+  responseType: undefined,
   query: undefined,
   subdomain: false,
 };

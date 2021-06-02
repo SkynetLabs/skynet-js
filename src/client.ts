@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosResponse, ResponseType } from "axios";
 import type { Method } from "axios";
 import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
 import {
@@ -16,7 +16,7 @@ import {
   resolveHns,
 } from "./download";
 import { getEntryData, getEntryLink as fileGetEntryLink, getJSON as fileGetJSON } from "./file";
-import { deleteJSON, getJSON, setJSON, setDataLink } from "./skydb";
+import { deleteJSON, getJSON, setJSON, setDataLink, getRawBytes } from "./skydb";
 import { getEntry, getEntryUrl, getEntryLink, setEntry, postSignedEntry } from "./registry";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
@@ -49,6 +49,7 @@ export type CustomClientOptions = {
  * @property [timeout] - Request timeout. May be deprecated.
  * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
  * @property [headers] - Any request headers to set.
+ * @property [responseType] - The response type.
  * @property [transformRequest] - A function that allows manually transforming the request.
  * @property [transformResponse] - A function that allows manually transforming the response.
  */
@@ -61,6 +62,7 @@ export type RequestConfig = CustomClientOptions & {
   timeout?: number; // TODO: remove
   extraPath?: string;
   headers?: Record<string, unknown>;
+  responseType?: ResponseType;
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;
 };
@@ -123,6 +125,7 @@ export class SkynetClient {
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
     setDataLink: setDataLink.bind(this),
+    getRawBytes: getRawBytes.bind(this),
   };
 
   // SkyDB helpers
@@ -132,7 +135,6 @@ export class SkynetClient {
     getEntryUrl: getEntryUrl.bind(this),
     getEntryLink: getEntryLink.bind(this),
     setEntry: setEntry.bind(this),
-
     postSignedEntry: postSignedEntry.bind(this),
   };
 
@@ -254,6 +256,7 @@ export class SkynetClient {
       headers,
       auth,
       onUploadProgress,
+      responseType: config.responseType,
       transformRequest: config.transformRequest,
       transformResponse: config.transformResponse,
 

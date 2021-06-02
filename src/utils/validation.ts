@@ -15,6 +15,20 @@ export function validateBigint(name: string, value: unknown, valueKind: string):
 }
 
 /**
+ * Validates the given value as a boolean.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @throws - Will throw if not a valid boolean.
+ */
+export function validateBoolean(name: string, value: unknown, valueKind: string): void {
+  if (typeof value !== "boolean") {
+    throwValidationError(name, value, valueKind, "type 'boolean'");
+  }
+}
+
+/**
  * Validates the given value as an object.
  *
  * @param name - The name of the value.
@@ -161,5 +175,5 @@ export function validateUint8ArrayLen(name: string, value: unknown, valueKind: s
  * @throws - Will always throw.
  */
 export function throwValidationError(name: string, value: unknown, valueKind: string, expected: string): void {
-  throw new Error(`Expected ${valueKind} '${name}' to be ${expected}, was '${value}'`);
+  throw new Error(`Expected ${valueKind} '${name}' to be ${expected}, was '${value}' (type '${typeof value}')`);
 }
