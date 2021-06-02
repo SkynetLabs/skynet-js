@@ -2,6 +2,7 @@ import {
   validateBigint,
   validateNumber,
   validateObject,
+  validateString,
   validateUint8Array,
   validateUint8ArrayLen,
 } from "./validation";
@@ -26,6 +27,14 @@ describe("validateObject", () => {
   it("validateObject should catch null input", () => {
     expect(() => validateObject("test", null, "parameter")).toThrowError(
       "Expected parameter 'test' to be non-null, was 'null'"
+    );
+  });
+});
+
+describe("validateString", () => {
+  it("validateString should catch undefined input", () => {
+    expect(() => validateString("test", undefined, "parameter")).toThrowError(
+      "Expected parameter 'test' to be type 'string', was 'undefined'"
     );
   });
 });

@@ -423,7 +423,7 @@ export class MySky {
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - The entry data.
    */
-  async getEntryData(path: string, customOptions: CustomGetEntryOptions): Promise<EntryData> {
+  async getEntryData(path: string, customOptions?: CustomGetEntryOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
 
@@ -453,7 +453,7 @@ export class MySky {
    * @returns - The entry data.
    * @throws - Will throw if the length of the data is > 70 bytes.
    */
-  async setEntryData(path: string, data: Uint8Array, customOptions: CustomSetEntryOptions): Promise<EntryData> {
+  async setEntryData(path: string, data: Uint8Array, customOptions?: CustomSetJSONOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
     validateUint8Array("data", data, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
@@ -468,7 +468,7 @@ export class MySky {
     }
 
     const opts = {
-      ...defaultSetEntryOptions,
+      ...defaultSetJSONOptions,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
