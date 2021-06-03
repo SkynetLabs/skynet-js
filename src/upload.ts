@@ -17,7 +17,7 @@ import { toHexString, trimSuffix } from "./utils/string";
 import { SiaSkylink } from "./skylink/sia";
 
 /**
- * The tus chunk size is 4MiB * dataPieces - encryptionOverhead, set in skyd.
+ * The tus chunk size is (4MiB - encryptionOverhead) * dataPieces, set in skyd.
  */
 const TUS_CHUNK_SIZE = (1 << 22) * 10;
 
