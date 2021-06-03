@@ -381,8 +381,8 @@ export async function postSignedEntry(
   customOptions?: CustomSetEntryOptions
 ): Promise<void> {
   validateHexString("publicKey", publicKey, "parameter");
-  // TODO: Validate entry and signature
-  validateString("entry.dataKey", entry.dataKey, "parameter");
+  validateRegistryEntry("entry", entry, "parameter");
+  validateUint8Array("signature", signature, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
 
   const opts = {
@@ -428,20 +428,6 @@ export async function postSignedEntry(
 }
 
 /**
- * Validates the given registry entry.
- *
- * @param name - The name of the value.
- * @param value - The actual value.
- * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
- */
-export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
-  validateObject(name, value, valueKind);
-  validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
-  validateUint8Array(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
-  validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
-}
-
-/**
  * Handles error responses returned in getEntry.
  *
  * @param err - The Axios error.
@@ -463,6 +449,20 @@ function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
   }
 
   throw err;
+}
+
+/**
+ * Validates the given registry entry.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ */
+export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
+  validateObject(name, value, valueKind);
+  validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
+  validateUint8Array(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
+  validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
 }
 
 /**
