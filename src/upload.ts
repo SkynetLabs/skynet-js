@@ -230,8 +230,7 @@ export async function uploadLargeFileRequest(
   file: File,
   customOptions?: CustomUploadOptions
 ): Promise<AxiosResponse> {
-  // TODO: Accept Buffer in Node?
-  // validateFile("file", file, "parameter");
+  validateFile("file", file, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
 
   const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
@@ -240,9 +239,8 @@ export async function uploadLargeFileRequest(
   const url = await buildRequestUrl(this, opts.endpointLargeUpload);
   const headers = buildRequestHeaders(undefined, opts.customUserAgent, opts.customCookie);
 
-  // file = ensureFileObjectConsistency(file);
-  // let filename = file.name;
-  let filename = "asdf";
+  file = ensureFileObjectConsistency(file);
+  let filename = file.name;
   if (opts.customFilename) {
     filename = opts.customFilename;
   }
@@ -265,8 +263,7 @@ export async function uploadLargeFileRequest(
       retryDelays: opts.retryDelays,
       metadata: {
         filename,
-        // filetype: file.type,
-        filetype: "application/plain",
+        filetype: file.type,
       },
       headers,
       onProgress,

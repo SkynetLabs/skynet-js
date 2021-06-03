@@ -259,6 +259,16 @@ export class SkynetClient {
   }
 }
 
+/**
+ * Helper function that builds the request URL.
+ *
+ * @param client - The Skynet client.
+ * @param endpointPath - The endpoint to contact.
+ * @param [url] - The base URL to use, instead of the portal URL.
+ * @param [extraPath] - An optional path to append to the URL.
+ * @param [query] - Optional query parameters to append to the URL.
+ * @returns - The built URL.
+ */
 export async function buildRequestUrl(
   client: SkynetClient,
   endpointPath: string,
@@ -280,6 +290,14 @@ export async function buildRequestUrl(
 
 type Headers = { [key: string]: string };
 
+/**
+ * Helper function that builds the request headers.
+ *
+ * @param [headers] - Any base headers.
+ * @param [customUserAgent] - A custom user agent to set.
+ * @param [customCookie] - A custom cookie.
+ * @returns - The built headers.
+ */
 export function buildRequestHeaders(headers?: Headers, customUserAgent?: string, customCookie?: string): Headers {
   if (!headers) {
     headers = {};
