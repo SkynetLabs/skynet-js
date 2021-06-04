@@ -80,7 +80,6 @@ export type JSONResponse = {
 
 export type RawBytesResponse = {
   data: Uint8Array | null;
-  dataLink: string | null;
 };
 
 // ====
@@ -297,7 +296,7 @@ export async function setDataLink(
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned bytes and data link.
+ * @returns - The returned bytes.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
 // TODO: Should we expose this in the API?
@@ -321,7 +320,7 @@ export async function getRawBytes(
   const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
   const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
-    return { data: null, dataLink: null };
+    return { data: null };
   }
 
   // Determine the data link.
@@ -340,14 +339,14 @@ export async function getRawBytes(
 
   // If a cached data link is provided and the data link hasn't changed, return.
   if (opts.cachedDataLink && rawDataLink === parseSkylink(opts.cachedDataLink)) {
-    return { data: null, dataLink };
+    return { data: null };
   }
 
   // Download the data in the returned data link.
   const downloadOpts = { ...extractOptions(opts, defaultDownloadOptions), responseType: "arraybuffer" as ResponseType };
   const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
 
-  return { data: new Uint8Array(buffer), dataLink };
+  return { data: new Uint8Array(buffer) };
 }
 
 /**
