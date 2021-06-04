@@ -88,6 +88,13 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData
   return { _data: json, _v: metadata.version };
 }
 
+/**
+ * Encrypts the given JSON data and metadata.
+ *
+ * @param fullData - The given JSON data and metadata.
+ * @param key - The encryption key.
+ * @returns - The encrypted data.
+ */
 export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8Array {
   // Stringify the json and convert to bytes.
   let data = stringToUint8ArrayUtf8(JSON.stringify(fullData));
@@ -111,6 +118,12 @@ export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8A
   return new Uint8Array([...nonce, ...encryptedBytes]);
 }
 
+/**
+ * Derives key entropy for the given path seed.
+ *
+ * @param pathSeed - The given path seed.
+ * @returns - The key entropy.
+ */
 export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
   const bytes = new Uint8Array([...sha512("encryption"), ...sha512(pathSeed)]);
   const hashBytes = sha512(bytes);
@@ -118,6 +131,12 @@ export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
   return hashBytes.slice(0, ENCRYPTION_KEY_LENGTH);
 }
 
+/**
+ * Derives the encrypted file tweak for the given path seed.
+ *
+ * @param pathSeed - the given path seed.
+ * @returns - The encrypted file tweak.
+ */
 export function deriveEncryptedFileTweak(pathSeed: string): string {
   let hashBytes = sha512(new Uint8Array([...sha512("encrypted filesystem tweak"), ...sha512(pathSeed)]));
   // Truncate the hash or it will be rejected in skyd.
@@ -129,6 +148,11 @@ export function deriveEncryptedFileTweak(pathSeed: string): string {
  * Derives the path seed for the relative path, given the starting path seed and
  * whether it is a directory. The path can be an absolute path if the root seed
  * is given.
+ *
+ * @param pathSeed - The given starting path seed.
+ * @param subPath - The path.
+ * @param isDirectory - Whether the path is a directory.
+ * @returns - The path seed for the given path.
  */
 export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
   validateHexString("pathSeed", pathSeed, "parameter");
@@ -154,6 +178,12 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
   return toHexString(pathSeedBytes);
 }
 
+/**
+ * Hashes the derivation path object.
+ *
+ * @param obj - The given object containing the derivation path.
+ * @returns - The hash.
+ */
 function hashDerivationPathObject(obj: DerivationPathObject): Uint8Array {
   const bytes = new Uint8Array([...obj.pathSeed, obj.directory ? 1 : 0, ...stringToUint8ArrayUtf8(obj.name)]);
   return sha512(bytes);
@@ -188,6 +218,10 @@ function hashDerivationPathObject(obj: DerivationPathObject): Uint8Array {
  * are a multiple of 8 KiB, and each 10 after that the multiple doubles. We use
  * this method of padding files to prevent an adversary from guessing the
  * contents or structure of the file based on its size.
+ *
+ * @param initialSize - The size of the file.
+ * @returns - The final size, padded to a pad block.
+ * @throws - Will throw if the size would overflow the JS number type.
  */
 export function padFileSize(initialSize: number): number {
   const kib = 1 << 10;
@@ -207,6 +241,13 @@ export function padFileSize(initialSize: number): number {
   }
 }
 
+/**
+ * Decodes the encoded encrypted file metadata.
+ *
+ * @param bytes - The encoded metadata.
+ * @returns - The decoded metadata.
+ * @throws - Will throw if the given bytes are of the wrong length.
+ */
 function decodeEncryptedFileMetadata(bytes: Uint8Array): EncryptedFileMetadata {
   // Ensure input is correct length.
   validateUint8ArrayLen("bytes", bytes, "encrypted file metadata bytes", ENCRYPTION_METADATA_LENGTH);
@@ -218,6 +259,13 @@ function decodeEncryptedFileMetadata(bytes: Uint8Array): EncryptedFileMetadata {
   };
 }
 
+/**
+ * Encodes the given encrypted file metadata.
+ *
+ * @param metadata - The given metadata.
+ * @returns - The encoded metadata bytes.
+ * @throws - Will throw if the version does not fit in a byte.
+ */
 function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Uint8Array {
   const bytes = new Uint8Array(ENCRYPTION_METADATA_LENGTH);
 

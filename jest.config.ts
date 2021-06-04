@@ -19,10 +19,10 @@ const config: Config.InitialOptions = {
   // An object that configures minimum threshold enforcement for coverage results
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 65,
-      lines: 70,
-      statements: 70,
+      branches: 60,
+      functions: 60,
+      lines: 60,
+      statements: 60,
     },
   },
   // The root directory that Jest should scan for tests and modules within
