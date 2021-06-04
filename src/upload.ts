@@ -6,15 +6,8 @@ import { getFileMimeType } from "./utils/file";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
 import { buildRequestHeaders, buildRequestUrl, SkynetClient } from "./client";
-import {
-  throwValidationError,
-  validateNumber,
-  validateObject,
-  validateOptionalObject,
-  validateString,
-} from "./utils/validation";
-import { toHexString, trimSuffix } from "./utils/string";
-import { SiaSkylink } from "./skylink/sia";
+import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
+import { trimSuffix } from "./utils/string";
 
 /**
  * The tus chunk size is (4MiB - encryptionOverhead) * dataPieces, set in skyd.
@@ -60,13 +53,9 @@ export type CustomUploadOptions = BaseCustomOptions & {
  * The response to an upload request.
  *
  * @property skylink - 46-character skylink.
- * @property merkleroot - The hash that is encoded into the skylink.
- * @property bitfield - The bitfield that gets encoded into the skylink. The bitfield contains a version, an offset and a length in a heavily compressed and optimized format.
  */
 export type UploadRequestResponse = {
   skylink: string;
-  merkleroot: string;
-  bitfield: number;
 };
 
 export const defaultUploadOptions = {
@@ -129,10 +118,8 @@ export async function uploadSmallFile(
   validateUploadResponse(response);
 
   const skylink = formatSkylink(response.data.skylink);
-  const merkleroot = response.data.merkleroot;
-  const bitfield = response.data.bitfield;
 
-  return { skylink, merkleroot, bitfield };
+  return { skylink };
 }
 
 /**
@@ -205,15 +192,10 @@ export async function uploadLargeFile(
   }
   skylink = Buffer.from(skylink, "base64").toString("utf-8");
 
-  // Get the remaining fields.
-  const siaSkylink = SiaSkylink.fromString(skylink);
-  const merkleroot = toHexString(siaSkylink.merkleRoot);
-  const bitfield = siaSkylink.bitfield;
-
   // Format the skylink.
   skylink = formatSkylink(skylink);
 
-  return { skylink, merkleroot, bitfield };
+  return { skylink };
 }
 
 /**
@@ -320,10 +302,8 @@ export async function uploadDirectory(
   validateUploadResponse(response);
 
   const skylink = formatSkylink(response.data.skylink);
-  const merkleroot = response.data.merkleroot;
-  const bitfield = response.data.bitfield;
 
-  return { skylink, merkleroot, bitfield };
+  return { skylink };
 }
 
 /**
@@ -408,8 +388,6 @@ function validateUploadResponse(response: AxiosResponse): void {
     }
 
     validateString("skylink", response.data.skylink, "upload response field");
-    validateString("merkleroot", response.data.merkleroot, "upload response field");
-    validateNumber("bitfield", response.data.bitfield, "upload response field");
   } catch (err) {
     throw new Error(
       `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
