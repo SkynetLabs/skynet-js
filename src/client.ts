@@ -1,6 +1,15 @@
 import axios, { AxiosResponse } from "axios";
 import type { Method } from "axios";
-import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
+
+import {
+  uploadFile,
+  uploadLargeFile,
+  uploadDirectory,
+  uploadDirectoryRequest,
+  uploadSmallFile,
+  uploadSmallFileRequest,
+  uploadLargeFileRequest,
+} from "./upload";
 import {
   downloadFile,
   downloadFileHns,
@@ -46,7 +55,6 @@ export type CustomClientOptions = {
  * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
  * @property [method] - The request method.
  * @property [query] - Query parameters.
- * @property [timeout] - Request timeout. May be deprecated.
  * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
  * @property [headers] - Any request headers to set.
  * @property [transformRequest] - A function that allows manually transforming the request.
@@ -57,10 +65,9 @@ export type RequestConfig = CustomClientOptions & {
   data?: FormData | Record<string, unknown>;
   url?: string;
   method?: Method;
+  headers?: Headers;
   query?: Record<string, unknown>;
-  timeout?: number; // TODO: remove
   extraPath?: string;
-  headers?: Record<string, unknown>;
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;
 };
@@ -83,7 +90,10 @@ export class SkynetClient {
   // Upload
 
   uploadFile = uploadFile;
-  protected uploadFileRequest = uploadFileRequest;
+  protected uploadSmallFile = uploadSmallFile;
+  protected uploadSmallFileRequest = uploadSmallFileRequest;
+  protected uploadLargeFile = uploadLargeFile;
+  protected uploadLargeFileRequest = uploadLargeFileRequest;
   uploadDirectory = uploadDirectory;
   protected uploadDirectoryRequest = uploadDirectoryRequest;
 
@@ -212,28 +222,12 @@ export class SkynetClient {
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
-   * @throws - Will throw if unimplemented options have been passed in.
    */
   protected async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
-    // Build the URL.
-    let url = config.url;
-    if (!url) {
-      const portalUrl = await this.portalUrl();
-      url = makeUrl(portalUrl, config.endpointPath, config.extraPath ?? "");
-    }
-    if (config.query) {
-      url = addUrlQuery(url, config.query);
-    }
+    const url = await buildRequestUrl(this, config.endpointPath, config.url, config.extraPath, config.query);
 
     // Build headers.
-    const headers = { ...config.headers };
-    // Set some headers from common options.
-    if (config.customUserAgent) {
-      headers["User-Agent"] = config.customUserAgent;
-    }
-    if (config.customCookie) {
-      headers["Cookie"] = config.customCookie;
-    }
+    const headers = buildRequestHeaders(config.headers, config.customUserAgent, config.customCookie);
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
@@ -263,4 +257,57 @@ export class SkynetClient {
       withCredentials: true,
     });
   }
+}
+
+/**
+ * Helper function that builds the request URL.
+ *
+ * @param client - The Skynet client.
+ * @param endpointPath - The endpoint to contact.
+ * @param [url] - The base URL to use, instead of the portal URL.
+ * @param [extraPath] - An optional path to append to the URL.
+ * @param [query] - Optional query parameters to append to the URL.
+ * @returns - The built URL.
+ */
+export async function buildRequestUrl(
+  client: SkynetClient,
+  endpointPath: string,
+  url?: string,
+  extraPath?: string,
+  query?: Record<string, unknown>
+): Promise<string> {
+  // Build the URL.
+  if (!url) {
+    const portalUrl = await client.portalUrl();
+    url = makeUrl(portalUrl, endpointPath, extraPath ?? "");
+  }
+  if (query) {
+    url = addUrlQuery(url, query);
+  }
+
+  return url;
+}
+
+type Headers = { [key: string]: string };
+
+/**
+ * Helper function that builds the request headers.
+ *
+ * @param [headers] - Any base headers.
+ * @param [customUserAgent] - A custom user agent to set.
+ * @param [customCookie] - A custom cookie.
+ * @returns - The built headers.
+ */
+export function buildRequestHeaders(headers?: Headers, customUserAgent?: string, customCookie?: string): Headers {
+  if (!headers) {
+    headers = {};
+  }
+  // Set some headers from common options.
+  if (customUserAgent) {
+    headers["User-Agent"] = customUserAgent;
+  }
+  if (customCookie) {
+    headers["Cookie"] = customCookie;
+  }
+  return headers;
 }

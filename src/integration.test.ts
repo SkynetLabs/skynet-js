@@ -311,8 +311,24 @@ describe(`Integration test for portal ${portal}`, () => {
     //   expect(skylink).toEqual(returnedSkylink);
     // });
 
+    it("Custom filenames should take effect", async () => {
+      const customFilename = "asdf!!";
+
+      // Upload the data with a custom filename.
+
+      const file = new File([fileData], dataKey);
+      const { skylink } = await client.uploadFile(file, { customFilename });
+      expect(skylink).not.toEqual("");
+
+      // Get file metadata and check filename.
+
+      const { metadata } = await client.getMetadata(skylink);
+      expect(metadata).toEqual(expect.objectContaining({ filename: customFilename }));
+    });
+
     it("Should get plaintext file contents", async () => {
       // Upload the data to acquire its skylink.
+
       const file = new File([fileData], dataKey, { type: plaintextType });
       const { skylink } = await client.uploadFile(file);
       expect(skylink).not.toEqual("");
