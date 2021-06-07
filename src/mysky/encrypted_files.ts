@@ -37,6 +37,11 @@ const ENCRYPTION_NONCE_LENGTH = 24;
  */
 const ENCRYPTION_OVERHEAD_LENGTH = 16;
 
+/**
+ * The length of the share-able path seed.
+ */
+export const ENCRYPTION_PATH_SEED_LENGTH = 32;
+
 export type EncryptedJSONResponse = {
   data: JsonData | null;
 };
@@ -182,7 +187,8 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
     pathSeedBytes = sha512(bytes);
   }
 
-  return toHexString(pathSeedBytes);
+  // Truncate and hex-encode the final output.
+  return toHexString(pathSeedBytes.slice(0, ENCRYPTION_PATH_SEED_LENGTH));
 }
 
 /**

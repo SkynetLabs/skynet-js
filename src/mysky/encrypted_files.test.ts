@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 
 import {
   decryptJSONFile,
@@ -60,16 +60,12 @@ describe("deriveEncryptedFileSeed", () => {
     // Derive seed for a file.
     const fileSeed = deriveEncryptedFileSeed(pathSeed, subPath, false);
 
-    expect(fileSeed).toEqual(
-      "ace80613629a4049386b3007c17aa9aa2a7f86a7649326c03d56eb40df23593bee4a19fc4dcf5118c2cf85649551a780acf07b7b2d13e098612351e59c472bd0"
-    );
+    expect(fileSeed).toEqual("ace80613629a4049386b3007c17aa9aa2a7f86a7649326c03d56eb40df23593b");
 
     // Derive seed for a directory.
     const directorySeed = deriveEncryptedFileSeed(pathSeed, subPath, true);
 
-    expect(directorySeed).toEqual(
-      "fa91607af922c9e57d794b7980e550fb15db99e62960fb0908b0f5af10afaf16876b7ac314c1815eb1ca0e51701c11489f08002e8ff3d61c7798bed1c7f016fb"
-    );
+    expect(directorySeed).toEqual("fa91607af922c9e57d794b7980e550fb15db99e62960fb0908b0f5af10afaf16");
 
     expect(fileSeed).not.toEqual(directorySeed);
   });
@@ -114,8 +110,6 @@ describe("encryptJSONFile", () => {
   const result = encryptJSONFile(fullData, key);
 
   expect(result.length).toEqual(4096);
-
-  writeFileSync(encryptedTestFilePath, result);
 });
 
 describe("encodeEncryptedFileMetadata", () => {
