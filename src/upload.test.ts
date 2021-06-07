@@ -121,22 +121,6 @@ describe("uploadFile", () => {
     expect(data.skylink).toEqual(sialink);
   });
 
-  it("Should send custom query parameters if provided", async () => {
-    // Create a client with a unique portal so we don't accidentally hit another
-    // request mocker.
-    const portalUrl = "https://portal.net";
-    const url = `${portalUrl}/skynet/skyfile`;
-    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
-    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
-
-    mock.onPost(`${url}?file=test`).replyOnce(200, data);
-
-    const query = { file: "test" };
-    const response = await client.uploadFile(file, { query });
-
-    expect(response.skylink).toEqual(sialink);
-  });
-
   it("Trying to upload with a skykey should throw an error", async () => {
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     await expect(client.uploadFile(file, { skykeyName: "test" })).rejects.toThrow(

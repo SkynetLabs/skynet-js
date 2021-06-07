@@ -31,7 +31,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --ext .ts",
-      "tsc --esModuleInterop --noemit",
+      "tsc --esModuleInterop --downlevelIteration --noemit",
       "prettier --write"
     ],
     "*.{json,yml,md}": [
@@ -65,6 +65,7 @@
     "randombytes": "^2.1.0",
     "sjcl": "^1.0.8",
     "skynet-mysky-utils": "^0.2.2",
+    "tus-js-client": "^2.2.0",
     "tweetnacl": "^1.0.3",
     "url-join": "^4.0.1",
     "url-parse": "^1.5.1"
