@@ -8,6 +8,8 @@ import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, uint8ArrayToStrin
 import {
   validateBoolean,
   validateHexString,
+  validateNumber,
+  validateObject,
   validateString,
   validateUint8Array,
   validateUint8ArrayLen,
@@ -18,7 +20,7 @@ export const ENCRYPTED_JSON_RESPONSE_VERSION = 1;
 /**
  * The length of the encryption key.
  */
-const ENCRYPTION_KEY_LENGTH = 32;
+export const ENCRYPTION_KEY_LENGTH = 32;
 
 /**
  * The length of the metadata stored in encrypted files.
@@ -96,11 +98,16 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData
  * @returns - The encrypted data.
  */
 export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8Array {
+  const { _data, _v } = fullData;
+  validateObject("fullData._data", _data, "parameter");
+  validateNumber("fullData._v", _v, "parameter");
+  validateUint8ArrayLen("key", key, "parameter", ENCRYPTION_KEY_LENGTH);
+
   // Stringify the json and convert to bytes.
-  let data = stringToUint8ArrayUtf8(JSON.stringify(fullData));
+  let data = stringToUint8ArrayUtf8(JSON.stringify(_data));
 
   // Prepend the metadata.
-  const metadata: EncryptedFileMetadata = { version: fullData["_v"] };
+  const metadata: EncryptedFileMetadata = { version: _v };
   const metadataBytes = encodeEncryptedFileMetadata(metadata);
   data = new Uint8Array([...metadataBytes, ...data]);
 
@@ -109,7 +116,7 @@ export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8A
   data = new Uint8Array([...data, ...new Uint8Array(finalSize - data.length)]);
 
   // Generate a random nonce.
-  const nonce = randomBytes(ENCRYPTION_NONCE_LENGTH);
+  const nonce = new Uint8Array(randomBytes(ENCRYPTION_NONCE_LENGTH));
 
   // Encrypt the data.
   const encryptedBytes = secretbox(data, nonce, key);
@@ -266,7 +273,7 @@ function decodeEncryptedFileMetadata(bytes: Uint8Array): EncryptedFileMetadata {
  * @returns - The encoded metadata bytes.
  * @throws - Will throw if the version does not fit in a byte.
  */
-function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Uint8Array {
+export function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Uint8Array {
   const bytes = new Uint8Array(ENCRYPTION_METADATA_LENGTH);
 
   // Encode the version
