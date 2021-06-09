@@ -117,7 +117,8 @@ export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8A
   data = new Uint8Array([...metadataBytes, ...data]);
 
   // Add padding so that the final size will be a padded block. The overhead will be added by encryption and we add the nonce at the end.
-  const finalSize = padFileSize(data.length) - ENCRYPTION_OVERHEAD_LENGTH - ENCRYPTION_NONCE_LENGTH;
+  const totalOverhead = ENCRYPTION_OVERHEAD_LENGTH + ENCRYPTION_NONCE_LENGTH;
+  const finalSize = padFileSize(data.length + totalOverhead) - totalOverhead;
   data = new Uint8Array([...data, ...new Uint8Array(finalSize - data.length)]);
 
   // Generate a random nonce.
