@@ -102,6 +102,26 @@ describe("getJSON", () => {
       `File data for the entry at data key '${dataKey}' is not JSON.`
     );
   });
+
+  it("should throw if the returned _data field in the file data is not JSON", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).reply(200, { _data: "thisistext", _v: 1 }, {});
+
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      "File data '_data' for the entry at data key 'app' is not JSON."
+    );
+  });
+
+  it("should throw if invalid entry data is returned", async () => {
+    const client = new SkynetClient(portalUrl);
+    const mockedFn = jest.fn();
+    mockedFn.mockReturnValueOnce({ entry: { data: new Uint8Array() } });
+    client.registry.getEntry = mockedFn;
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      "Expected returned entry data 'entry.data' to be length 34 bytes, was ''"
+    );
+  });
 });
 
 describe("setJSON", () => {

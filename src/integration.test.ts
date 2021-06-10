@@ -1,4 +1,5 @@
 import { genKeyPairAndSeed, SkynetClient } from "./index";
+import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, trimPrefix } from "./utils/string";
 import { uriSkynetPrefix } from "./utils/url";
 
@@ -13,6 +14,7 @@ declare global {
   namespace jest {
     interface Matchers<R> {
       toEqualPortalUrl(argument: string): R;
+      toEqualUint8Array(argument: Uint8Array): R;
     }
   }
 }
@@ -29,17 +31,47 @@ expect.extend({
     }
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
+
+  // source https://stackoverflow.com/a/60818105/6085242
+  toEqualUint8Array(received: Uint8Array, argument: Uint8Array) {
+    if (received.length !== argument.length) {
+      return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+    }
+    for (let i = 0; i < received.length; i++) {
+      if (received[i] !== argument[i]) {
+        return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+      }
+    }
+    return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
+  },
 });
 
 describe(`Integration test for portal ${portal}`, () => {
   describe("File API integration tests", () => {
-    it("Should get existing File API data", async () => {
-      const userID = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
-      const path = "snew.hns/asdf";
+    const userID = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+    const path = "snew.hns/asdf";
+
+    it("Should get existing File API JSON data", async () => {
       const expected = { name: "testnames" };
 
       const { data: received } = await client.file.getJSON(userID, path);
       expect(received).toEqual(expect.objectContaining(expected));
+    });
+
+    it("Should get existing File API entry data", async () => {
+      const expected = new Uint8Array([
+        65, 65, 67, 116, 77, 77, 114, 101, 122, 76, 56, 82, 71, 102, 105, 98, 104, 67, 53, 79, 98, 120, 48, 83, 102, 69,
+        106, 48, 77, 87, 108, 106, 95, 112, 55, 97, 95, 77, 107, 90, 85, 81, 45, 77, 57, 65,
+      ]);
+
+      const { data: received } = await client.file.getEntryData(userID, path);
+      expect(received).toEqualUint8Array(expected);
+    });
+
+    it("getEntryData should return null for non-existent File API entry data", async () => {
+      const { publicKey: userID } = genKeyPairAndSeed();
+      const { data: received } = await client.file.getEntryData(userID, path);
+      expect(received).toBeNull();
     });
   });
 
@@ -184,6 +216,21 @@ describe(`Integration test for portal ${portal}`, () => {
 
       expect(data2).toEqual(json);
       expect(dataLink2).toBeTruthy();
+    });
+
+    it("Should correctly set a data link", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const dataLink = "AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw";
+      const dataLinkBytes = decodeSkylinkBase64(dataLink);
+
+      await client.db.setDataLink(privateKey, dataKey, dataLink);
+
+      const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+      expect(returnedEntry).not.toBeNull();
+      expect(returnedEntry).toEqual(expect.objectContaining({}));
+
+      // @ts-expect-error TS still thinks returnedEntry can be null
+      expect(returnedEntry.data).toEqualUint8Array(dataLinkBytes);
     });
   });
 

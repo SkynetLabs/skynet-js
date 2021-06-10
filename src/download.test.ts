@@ -57,12 +57,6 @@ describe("downloadFile", () => {
 
     expect(url).toEqual(`${expectedUrl}/dir/test%3Fencoding${attachment}`);
   });
-
-  it("should download with query parameters being appended to the URL", async () => {
-    const url = await client.downloadFile(skylink, { query: { name: "test" } });
-
-    expect(url).toEqual(`${expectedUrl}?name=test&attachment=true`);
-  });
 });
 
 describe("downloadFileHns", () => {
@@ -178,6 +172,14 @@ describe("getMetadata", () => {
 
     await expect(client.getMetadata(`${skylink}/path/file`)).rejects.toThrowError(
       "Skylink string should not contain a path"
+    );
+  });
+
+  it("should throw if no data was returned to getMetadata", async () => {
+    mock.onGet(skylinkUrl).replyOnce(200);
+
+    await expect(client.getMetadata(skylink)).rejects.toThrowError(
+      "Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.data field missing"
     );
   });
 
@@ -344,12 +346,12 @@ describe("resolveHns", () => {
   beforeEach(() => {
     mock = new MockAdapter(axios);
     mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
-    mock.onGet(expectedHnsresUrl).replyOnce(200, { skylink });
   });
 
   it.each(validHnsLinkVariations)(
     "should call axios.get with the portal and hnsres link for %s and return the json body",
     async (hnsLink) => {
+      mock.onGet(expectedHnsresUrl).replyOnce(200, { skylink });
       mock.resetHistory();
 
       const data = await client.resolveHns(hnsLink);
@@ -358,4 +360,20 @@ describe("resolveHns", () => {
       expect(data.skylink).toEqual(skylink);
     }
   );
+
+  it("should throw if no data was returned to resolveHns", async () => {
+    mock.onGet(expectedHnsresUrl).replyOnce(200);
+
+    await expect(client.resolveHns(hnsLink)).rejects.toThrowError(
+      "Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.data field missing"
+    );
+  });
+
+  it("should throw if unexpected data was returned to resolveHns", async () => {
+    mock.onGet(expectedHnsresUrl).replyOnce(200, { foo: "foo" });
+
+    await expect(client.resolveHns(hnsLink)).rejects.toThrowError(
+      "Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected response data object 'response.data' to be object containing skylink or registry field, was '[object Object]'"
+    );
+  });
 });

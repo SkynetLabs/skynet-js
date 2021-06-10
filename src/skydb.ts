@@ -26,10 +26,12 @@ import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
 import {
+  throwValidationError,
   validateHexString,
   validateObject,
   validateOptionalObject,
   validateString,
+  validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
 import { areEqualUint8Arrays } from "./utils/array";
@@ -103,13 +105,11 @@ export async function getJSON(
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return { data: null, dataLink: null };
   }
+  validateUint8Array("entry.data", entry.data, "returned entry data");
 
   // Determine the data link.
   // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  if (typeof entry.data === "string") {
-    throw new Error("Expected returned entry data to be bytes");
-  }
-  let rawDataLink: string;
+  let rawDataLink = "";
   if (entry.data.length === 46) {
     // Legacy data, convert to string.
     rawDataLink = uint8ArrayToStringUtf8(entry.data);
@@ -117,7 +117,7 @@ export async function getJSON(
     // Convert the bytes to a base64 skylink.
     rawDataLink = encodeSkylinkBase64(entry.data);
   } else {
-    throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
+    throwValidationError("entry.data", entry.data, "returned entry data", `length ${RAW_SKYLINK_SIZE} bytes`);
   }
   const dataLink = formatSkylink(rawDataLink);
 

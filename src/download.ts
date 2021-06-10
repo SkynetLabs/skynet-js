@@ -24,7 +24,6 @@ export type CustomDownloadOptions = BaseCustomOptions & {
   download?: boolean;
   path?: string;
   range?: string;
-  query?: Record<string, unknown>;
   subdomain?: boolean;
 };
 
@@ -210,7 +209,7 @@ export function getSkylinkUrlForPortal(
 
   const opts = { ...defaultDownloadOptions, ...customOptions };
 
-  const query = opts.query ?? {};
+  const query: Record<string, unknown> = {};
   if (opts.download) {
     // Set the "attachment" parameter.
     query.attachment = true;
@@ -280,7 +279,7 @@ export async function getHnsUrl(
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 
-  const query = opts.query ?? {};
+  const query: Record<string, unknown> = {};
   if (opts.download) {
     query.attachment = true;
   }
@@ -569,7 +568,7 @@ function validateGetMetadataResponse(response: AxiosResponse): void {
     }
   } catch (err) {
     throw new Error(
-      `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+      `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
     );
   }
 }
@@ -599,7 +598,7 @@ function validateResolveHnsResponse(response: AxiosResponse): void {
     }
   } catch (err) {
     throw new Error(
-      `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+      `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
     );
   }
 }

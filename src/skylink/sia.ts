@@ -18,7 +18,7 @@ export const BASE64_ENCODED_SKYLINK_SIZE = 46;
  * Returned when a string could not be decoded into a Skylink due to it having
  * an incorrect size.
  */
-const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
+export const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
 
 /**
  * The raw size in bytes of the data that gets put into a link.
@@ -228,6 +228,7 @@ export function decodeSkylink(encoded: string): Uint8Array {
   }
 
   // Sanity check the size of the given data.
+  /* istanbul ignore next */
   if (bytes.length != RAW_SKYLINK_SIZE) {
     throw new Error("failed to load skylink data");
   }

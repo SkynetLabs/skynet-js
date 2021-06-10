@@ -26,6 +26,7 @@ export const defaultBaseOptions = {
 export function extractOptions<T extends Record<string, unknown>>(opts: Record<string, unknown>, model: T): T {
   const result: Record<string, unknown> = {};
   for (const property in model) {
+    /* istanbul ignore next */
     if (!Object.prototype.hasOwnProperty.call(model, property)) {
       continue;
     }
