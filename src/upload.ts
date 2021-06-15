@@ -347,7 +347,6 @@ export async function uploadDirectoryRequest(
  *
  * @param file - The input file.
  * @returns - The processed file.
- * @see {@link https://github.com/NebulousLabs/skynet-webportal/issues/290| Related Issue}
  */
 function ensureFileObjectConsistency(file: File): File {
   return new File([file], file.name, { type: getFileMimeType(file) });
