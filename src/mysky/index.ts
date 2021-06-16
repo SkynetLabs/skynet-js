@@ -173,11 +173,13 @@ export class MySky {
   /**
    * Destroys the mysky connection by:
    *
-   * 1. Destroying the connected DACs,
+   * 1. Destroying the connected DACs.
    *
-   * 2. Closing the connection,
+   * 2. Closing the connection.
    *
-   * 3. Closing the child iframe
+   * 3. Closing the child iframe.
+   *
+   * @throws - Will throw if there is an unexpected DOM error.
    */
   async destroy(): Promise<void> {
     // TODO: For all connected dacs, send a destroy call.

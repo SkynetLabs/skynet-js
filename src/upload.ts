@@ -182,15 +182,7 @@ export async function uploadLargeFile(
   validateLargeUploadResponse(response);
 
   // Get the skylink.
-  const metadata = response.headers["upload-metadata"];
-  // Convert the string metadata header into a map.
-  const metadataMap: Map<string, string> = new Map(metadata.split(",").map((pair: string) => pair.split(" ")));
-  let skylink = metadataMap.get("Skylink");
-  // Validate that metadata contains Skylink.
-  if (!skylink) {
-    throw new Error("Response header 'upload-metadata' missing 'Skylink' field");
-  }
-  skylink = Buffer.from(skylink, "base64").toString("utf-8");
+  let skylink = response.headers["skynet-skylink"];
 
   // Format the skylink.
   skylink = formatSkylink(skylink);
@@ -355,7 +347,6 @@ export async function uploadDirectoryRequest(
  *
  * @param file - The input file.
  * @returns - The processed file.
- * @see {@link https://github.com/NebulousLabs/skynet-webportal/issues/290| Related Issue}
  */
 function ensureFileObjectConsistency(file: File): File {
   return new File([file], file.name, { type: getFileMimeType(file) });
@@ -407,8 +398,7 @@ function validateLargeUploadResponse(response: AxiosResponse): void {
       throw new Error("response.headers field missing");
     }
 
-    const metadata = response.headers["upload-metadata"];
-    validateString('response.headers["upload-metadata"]', metadata, "upload response field");
+    validateString('response.headers["skynet-skylink"]', response.headers["skynet-skylink"], "upload response field");
   } catch (err) {
     throw new Error(
       `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`

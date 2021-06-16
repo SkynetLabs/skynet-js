@@ -563,7 +563,10 @@ export async function resolveHns(
 }
 
 /**
- * @param response
+ * Validates the response from getMetadata.
+ *
+ * @param response - The Axios response.
+ * @throws - Will throw if the response does not contain the expected fields.
  */
 function validateGetMetadataResponse(response: AxiosResponse): void {
   try {
@@ -578,7 +581,10 @@ function validateGetMetadataResponse(response: AxiosResponse): void {
 }
 
 /**
- * @param response
+ * Validates the response from resolveHns.
+ *
+ * @param response - The Axios response.
+ * @throws - Will throw if the response contains an unexpected format.
  */
 function validateResolveHnsResponse(response: AxiosResponse): void {
   try {

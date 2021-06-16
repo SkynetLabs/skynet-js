@@ -10,7 +10,7 @@ export const uriHandshakePrefix = "hns://";
 export const uriSkynetPrefix = "sia://";
 
 // TODO: This will be smarter. See
-// https://github.com/NebulousLabs/skynet-docs/issues/21.
+// https://github.com/SkynetLabs/skynet-docs/issues/5.
 /**
  * Returns the default portal URL.
  *
