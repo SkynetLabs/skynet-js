@@ -10,7 +10,7 @@ const BASE32_ENCODING_VARIANT = "RFC4648-HEX";
 /**
  * Decodes the skylink encoded using base32 encoding to bytes.
  *
- * @param s - The encoded skylink.
+ * @param skylink - The encoded skylink.
  * @returns - The decoded bytes.
  */
 export function decodeSkylinkBase32(skylink: string): Uint8Array {
@@ -32,7 +32,7 @@ export function encodeSkylinkBase32(bytes: Uint8Array): string {
 /**
  * Decodes the skylink encoded using base64 raw URL encoding to bytes.
  *
- * @param s - The encoded skylink.
+ * @param skylink - The encoded skylink.
  * @returns - The decoded bytes.
  */
 export function decodeSkylinkBase64(skylink: string): Uint8Array {
