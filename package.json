@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "4.0.8-beta",
+  "version": "4.0.9-beta",
   "description": "Sia Skynet Javascript Client",
   "main": "dist/cjs/index.js",
   "types": "dist/cjs/index.d.ts",
@@ -22,7 +22,7 @@
   "scripts": {
     "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.cjs.json",
     "lint": "yarn lint:tsc && yarn lint:eslint",
-    "lint:eslint": "eslint --ext .ts utils src --max-warnings 30",
+    "lint:eslint": "eslint --ext .ts utils src --max-warnings 0",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",
     "test": "jest --coverage",
@@ -40,7 +40,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NebulousLabs/skynet-js.git"
+    "url": "git+https://github.com/SkynetLabs/skynet-js.git"
   },
   "keywords": [
     "sia",

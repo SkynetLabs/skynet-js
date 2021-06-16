@@ -33,14 +33,32 @@ export class DiscoverableBucketTweak {
   }
 }
 
+/**
+ * Splits the path by forward slashes.
+ *
+ * @param path - The path to split.
+ * @returns - An array of path components.
+ */
 export function splitPath(path: string): Array<string> {
   return path.split("/");
 }
 
+/**
+ * Hashes the path component.
+ *
+ * @param component - The component extracted from the path.
+ * @returns - The hash.
+ */
 export function hashPathComponent(component: string): Uint8Array {
   return hashAll(stringToUint8ArrayUtf8(component));
 }
 
+/**
+ * Derives the discoverable file tweak for the given path.
+ *
+ * @param path - The given path.
+ * @returns - The hex-encoded tweak.
+ */
 export function deriveDiscoverableTweak(path: string): string {
   const dbt = new DiscoverableBucketTweak(path);
   const bytes = dbt.getHash();

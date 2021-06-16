@@ -31,6 +31,7 @@ export async function extractDomain(this: SkynetClient, fullDomain: string): Pro
   return extractDomainForPortal(portalUrl, fullDomain);
 }
 
+/* istanbul ignore next */
 /**
  * Create a new popup window. From SkyID.
  *
@@ -39,8 +40,8 @@ export async function extractDomain(this: SkynetClient, fullDomain: string): Pro
  * @param w - The width of the popup window.
  * @param h - the height of the popup window.
  * @returns - The window.
+ * @throws - Will throw if the window could not be opened.
  */
-/* istanbul ignore next */
 export function popupCenter(url: string, title: string, w: number, h: number): Window {
   url = ensureUrl(url);
 

@@ -4,12 +4,25 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.9-beta]
+
+### Removed
+
+- **[Breaking change]** Removed `merkleRoot` and `bitfield` from upload response.
+
+### Added
+
+- Added support for large file uploads. The tus protocol will be used for files greater than 40MiB in size.
+- Added `convertSkylinkToBase64`.
+- Added `mySky.getEntryData`, `mySky.setEntryData`, and `file.getEntryData`.
+- Added `range` option to download options.
+
 ## [4.0.8-beta]
 
 ### Changed
 
-- **[Breaking change]** - The `sia:` skylink prefix has been changed to `sia://`.
-- **[Breaking change]** - Added missing `sia://` prefixes to the skylinks returned from SkyDB and MySky.
+- **[Breaking change]** The `sia:` skylink prefix has been changed to `sia://`.
+- **[Breaking change]** Added missing `sia://` prefixes to the skylinks returned from SkyDB and MySky.
 - The `resolveHNS` method now works for Handshake domains with `skyns://` HNS entries.
 
 ### Added
