@@ -10,7 +10,7 @@ import {
   SignedRegistryEntry,
   CustomSetEntryOptions,
 } from "./registry";
-import { decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
+import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/url";
 import {
@@ -110,7 +110,7 @@ export async function getJSON(
   // Determine the data link.
   // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
   let rawDataLink = "";
-  if (entry.data.length === 46) {
+  if (entry.data.length === BASE64_ENCODED_SKYLINK_SIZE) {
     // Legacy data, convert to string.
     rawDataLink = uint8ArrayToStringUtf8(entry.data);
   } else if (entry.data.length === RAW_SKYLINK_SIZE) {

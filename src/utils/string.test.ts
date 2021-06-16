@@ -62,7 +62,7 @@ describe("hexToUint8Array", () => {
 
   it.each(invalidHexStrings)("should throw on invalid input '%s'", (str) => {
     expect(() => hexToUint8Array(str)).toThrowError(
-      `Expected parameter 'str' to be a hex-encoded string, was '${str}'`
+      `Expected parameter 'str' to be a hex-encoded string, was type 'string', value '${str}'`
     );
   });
 });

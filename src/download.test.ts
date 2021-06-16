@@ -373,7 +373,7 @@ describe("resolveHns", () => {
     mock.onGet(expectedHnsresUrl).replyOnce(200, { foo: "foo" });
 
     await expect(client.resolveHns(hnsLink)).rejects.toThrowError(
-      "Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected response data object 'response.data' to be object containing skylink or registry field, was '[object Object]'"
+      "Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected response data object 'response.data' to be object containing skylink or registry field, was type 'object', value '[object Object]'"
     );
   });
 });

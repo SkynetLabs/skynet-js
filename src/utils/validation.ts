@@ -161,5 +161,13 @@ export function validateUint8ArrayLen(name: string, value: unknown, valueKind: s
  * @throws - Will always throw.
  */
 export function throwValidationError(name: string, value: unknown, valueKind: string, expected: string): void {
-  throw new Error(`Expected ${valueKind} '${name}' to be ${expected}, was '${value}'`);
+  let actualValue: string;
+  if (value === undefined) {
+    actualValue = "type 'undefined'";
+  } else if (value === null) {
+    actualValue = "type 'null'";
+  } else {
+    actualValue = `type '${typeof value}', value '${value}'`;
+  }
+  throw new Error(`Expected ${valueKind} '${name}' to be ${expected}, was ${actualValue}`);
 }

@@ -115,7 +115,7 @@ describe("makeUrl", () => {
   });
 
   it("Should throw if no args provided", () => {
-    expect(() => makeUrl()).toThrowError("Expected parameter 'args' to be non-empty, was ''");
+    expect(() => makeUrl()).toThrowError("Expected parameter 'args' to be non-empty, was type 'object', value ''");
   });
 });
 

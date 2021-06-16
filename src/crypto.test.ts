@@ -24,6 +24,8 @@ describe("genKeyPairAndSeed", () => {
   it("should create a seed of the given length, hex-encoded", () => {
     const length = 8;
     const { seed } = genKeyPairAndSeed(length);
+    // The length is specified in bytes and seed.length gives us the length of
+    // the string representation of the seed bytes, which is hex encoded.
     expect(seed.length).toEqual(length * 2);
   });
 });

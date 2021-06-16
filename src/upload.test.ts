@@ -139,7 +139,7 @@ describe("uploadFile", () => {
 
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
     await expect(client.uploadFile("some/path/file.json")).rejects.toThrowError(
-      "Expected parameter 'file' to be type 'File', was 'some/path/file.json'"
+      "Expected parameter 'file' to be type 'File', was type 'string', value 'some/path/file.json'"
     );
   });
 
@@ -148,7 +148,7 @@ describe("uploadFile", () => {
     mock.onPost(url).replyOnce(200, {});
 
     await expect(client.uploadFile(file)).rejects.toThrowError(
-      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected upload response field 'skylink' to be type 'string', was 'undefined'"
+      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected upload response field 'skylink' to be type 'string', was type 'undefined'"
     );
   });
 

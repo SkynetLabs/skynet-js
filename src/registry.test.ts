@@ -62,7 +62,7 @@ describe("getEntry", () => {
 
   it("Should throw an error if the public key is not hex-encoded", async () => {
     await expect(client.registry.getEntry("foo", dataKey)).rejects.toThrowError(
-      "Expected parameter 'publicKey' to be a hex-encoded string with a valid prefix, was 'foo'"
+      "Expected parameter 'publicKey' to be a hex-encoded string with a valid prefix, was type 'string', value 'foo'"
     );
   });
 
@@ -119,14 +119,14 @@ describe("setEntry", () => {
   it("Should throw an error if the private key is not hex-encoded", async () => {
     // @ts-expect-error We pass an invalid private key on purpose.
     await expect(client.registry.setEntry("foo", {})).rejects.toThrowError(
-      "Expected parameter 'privateKey' to be a hex-encoded string, was 'foo'"
+      "Expected parameter 'privateKey' to be a hex-encoded string, was type 'string', value 'foo'"
     );
   });
 
   it("Should throw an error if the entry is not an object", async () => {
     // @ts-expect-error We do not pass an entry on purpose.
     await expect(client.registry.setEntry(privateKey)).rejects.toThrowError(
-      "Expected parameter 'entry' to be type 'object', was 'undefined'"
+      "Expected parameter 'entry' to be type 'object', was type 'undefined'"
     );
   });
 });
@@ -135,7 +135,7 @@ describe("signEntry", () => {
   it("Should throw if we try to sign an entry with a prehashed data key that is not in hex format", async () => {
     const entry = { data: stringToUint8ArrayUtf8("test"), dataKey: "test", revision: BigInt(0) };
     await expect(signEntry(privateKey, entry, true)).rejects.toThrowError(
-      "Expected parameter 'str' to be a hex-encoded string, was 'test'"
+      "Expected parameter 'str' to be a hex-encoded string, was type 'string', value 'test'"
     );
   });
 });
