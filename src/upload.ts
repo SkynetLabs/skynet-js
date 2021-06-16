@@ -1,5 +1,4 @@
 import { AxiosResponse } from "axios";
-import { Buffer } from "buffer";
 import { Upload } from "tus-js-client";
 
 import { getFileMimeType } from "./utils/file";
@@ -159,6 +158,7 @@ export async function uploadSmallFileRequest(
   return response;
 }
 
+/* istanbul ignore next */
 /**
  * Uploads a large file to Skynet using tus.
  *
@@ -169,7 +169,6 @@ export async function uploadSmallFileRequest(
  * @returns - The returned skylink.
  * @throws - Will throw if the request is successful but the upload response does not contain a complete response.
  */
-/* istanbul ignore next */
 export async function uploadLargeFile(
   this: SkynetClient,
   file: File,
@@ -191,6 +190,7 @@ export async function uploadLargeFile(
   return { skylink };
 }
 
+/* istanbul ignore next */
 /**
  * Makes a request to upload a file to Skynet.
  *
@@ -200,7 +200,6 @@ export async function uploadLargeFile(
  * @param [customOptions.endpointLargeUpload="/skynet/tus"] - The relative URL path of the portal endpoint to contact.
  * @returns - The upload response.
  */
-/* istanbul ignore next */
 export async function uploadLargeFileRequest(
   this: SkynetClient,
   file: File,
@@ -388,13 +387,13 @@ function validateUploadResponse(response: AxiosResponse): void {
   }
 }
 
+/* istanbul ignore next */
 /**
  * Validates the large upload response.
  *
  * @param response - The upload response.
  * @throws - Will throw if not a valid upload response.
  */
-/* istanbul ignore next */
 function validateLargeUploadResponse(response: AxiosResponse): void {
   try {
     if (!response.headers) {
