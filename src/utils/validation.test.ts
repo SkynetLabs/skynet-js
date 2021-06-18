@@ -3,6 +3,7 @@ import {
   validateNumber,
   validateObject,
   validateString,
+  validateStringLen,
   validateUint8Array,
   validateUint8ArrayLen,
 } from "./validation";
@@ -35,6 +36,14 @@ describe("validateString", () => {
   it("validateString should catch undefined input", () => {
     expect(() => validateString("test", undefined, "parameter")).toThrowError(
       "Expected parameter 'test' to be type 'string', was type 'undefined'"
+    );
+  });
+});
+
+describe("validateStringLen", () => {
+  it("Should reject string input of wrong length", () => {
+    expect(() => validateStringLen("test", "hello", "parameter", 4)).toThrowError(
+      "Expected parameter 'test' to be type 'string' of length 4, was length 5, was type 'string', value 'hello'"
     );
   });
 });

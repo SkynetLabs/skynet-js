@@ -1,6 +1,7 @@
+import { hashDataKey } from "./crypto";
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { decodeSkylinkBase64 } from "./utils/encoding";
-import { stringToUint8ArrayUtf8, trimPrefix } from "./utils/string";
+import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
 import { uriSkynetPrefix } from "./utils/url";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
@@ -231,6 +232,21 @@ describe(`Integration test for portal ${portal}`, () => {
 
       // @ts-expect-error TS still thinks returnedEntry can be null
       expect(returnedEntry.data).toEqualUint8Array(dataLinkBytes);
+    });
+
+    it("Should correctly handle the hashedDataKeyHex option", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const dataKey = "test";
+      const hashedDataKeyHex = toHexString(hashDataKey(dataKey));
+      const json = { message: "foo" };
+
+      // Set JSON using the hashed data key hex.
+      await client.db.setJSON(privateKey, hashedDataKeyHex, json, { hashedDataKeyHex: true });
+
+      // Get JSON using the original data key.
+      const { data } = await client.db.getJSON(publicKey, dataKey, { hashedDataKeyHex: false });
+
+      expect(data).toEqual(json);
     });
   });
 

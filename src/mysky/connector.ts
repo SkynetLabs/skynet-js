@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { Connection, ParentHandshake, WindowMessenger } from "post-me";
 import { createIframe, defaultHandshakeAttemptsInterval, defaultHandshakeMaxAttempts } from "skynet-mysky-utils";
 
