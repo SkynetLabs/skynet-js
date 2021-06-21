@@ -21,7 +21,6 @@ import {
   uint8ArrayToStringUtf8,
 } from "./utils/string";
 import { formatSkylink } from "./skylink/format";
-import { parseSkylink } from "./skylink/parse";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
@@ -29,6 +28,7 @@ import {
   validateHexString,
   validateObject,
   validateOptionalObject,
+  validateSkylinkString,
   validateString,
   validateUint8ArrayLen,
 } from "./utils/validation";
@@ -79,7 +79,7 @@ export type JSONResponse = {
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
 export async function getJSON(
@@ -122,8 +122,11 @@ export async function getJSON(
   const dataLink = formatSkylink(rawDataLink);
 
   // If a cached data link is provided and the data link hasn't changed, return.
-  if (opts.cachedDataLink && rawDataLink === parseSkylink(opts.cachedDataLink)) {
-    return { data: null, dataLink };
+  if (opts.cachedDataLink) {
+    const cachedDataLink = validateSkylinkString("opts.cachedDataLink", opts.cachedDataLink, "optional parameter");
+    if (rawDataLink === cachedDataLink) {
+      return { data: null, dataLink };
+    }
   }
 
   // Download the data in the returned data link.
@@ -154,7 +157,7 @@ export async function getJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setJSON(
