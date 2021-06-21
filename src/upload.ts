@@ -1,5 +1,4 @@
 import { AxiosResponse } from "axios";
-import { Buffer } from "buffer";
 import { Upload } from "tus-js-client";
 
 import { getFileMimeType } from "./utils/file";
