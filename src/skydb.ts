@@ -81,7 +81,7 @@ export type JSONResponse = {
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
 export async function getJSON(
@@ -154,7 +154,7 @@ export async function getJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setJSON(
