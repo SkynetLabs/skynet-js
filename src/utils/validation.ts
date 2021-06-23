@@ -101,7 +101,7 @@ export function validateStringLen(name: string, value: unknown, valueKind: strin
   validateString(name, value, valueKind);
   const actualLen = (value as string).length;
   if (actualLen !== len) {
-    throwValidationError(name, value, valueKind, `'string' of length ${len}, was length ${actualLen}`);
+    throwValidationError(name, value, valueKind, `type 'string' of length ${len}, was length ${actualLen}`);
   }
 }
 
@@ -130,7 +130,7 @@ export function validateHexString(name: string, value: unknown, valueKind: strin
  */
 export function validateUint8Array(name: string, value: unknown, valueKind: string): void {
   if (!(value instanceof Uint8Array)) {
-    throwValidationError(name, value, valueKind, "'Uint8Array'");
+    throwValidationError(name, value, valueKind, "type 'Uint8Array'");
   }
 }
 
@@ -147,7 +147,7 @@ export function validateUint8ArrayLen(name: string, value: unknown, valueKind: s
   validateUint8Array(name, value, valueKind);
   const actualLen = (value as Uint8Array).length;
   if (actualLen !== len) {
-    throwValidationError(name, value, valueKind, `'Uint8Array' of length ${len}, was length ${actualLen}`);
+    throwValidationError(name, value, valueKind, `type 'Uint8Array' of length ${len}, was length ${actualLen}`);
   }
 }
 
@@ -161,5 +161,13 @@ export function validateUint8ArrayLen(name: string, value: unknown, valueKind: s
  * @throws - Will always throw.
  */
 export function throwValidationError(name: string, value: unknown, valueKind: string, expected: string): void {
-  throw new Error(`Expected ${valueKind} '${name}' to be ${expected}, was '${value}'`);
+  let actualValue: string;
+  if (value === undefined) {
+    actualValue = "type 'undefined'";
+  } else if (value === null) {
+    actualValue = "type 'null'";
+  } else {
+    actualValue = `type '${typeof value}', value '${value}'`;
+  }
+  throw new Error(`Expected ${valueKind} '${name}' to be ${expected}, was ${actualValue}`);
 }

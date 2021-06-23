@@ -89,8 +89,8 @@ describe("uploadFile", () => {
     expect(data.skylink).toEqual(sialink);
   });
 
-  it("should send portal's custom user agent if defined", async () => {
-    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent" });
+  it("should send portal's custom user agent and cookie if defined", async () => {
+    const client = new SkynetClient(portalUrl, { customUserAgent: "Sia-Agent", customCookie: "foo" });
 
     const data = await client.uploadFile(file);
 
@@ -98,6 +98,7 @@ describe("uploadFile", () => {
     const request = mock.history.post[0];
 
     expect(request.headers["User-Agent"]).toEqual("Sia-Agent");
+    expect(request.headers["Cookie"]).toEqual("foo");
     // Check that other headers weren't altered.
     expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);
@@ -133,12 +134,30 @@ describe("uploadFile", () => {
     );
   });
 
+  it("should throw if 'file' input is not a file", async () => {
+    mock.resetHandlers();
+
+    // @ts-expect-error we only check this use case in case someone ignores typescript typing
+    await expect(client.uploadFile("some/path/file.json")).rejects.toThrowError(
+      "Expected parameter 'file' to be type 'File', was type 'string', value 'some/path/file.json'"
+    );
+  });
+
   it("should throw if a skylink was not returned", async () => {
     mock.resetHandlers();
     mock.onPost(url).replyOnce(200, {});
 
     await expect(client.uploadFile(file)).rejects.toThrowError(
-      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists."
+      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected upload response field 'skylink' to be type 'string', was type 'undefined'"
+    );
+  });
+
+  it("should throw if no data was returned to uploadFile", async () => {
+    mock.resetHandlers();
+    mock.onPost(url).replyOnce(200);
+
+    await expect(client.uploadFile(file)).rejects.toThrowError(
+      "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.data field missing"
     );
   });
 });

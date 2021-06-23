@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 export { SkynetClient } from "./client";
 export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";

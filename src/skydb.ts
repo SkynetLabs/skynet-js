@@ -10,7 +10,7 @@ import {
   SignedRegistryEntry,
   CustomSetEntryOptions,
 } from "./registry";
-import { decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
+import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { MAX_REVISION } from "./utils/number";
 import { uriSkynetPrefix } from "./utils/url";
 import {
@@ -26,10 +26,12 @@ import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
 import {
+  throwValidationError,
   validateHexString,
   validateObject,
   validateOptionalObject,
   validateString,
+  validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
 import { areEqualUint8Arrays } from "./utils/array";
@@ -79,7 +81,7 @@ export type JSONResponse = {
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
 export async function getJSON(
@@ -103,21 +105,19 @@ export async function getJSON(
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return { data: null, dataLink: null };
   }
+  validateUint8Array("entry.data", entry.data, "returned entry data");
 
   // Determine the data link.
   // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  if (typeof entry.data === "string") {
-    throw new Error("Expected returned entry data to be bytes");
-  }
-  let rawDataLink: string;
-  if (entry.data.length === 46) {
+  let rawDataLink = "";
+  if (entry.data.length === BASE64_ENCODED_SKYLINK_SIZE) {
     // Legacy data, convert to string.
     rawDataLink = uint8ArrayToStringUtf8(entry.data);
   } else if (entry.data.length === RAW_SKYLINK_SIZE) {
     // Convert the bytes to a base64 skylink.
     rawDataLink = encodeSkylinkBase64(entry.data);
   } else {
-    throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
+    throwValidationError("entry.data", entry.data, "returned entry data", `length ${RAW_SKYLINK_SIZE} bytes`);
   }
   const dataLink = formatSkylink(rawDataLink);
 
@@ -154,7 +154,7 @@ export async function getJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param json - The JSON data to set.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The returned JSON and revision number.
+ * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setJSON(
