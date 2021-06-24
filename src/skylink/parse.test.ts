@@ -45,9 +45,13 @@ describe("parseSkylink", () => {
 
   it("should return null on invalid skylink", () => {
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
-    expect(() => parseSkylink()).toThrowError("Expected parameter 'skylinkUrl' to be type 'string', was 'undefined'");
+    expect(() => parseSkylink()).toThrowError(
+      "Expected parameter 'skylinkUrl' to be type 'string', was type 'undefined'"
+    );
     // @ts-expect-error we only check this use case in case someone ignores typescript typing
-    expect(() => parseSkylink(123)).toThrowError("Expected parameter 'skylinkUrl' to be type 'string', was '123'");
+    expect(() => parseSkylink(123)).toThrowError(
+      "Expected parameter 'skylinkUrl' to be type 'string', was type 'number', value '123'"
+    );
   });
 
   const invalidCases = ["123", `${skylink}xxx`, `${skylink}xxx/foo`, `${skylink}xxx?foo`];

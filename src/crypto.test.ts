@@ -1,4 +1,4 @@
-import { deriveChildSeed, genKeyPairFromSeed, hashDataKey, hashRegistryEntry } from "./crypto";
+import { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed, hashDataKey, hashRegistryEntry } from "./crypto";
 import { stringToUint8ArrayUtf8, toHexString } from "./utils/string";
 
 describe("deriveChildSeed", () => {
@@ -17,6 +17,16 @@ describe("deriveChildSeed", () => {
     const seed3 = deriveChildSeed(masterSeed, "ds");
     expect(seed1).not.toEqual(seed2);
     expect(seed2).not.toEqual(seed3);
+  });
+});
+
+describe("genKeyPairAndSeed", () => {
+  it("should create a seed of the given length, hex-encoded", () => {
+    const length = 8;
+    const { seed } = genKeyPairAndSeed(length);
+    // The length is specified in bytes and seed.length gives us the length of
+    // the string representation of the seed bytes, which is hex encoded.
+    expect(seed.length).toEqual(length * 2);
   });
 });
 

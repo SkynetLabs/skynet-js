@@ -234,9 +234,9 @@ export class SkynetClient {
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
-    /* istanbul ignore next */
     const onUploadProgress =
       config.onUploadProgress &&
+      /* istanbul ignore next */
       function (event: ProgressEvent) {
         const progress = event.loaded / event.total;
 

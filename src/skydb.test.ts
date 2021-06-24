@@ -102,6 +102,26 @@ describe("getJSON", () => {
       `File data for the entry at data key '${dataKey}' is not JSON.`
     );
   });
+
+  it("should throw if the returned _data field in the file data is not JSON", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).reply(200, { _data: "thisistext", _v: 1 }, {});
+
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      "File data '_data' for the entry at data key 'app' is not JSON."
+    );
+  });
+
+  it("should throw if invalid entry data is returned", async () => {
+    const client = new SkynetClient(portalUrl);
+    const mockedFn = jest.fn();
+    mockedFn.mockReturnValueOnce({ entry: { data: new Uint8Array() } });
+    client.registry.getEntry = mockedFn;
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      "Expected returned entry data 'entry.data' to be length 34 bytes, was type 'object', value ''"
+    );
+  });
 });
 
 describe("setJSON", () => {
@@ -178,21 +198,21 @@ describe("setJSON", () => {
 
   it("Should throw an error if the private key is not hex-encoded", async () => {
     await expect(client.db.setJSON("foo", dataKey, {})).rejects.toThrowError(
-      "Expected parameter 'privateKey' to be a hex-encoded string, was 'foo'"
+      "Expected parameter 'privateKey' to be a hex-encoded string, was type 'string', value 'foo'"
     );
   });
 
   it("Should throw an error if the data key is not provided", async () => {
     // @ts-expect-error We do not pass the data key on purpose.
     await expect(client.db.setJSON(privateKey)).rejects.toThrowError(
-      "Expected parameter 'dataKey' to be type 'string', was 'undefined'"
+      "Expected parameter 'dataKey' to be type 'string', was type 'undefined'"
     );
   });
 
   it("Should throw an error if the json is not provided", async () => {
     // @ts-expect-error We do not pass the json on purpose.
     await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
-      "Expected parameter 'json' to be type 'object', was 'undefined'"
+      "Expected parameter 'json' to be type 'object', was type 'undefined'"
     );
   });
 });

@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 

@@ -158,6 +158,7 @@ export async function uploadSmallFileRequest(
   return response;
 }
 
+/* istanbul ignore next */
 /**
  * Uploads a large file to Skynet using tus.
  *
@@ -189,6 +190,7 @@ export async function uploadLargeFile(
   return { skylink };
 }
 
+/* istanbul ignore next */
 /**
  * Makes a request to upload a file to Skynet.
  *
@@ -361,7 +363,7 @@ function ensureFileObjectConsistency(file: File): File {
  */
 function validateFile(name: string, value: unknown, valueKind: string) {
   if (!(value instanceof File)) {
-    throwValidationError(name, value, valueKind, "'File'");
+    throwValidationError(name, value, valueKind, "type 'File'");
   }
 }
 
@@ -380,11 +382,12 @@ function validateUploadResponse(response: AxiosResponse): void {
     validateString("skylink", response.data.skylink, "upload response field");
   } catch (err) {
     throw new Error(
-      `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+      `Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
     );
   }
 }
 
+/* istanbul ignore next */
 /**
  * Validates the large upload response.
  *

@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { Permission } from "skynet-mysky-utils";
 import { SkynetClient } from "../client";
 
