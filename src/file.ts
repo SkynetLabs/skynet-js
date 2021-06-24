@@ -9,7 +9,7 @@ import {
 import { deriveDiscoverableFileTweak } from "./mysky/tweak";
 import { CustomGetEntryOptions, defaultGetEntryOptions } from "./registry";
 import { CustomGetJSONOptions, defaultGetJSONOptions, JSONResponse } from "./skydb";
-import { validateOptionalObject, validateString } from "./utils/validation";
+import { validateOptionalObject, validateString, validateStringLen } from "./utils/validation";
 
 // ====
 // JSON
@@ -130,7 +130,7 @@ export async function getEncryptedJSON(
   customOptions?: CustomGetJSONOptions
 ): Promise<EncryptedJSONResponse> {
   validateString("userID", userID, "parameter");
-  validateString("pathSeed", pathSeed, "parameter");
+  validateStringLen("pathSeed", pathSeed, "parameter", 64);
   validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
 
   const opts = {

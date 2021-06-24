@@ -349,6 +349,7 @@ export async function getRawBytes(
   return { data: new Uint8Array(buffer) };
 }
 
+/* istanbul ignore next */
 /**
  * Gets the registry entry for the given raw bytes or creates the entry if it doesn't exist.
  *
