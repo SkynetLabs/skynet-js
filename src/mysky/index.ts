@@ -305,8 +305,8 @@ export class MySky {
 
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableTweak(path);
-    const opts = defaultGetEntryOptions;
-    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+    // Do not hash the tweak anymore.
+    const opts = { ...defaultGetEntryOptions, hashedDataKeyHex: true };
 
     return await this.connector.client.registry.getEntryLink(publicKey, dataKey, opts);
   }
