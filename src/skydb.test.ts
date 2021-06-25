@@ -6,6 +6,7 @@ import { MAX_REVISION } from "./utils/number";
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
+import { checkCachedDataLink } from "./skydb";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
@@ -214,5 +215,17 @@ describe("setJSON", () => {
     await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
       "Expected parameter 'json' to be type 'object', was type 'undefined'"
     );
+  });
+});
+
+describe("checkCachedDataLink", () => {
+  const inputs: Array<[string, string | undefined, boolean]> = [
+    [skylink, undefined, false],
+    [skylink, skylink, true],
+    [skylink, "asdf", false],
+  ];
+
+  it.each(inputs)("checkCachedDataLink(%s, %s) should return %s", (rawDataLink, cachedDataLink, output) => {
+    expect(checkCachedDataLink(rawDataLink, cachedDataLink)).toEqual(output);
   });
 });

@@ -82,6 +82,7 @@ export type JSONResponse = {
 
 export type RawBytesResponse = {
   data: Uint8Array | null;
+  dataLink: string | null;
 };
 
 // ====
@@ -114,29 +115,17 @@ export async function getJSON(
   };
 
   // Lookup the registry entry.
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-  const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
-  if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
+  const entry = await getRegistryEntry(this, publicKey, dataKey, opts);
+  if (entry === null) {
     return { data: null, dataLink: null };
   }
-  validateUint8Array("entry.data", entry.data, "returned entry data");
 
   // Determine the data link.
   // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  let rawDataLink = "";
-  if (entry.data.length === BASE64_ENCODED_SKYLINK_SIZE) {
-    // Legacy data, convert to string.
-    rawDataLink = uint8ArrayToStringUtf8(entry.data);
-  } else if (entry.data.length === RAW_SKYLINK_SIZE) {
-    // Convert the bytes to a base64 skylink.
-    rawDataLink = encodeSkylinkBase64(entry.data);
-  } else {
-    throwValidationError("entry.data", entry.data, "returned entry data", `length ${RAW_SKYLINK_SIZE} bytes`);
-  }
-  const dataLink = formatSkylink(rawDataLink);
+  const { rawDataLink, dataLink } = parseDataLink(entry.data, true);
 
   // If a cached data link is provided and the data link hasn't changed, return.
-  if (opts.cachedDataLink && rawDataLink === parseSkylink(opts.cachedDataLink)) {
+  if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
     return { data: null, dataLink };
   }
 
@@ -317,36 +306,25 @@ export async function getRawBytes(
   };
 
   // Lookup the registry entry.
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-  const { entry }: { entry: RegistryEntry | null } = await this.registry.getEntry(publicKey, dataKey, getEntryOpts);
-  if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
-    return { data: null };
+  const entry = await getRegistryEntry(this, publicKey, dataKey, opts);
+  if (entry === null) {
+    return { data: null, dataLink: null };
   }
 
   // Determine the data link.
   // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  if (typeof entry.data === "string") {
-    throw new Error("Expected returned entry data to be bytes");
-  }
-  let rawDataLink: string;
-  if (entry.data.length === RAW_SKYLINK_SIZE) {
-    // Convert the bytes to a base64 skylink.
-    rawDataLink = encodeSkylinkBase64(entry.data);
-  } else {
-    throw new Error(`Bytes entry.data response was not ${RAW_SKYLINK_SIZE} bytes: ${entry.data}"`);
-  }
-  const dataLink = formatSkylink(rawDataLink);
+  const { rawDataLink, dataLink } = parseDataLink(entry.data, false);
 
   // If a cached data link is provided and the data link hasn't changed, return.
-  if (opts.cachedDataLink && rawDataLink === parseSkylink(opts.cachedDataLink)) {
-    return { data: null };
+  if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
+    return { data: null, dataLink };
   }
 
   // Download the data in the returned data link.
   const downloadOpts = { ...extractOptions(opts, defaultDownloadOptions), responseType: "arraybuffer" as ResponseType };
   const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
 
-  return { data: new Uint8Array(buffer) };
+  return { data: new Uint8Array(buffer), dataLink };
 }
 
 /* istanbul ignore next */
@@ -546,4 +524,63 @@ export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
   }
 
   return revision;
+}
+
+/**
+ * Checks whether the raw data link matches the cached data link, if provided.
+ *
+ * @param rawDataLink - The raw, unformatted data link.
+ * @param cachedDataLink - The cached data link, if provided.
+ * @returns - Whether the cached data link is a match.
+ */
+export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string): boolean {
+  return !!(cachedDataLink && rawDataLink === parseSkylink(cachedDataLink));
+}
+
+/**
+ * Gets and validates the registry entry.
+ *
+ * @param client - The Skynet Client
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param opts - Additional settings.
+ * @returns - The registry entry, or null if not found or deleted.
+ * @throws - Will throw if the returned entry data is not a valid byte array.
+ */
+async function getRegistryEntry(
+  client: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  opts: CustomGetJSONOptions
+): Promise<RegistryEntry | null> {
+  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const { entry }: { entry: RegistryEntry | null } = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+  if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
+    return null;
+  }
+  validateUint8Array("entry.data", entry.data, "returned entry data");
+
+  return entry;
+}
+
+/**
+ * Parses a data link out of the given registry entry data.
+ *
+ * @param data - The raw registry entry data.
+ * @param legacy - Whether to check for possible legacy skylink data, encoded as base64.
+ * @returns - The raw, unformatted data link and the formatted data link.
+ * @throws - Will throw if the data is not of the expected length for a skylink.
+ */
+function parseDataLink(data: Uint8Array, legacy: boolean): { rawDataLink: string; dataLink: string } {
+  let rawDataLink = "";
+  if (legacy && data.length === BASE64_ENCODED_SKYLINK_SIZE) {
+    // Legacy data, convert to string for backwards compatibility.
+    rawDataLink = uint8ArrayToStringUtf8(data);
+  } else if (data.length === RAW_SKYLINK_SIZE) {
+    // Convert the bytes to a base64 skylink.
+    rawDataLink = encodeSkylinkBase64(data);
+  } else {
+    throwValidationError("entry.data", data, "returned entry data", `length ${RAW_SKYLINK_SIZE} bytes`);
+  }
+  return { rawDataLink, dataLink: formatSkylink(rawDataLink) };
 }

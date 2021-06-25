@@ -138,6 +138,18 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(json).toEqual(expectedJson);
     });
 
+    it("getRawBytes should perform a lookup but not a skylink GET if the cachedDataLink is a hit for existing data", async () => {
+      const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+      const dataKey = "dataKey3";
+      const expectedDataLink = `${uriSkynetPrefix}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
+
+      const { data: returnedData, dataLink } = await client.db.getRawBytes(publicKey, dataKey, {
+        cachedDataLink: expectedDataLink,
+      });
+      expect(returnedData).toBeNull();
+      expect(dataLink).toEqual(expectedDataLink);
+    });
+
     it("Should get existing SkyDB data with unicode data key", async () => {
       const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
       const dataKey = "dataKeyż";
