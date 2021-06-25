@@ -97,7 +97,6 @@ describe(`Integration test for portal ${portal}`, () => {
     });
 
     it("Should return null for inexistant encrypted JSON", async () => {
-      const userID = "4dfb9ce035e4e44711c1bb0a0901ce3adc2a928b122ee7b45df6ac47548646b0";
       const pathSeed = "a".repeat(64);
 
       const { data } = await client.file.getEncryptedJSON(userID, pathSeed);

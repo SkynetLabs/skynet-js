@@ -66,8 +66,8 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
   validateString("path", path, "parameter");
 
   const dataKey = deriveDiscoverableFileTweak(path);
-  const opts = defaultGetEntryOptions;
-  opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+  // Do not hash the tweak anymore.
+  const opts = { ...defaultGetEntryOptions, hashedDataKeyHex: true };
 
   return await this.registry.getEntryLink(userID, dataKey, opts);
 }
