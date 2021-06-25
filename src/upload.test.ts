@@ -193,7 +193,7 @@ describe("uploadDirectory", () => {
     expect(data.skylink).toEqual(sialink);
   });
 
-  it("should send register onUploadProgress callback if defined", async () => {
+  it("should register onUploadProgress callback if defined", async () => {
     const data = await client.uploadDirectory(directory, filename, { onUploadProgress: jest.fn() });
 
     expect(mock.history.post.length).toBe(1);

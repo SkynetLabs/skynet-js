@@ -261,6 +261,17 @@ describe("getFileContent", () => {
 
     expect(request.headers["Range"]).toEqual(range);
   });
+
+  it("should register onDownloadProgress callback if defined", async () => {
+    mock.onGet(expectedUrl).replyOnce(200, skynetFileContents, fullHeaders);
+
+    await client.getFileContent(skylink, { onDownloadProgress: jest.fn() });
+
+    expect(mock.history.get.length).toBe(1);
+    const request = mock.history.get[0];
+
+    expect(request.onDownloadProgress).toEqual(expect.any(Function));
+  });
 });
 
 describe("getFileContentHns", () => {

@@ -38,12 +38,14 @@ import { trimSuffix } from "./utils/string";
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
  * @property [customCookie] - Custom cookie header to set.
+ * @property [onDownloadProgress] - Optional callback to track download progress.
  * @property [onUploadProgress] - Optional callback to track upload progress.
  */
 export type CustomClientOptions = {
   APIKey?: string;
   customUserAgent?: string;
   customCookie?: string;
+  onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
 };
 
@@ -231,6 +233,15 @@ export class SkynetClient {
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
+    const onDownloadProgress =
+      config.onDownloadProgress &&
+      /* istanbul ignore next */
+      function (event: ProgressEvent) {
+        const progress = event.loaded / event.total;
+
+        // Need the if-statement or TS complains.
+        if (config.onDownloadProgress) config.onDownloadProgress(progress, event);
+      };
     const onUploadProgress =
       config.onUploadProgress &&
       /* istanbul ignore next */
@@ -247,6 +258,7 @@ export class SkynetClient {
       data: config.data,
       headers,
       auth,
+      onDownloadProgress,
       onUploadProgress,
       transformRequest: config.transformRequest,
       transformResponse: config.transformResponse,

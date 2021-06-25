@@ -12,6 +12,7 @@ export const defaultBaseOptions = {
   APIKey: "",
   customUserAgent: "",
   customCookie: "",
+  onDownloadProgress: undefined,
   onUploadProgress: undefined,
 };
 
