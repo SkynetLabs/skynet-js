@@ -6,6 +6,7 @@ import { HASH_LENGTH, sha512 } from "../crypto";
 import { JsonData, JsonFullData } from "../skydb";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, uint8ArrayToStringUtf8 } from "../utils/string";
 import {
+  throwValidationError,
   validateBoolean,
   validateHexString,
   validateNumber,
@@ -23,14 +24,17 @@ export const ENCRYPTED_JSON_RESPONSE_VERSION = 1;
 export const ENCRYPTION_KEY_LENGTH = 32;
 
 /**
- * The length of the metadata stored in encrypted files.
+ * The length of the hidden field metadata stored along with encrypted files.
+ * Note that this is hidden from the user, but not actually encrypted. It is
+ * stored after the nonce.
  */
-const ENCRYPTION_METADATA_LENGTH = 16;
+export const ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH = 16;
 
 /**
- * The length of the random nonce, prepended to the encrypted bytes.
+ * The length of the random nonce, prepended to the encrypted bytes. It comes
+ * before the unencrypted hidden field metadata.
  */
-const ENCRYPTION_NONCE_LENGTH = 24;
+export const ENCRYPTION_NONCE_LENGTH = 24;
 
 /**
  * The length of the overhead introduced by encryption.
@@ -69,11 +73,27 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData
   validateUint8Array("data", data, "parameter");
   validateUint8ArrayLen("key", key, "parameter", ENCRYPTION_KEY_LENGTH);
 
+  // Validate that the size of the data corresponds to a padded block.
+  if (!checkPaddedBlock(data.length)) {
+    throwValidationError("data", data, "parameter", `padded encrypted data, length was '${data.length}'`);
+  }
+
   // Extract the nonce.
   const nonce = data.slice(0, ENCRYPTION_NONCE_LENGTH);
+  data = data.slice(ENCRYPTION_NONCE_LENGTH);
+
+  // Extract the unencrypted hidden field metadata.
+  const metadataBytes = data.slice(0, ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH);
+  data = data.slice(ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH);
+  const metadata = decodeEncryptedFileMetadata(metadataBytes);
+  if (metadata.version !== ENCRYPTED_JSON_RESPONSE_VERSION) {
+    throw new Error(
+      `Received unrecognized JSON response version '${metadata.version}', expected '${ENCRYPTED_JSON_RESPONSE_VERSION}'`
+    );
+  }
 
   // Decrypt the non-nonce part of the data.
-  let decryptedBytes = secretbox.open(data.slice(ENCRYPTION_NONCE_LENGTH), nonce, key);
+  let decryptedBytes = secretbox.open(data, nonce, key);
   if (!decryptedBytes) {
     throw new Error("Could not decrypt given encrypted JSON file");
   }
@@ -84,11 +104,6 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData
     paddingIndex--;
   }
   decryptedBytes = decryptedBytes.slice(0, paddingIndex);
-
-  // Extract the metadata.
-  const metadataBytes = decryptedBytes.slice(0, ENCRYPTION_METADATA_LENGTH);
-  decryptedBytes = decryptedBytes.slice(ENCRYPTION_METADATA_LENGTH);
-  const metadata = decodeEncryptedFileMetadata(metadataBytes);
 
   // Parse the final decrypted message as json.
   const json = JSON.parse(uint8ArrayToStringUtf8(decryptedBytes));
@@ -111,13 +126,8 @@ export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8A
   // Stringify the json and convert to bytes.
   let data = stringToUint8ArrayUtf8(JSON.stringify(_data));
 
-  // Prepend the metadata.
-  const metadata: EncryptedFileMetadata = { version: _v };
-  const metadataBytes = encodeEncryptedFileMetadata(metadata);
-  data = new Uint8Array([...metadataBytes, ...data]);
-
   // Add padding so that the final size will be a padded block. The overhead will be added by encryption and we add the nonce at the end.
-  const totalOverhead = ENCRYPTION_OVERHEAD_LENGTH + ENCRYPTION_NONCE_LENGTH;
+  const totalOverhead = ENCRYPTION_OVERHEAD_LENGTH + ENCRYPTION_NONCE_LENGTH + ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH;
   const finalSize = padFileSize(data.length + totalOverhead) - totalOverhead;
   data = new Uint8Array([...data, ...new Uint8Array(finalSize - data.length)]);
 
@@ -127,8 +137,13 @@ export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8A
   // Encrypt the data.
   const encryptedBytes = secretbox(data, nonce, key);
 
+  // Prepend the metadata.
+  const metadata: EncryptedFileMetadata = { version: _v };
+  const metadataBytes = encodeEncryptedFileMetadata(metadata);
+  const finalBytes = new Uint8Array([...metadataBytes, ...encryptedBytes]);
+
   // Prepend the nonce to the final data.
-  return new Uint8Array([...nonce, ...encryptedBytes]);
+  return new Uint8Array([...nonce, ...finalBytes]);
 }
 
 /**
@@ -256,6 +271,27 @@ export function padFileSize(initialSize: number): number {
 }
 
 /**
+ * Checks if the given size corresponds to the correct padded block.
+ *
+ * @param size - The given file size.
+ * @returns - Whether the size corresponds to a padded block.
+ * @throws - Will throw if the size would overflow the JS number type.
+ */
+export function checkPaddedBlock(size: number): boolean {
+  const kib = 1 << 10;
+  for (let n = 0; ; n++) {
+    // Prevent overflow. Max JS number size is 2^53-1.
+    if (n >= 53) {
+      throw new Error("Could not check padded file size, overflow detected.");
+    }
+    if (size <= (1 << n) * 80 * kib) {
+      const paddingBlock = (1 << n) * 4 * kib;
+      return size % paddingBlock === 0;
+    }
+  }
+}
+
+/**
  * Decodes the encoded encrypted file metadata.
  *
  * @param bytes - The encoded metadata.
@@ -264,7 +300,7 @@ export function padFileSize(initialSize: number): number {
  */
 function decodeEncryptedFileMetadata(bytes: Uint8Array): EncryptedFileMetadata {
   // Ensure input is correct length.
-  validateUint8ArrayLen("bytes", bytes, "encrypted file metadata bytes", ENCRYPTION_METADATA_LENGTH);
+  validateUint8ArrayLen("bytes", bytes, "encrypted file metadata bytes", ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH);
 
   const version = bytes[0];
 
@@ -281,7 +317,7 @@ function decodeEncryptedFileMetadata(bytes: Uint8Array): EncryptedFileMetadata {
  * @throws - Will throw if the version does not fit in a byte.
  */
 export function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Uint8Array {
-  const bytes = new Uint8Array(ENCRYPTION_METADATA_LENGTH);
+  const bytes = new Uint8Array(ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH);
 
   // Encode the version
   if (metadata.version >= 1 << 8) {

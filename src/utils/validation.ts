@@ -180,6 +180,12 @@ export function throwValidationError(name: string, value: unknown, valueKind: st
     actualValue = "type 'undefined'";
   } else if (value === null) {
     actualValue = "type 'null'";
+  } else if (value instanceof Uint8Array) {
+    if (value.length > 128) {
+      actualValue = `type '${typeof value}', value '${value.slice(0, 128)},...'`;
+    } else {
+      actualValue = `type '${typeof value}', value '${value}'`;
+    }
   } else {
     actualValue = `type '${typeof value}', value '${value}'`;
   }

@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 
 import {
+  checkPaddedBlock,
   decryptJSONFile,
   deriveEncryptedFileKeyEntropy,
   deriveEncryptedFileSeed,
@@ -8,6 +9,8 @@ import {
   encodeEncryptedFileMetadata,
   ENCRYPTED_JSON_RESPONSE_VERSION,
   ENCRYPTION_KEY_LENGTH,
+  ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH,
+  ENCRYPTION_NONCE_LENGTH,
   encryptJSONFile,
   padFileSize,
 } from "./encrypted_files";
@@ -88,20 +91,48 @@ const json = { message: "text" };
 const v = ENCRYPTED_JSON_RESPONSE_VERSION;
 const fullData = { _data: json, _v: v };
 const key = new Uint8Array(ENCRYPTION_KEY_LENGTH);
+const fileData = new Uint8Array(readFileSync(encryptedTestFilePath));
 
 describe("decryptJSONFile", () => {
   it("Should decrypt the given test data", () => {
-    const data = new Uint8Array(readFileSync(encryptedTestFilePath));
-    expect(data.length).toEqual(4096);
+    expect(fileData.length).toEqual(4096);
 
-    const result = decryptJSONFile(data, key);
+    const result = decryptJSONFile(fileData, key);
 
     expect(result).toEqual(fullData);
   });
 
   it("Should fail to decrypt bad data", () => {
     expect(() => decryptJSONFile(new Uint8Array(4096), key)).toThrowError(
-      "Could not decrypt given encrypted JSON file"
+      "Received unrecognized JSON response version '0', expected '1'"
+    );
+  });
+
+  it("Should fail to decrypt data with a corrupted nonce", () => {
+    const data = fileData.slice();
+    data[0]++;
+    expect(() => decryptJSONFile(data, key)).toThrowError("Could not decrypt given encrypted JSON file");
+  });
+
+  it("Should fail to decrypt data with a corrupted metadata", () => {
+    const data = fileData.slice();
+    data[ENCRYPTION_NONCE_LENGTH]++;
+    expect(() => decryptJSONFile(data, key)).toThrowError(
+      "Received unrecognized JSON response version '2', expected '1'"
+    );
+  });
+
+  it("Should fail to decrypt data with corrupted encrypted bytes", () => {
+    const data = fileData.slice();
+    data[ENCRYPTION_NONCE_LENGTH + ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH]++;
+    expect(() => decryptJSONFile(data, key)).toThrowError("Could not decrypt given encrypted JSON file");
+  });
+
+  it("Should fail to decrypt data that was not padded correctly", () => {
+    const data = fileData.slice(0, fileData.length - 1);
+    expect(data.length).toEqual(4095);
+    expect(() => decryptJSONFile(data, key)).toThrowError(
+      "Expected parameter 'data' to be padded encrypted data, length was '4095', was type 'object', value '174,167,134,21,46,207,180,245,44,139,11,69,252,151,172,83,91,4,3,35,8,124,58,113,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,216,246,27,114,110,131,41,62,175,48,210,216,97,136,48,8,79,76,33,85,100,240,252,91,188,153,39,76,217,94,167,68,133,137,216,208,244,253,19,105,85,177,254,135,12,20,24,85,185,165,5,14,89,243,15,157,237,128,66,76,41,181,192,187,199,218,199,82,43,134,154,161,91,215,191,119,33,42,7,137,188,71,228,251,245,222,30,193,...'"
     );
   });
 });
@@ -122,8 +153,11 @@ describe("encodeEncryptedFileMetadata", () => {
   });
 });
 
+const kib = 1 << 10;
+const mib = 1 << 20;
+const gib = 1 << 30;
+
 describe("padFileSize", () => {
-  const kib = 1 << 10;
   const sizes = [
     [1 * kib, 4 * kib],
     [4 * kib, 4 * kib],
@@ -132,14 +166,45 @@ describe("padFileSize", () => {
     [305 * kib, 320 * kib],
     [351 * kib, 352 * kib],
     [352 * kib, 352 * kib],
+    [mib, mib],
+    [100 * mib, 104 * mib],
+    [gib, gib],
+    [100 * gib, 104 * gib],
   ];
 
   it.each(sizes)("Should pad the file size %s to %s", (initialSize, expectedSize) => {
     const size = padFileSize(initialSize);
     expect(size).toEqual(expectedSize);
+    expect(checkPaddedBlock(size)).toBeTruthy();
   });
 
   it("Should throw on a really big number.", () => {
     expect(() => padFileSize(Number.MAX_SAFE_INTEGER)).toThrowError("Could not pad file size, overflow detected.");
+  });
+});
+
+describe("checkPaddedBlock", () => {
+  const sizes: Array<[number, boolean]> = [
+    [1 * kib, false],
+    [4 * kib, true],
+    [5 * kib, false],
+    [105 * kib, false],
+    [305 * kib, false],
+    [351 * kib, false],
+    [352 * kib, true],
+    [mib, true],
+    [100 * mib, false],
+    [gib, true],
+    [100 * gib, false],
+  ];
+
+  it.each(sizes)("checkPaddedBlock(%s) should return %s", (size, isPadded) => {
+    expect(checkPaddedBlock(size)).toEqual(isPadded);
+  });
+
+  it("Should throw on a really big number.", () => {
+    expect(() => checkPaddedBlock(Number.MAX_SAFE_INTEGER)).toThrowError(
+      "Could not check padded file size, overflow detected."
+    );
   });
 });

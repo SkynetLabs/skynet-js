@@ -122,7 +122,7 @@ export async function getEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the decrypted json data.
  */
-export async function getEncryptedJSON(
+export async function getJSONEncrypted(
   this: SkynetClient,
   userID: string,
   pathSeed: string,
@@ -137,16 +137,17 @@ export async function getEncryptedJSON(
     ...defaultGetJSONOptions,
     ...this.customOptions,
     ...customOptions,
+    hashedDataKeyHex: true, // Do not hash the tweak anymore.
   };
 
+  // Fetch the raw encrypted JSON data.
   const dataKey = deriveEncryptedFileTweak(pathSeed);
-  opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
-  const key = deriveEncryptedFileKeyEntropy(pathSeed);
-
   const { data } = await this.db.getRawBytes(userID, dataKey, opts);
   if (data === null) {
     return { data: null };
   }
+
+  const key = deriveEncryptedFileKeyEntropy(pathSeed);
   const { _data: json } = decryptJSONFile(data, key);
 
   return { data: json };

@@ -534,6 +534,7 @@ export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
  * @returns - Whether the cached data link is a match.
  */
 export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string): boolean {
+  // Double exclamation mark is necessary to convert cachedDataLink to false if it is undefined.
   return !!(cachedDataLink && rawDataLink === parseSkylink(cachedDataLink));
 }
 
@@ -554,7 +555,7 @@ async function getRegistryEntry(
   opts: CustomGetJSONOptions
 ): Promise<RegistryEntry | null> {
   const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
-  const { entry }: { entry: RegistryEntry | null } = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+  const { entry } = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return null;
   }

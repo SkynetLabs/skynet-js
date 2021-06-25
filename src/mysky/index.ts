@@ -507,7 +507,7 @@ export class MySky {
 
   /**
    * Lets you get the share-able path seed, which can be passed to
-   * file.getEncryptedJSON. Requires read permission on the path.
+   * file.getJSONEncrypted. Requires read permission on the path.
    *
    * @param path - The given path.
    * @param isDirectory - Whether the path is a directory.
@@ -527,7 +527,7 @@ export class MySky {
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the decrypted json data.
    */
-  async getEncryptedJSON(path: string, customOptions?: CustomGetJSONOptions): Promise<EncryptedJSONResponse> {
+  async getJSONEncrypted(path: string, customOptions?: CustomGetJSONOptions): Promise<EncryptedJSONResponse> {
     validateString("path", path, "parameter");
     validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
 
@@ -535,19 +535,21 @@ export class MySky {
       ...defaultGetJSONOptions,
       ...this.connector.client.customOptions,
       ...customOptions,
+      hashedDataKeyHex: true, // Do not hash the tweak anymore.
     };
 
     // Call MySky which checks for read permissions on the path.
     const publicKey = await this.userID();
     const pathSeed = await this.getEncryptedFileSeed(path, false);
-    const dataKey = deriveEncryptedFileTweak(pathSeed);
-    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
-    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
+    // Fetch the raw encrypted JSON data.
+    const dataKey = deriveEncryptedFileTweak(pathSeed);
     const { data } = await this.connector.client.db.getRawBytes(publicKey, dataKey, opts);
     if (data === null) {
       return { data: null };
     }
+
+    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
     const { _data: json } = decryptJSONFile(data, encryptionKey);
 
     return { data: json };
@@ -561,7 +563,7 @@ export class MySky {
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the original json data.
    */
-  async setEncryptedJSON(
+  async setJSONEncrypted(
     path: string,
     json: JsonData,
     customOptions?: CustomSetJSONOptions
