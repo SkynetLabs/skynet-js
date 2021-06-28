@@ -84,8 +84,8 @@ export class SkynetClient {
   protected initialPortalUrl: string;
   // The resolved API portal URL. The request won't be made until needed, or `initPortalUrl()` is called. The request is only made once, for all Skynet Clients.
   protected static resolvedPortalUrl?: Promise<string>;
-  // The given portal URL, if one was passed in to `new SkynetClient()`.
-  protected givenPortalUrl?: string;
+  // The custom portal URL, if one was passed in to `new SkynetClient()`.
+  protected customPortalUrl?: string;
 
   // Set methods (defined in other files).
 
@@ -161,7 +161,7 @@ export class SkynetClient {
       initialPortalUrl = defaultPortalUrl();
     } else {
       // Portal was given, don't make the request for the resolved portal URL.
-      this.givenPortalUrl = initialPortalUrl;
+      this.customPortalUrl = initialPortalUrl;
     }
     this.initialPortalUrl = initialPortalUrl;
     this.customOptions = customOptions;
@@ -174,6 +174,11 @@ export class SkynetClient {
    */
   /* istanbul ignore next */
   async initPortalUrl(): Promise<void> {
+    if (this.customPortalUrl) {
+      // Tried to make a request for the API portal URL when a custom URL was already provided.
+      return;
+    }
+
     if (!SkynetClient.resolvedPortalUrl) {
       SkynetClient.resolvedPortalUrl = new Promise((resolve, reject) => {
         this.executeRequest({
@@ -209,8 +214,8 @@ export class SkynetClient {
    */
   /* istanbul ignore next */
   async portalUrl(): Promise<string> {
-    if (this.givenPortalUrl) {
-      return this.givenPortalUrl;
+    if (this.customPortalUrl) {
+      return this.customPortalUrl;
     }
 
     // Make the request if needed and not done so.

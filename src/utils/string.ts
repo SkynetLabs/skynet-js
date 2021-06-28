@@ -3,6 +3,20 @@ import { Buffer } from "buffer";
 import { throwValidationError, validateHexString, validateString } from "./validation";
 
 /**
+ * Prepends the prefix to the given string only if the string does not already start with the prefix.
+ *
+ * @param str - The string.
+ * @param prefix - The prefix.
+ * @returns - The prefixed string.
+ */
+export function ensurePrefix(str: string, prefix: string): string {
+  if (!str.startsWith(prefix)) {
+    str = `${prefix}${str}`;
+  }
+  return str;
+}
+
+/**
  * Removes slashes from the beginning and end of the string.
  *
  * @param str - The string to process.
