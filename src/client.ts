@@ -242,19 +242,35 @@ export class SkynetClient {
       config.onDownloadProgress &&
       /* istanbul ignore next */
       function (event: ProgressEvent) {
-        const progress = event.loaded / event.total;
+        let progress;
+        if (event.total === 0) {
+          // Special handling for 0-byte files to avoid NaN.
+          progress = 1;
+        } else {
+          progress = event.loaded / event.total;
+        }
 
         // Need the if-statement or TS complains.
-        if (config.onDownloadProgress) config.onDownloadProgress(progress, event);
+        if (config.onDownloadProgress) {
+          config.onDownloadProgress(progress, event);
+        }
       };
     const onUploadProgress =
       config.onUploadProgress &&
       /* istanbul ignore next */
       function (event: ProgressEvent) {
-        const progress = event.loaded / event.total;
+        let progress;
+        if (event.total === 0) {
+          // Special handling for 0-byte files to avoid NaN.
+          progress = 1;
+        } else {
+          progress = event.loaded / event.total;
+        }
 
         // Need the if-statement or TS complains.
-        if (config.onUploadProgress) config.onUploadProgress(progress, event);
+        if (config.onUploadProgress) {
+          config.onUploadProgress(progress, event);
+        }
       };
 
     return axios({

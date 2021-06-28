@@ -457,6 +457,24 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(data).toEqual(json);
       expect(contentType).toEqual("application/octet-stream");
     });
+
+    it("Should upload and download a 0-byte file", async () => {
+      const onProgress = (progress: number) => {
+        expect(progress).toEqual(1);
+      };
+
+      const file = new File([""], dataKey);
+      expect(file.size).toEqual(0);
+      const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+      expect(skylink).not.toEqual("");
+
+      // TODO: Downloads currently return 416 for empty files.
+      // // Get file content and check returned values.
+      // const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+
+      // expect(data).toEqual(expect.any(Object));
+      // expect(data).toEqual("");
+    });
   });
 
   describe("resolveHns", () => {
