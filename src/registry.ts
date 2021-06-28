@@ -5,7 +5,7 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
+import { ensurePrefix, hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
 import {
@@ -65,6 +65,8 @@ export const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
  * Regex for JSON revision value with quotes.
  */
 const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
+
+const ED25519_PREFIX = "ed25519:";
 
 /**
  * Registry entry.
@@ -233,7 +235,7 @@ export function getEntryUrlForPortal(
   customOptions?: CustomGetEntryOptions
 ): string {
   validateString("portalUrl", portalUrl, "parameter");
-  validateString("publicKey", publicKey, "parameter");
+  validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
 
@@ -242,10 +244,6 @@ export function getEntryUrlForPortal(
     ...customOptions,
   };
 
-  // Trim the prefix if it was passed in.
-  publicKey = trimPrefix(publicKey, "ed25519:");
-  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
-
   // Hash and hex encode the given data key if it is not a hash already.
   let dataKeyHashHex = dataKey;
   if (!opts.hashedDataKeyHex) {
@@ -253,7 +251,7 @@ export function getEntryUrlForPortal(
   }
 
   const query = {
-    publickey: `ed25519:${publicKey}`,
+    publickey: ensurePrefix(publicKey, ED25519_PREFIX),
     datakey: dataKeyHashHex,
     timeout: DEFAULT_GET_ENTRY_TIMEOUT,
   };
@@ -280,7 +278,7 @@ export async function getEntryLink(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<string> {
-  validateString("publicKey", publicKey, "parameter");
+  validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
 
@@ -289,11 +287,7 @@ export async function getEntryLink(
     ...customOptions,
   };
 
-  // Trim the prefix if it was passed in.
-  publicKey = trimPrefix(publicKey, "ed25519:");
-  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
-
-  const siaPublicKey = newEd25519PublicKey(publicKey);
+  const siaPublicKey = newEd25519PublicKey(trimPrefix(publicKey, ED25519_PREFIX));
   let tweak;
   if (opts.hashedDataKeyHex) {
     tweak = hexToUint8Array(dataKey);
@@ -466,15 +460,15 @@ export function validateRegistryEntry(name: string, value: unknown, valueKind: s
 }
 
 /**
- * Validates the given value as a hex-encoded public key.
+ * Validates the given value as a hex-encoded, potentially prefixed public key.
  *
  * @param name - The name of the value.
  * @param publicKey - The public key.
  * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
  * @throws - Will throw if not a valid hex-encoded public key.
  */
-function validateTrimmedPublicKey(name: string, publicKey: string, valueKind: string): void {
-  if (!isHexString(publicKey)) {
+function validatePublicKey(name: string, publicKey: string, valueKind: string): void {
+  if (!isHexString(trimPrefix(publicKey, ED25519_PREFIX))) {
     throwValidationError(name, publicKey, valueKind, "a hex-encoded string with a valid prefix");
   }
 }
