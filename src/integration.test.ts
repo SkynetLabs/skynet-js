@@ -74,6 +74,13 @@ describe(`Integration test for portal ${portal}`, () => {
       const { data: received } = await client.file.getEntryData(userID, path);
       expect(received).toBeNull();
     });
+
+    it("Should get an existing entry link for a user ID and path", async () => {
+      const expected = `${uriSkynetPrefix}AQAKDRJbfAOOp3Vk8L-cjuY2d34E8OrEOy_PTsD0xCkYOQ`;
+
+      const entryLink = await client.file.getEntryLink(userID, path);
+      expect(entryLink).toEqual(expected);
+    });
   });
 
   describe("SkyDB end to end integration tests", () => {
