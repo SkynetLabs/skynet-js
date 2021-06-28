@@ -235,6 +235,8 @@ export function getSkylinkUrlForPortal(
 
   let url;
   if (opts.subdomain) {
+    // The caller wants to use a URL with the skylink as a base32 subdomain.
+    //
     // Get the path from the skylink. Use the empty string if not found.
     const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true }) ?? "";
     // Get just the skylink.
@@ -256,6 +258,7 @@ export function getSkylinkUrlForPortal(
     url = makeUrl(portalUrl, opts.endpointDownload, skylink);
     url = makeUrl(url, path);
   }
+
   return addUrlQuery(url, query);
 }
 

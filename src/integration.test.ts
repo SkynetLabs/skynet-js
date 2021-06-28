@@ -48,6 +48,18 @@ expect.extend({
 });
 
 describe(`Integration test for portal ${portal}`, () => {
+  describe("initPortalUrl", () => {
+    it("Calling initPortalUrl after providing a custom portal URL should have no effect", async () => {
+      const portalUrl1 = await client.portalUrl();
+      expect(portalUrl1).toEqual(portal);
+
+      await client.initPortalUrl();
+
+      const portalUrl2 = await client.portalUrl();
+      expect(portalUrl2).toEqual(portal);
+    });
+  });
+
   describe("File API integration tests", () => {
     const userID = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
     const path = "snew.hns/asdf";
@@ -334,52 +346,27 @@ describe(`Integration test for portal ${portal}`, () => {
       },
     };
 
-    // TODO: This test is broken in Node.
-    // it("Should upload and download directories", async () => {
-    //   const directory = {
-    //     "i-am-not/file1.jpeg": new File(["foo1"], "i-am-not/file1.jpeg"),
-    //     "i-am-not/file2.jpeg": new File(["foo2"], "i-am-not/file2.jpeg"),
-    //     "i-am-not/me-neither/file3.jpeg": new File(["foo3"], "i-am-not/me-neither/file3.jpeg"),
-    //   };
-    //   const dirMetadata = {
-    //     filename: "dirname",
-    //     length: 12,
-    //     subfiles: {
-    //       "i-am-not:file1.jpeg": {
-    //         contenttype: "image/jpeg",
-    //         filename: "i-am-not:file1.jpeg",
-    //         len: 4,
-    //       },
-    //       "i-am-not:file2.jpeg": {
-    //         contenttype: "image/jpeg",
-    //         filename: "i-am-not:file2.jpeg",
-    //         len: 4,
-    //         offset: 4,
-    //       },
-    //       "i-am-not:me-neither:file3.jpeg": {
-    //         contenttype: "image/jpeg",
-    //         filename: "i-am-not:me-neither:file3.jpeg",
-    //         len: 4,
-    //         offset: 8,
-    //       },
-    //     },
-    //   };
-    //   const dirname = "dirname";
-    //   const dirType = "application/zip";
+    it("Should upload and download directories", async () => {
+      const directory = {
+        "i-am-not/file1.jpeg": new File(["foo1"], "i-am-not/file1.jpeg"),
+        "i-am-not/file2.jpeg": new File(["foo2"], "i-am-not/file2.jpeg"),
+        "i-am-not/me-neither/file3.jpeg": new File(["foo3"], "i-am-not/me-neither/file3.jpeg"),
+      };
+      const dirname = "dirname";
+      const dirType = "application/zip";
 
-    //   const { skylink } = await client.uploadDirectory(directory, dirname);
-    //   expect(skylink).not.toEqual("");
+      const { skylink } = await client.uploadDirectory(directory, dirname);
+      expect(skylink).not.toEqual("");
 
-    //   // Get file content and check returned values.
+      // Get file content and check returned values.
 
-    //   const resp = await client.getFileContent(skylink);
-    //   const { data, contentType, metadata, portalUrl, skylink: returnedSkylink } = resp;
-    //   expect(data).toEqual(expect.any(String));
-    //   expect(contentType).toEqual(dirType);
-    //   expect(metadata).toEqual(dirMetadata);
-    //   expect(portalUrl).toEqualPortalUrl(portal);
-    //   expect(skylink).toEqual(returnedSkylink);
-    // });
+      const resp = await client.getFileContent(skylink);
+      const { data, contentType, portalUrl, skylink: returnedSkylink } = resp;
+      expect(data).toEqual(expect.any(String));
+      expect(contentType).toEqual(dirType);
+      expect(portalUrl).toEqualPortalUrl(portal);
+      expect(skylink).toEqual(returnedSkylink);
+    });
 
     it("Custom filenames should take effect", async () => {
       const customFilename = "asdf!!";
