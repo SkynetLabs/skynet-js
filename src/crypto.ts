@@ -96,9 +96,7 @@ export function genKeyPairFromSeed(seed: string): KeyPair {
  */
 export function hashAll(...args: Uint8Array[]): Uint8Array {
   const hasher = newHash();
-  for (const arg of args) {
-    blake2bUpdate(hasher, arg);
-  }
+  args.forEach((arg) => blake2bUpdate(hasher, arg));
   return blake2bFinal(hasher);
 }
 

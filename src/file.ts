@@ -148,7 +148,7 @@ export async function getJSONEncrypted(
   }
 
   const key = deriveEncryptedFileKeyEntropy(pathSeed);
-  const { _data: json } = decryptJSONFile(data, key);
+  const json = decryptJSONFile(data, key);
 
   return { data: json };
 }

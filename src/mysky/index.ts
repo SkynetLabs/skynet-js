@@ -280,11 +280,13 @@ export class MySky {
   }
 
   /**
-   * Gets Discoverable JSON at the given path through MySky, if the user has given Read permissions to do so.
+   * Gets Discoverable JSON at the given path through MySky, if the user has
+   * given Discoverable Read permissions to do so.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the json data as well as the skylink for the data.
+   * @throws - Will throw if the user does not have Discoverable Read permission on the path.
    */
   async getJSON(path: string, customOptions?: CustomGetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
@@ -322,12 +324,14 @@ export class MySky {
   }
 
   /**
-   * Sets Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
+   * Sets Discoverable JSON at the given path through MySky, if the user has
+   * given Discoverable Write permissions to do so.
    *
    * @param path - The data path.
    * @param json - The json to set.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the json data as well as the skylink for the data.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
   async setJSON(path: string, json: JsonData, customOptions?: CustomSetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
@@ -361,6 +365,7 @@ export class MySky {
    * @param dataLink - The data link to set at the path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An empty promise.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
   async setDataLink(path: string, dataLink: string, customOptions?: CustomSetJSONOptions): Promise<void> {
     validateString("path", path, "parameter");
@@ -393,12 +398,14 @@ export class MySky {
   }
 
   /**
-   * Deletes Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
+   * Deletes Discoverable JSON at the given path through MySky, if the user has
+   * given Discoverable Write permissions to do so.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An empty promise.
    * @throws - Will throw if the revision is already the maximum value.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
   async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
     validateString("path", path, "parameter");
@@ -430,11 +437,13 @@ export class MySky {
   }
 
   /**
-   * Gets the raw registry entry data for the given path, if the user has given READ permissions.
+   * Gets the raw registry entry data for the given path, if the user has given
+   * Discoverable Read permissions.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - The entry data.
+   * @throws - Will throw if the user does not have Discoverable Read permission on the path.
    */
   async getEntryData(path: string, customOptions?: CustomGetEntryOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
@@ -458,13 +467,15 @@ export class MySky {
   }
 
   /**
-   * Sets the entry data at the given path, if the user has given WRITE permissions.
+   * Sets the entry data at the given path, if the user has given Discoverable
+   * Write permissions.
    *
    * @param path - The data path.
    * @param data - The raw entry data to set.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - The entry data.
    * @throws - Will throw if the length of the data is > 70 bytes.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
   async setEntryData(path: string, data: Uint8Array, customOptions?: CustomSetJSONOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
@@ -507,11 +518,12 @@ export class MySky {
 
   /**
    * Lets you get the share-able path seed, which can be passed to
-   * file.getJSONEncrypted. Requires read permission on the path.
+   * file.getJSONEncrypted. Requires Hidden Read permission on the path.
    *
    * @param path - The given path.
    * @param isDirectory - Whether the path is a directory.
    * @returns - The seed for the path.
+   * @throws - Will throw if the user does not have Hidden Read permission on the path.
    */
   async getEncryptedFileSeed(path: string, isDirectory: boolean): Promise<string> {
     validateString("path", path, "parameter");
@@ -521,11 +533,13 @@ export class MySky {
   }
 
   /**
-   * Gets Encrypted JSON at the given path through MySky, if the user has given Read permissions to do so.
+   * Gets Encrypted JSON at the given path through MySky, if the user has given
+   * Hidden Read permissions to do so.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the decrypted json data.
+   * @throws - Will throw if the user does not have Hidden Read permission on the path.
    */
   async getJSONEncrypted(path: string, customOptions?: CustomGetJSONOptions): Promise<EncryptedJSONResponse> {
     validateString("path", path, "parameter");
@@ -539,8 +553,7 @@ export class MySky {
     };
 
     // Call MySky which checks for read permissions on the path.
-    const publicKey = await this.userID();
-    const pathSeed = await this.getEncryptedFileSeed(path, false);
+    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedFileSeed(path, false)]);
 
     // Fetch the raw encrypted JSON data.
     const dataKey = deriveEncryptedFileTweak(pathSeed);
@@ -550,18 +563,20 @@ export class MySky {
     }
 
     const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
-    const { _data: json } = decryptJSONFile(data, encryptionKey);
+    const json = decryptJSONFile(data, encryptionKey);
 
     return { data: json };
   }
 
   /**
-   * Sets Encrypted JSON at the given path through MySky, if the user has given Write permissions to do so.
+   * Sets Encrypted JSON at the given path through MySky, if the user has given
+   * Hidden Write permissions to do so.
    *
    * @param path - The data path.
    * @param json - The json to encrypt and set.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the original json data.
+   * @throws - Will throw if the user does not have Hidden Write permission on the path.
    */
   async setJSONEncrypted(
     path: string,
@@ -579,15 +594,13 @@ export class MySky {
     };
 
     // Call MySky which checks for read permissions on the path.
-    const publicKey = await this.userID();
-    const pathSeed = await this.getEncryptedFileSeed(path, false);
+    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedFileSeed(path, false)]);
     const dataKey = deriveEncryptedFileTweak(pathSeed);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
     const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
     // Pad and encrypt json file.
-    const fullData = { _data: json, _v: ENCRYPTED_JSON_RESPONSE_VERSION };
-    const data = encryptJSONFile(fullData, encryptionKey);
+    const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);
 
     const entry = await getOrCreateRawBytesRegistryEntry(this.connector.client, publicKey, dataKey, data, opts);
 

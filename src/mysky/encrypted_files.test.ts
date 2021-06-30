@@ -88,8 +88,7 @@ describe("deriveEncryptedFileTweak", () => {
 
 const encryptedTestFilePath = "test_data/encrypted-json-file";
 const json = { message: "text" };
-const v = ENCRYPTED_JSON_RESPONSE_VERSION;
-const fullData = { _data: json, _v: v };
+const metadata = { version: ENCRYPTED_JSON_RESPONSE_VERSION };
 const key = new Uint8Array(ENCRYPTION_KEY_LENGTH);
 const fileData = new Uint8Array(readFileSync(encryptedTestFilePath));
 
@@ -99,26 +98,28 @@ describe("decryptJSONFile", () => {
 
     const result = decryptJSONFile(fileData, key);
 
-    expect(result).toEqual(fullData);
+    expect(result).toEqual(json);
   });
 
   it("Should fail to decrypt bad data", () => {
     expect(() => decryptJSONFile(new Uint8Array(4096), key)).toThrowError(
-      "Received unrecognized JSON response version '0', expected '1'"
+      "Received unrecognized JSON response version '0' in metadata, expected '1'"
     );
   });
 
   it("Should fail to decrypt data with a corrupted nonce", () => {
     const data = fileData.slice();
+    // Increment the first byte of the nonce to corrupt it.
     data[0]++;
     expect(() => decryptJSONFile(data, key)).toThrowError("Could not decrypt given encrypted JSON file");
   });
 
   it("Should fail to decrypt data with a corrupted metadata", () => {
     const data = fileData.slice();
+    // Increment the first byte of the metadata to corrupt it.
     data[ENCRYPTION_NONCE_LENGTH]++;
     expect(() => decryptJSONFile(data, key)).toThrowError(
-      "Received unrecognized JSON response version '2', expected '1'"
+      "Received unrecognized JSON response version '2' in metadata, expected '1'"
     );
   });
 
@@ -132,20 +133,23 @@ describe("decryptJSONFile", () => {
     const data = fileData.slice(0, fileData.length - 1);
     expect(data.length).toEqual(4095);
     expect(() => decryptJSONFile(data, key)).toThrowError(
-      "Expected parameter 'data' to be padded encrypted data, length was '4095', was type 'object', value '174,167,134,21,46,207,180,245,44,139,11,69,252,151,172,83,91,4,3,35,8,124,58,113,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,216,246,27,114,110,131,41,62,175,48,210,216,97,136,48,8,79,76,33,85,100,240,252,91,188,153,39,76,217,94,167,68,133,137,216,208,244,253,19,105,85,177,254,135,12,20,24,85,185,165,5,14,89,243,15,157,237,128,66,76,41,181,192,187,199,218,199,82,43,134,154,161,91,215,191,119,33,42,7,137,188,71,228,251,245,222,30,193,...'"
+      "Expected input to be decrypted 'data' to be padded encrypted data, length was '4095'"
     );
   });
 });
 
 describe("encryptJSONFile", () => {
-  const result = encryptJSONFile(fullData, key);
+  it("Should encrypt json data", () => {
+    const result = encryptJSONFile(json, metadata, key);
 
-  expect(result.length).toEqual(4096);
+    expect(result.length).toEqual(4096);
+  });
 });
 
 describe("encodeEncryptedFileMetadata", () => {
-  it("Should fail to encode metadata with an invalid version", () => {
-    const version = 256;
+  const versions = [256, -1];
+
+  it.each(versions)("Should fail to encode metadata with invalid version %s", (version) => {
     const metadata = { version };
     expect(() => encodeEncryptedFileMetadata(metadata)).toThrowError(
       `Metadata version '${version}' could not be stored in a uint8`

@@ -31,7 +31,6 @@ import {
   validateObject,
   validateOptionalObject,
   validateString,
-  validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
 import { areEqualUint8Arrays } from "./utils/array";
@@ -115,7 +114,7 @@ export async function getJSON(
   };
 
   // Lookup the registry entry.
-  const entry = await getRegistryEntry(this, publicKey, dataKey, opts);
+  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, opts);
   if (entry === null) {
     return { data: null, dataLink: null };
   }
@@ -306,7 +305,7 @@ export async function getRawBytes(
   };
 
   // Lookup the registry entry.
-  const entry = await getRegistryEntry(this, publicKey, dataKey, opts);
+  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, opts);
   if (entry === null) {
     return { data: null, dataLink: null };
   }
@@ -534,21 +533,19 @@ export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
  * @returns - Whether the cached data link is a match.
  */
 export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string): boolean {
-  // Double exclamation mark is necessary to convert cachedDataLink to false if it is undefined.
-  return !!(cachedDataLink && rawDataLink === parseSkylink(cachedDataLink));
+  return Boolean(cachedDataLink && rawDataLink === parseSkylink(cachedDataLink));
 }
 
 /**
- * Gets and validates the registry entry.
+ * Gets the registry entry, returning null if the entry contains an empty skylink (the deletion sentinel).
  *
  * @param client - The Skynet Client
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param opts - Additional settings.
  * @returns - The registry entry, or null if not found or deleted.
- * @throws - Will throw if the returned entry data is not a valid byte array.
  */
-async function getRegistryEntry(
+async function getSkyDBRegistryEntry(
   client: SkynetClient,
   publicKey: string,
   dataKey: string,
@@ -559,8 +556,6 @@ async function getRegistryEntry(
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return null;
   }
-  validateUint8Array("entry.data", entry.data, "returned entry data");
-
   return entry;
 }
 

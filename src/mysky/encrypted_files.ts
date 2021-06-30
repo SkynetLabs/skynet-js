@@ -3,10 +3,9 @@ import { sanitizePath } from "skynet-mysky-utils";
 import { secretbox } from "tweetnacl";
 
 import { HASH_LENGTH, sha512 } from "../crypto";
-import { JsonData, JsonFullData } from "../skydb";
+import { JsonData } from "../skydb";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, uint8ArrayToStringUtf8 } from "../utils/string";
 import {
-  throwValidationError,
   validateBoolean,
   validateHexString,
   validateNumber,
@@ -16,6 +15,10 @@ import {
   validateUint8ArrayLen,
 } from "../utils/validation";
 
+/**
+ * The current response version for encrypted JSON files. Part of the metadata
+ * prepended to encrypted data.
+ */
 export const ENCRYPTED_JSON_RESPONSE_VERSION = 1;
 
 /**
@@ -46,6 +49,15 @@ const ENCRYPTION_OVERHEAD_LENGTH = 16;
  */
 export const ENCRYPTION_PATH_SEED_LENGTH = 32;
 
+// Descriptive salt that should not be changed.
+const SALT_ENCRYPTED_CHILD = "encrypted filesystem child";
+
+// Descriptive salt that should not be changed.
+const SALT_ENCRYPTED_TWEAK = "encrypted filesystem tweak";
+
+// Descriptive salt that should not be changed.
+const SALT_ENCRYPTION = "encryption";
+
 export type EncryptedJSONResponse = {
   data: JsonData | null;
 };
@@ -69,13 +81,13 @@ type EncryptedFileMetadata = {
  * @returns - The JSON data and metadata.
  * @throws - Will throw if the bytes could not be decrypted.
  */
-export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData {
+export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonData {
   validateUint8Array("data", data, "parameter");
   validateUint8ArrayLen("key", key, "parameter", ENCRYPTION_KEY_LENGTH);
 
   // Validate that the size of the data corresponds to a padded block.
   if (!checkPaddedBlock(data.length)) {
-    throwValidationError("data", data, "parameter", `padded encrypted data, length was '${data.length}'`);
+    throw new Error(`Expected input to be decrypted 'data' to be padded encrypted data, length was '${data.length}'`);
   }
 
   // Extract the nonce.
@@ -88,7 +100,7 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData
   const metadata = decodeEncryptedFileMetadata(metadataBytes);
   if (metadata.version !== ENCRYPTED_JSON_RESPONSE_VERSION) {
     throw new Error(
-      `Received unrecognized JSON response version '${metadata.version}', expected '${ENCRYPTED_JSON_RESPONSE_VERSION}'`
+      `Received unrecognized JSON response version '${metadata.version}' in metadata, expected '${ENCRYPTED_JSON_RESPONSE_VERSION}'`
     );
   }
 
@@ -98,7 +110,8 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData
     throw new Error("Could not decrypt given encrypted JSON file");
   }
 
-  // Trim the 0-byte padding off the end.
+  // Trim the 0-byte padding off the end of the decrypted bytes. This should never remove real data as
+  // properly-formatted JSON must end with '}'.
   let paddingIndex = decryptedBytes.length;
   while (paddingIndex > 0 && decryptedBytes[paddingIndex - 1] === 0) {
     paddingIndex--;
@@ -106,25 +119,24 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonFullData
   decryptedBytes = decryptedBytes.slice(0, paddingIndex);
 
   // Parse the final decrypted message as json.
-  const json = JSON.parse(uint8ArrayToStringUtf8(decryptedBytes));
-  return { _data: json, _v: metadata.version };
+  return JSON.parse(uint8ArrayToStringUtf8(decryptedBytes));
 }
 
 /**
  * Encrypts the given JSON data and metadata.
  *
- * @param fullData - The given JSON data and metadata.
+ * @param json - The given JSON data.
+ * @param metadata - The given metadata.
  * @param key - The encryption key.
  * @returns - The encrypted data.
  */
-export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8Array {
-  const { _data, _v } = fullData;
-  validateObject("fullData._data", _data, "parameter");
-  validateNumber("fullData._v", _v, "parameter");
+export function encryptJSONFile(json: JsonData, metadata: EncryptedFileMetadata, key: Uint8Array): Uint8Array {
+  validateObject("json", json, "parameter");
+  validateNumber("metadata.version", metadata.version, "parameter");
   validateUint8ArrayLen("key", key, "parameter", ENCRYPTION_KEY_LENGTH);
 
   // Stringify the json and convert to bytes.
-  let data = stringToUint8ArrayUtf8(JSON.stringify(_data));
+  let data = stringToUint8ArrayUtf8(JSON.stringify(json));
 
   // Add padding so that the final size will be a padded block. The overhead will be added by encryption and we add the nonce at the end.
   const totalOverhead = ENCRYPTION_OVERHEAD_LENGTH + ENCRYPTION_NONCE_LENGTH + ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH;
@@ -138,7 +150,6 @@ export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8A
   const encryptedBytes = secretbox(data, nonce, key);
 
   // Prepend the metadata.
-  const metadata: EncryptedFileMetadata = { version: _v };
   const metadataBytes = encodeEncryptedFileMetadata(metadata);
   const finalBytes = new Uint8Array([...metadataBytes, ...encryptedBytes]);
 
@@ -153,7 +164,7 @@ export function encryptJSONFile(fullData: JsonFullData, key: Uint8Array): Uint8A
  * @returns - The key entropy.
  */
 export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
-  const bytes = new Uint8Array([...sha512("encryption"), ...sha512(pathSeed)]);
+  const bytes = new Uint8Array([...sha512(SALT_ENCRYPTION), ...sha512(pathSeed)]);
   const hashBytes = sha512(bytes);
   // Truncate the hash to the size of an encryption key.
   return hashBytes.slice(0, ENCRYPTION_KEY_LENGTH);
@@ -166,7 +177,7 @@ export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
  * @returns - The encrypted file tweak.
  */
 export function deriveEncryptedFileTweak(pathSeed: string): string {
-  let hashBytes = sha512(new Uint8Array([...sha512("encrypted filesystem tweak"), ...sha512(pathSeed)]));
+  let hashBytes = sha512(new Uint8Array([...sha512(SALT_ENCRYPTED_TWEAK), ...sha512(pathSeed)]));
   // Truncate the hash or it will be rejected in skyd.
   hashBytes = hashBytes.slice(0, HASH_LENGTH);
   return toHexString(hashBytes);
@@ -199,7 +210,7 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
       name,
     };
     const derivationPath = hashDerivationPathObject(derivationPathObj);
-    const bytes = new Uint8Array([...sha512("encrypted filesystem child"), ...derivationPath]);
+    const bytes = new Uint8Array([...sha512(SALT_ENCRYPTED_CHILD), ...derivationPath]);
     pathSeedBytes = sha512(bytes);
   }
 
@@ -254,20 +265,19 @@ function hashDerivationPathObject(obj: DerivationPathObject): Uint8Array {
  */
 export function padFileSize(initialSize: number): number {
   const kib = 1 << 10;
-  for (let n = 0; ; n++) {
-    // Prevent overflow. Max JS number size is 2^53-1.
-    if (n >= 53) {
-      throw new Error("Could not pad file size, overflow detected.");
-    }
+  // Only iterate to 53 (the maximum safe power of 2).
+  for (let n = 0; n < 53; n++) {
     if (initialSize <= (1 << n) * 80 * kib) {
       const paddingBlock = (1 << n) * 4 * kib;
       let finalSize = initialSize;
-      if (finalSize % paddingBlock != 0) {
+      if (finalSize % paddingBlock !== 0) {
         finalSize = initialSize - (initialSize % paddingBlock) + paddingBlock;
       }
       return finalSize;
     }
   }
+  // Prevent overflow. Max JS number size is 2^53-1.
+  throw new Error("Could not pad file size, overflow detected.");
 }
 
 /**
@@ -279,16 +289,15 @@ export function padFileSize(initialSize: number): number {
  */
 export function checkPaddedBlock(size: number): boolean {
   const kib = 1 << 10;
-  for (let n = 0; ; n++) {
-    // Prevent overflow. Max JS number size is 2^53-1.
-    if (n >= 53) {
-      throw new Error("Could not check padded file size, overflow detected.");
-    }
+  // Only iterate to 53 (the maximum safe power of 2).
+  for (let n = 0; n < 53; n++) {
     if (size <= (1 << n) * 80 * kib) {
       const paddingBlock = (1 << n) * 4 * kib;
       return size % paddingBlock === 0;
     }
   }
+  // Prevent overflow. Max JS number size is 2^53-1.
+  throw new Error("Could not check padded file size, overflow detected.");
 }
 
 /**
@@ -320,7 +329,7 @@ export function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Ui
   const bytes = new Uint8Array(ENCRYPTION_HIDDEN_FIELD_METADATA_LENGTH);
 
   // Encode the version
-  if (metadata.version >= 1 << 8) {
+  if (metadata.version >= 1 << 8 || metadata.version < 0) {
     throw new Error(`Metadata version '${metadata.version}' could not be stored in a uint8`);
   }
   // Don't need to use a DataView or worry about endianness for a uint8.
