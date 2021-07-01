@@ -39,7 +39,7 @@ describe("getFileContent", () => {
     mock.onPost(expectedUrl).replyOnce(200, "", {});
 
     await expect(client.pinSkylink(skylink)).rejects.toThrowError(
-      "Did not get a complete pin response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected pin response field 'response.headers[\"skynet-skylink\"]' to be type 'string', was 'undefined'"
+      "Did not get a complete pin response despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected pin response field 'response.headers[\"skynet-skylink\"]' to be type 'string', was type 'undefined'"
     );
   });
 
