@@ -270,7 +270,8 @@ describe(`Integration test for portal ${portal}`, () => {
   });
 
   describe("Registry end to end integration tests", () => {
-    const data = stringToUint8ArrayUtf8("AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg");
+    const skylink = "AABRKCTb6z9d-C-Hre-daX4-VIB8L7eydmEr8XRphnS8jg";
+    const data = stringToUint8ArrayUtf8(skylink);
 
     it("Should return null for an inexistent entry", async () => {
       const { publicKey } = genKeyPairAndSeed();
@@ -456,6 +457,22 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(data).toEqual(expect.any(Object));
       expect(data).toEqual(json);
       expect(contentType).toEqual("application/octet-stream");
+    });
+  });
+
+  describe("pinSkylink", () => {
+    const fileData = "testing";
+
+    it("Should call the actual pin endpoint and get the skylink from the headers", async () => {
+      // Upload the data to acquire its skylink.
+
+      const file = new File([fileData], dataKey);
+      const { skylink } = await client.uploadFile(file);
+      expect(skylink).not.toEqual("");
+
+      const { skylink: skylink2 } = await client.pinSkylink(skylink);
+
+      expect(skylink2).toEqual(skylink);
     });
   });
 

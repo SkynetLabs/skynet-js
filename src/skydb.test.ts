@@ -65,14 +65,26 @@ describe("getJSON", () => {
   });
 
   it("should perform a lookup and a skylink GET if the cachedDataLink is not a hit", async () => {
+    const skylinkNoHit = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
 
-    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" });
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: skylinkNoHit });
     expect(data).toEqual(jsonData);
     expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(2);
+  });
+
+  it("should throw if the cachedDataLink is not a valid skylink", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
+
+    await expect(client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" })).rejects.toThrowError(
+      "Expected optional parameter 'opts.cachedDataLink' to be valid skylink of type 'string', was 'asdf'"
+    );
   });
 
   it("should perform a lookup and skylink GET on legacy pre-v4 data", async () => {
