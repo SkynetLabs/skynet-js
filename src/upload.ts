@@ -33,7 +33,6 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  *
  * @property [endpointUpload] - The relative URL path of the portal endpoint to contact.
  * @property [endpointLargeUpload] - The relative URL path of the portal endpoint to contact for large uploads.
- * @property [endpointLargeUploadId] - The relative URL path of the portal endpoint to contact for large uploads to retrieve the skylink on success.
  * @property [customFilename] - The custom filename to use when uploading files.
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
@@ -41,7 +40,6 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
 export type CustomUploadOptions = BaseCustomOptions & {
   endpointUpload?: string;
   endpointLargeUpload?: string;
-  endpointLargeUploadId?: string;
 
   customFilename?: string;
   largeFileSize?: number;
@@ -62,7 +60,6 @@ export const defaultUploadOptions = {
 
   endpointUpload: "/skynet/skyfile",
   endpointLargeUpload: "/skynet/tus",
-  endpointLargeUploadId: "/skynet/upload/tus",
 
   customFilename: "",
   largeFileSize: TUS_CHUNK_SIZE,
@@ -253,15 +250,13 @@ export async function uploadLargeFileRequest(
           return;
         }
 
-        // Extract the location from the URL.
-        const [location] = trimSuffix(upload.url, "/").split("/").slice(-1);
         // Call HEAD to get the metadata, including the skylink.
         const resp = await this.executeRequest({
           ...opts,
+          url: upload.url,
           endpointPath: opts.endpointLargeUpload,
           method: "head",
           headers: { ...headers, "Tus-Resumable": "1.0.0" },
-          extraPath: location,
         });
         resolve(resp);
       },
