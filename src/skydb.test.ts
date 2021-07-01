@@ -83,7 +83,7 @@ describe("getJSON", () => {
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
 
     await expect(client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" })).rejects.toThrowError(
-      "Expected optional parameter 'opts.cachedDataLink' to be valid skylink of type 'string', was 'asdf'"
+      "Expected optional parameter 'opts.cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
     );
   });
 
