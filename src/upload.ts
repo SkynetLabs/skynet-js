@@ -6,7 +6,6 @@ import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
 import { buildRequestHeaders, buildRequestUrl, SkynetClient } from "./client";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
-import { trimSuffix } from "./utils/string";
 
 /**
  * The tus chunk size is (4MiB - encryptionOverhead) * dataPieces, set in skyd.
