@@ -133,7 +133,7 @@ describe("decryptJSONFile", () => {
     const data = fileData.slice(0, fileData.length - 1);
     expect(data.length).toEqual(4095);
     expect(() => decryptJSONFile(data, key)).toThrowError(
-      "Expected input to be decrypted 'data' to be padded encrypted data, length was '4095'"
+      "Expected parameter 'data' to be padded encrypted data, length was '4095', nearest padded block is '4096'"
     );
   });
 });

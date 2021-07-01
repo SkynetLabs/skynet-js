@@ -87,7 +87,11 @@ export function decryptJSONFile(data: Uint8Array, key: Uint8Array): JsonData {
 
   // Validate that the size of the data corresponds to a padded block.
   if (!checkPaddedBlock(data.length)) {
-    throw new Error(`Expected input to be decrypted 'data' to be padded encrypted data, length was '${data.length}'`);
+    throw new Error(
+      `Expected parameter 'data' to be padded encrypted data, length was '${
+        data.length
+      }', nearest padded block is '${padFileSize(data.length)}'`
+    );
   }
 
   // Extract the nonce.
