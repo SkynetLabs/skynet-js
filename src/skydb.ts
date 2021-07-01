@@ -21,7 +21,6 @@ import {
   uint8ArrayToStringUtf8,
 } from "./utils/string";
 import { formatSkylink } from "./skylink/format";
-import { parseSkylink } from "./skylink/parse";
 import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { defaultBaseOptions, extractOptions } from "./utils/options";
@@ -30,6 +29,7 @@ import {
   validateHexString,
   validateObject,
   validateOptionalObject,
+  validateSkylinkString,
   validateString,
   validateUint8ArrayLen,
 } from "./utils/validation";
@@ -533,7 +533,11 @@ export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
  * @returns - Whether the cached data link is a match.
  */
 export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string): boolean {
-  return Boolean(cachedDataLink && rawDataLink === parseSkylink(cachedDataLink));
+  if (cachedDataLink) {
+    cachedDataLink = validateSkylinkString("cachedDataLink", cachedDataLink, "optional parameter");
+    return rawDataLink === cachedDataLink;
+  }
+  return false;
 }
 
 /**

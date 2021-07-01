@@ -25,8 +25,9 @@ import {
   resolveHns,
 } from "./download";
 import { getJSONEncrypted, getEntryData, getEntryLink as fileGetEntryLink, getJSON as fileGetJSON } from "./file";
-import { deleteJSON, getJSON, setJSON, setDataLink, getRawBytes } from "./skydb";
+import { pinSkylink } from "./pin";
 import { getEntry, getEntryUrl, getEntryLink, setEntry, postSignedEntry } from "./registry";
+import { deleteJSON, getJSON, setJSON, setDataLink, getRawBytes } from "./skydb";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -113,6 +114,10 @@ export class SkynetClient {
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;
+
+  // Pin
+
+  pinSkylink = pinSkylink;
 
   // MySky
 

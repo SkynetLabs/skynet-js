@@ -1,3 +1,4 @@
+import { parseSkylink } from "../skylink/parse";
 import { isHexString } from "./string";
 
 /**
@@ -86,6 +87,26 @@ export function validateNumber(name: string, value: unknown, valueKind: string):
   if (typeof value !== "number") {
     throwValidationError(name, value, valueKind, "type 'number'");
   }
+}
+
+/**
+ * Validates the given value as a skylink string.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @returns - The validated and parsed skylink.
+ * @throws - Will throw if not a valid skylink string.
+ */
+export function validateSkylinkString(name: string, value: unknown, valueKind: string): string {
+  validateString(name, value, valueKind);
+
+  const parsedSkylink = parseSkylink(value as string);
+  if (parsedSkylink === null) {
+    throw throwValidationError(name, value, valueKind, `valid skylink of type 'string'`);
+  }
+
+  return parsedSkylink;
 }
 
 /**
