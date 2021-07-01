@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import { Upload } from "tus-js-client";
+import { HttpRequest, Upload } from "tus-js-client";
 
 import { getFileMimeType } from "./utils/file";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
@@ -219,8 +219,6 @@ export async function uploadLargeFileRequest(
   if (opts.customFilename) {
     filename = opts.customFilename;
   }
-  // TODO: Authorization?
-  // TODO: Do we have to enable cross-site cookies?
 
   const onProgress =
     opts.onUploadProgress &&
@@ -242,6 +240,10 @@ export async function uploadLargeFileRequest(
       },
       headers,
       onProgress,
+      onBeforeRequest: function (req: HttpRequest) {
+        const xhr = req.getUnderlyingObject();
+        xhr.withCredentials = true;
+      },
       onError: (error: Error) => {
         reject(error);
       },
