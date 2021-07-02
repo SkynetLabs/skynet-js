@@ -531,6 +531,7 @@ export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
  * @param rawDataLink - The raw, unformatted data link.
  * @param cachedDataLink - The cached data link, if provided.
  * @returns - Whether the cached data link is a match.
+ * @throws - Will throw if the given cached data link is not a valid skylink.
  */
 export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string): boolean {
   if (cachedDataLink) {

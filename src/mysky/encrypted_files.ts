@@ -206,7 +206,7 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
   subPath = sanitizePath(subPath);
   const names = subPath.split("/");
 
-  for (const [index, name] of names.entries()) {
+  names.forEach((name: string, index: number) => {
     const directory = index === names.length - 1 ? isDirectory : true;
     const derivationPathObj: DerivationPathObject = {
       pathSeed: pathSeedBytes,
@@ -216,7 +216,7 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
     const derivationPath = hashDerivationPathObject(derivationPathObj);
     const bytes = new Uint8Array([...sha512(SALT_ENCRYPTED_CHILD), ...derivationPath]);
     pathSeedBytes = sha512(bytes);
-  }
+  });
 
   // Truncate and hex-encode the final output.
   return toHexString(pathSeedBytes.slice(0, ENCRYPTION_PATH_SEED_LENGTH));
