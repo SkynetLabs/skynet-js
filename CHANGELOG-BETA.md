@@ -4,6 +4,16 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.11-beta]
+
+### Changed
+
+- Fixed large file upload cookies and sticky sessions.
+
+### Added
+
+- Added `client.pinSkylink`.
+
 ## [4.0.10-beta]
 
 ### Changed
