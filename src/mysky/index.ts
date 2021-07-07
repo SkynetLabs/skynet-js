@@ -13,7 +13,6 @@ import {
   Permission,
   PermType,
 } from "skynet-mysky-utils";
-import type { CustomUserIDOptions } from "skynet-mysky-utils";
 
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
@@ -275,8 +274,8 @@ export class MySky {
     return loggedIn;
   }
 
-  async userID(opts?: CustomUserIDOptions): Promise<string> {
-    return await this.connector.connection.remoteHandle().call("userID", opts);
+  async userID(): Promise<string> {
+    return await this.connector.connection.remoteHandle().call("userID");
   }
 
   /**
