@@ -69,7 +69,13 @@ describe("hexToUint8Array", () => {
 
 describe("trimUriPrefix", () => {
   it("should correctly parse hns prefixed link", () => {
-    const validHnsLinkVariations = [hnsLink, `hns:${hnsLink}`, `hns://${hnsLink}`];
+    const validHnsLinkVariations = [
+      hnsLink,
+      `hns:${hnsLink}`,
+      `hns://${hnsLink}`,
+      `HNS:${hnsLink}`,
+      `HNS://${hnsLink}`,
+    ];
 
     validHnsLinkVariations.forEach((input) => {
       expect(trimUriPrefix(input, uriHandshakePrefix)).toEqual(hnsLink);
