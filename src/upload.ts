@@ -1,12 +1,11 @@
 import { AxiosResponse } from "axios";
-import { Upload } from "tus-js-client";
+import { HttpRequest, Upload } from "tus-js-client";
 
 import { getFileMimeType } from "./utils/file";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
 import { buildRequestHeaders, buildRequestUrl, SkynetClient } from "./client";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
-import { trimSuffix } from "./utils/string";
 
 /**
  * The tus chunk size is (4MiB - encryptionOverhead) * dataPieces, set in skyd.
@@ -33,7 +32,6 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  *
  * @property [endpointUpload] - The relative URL path of the portal endpoint to contact.
  * @property [endpointLargeUpload] - The relative URL path of the portal endpoint to contact for large uploads.
- * @property [endpointLargeUploadId] - The relative URL path of the portal endpoint to contact for large uploads to retrieve the skylink on success.
  * @property [customFilename] - The custom filename to use when uploading files.
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
@@ -41,7 +39,6 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
 export type CustomUploadOptions = BaseCustomOptions & {
   endpointUpload?: string;
   endpointLargeUpload?: string;
-  endpointLargeUploadId?: string;
 
   customFilename?: string;
   largeFileSize?: number;
@@ -62,7 +59,6 @@ export const defaultUploadOptions = {
 
   endpointUpload: "/skynet/skyfile",
   endpointLargeUpload: "/skynet/tus",
-  endpointLargeUploadId: "/skynet/upload/tus",
 
   customFilename: "",
   largeFileSize: TUS_CHUNK_SIZE,
@@ -219,8 +215,6 @@ export async function uploadLargeFileRequest(
   if (opts.customFilename) {
     filename = opts.customFilename;
   }
-  // TODO: Authorization?
-  // TODO: Do we have to enable cross-site cookies?
 
   const onProgress =
     opts.onUploadProgress &&
@@ -242,8 +236,15 @@ export async function uploadLargeFileRequest(
       },
       headers,
       onProgress,
+      onBeforeRequest: function (req: HttpRequest) {
+        const xhr = req.getUnderlyingObject();
+        xhr.withCredentials = true;
+      },
       onError: (error: Error) => {
-        reject(error);
+        // @ts-expect-error tus-client-js Error is not typed correctly.
+        const res = error.originalResponse;
+        const message = res ? res.getBody() || error : error;
+        reject(new Error(message.trim()));
       },
       onSuccess: async () => {
         if (!upload.url) {
@@ -251,15 +252,13 @@ export async function uploadLargeFileRequest(
           return;
         }
 
-        // Extract the location from the URL.
-        const [location] = trimSuffix(upload.url, "/").split("/").slice(-1);
         // Call HEAD to get the metadata, including the skylink.
         const resp = await this.executeRequest({
           ...opts,
+          url: upload.url,
           endpointPath: opts.endpointLargeUpload,
           method: "head",
           headers: { ...headers, "Tus-Resumable": "1.0.0" },
-          extraPath: location,
         });
         resolve(resp);
       },

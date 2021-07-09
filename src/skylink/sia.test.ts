@@ -94,7 +94,9 @@ describe("newSkylinkV2", () => {
 
 describe("SiaSkylink.fromBytes", () => {
   it("Should fail on invalid input byte array length", () => {
-    expect(() => SiaSkylink.fromBytes(new Uint8Array(0))).toThrowError("Failed to load skylink data");
+    expect(() => SiaSkylink.fromBytes(new Uint8Array(0))).toThrowError(
+      "Expected parameter 'data' to be type 'Uint8Array' of length 34, was length 0, was type 'object', value ''"
+    );
   });
 });
 

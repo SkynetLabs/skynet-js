@@ -4,7 +4,7 @@ export { SkynetClient } from "./client";
 export { HASH_LENGTH, deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
 export { getEntryUrlForPortal, signEntry } from "./registry";
-export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
+export { DacLibrary, MySky, mySkyDomain, mySkyDevDomain } from "./mysky";
 export {
   deriveEncryptedFileKeyEntropy,
   deriveEncryptedFileSeed,
@@ -44,7 +44,7 @@ export {
 export type { CustomClientOptions, RequestConfig } from "./client";
 export type { KeyPair, KeyPairAndSeed, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
-export type { CustomConnectorOptions, MySky } from "./mysky";
+export type { CustomConnectorOptions } from "./mysky";
 export type { CustomPinOptions, PinResponse } from "./pin";
 export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";
 export type { CustomGetJSONOptions, CustomSetJSONOptions, JsonData, JSONResponse, RawBytesResponse } from "./skydb";

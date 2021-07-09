@@ -234,10 +234,10 @@ export async function deleteJSON(
  *
  * @param this - SkynetClient
  * @param privateKey - The user private key.
- * @param dataKey - The key of the data to fetch for the given user.
+ * @param dataKey - The data key.
  * @param dataLink - The data link to set at the entry.
  * @param [customOptions] - Additional settings that can optionally be set.
- * @throws - Will throw if the input keys are not valid strings
+ * @throws - Will throw if the input keys are not valid strings.
  */
 export async function setDataLink(
   this: SkynetClient,
