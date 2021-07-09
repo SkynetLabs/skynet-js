@@ -60,10 +60,7 @@ export class SiaSkylink {
    * @throws - Will throw if the data has an unexpected size.
    */
   static fromBytes(data: Uint8Array): SiaSkylink {
-    // Sanity check the size of the given data.
-    if (data.length !== RAW_SKYLINK_SIZE) {
-      throw new Error("Failed to load skylink data");
-    }
+    validateUint8ArrayLen("data", data, "parameter", RAW_SKYLINK_SIZE);
 
     const view = new DataView(data.buffer);
 
