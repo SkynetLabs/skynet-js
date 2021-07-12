@@ -693,9 +693,9 @@
     "@types/node" "*"
 
 "@types/sjcl@^1.0.29":
-  version "1.0.29"
-  resolved "https://registry.yarnpkg.com/@types/sjcl/-/sjcl-1.0.29.tgz#bd154ee15421fe24be2db4a20322f38069c1ca71"
-  integrity sha512-gP9M7Oq4xAoDpuueWHeOTasccV4K6iFBEBPbR0tXejKT/e/Gkla0XcJ9REmgSCICt6y8/ubcvXFtiZ4ZLQ6BKA==
+  version "1.0.30"
+  resolved "https://registry.yarnpkg.com/@types/sjcl/-/sjcl-1.0.30.tgz#c1db866622ef4da56af081fa2e258d76fb255b89"
+  integrity sha512-4ebBtj1rx3Kh3To5RnPua+U4JzVwH2MxUmHQvAlxWpzmfmupBRyyXAIEQceon+e5tW9aBeOApTYA6EXfBysRyQ==
 
 "@types/stack-utils@^2.0.0":
   version "2.0.0"
