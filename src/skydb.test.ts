@@ -6,6 +6,7 @@ import { MAX_REVISION } from "./utils/number";
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
+import { checkCachedDataLink } from "./skydb";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
@@ -83,7 +84,7 @@ describe("getJSON", () => {
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
 
     await expect(client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" })).rejects.toThrowError(
-      "Expected optional parameter 'opts.cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
+      "Expected optional parameter 'cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
     );
   });
 
@@ -225,6 +226,26 @@ describe("setJSON", () => {
     // @ts-expect-error We do not pass the json on purpose.
     await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
       "Expected parameter 'json' to be type 'object', was type 'undefined'"
+    );
+  });
+});
+
+describe("checkCachedDataLink", () => {
+  const differentSkylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+  const inputs: Array<[string, string | undefined, boolean]> = [
+    [skylink, undefined, false],
+    [skylink, skylink, true],
+    [skylink, differentSkylink, false],
+    [differentSkylink, skylink, false],
+  ];
+
+  it.each(inputs)("checkCachedDataLink(%s, %s) should return %s", (rawDataLink, cachedDataLink, output) => {
+    expect(checkCachedDataLink(rawDataLink, cachedDataLink)).toEqual(output);
+  });
+
+  it("Should throw on invalid cachedDataLink", () => {
+    expect(() => checkCachedDataLink(skylink, "asdf")).toThrowError(
+      "Expected optional parameter 'cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
     );
   });
 });
