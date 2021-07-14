@@ -4,6 +4,21 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.12-beta]
+
+### Added
+
+- Encrypted files API.
+  - `mySky.setJSONEncrypted`
+  - `mySky.getJSONEncrypted`
+  - `mySky.getEncryptedFileSeed`
+  - `file.getJSONEncrypted`
+
+### Changed
+
+- Export MySky as value instead of as type + minor fixes.
+- Error reporting for large files has been improved.
+
 ## [4.0.11-beta]
 
 ### Changed
