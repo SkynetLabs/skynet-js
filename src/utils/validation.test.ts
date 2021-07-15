@@ -1,5 +1,6 @@
 import {
   validateBigint,
+  validateBoolean,
   validateNumber,
   validateObject,
   validateString,
@@ -12,6 +13,14 @@ describe("validateBigint", () => {
   it("Should reject non-bigint input", () => {
     expect(() => validateBigint("test", 123, "parameter")).toThrowError(
       "Expected parameter 'test' to be type 'bigint', was type 'number', value '123'"
+    );
+  });
+});
+
+describe("validateBoolean", () => {
+  it("Should reject non-boolean input", () => {
+    expect(() => validateBoolean("test", 123, "parameter")).toThrowError(
+      "Expected parameter 'test' to be type 'boolean', was type 'number', value '123'"
     );
   });
 });
@@ -57,7 +66,7 @@ describe("validateUint8Array", () => {
 });
 
 describe("validateUint8ArrayLen", () => {
-  it("Should reject non-byte array input of wrong length", () => {
+  it("Should reject byte array input of wrong length", () => {
     expect(() => validateUint8ArrayLen("test", new Uint8Array(2), "parameter", 3)).toThrowError(
       "Expected parameter 'test' to be type 'Uint8Array' of length 3, was length 2, was type 'object', value '0,0'"
     );

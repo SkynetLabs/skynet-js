@@ -3,6 +3,18 @@ import { stringToUint8ArrayUtf8, toHexString } from "../utils/string";
 
 const discoverableBucketTweakVersion = 1;
 
+/**
+ * Derives the discoverable file tweak for the given path.
+ *
+ * @param path - The given path.
+ * @returns - The hex-encoded tweak.
+ */
+export function deriveDiscoverableFileTweak(path: string): string {
+  const dbt = new DiscoverableBucketTweak(path);
+  const bytes = dbt.getHash();
+  return toHexString(bytes);
+}
+
 export class DiscoverableBucketTweak {
   version: number;
   path: Array<Uint8Array>;
@@ -49,18 +61,7 @@ export function splitPath(path: string): Array<string> {
  * @param component - The component extracted from the path.
  * @returns - The hash.
  */
+// TODO: Can we replace with hashString?
 export function hashPathComponent(component: string): Uint8Array {
   return hashAll(stringToUint8ArrayUtf8(component));
-}
-
-/**
- * Derives the discoverable file tweak for the given path.
- *
- * @param path - The given path.
- * @returns - The hex-encoded tweak.
- */
-export function deriveDiscoverableTweak(path: string): string {
-  const dbt = new DiscoverableBucketTweak(path);
-  const bytes = dbt.getHash();
-  return toHexString(bytes);
 }

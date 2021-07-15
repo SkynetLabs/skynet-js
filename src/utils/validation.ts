@@ -16,6 +16,20 @@ export function validateBigint(name: string, value: unknown, valueKind: string):
 }
 
 /**
+ * Validates the given value as a boolean.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @throws - Will throw if not a valid boolean.
+ */
+export function validateBoolean(name: string, value: unknown, valueKind: string): void {
+  if (typeof value !== "boolean") {
+    throwValidationError(name, value, valueKind, "type 'boolean'");
+  }
+}
+
+/**
  * Validates the given value as an object.
  *
  * @param name - The name of the value.
