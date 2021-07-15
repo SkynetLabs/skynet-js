@@ -302,7 +302,7 @@ export async function buildRequestUrl(
   return url;
 }
 
-type Headers = { [key: string]: string };
+export type Headers = { [key: string]: string };
 
 /**
  * Helper function that builds the request headers.

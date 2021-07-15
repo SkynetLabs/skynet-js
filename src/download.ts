@@ -23,6 +23,7 @@ import { throwValidationError, validateObject, validateOptionalObject, validateS
 export type CustomDownloadOptions = BaseCustomOptions & {
   endpointDownload?: string;
   download?: boolean;
+  noCache?: boolean;
   path?: string;
   range?: string;
   responseType?: ResponseType;
@@ -91,6 +92,7 @@ export const defaultDownloadOptions = {
   ...defaultBaseOptions,
   endpointDownload: "/",
   download: false,
+  noCache: false,
   path: undefined,
   range: undefined,
   responseType: undefined,
@@ -212,11 +214,7 @@ export function getSkylinkUrlForPortal(
 
   const opts = { ...defaultDownloadOptions, ...customOptions };
 
-  const query: Record<string, unknown> = {};
-  if (opts.download) {
-    // Set the "attachment" parameter.
-    query.attachment = true;
-  }
+  const query = buildQuery(opts.download, opts.noCache);
 
   // URL-encode the path.
   let path = "";
@@ -285,10 +283,7 @@ export async function getHnsUrl(
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 
-  const query: Record<string, unknown> = {};
-  if (opts.download) {
-    query.attachment = true;
-  }
+  const query = buildQuery(opts.download, opts.noCache);
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);
   const portalUrl = await this.portalUrl();
@@ -382,7 +377,7 @@ export async function getMetadata(
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getFileContent<T = unknown>(
@@ -396,7 +391,11 @@ export async function getFileContent<T = unknown>(
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
-  return this.getFileContentRequest<T>(url, opts);
+  const response = await this.getFileContentRequest<T>(url, opts);
+
+  validateGetFileContentResponse(response);
+
+  return await extractGetFileContentResponse<T>(response);
 }
 
 /**
@@ -406,7 +405,7 @@ export async function getFileContent<T = unknown>(
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
  * @throws - Will throw if the domain does not contain a skylink.
  */
 export async function getFileContentHns<T = unknown>(
@@ -420,7 +419,11 @@ export async function getFileContentHns<T = unknown>(
 
   const url = await this.getHnsUrl(domain, opts);
 
-  return this.getFileContentRequest<T>(url, opts);
+  const response = await this.getFileContentRequest<T>(url, opts);
+
+  validateGetFileContentResponse(response);
+
+  return await extractGetFileContentResponse<T>(response);
 }
 
 /**
@@ -436,38 +439,21 @@ export async function getFileContentRequest<T = unknown>(
   this: SkynetClient,
   url: string,
   customOptions?: CustomDownloadOptions
-): Promise<GetFileContentResponse<T>> {
+): Promise<AxiosResponse> {
   // Not publicly available, don't validate input.
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
   const headers = opts.range ? { Range: opts.range } : undefined;
 
-  // GET request the data at the skylink.
-  const response = await this.executeRequest({
+  // GET request the data at the URL.
+  return await this.executeRequest({
     ...opts,
     endpointPath: opts.endpointDownload,
     method: "get",
     url,
     headers,
   });
-
-  if (typeof response.data === "undefined") {
-    throw new Error(
-      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-
-  const contentType = response.headers["content-type"] ?? "";
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
-
-  return { data: response.data, contentType, portalUrl, skylink };
 }
 
 /**
@@ -561,6 +547,59 @@ export async function resolveHns(
       hashedDataKeyHex: true,
     });
     return { data: response.data, skylink };
+  }
+}
+
+// =======
+// Helpers
+// =======
+
+function buildQuery(download: boolean, noCache: boolean): Record<string, unknown> {
+  const query: Record<string, unknown> = {};
+  if (download) {
+    // Set the "attachment" parameter.
+    query.attachment = true;
+  }
+  if (noCache) {
+    query.nocache = true;
+  }
+  return query;
+}
+
+/**
+ * Extracts the response from getFileContent.
+ *
+ * @param response - The Axios response.
+ * @returns - The extracted get file content response fields.
+ */
+async function extractGetFileContentResponse<T = unknown>(response: AxiosResponse): Promise<GetFileContentResponse<T>> {
+  const contentType = response.headers["content-type"] ?? "";
+  const portalUrl = response.headers["skynet-portal-api"] ?? "";
+  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+
+  return { data: response.data, contentType, portalUrl, skylink };
+}
+
+/**
+ * Validates the response from getFileContent.
+ *
+ * @param response - The Axios response.
+ * @throws - Will throw if the response does not contain the expected fields.
+ */
+function validateGetFileContentResponse(response: AxiosResponse): void {
+  try {
+    if (typeof response.data === "undefined") {
+      throw new Error(
+        "Did not get 'data' in response."
+      );
+    }
+    if (typeof response.headers === "undefined") {
+      throw new Error(
+        "Did not get 'headers' in response."
+      );
+    }
+  } catch (err) {
+      `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
   }
 }
 
