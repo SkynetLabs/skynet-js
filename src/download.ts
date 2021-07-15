@@ -1,5 +1,5 @@
 import { AxiosResponse, ResponseType } from "axios";
-import { SkynetClient } from "./client";
+import { SkynetClient, Headers } from "./client";
 
 import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
@@ -391,7 +391,7 @@ export async function getFileContent<T = unknown>(
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
-  const response = await this.getFileContentRequest<T>(url, opts);
+  const response = await this.getFileContentRequest(url, opts);
 
   validateGetFileContentResponse(response);
 
@@ -419,7 +419,7 @@ export async function getFileContentHns<T = unknown>(
 
   const url = await this.getHnsUrl(domain, opts);
 
-  const response = await this.getFileContentRequest<T>(url, opts);
+  const response = await this.getFileContentRequest(url, opts);
 
   validateGetFileContentResponse(response);
 
@@ -435,7 +435,7 @@ export async function getFileContentHns<T = unknown>(
  * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
  * @throws - Will throw if the request does not succeed or the response is missing data.
  */
-export async function getFileContentRequest<T = unknown>(
+export async function getFileContentRequest(
   this: SkynetClient,
   url: string,
   customOptions?: CustomDownloadOptions
@@ -444,7 +444,11 @@ export async function getFileContentRequest<T = unknown>(
 
   const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
 
-  const headers = opts.range ? { Range: opts.range } : undefined;
+  const headers: Headers = {};
+  if (opts.range) {
+    headers["Range"] = opts.range;
+  }
+  // headers["Access-Control-Request-Headers"] = "etag";
 
   // GET request the data at the URL.
   return await this.executeRequest({
@@ -554,6 +558,13 @@ export async function resolveHns(
 // Helpers
 // =======
 
+/**
+ * Helper function that builds the URL query.
+ *
+ * @param download - Whether to set attachment=true.
+ * @param noCache - Whether to set nocache=true.
+ * @returns - The URL query.
+ */
 function buildQuery(download: boolean, noCache: boolean): Record<string, unknown> {
   const query: Record<string, unknown> = {};
   if (download) {
@@ -589,17 +600,13 @@ async function extractGetFileContentResponse<T = unknown>(response: AxiosRespons
 function validateGetFileContentResponse(response: AxiosResponse): void {
   try {
     if (typeof response.data === "undefined") {
-      throw new Error(
-        "Did not get 'data' in response."
-      );
+      throw new Error("Did not get 'data' in response.");
     }
     if (typeof response.headers === "undefined") {
-      throw new Error(
-        "Did not get 'headers' in response."
-      );
+      throw new Error("Did not get 'headers' in response.");
     }
   } catch (err) {
-      `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
+    `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`;
   }
 }
 

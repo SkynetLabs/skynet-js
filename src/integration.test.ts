@@ -1,3 +1,4 @@
+import { randomUnicodeString } from "../utils/testing";
 import { hashDataKey } from "./crypto";
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { decodeSkylinkBase64 } from "./utils/encoding";
@@ -418,6 +419,72 @@ describe(`Integration test for portal ${portal}`, () => {
       expect(metadata).toEqual(expect.objectContaining({ filename: customFilename }));
     });
 
+    it("Should upload and download two files with different names and compare their etags", async () => {
+      // Generate random filenames.
+      const [filename1, filename2] = [randomUnicodeString(16), randomUnicodeString(16)];
+      const data = "file";
+
+      // Upload the files.
+      const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
+        client.uploadFile(new File([data], filename1)),
+        client.uploadFile(new File([data], filename2)),
+      ]);
+
+      await etagTestSkylinks(skylink1, skylink2);
+    });
+
+    it("Should upload and download two files with different contents and compare their etags", async () => {
+      // Generate random file data.
+      const [data1, data2] = [randomUnicodeString(4096), randomUnicodeString(4096)];
+      const filename = "file";
+
+      // Upload the files.
+      const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
+        client.uploadFile(new File([data1], filename)),
+        client.uploadFile(new File([data2], filename)),
+      ]);
+
+      await etagTestSkylinks(skylink1, skylink2);
+    });
+
+    it("Should update an etag for a resolver skylink after changing its data", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      // Generate random file data.
+      const [data1, data2] = [randomUnicodeString(4096), randomUnicodeString(4096)];
+      const filename = "file";
+
+      // Generate a data key and get its entry link.
+      const dataKey = randomUnicodeString(16);
+      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+
+      // Upload two random files.
+      const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
+        client.uploadFile(new File([data1], filename)),
+        client.uploadFile(new File([data2], filename)),
+      ]);
+
+      // Set the data link for the first file at a random data key.
+      await client.db.setDataLink(privateKey, dataKey, skylink1);
+
+      // Get the entry link's etag.
+      const url = await client.getSkylinkUrl(entryLink);
+      // @ts-expect-error Calling a private method.
+      const response1 = await client.getFileContentRequest(url);
+      const etag1 = response1.headers["etag"];
+      expect(etag1).toBeTruthy();
+
+      // Set the data link for the second file.
+      await client.db.setDataLink(privateKey, dataKey, skylink2);
+
+      // Check that the etag was updated.
+      // @ts-expect-error Calling a private method.
+      const response2 = await client.getFileContentRequest(url);
+      const etag2 = response2.headers["etag"];
+      expect(etag2).toBeTruthy();
+      expect(etag2).not.toEqual(etag1);
+    });
+
     it("Should get plaintext file contents", async () => {
       // Upload the data to acquire its skylink.
 
@@ -531,3 +598,44 @@ describe(`Integration test for portal ${portal}`, () => {
     });
   });
 });
+
+/**
+ * Runs the full etag test on the given skylinks.
+ *
+ * @param skylink1 - The first skylink.
+ * @param skylink2 - The second skylink.
+ */
+export async function etagTestSkylinks(skylink1: string, skylink2: string): Promise<void> {
+  // The skylinks should differ.
+  expect(skylink1).not.toEqual(skylink2);
+
+  // Download the files.
+  const [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
+  const [response1, response2] = await Promise.all([
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url1),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url2),
+  ]);
+
+  // Get the etags.
+  const [etag1, etag2] = [response1.headers["etag"], response2.headers["etag"]];
+  expect(etag1).toBeTruthy();
+  expect(etag2).toBeTruthy();
+
+  // The etags should differ.
+  expect(etag1).not.toEqual(etag2);
+
+  // Download the files using nocache.
+  const [response3, response4] = await Promise.all([
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url1, { noCache: true }),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url2, { noCache: true }),
+  ]);
+
+  // The etags should not have changed.
+  const [etag3, etag4] = [response3.headers["etag"], response4.headers["etag"]];
+  expect(etag3).toEqual(etag1);
+  expect(etag4).toEqual(etag2);
+}
