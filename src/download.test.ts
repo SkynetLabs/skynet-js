@@ -52,15 +52,6 @@ describe("downloadFile", () => {
     expect(mockLocationAssign).toHaveBeenCalledWith(fullExpectedUrl);
   });
 
-  it("should download with nocache=true set if noCache option is set", async () => {
-    mockLocationAssign.mockClear();
-    const url = await client.downloadFile(skylink, { noCache: true });
-
-    expect(url).toEqual(expect.stringContaining(expectedUrl));
-    expect(url).toEqual(expect.stringContaining("nocache=true"));
-    expect(mockLocationAssign).toHaveBeenCalledWith(url);
-  });
-
   it("should download with the optional path being correctly URI-encoded", async () => {
     const url = await client.downloadFile(skylink, { path: "dir/test?encoding" });
 

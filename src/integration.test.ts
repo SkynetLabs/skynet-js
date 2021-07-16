@@ -610,7 +610,7 @@ export async function etagTestSkylinks(skylink1: string, skylink2: string): Prom
   expect(skylink1).not.toEqual(skylink2);
 
   // Download the files.
-  const [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
+  let [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
   const [response1, response2] = await Promise.all([
     // @ts-expect-error Calling a private method.
     client.getFileContentRequest(url1),
@@ -627,11 +627,12 @@ export async function etagTestSkylinks(skylink1: string, skylink2: string): Prom
   expect(etag1).not.toEqual(etag2);
 
   // Download the files using nocache.
+  [url1, url2] = [`${url1}?nocache=true`, `${url2}?nocache=true`];
   const [response3, response4] = await Promise.all([
     // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url1, { noCache: true }),
+    client.getFileContentRequest(url1),
     // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url2, { noCache: true }),
+    client.getFileContentRequest(url2),
   ]);
 
   // The etags should not have changed.

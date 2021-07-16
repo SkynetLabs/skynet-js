@@ -23,7 +23,6 @@ import { throwValidationError, validateObject, validateOptionalObject, validateS
 export type CustomDownloadOptions = BaseCustomOptions & {
   endpointDownload?: string;
   download?: boolean;
-  noCache?: boolean;
   path?: string;
   range?: string;
   responseType?: ResponseType;
@@ -92,7 +91,6 @@ export const defaultDownloadOptions = {
   ...defaultBaseOptions,
   endpointDownload: "/",
   download: false,
-  noCache: false,
   path: undefined,
   range: undefined,
   responseType: undefined,
@@ -214,7 +212,7 @@ export function getSkylinkUrlForPortal(
 
   const opts = { ...defaultDownloadOptions, ...customOptions };
 
-  const query = buildQuery(opts.download, opts.noCache);
+  const query = buildQuery(opts.download);
 
   // URL-encode the path.
   let path = "";
@@ -283,7 +281,7 @@ export async function getHnsUrl(
 
   const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
 
-  const query = buildQuery(opts.download, opts.noCache);
+  const query = buildQuery(opts.download);
 
   domain = trimUriPrefix(domain, uriHandshakePrefix);
   const portalUrl = await this.portalUrl();
@@ -562,17 +560,13 @@ export async function resolveHns(
  * Helper function that builds the URL query.
  *
  * @param download - Whether to set attachment=true.
- * @param noCache - Whether to set nocache=true.
  * @returns - The URL query.
  */
-function buildQuery(download: boolean, noCache: boolean): Record<string, unknown> {
+function buildQuery(download: boolean): Record<string, unknown> {
   const query: Record<string, unknown> = {};
   if (download) {
     // Set the "attachment" parameter.
     query.attachment = true;
-  }
-  if (noCache) {
-    query.nocache = true;
   }
   return query;
 }
