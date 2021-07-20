@@ -430,7 +430,7 @@ describe(`Integration test for portal ${portal}`, () => {
         client.uploadFile(new File([data], filename2)),
       ]);
 
-      await etagTestSkylinks(skylink1, skylink2);
+      await expectDifferentEtags(skylink1, skylink2);
     });
 
     it("Should upload and download two files with different contents and compare their etags", async () => {
@@ -444,7 +444,7 @@ describe(`Integration test for portal ${portal}`, () => {
         client.uploadFile(new File([data2], filename)),
       ]);
 
-      await etagTestSkylinks(skylink1, skylink2);
+      await expectDifferentEtags(skylink1, skylink2);
     });
 
     it("Should update an etag for a resolver skylink after changing its data", async () => {
@@ -600,12 +600,12 @@ describe(`Integration test for portal ${portal}`, () => {
 });
 
 /**
- * Runs the full etag test on the given skylinks.
+ * Runs the etag test on the given skylinks that expects different etags.
  *
  * @param skylink1 - The first skylink.
  * @param skylink2 - The second skylink.
  */
-export async function etagTestSkylinks(skylink1: string, skylink2: string): Promise<void> {
+export async function expectDifferentEtags(skylink1: string, skylink2: string): Promise<void> {
   // The skylinks should differ.
   expect(skylink1).not.toEqual(skylink2);
 

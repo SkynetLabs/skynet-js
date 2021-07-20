@@ -238,7 +238,7 @@ describe("getFileContent", () => {
     mock.onGet(expectedUrl).replyOnce(200);
 
     await expect(client.getFileContent(skylink)).rejects.toThrowError(
-      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Did not get 'data' in response."
     );
   });
 
@@ -246,7 +246,7 @@ describe("getFileContent", () => {
     mock.onGet(expectedUrl).replyOnce(200, {});
 
     await expect(client.getFileContent(skylink)).rejects.toThrowError(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Did not get 'headers' in response."
     );
   });
 

@@ -446,7 +446,6 @@ export async function getFileContentRequest(
   if (opts.range) {
     headers["Range"] = opts.range;
   }
-  // headers["Access-Control-Request-Headers"] = "etag";
 
   // GET request the data at the URL.
   return await this.executeRequest({
@@ -600,7 +599,9 @@ function validateGetFileContentResponse(response: AxiosResponse): void {
       throw new Error("Did not get 'headers' in response.");
     }
   } catch (err) {
-    `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`;
+    throw new Error(
+      `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
+    );
   }
 }
 
