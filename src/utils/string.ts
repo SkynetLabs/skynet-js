@@ -78,13 +78,15 @@ export function trimSuffix(str: string, suffix: string, limit?: number): string 
  * @returns - The processed string.
  */
 export function trimUriPrefix(str: string, prefix: string): string {
-  const shortPrefix = trimSuffix(prefix, "/");
-  if (str.startsWith(prefix)) {
+  const longPrefix = prefix.toLowerCase();
+  const shortPrefix = trimSuffix(longPrefix, "/");
+  const strLower = str.toLowerCase();
+  if (strLower.startsWith(longPrefix)) {
     // longPrefix is exactly at the beginning
-    return str.slice(prefix.length);
+    return str.slice(longPrefix.length);
   }
-  if (str.startsWith(shortPrefix)) {
-    // else prefix is exactly at the beginning
+  if (strLower.startsWith(shortPrefix)) {
+    // else shortPrefix is exactly at the beginning
     return str.slice(shortPrefix.length);
   }
   return str;

@@ -196,6 +196,7 @@ export function deriveEncryptedFileTweak(pathSeed: string): string {
  * @param subPath - The path.
  * @param isDirectory - Whether the path is a directory.
  * @returns - The path seed for the given path.
+ * @throws - Will throw if the input sub path is not a valid path.
  */
 export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
   validateHexString("pathSeed", pathSeed, "parameter");
@@ -203,8 +204,11 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
   validateBoolean("isDirectory", isDirectory, "parameter");
 
   let pathSeedBytes = hexToUint8Array(pathSeed);
-  subPath = sanitizePath(subPath);
-  const names = subPath.split("/");
+  const sanitizedPath = sanitizePath(subPath);
+  if (sanitizedPath === null) {
+    throw new Error(`Input subPath '${subPath}' not a valid path`);
+  }
+  const names = sanitizedPath.split("/");
 
   names.forEach((name: string, index: number) => {
     const directory = index === names.length - 1 ? isDirectory : true;

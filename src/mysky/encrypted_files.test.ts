@@ -72,6 +72,16 @@ describe("deriveEncryptedFileSeed", () => {
 
     expect(fileSeed).not.toEqual(directorySeed);
   });
+
+  it("Should throw for invalid sub path", () => {
+    const pathSeed = "abc";
+    const subPath = "";
+
+    // Derive seed for a file.
+    expect(() => deriveEncryptedFileSeed(pathSeed, subPath, false)).toThrowError(
+      `Input subPath '${subPath}' not a valid path`
+    );
+  });
 });
 
 describe("deriveEncryptedFileTweak", () => {
