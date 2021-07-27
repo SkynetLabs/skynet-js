@@ -151,6 +151,8 @@ export function extractDomainForPortal(portalUrl: string, fullDomain: string): s
     fullDomain = trimForwardSlash(fullDomain);
     // Split on first / to get the path.
     [fullDomain, path] = fullDomain.split(/\/(.+)/);
+    // Lowercase the domain to match URL parsing. Leave path as-is.
+    fullDomain = fullDomain.toLowerCase();
   }
 
   // Get the portal domain.
