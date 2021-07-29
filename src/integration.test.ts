@@ -472,8 +472,24 @@ describe(`Integration test for portal ${portal}`, () => {
       // // Get file content and check returned values.
       // const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
 
-      // expect(data).toEqual(expect.any(Object));
       // expect(data).toEqual("");
+    });
+
+    it("Should upload and download a 1-byte file", async () => {
+      const filedata = "a";
+      const onProgress = (progress: number) => {
+        expect(progress).toBeLessThanOrEqual(1);
+      };
+
+      const file = new File([filedata], dataKey);
+      expect(file.size).toEqual(filedata.length);
+      const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+      expect(skylink).not.toEqual("");
+
+      // Get file content and check returned values.
+      const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+
+      expect(data).toEqual(filedata);
     });
   });
 

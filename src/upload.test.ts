@@ -47,33 +47,28 @@ describe("uploadFile", () => {
   });
 
   it("should register onUploadProgress callback if defined", async () => {
-    const newPortal = "https://my-portal.net";
-    const url = `${newPortal}/skynet/skyfile`;
-    const client = new SkynetClient(newPortal);
-    mock.onHead(newPortal).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
+    mock.onPost(url).reply(200, data);
 
-    // Use replyOnce to catch a single request with the new URL.
-    mock.onPost(url).replyOnce(200, data);
-
-    const response = await client.uploadFile(file, { onUploadProgress: jest.fn() });
-
+    // Assert `onUploadProgress` is not defined if not set.
+    await client.uploadFile(file);
     expect(mock.history.post.length).toBe(1);
-    const request = mock.history.post[0];
+    const request1 = mock.history.post[0];
+    expect(request1.onUploadProgress).not.toBeDefined();
 
-    expect(request.onUploadProgress).toEqual(expect.any(Function));
-    await compareFormData(request.data, [["file", "foo", filename]]);
-
-    expect(response.skylink).toEqual(sialink);
+    // Assert `onUploadProgress` is defined when passed as an option.
+    await client.uploadFile(file, { onUploadProgress: jest.fn() });
+    expect(mock.history.post.length).toBe(2);
+    const request2 = mock.history.post[1];
+    expect(request2.onUploadProgress).toBeDefined();
   });
 
   it("should use custom filename if provided", async () => {
-    const data = await client.uploadFile(file, { customFilename: "testname" });
+    const customFilename = "testname";
 
+    const data = await client.uploadFile(file, { customFilename });
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
-
-    await compareFormData(request.data, [["file", "foo", "testname"]]);
-
+    await compareFormData(request.data, [["file", "foo", customFilename]]);
     expect(data.skylink).toEqual(sialink);
   });
 
@@ -194,14 +189,19 @@ describe("uploadDirectory", () => {
   });
 
   it("should register onUploadProgress callback if defined", async () => {
-    const data = await client.uploadDirectory(directory, filename, { onUploadProgress: jest.fn() });
+    mock.onPost(url).reply(200, data);
 
+    // Assert `onUploadProgress` is not defined if not set.
+    await client.uploadDirectory(directory, filename);
     expect(mock.history.post.length).toBe(1);
-    const request = mock.history.post[0];
+    const request1 = mock.history.post[0];
+    expect(request1.onUploadProgress).not.toBeDefined();
 
-    expect(request.onUploadProgress).toEqual(expect.any(Function));
-
-    expect(data.skylink).toEqual(sialink);
+    // Assert `onUploadProgress` is defined when passed as an option.
+    await client.uploadDirectory(directory, filename, { onUploadProgress: jest.fn() });
+    expect(mock.history.post.length).toBe(2);
+    const request2 = mock.history.post[1];
+    expect(request2.onUploadProgress).toBeDefined();
   });
 
   it("should encode special characters in the URL", async () => {

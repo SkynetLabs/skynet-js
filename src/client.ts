@@ -242,6 +242,7 @@ export class SkynetClient {
     if (config.onDownloadProgress) {
       onDownloadProgress = function (event: ProgressEvent) {
         // Avoid NaN for 0-byte file.
+        /* istanbul ignore next: Empty file test doesn't work yet. */
         const progress = event.total ? event.loaded / event.total : 1;
         // @ts-expect-error TS complains even though we've ensured this is defined.
         config.onDownloadProgress(progress, event);
@@ -251,6 +252,7 @@ export class SkynetClient {
     if (config.onUploadProgress) {
       onUploadProgress = function (event: ProgressEvent) {
         // Avoid NaN for 0-byte file.
+        /* istanbul ignore next: event.total is always 0 in Node. */
         const progress = event.total ? event.loaded / event.total : 1;
         // @ts-expect-error TS complains even though we've ensured this is defined.
         config.onUploadProgress(progress, event);
