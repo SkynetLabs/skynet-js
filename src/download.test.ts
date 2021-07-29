@@ -187,7 +187,7 @@ describe("getMetadata", () => {
     mock.onGet(skylinkUrl).replyOnce(200, {});
 
     await expect(client.getMetadata(skylink)).rejects.toThrowError(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      "Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.headers field missing"
     );
   });
 });

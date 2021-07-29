@@ -17,7 +17,6 @@ import { throwValidationError, validateObject, validateOptionalObject, validateS
  * @property [path] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
  * @property [range] - The Range request header to set for the download. Not applicable for in-borwser downloads.
  * @property [responseType] - The response type.
- * @property [query] - A query object to convert to a query parameter string and append to the URL.
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
  */
 export type CustomDownloadOptions = BaseCustomOptions & {
@@ -42,7 +41,6 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
 
 export type CustomGetMetadataOptions = BaseCustomOptions & {
   endpointGetMetadata?: string;
-  query?: Record<string, unknown>;
 };
 
 export type CustomHnsResolveOptions = BaseCustomOptions & {
@@ -94,12 +92,11 @@ export const defaultDownloadOptions = {
   path: undefined,
   range: undefined,
   responseType: undefined,
-  query: undefined,
   subdomain: false,
 };
 const defaultGetMetadataOptions = {
+  ...defaultBaseOptions,
   endpointGetMetadata: "/skynet/metadata",
-  query: undefined,
 };
 const defaultDownloadHnsOptions = {
   ...defaultDownloadOptions,
@@ -340,7 +337,8 @@ export async function getMetadata(
   skylinkUrl: string,
   customOptions?: CustomGetMetadataOptions
 ): Promise<GetMetadataResponse> {
-  // Validation is done in `getSkylinkUrl`.
+  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetMetadataOptions);
+  // Rest of validation is done in `getSkylinkUrl`.
 
   const opts = { ...defaultGetMetadataOptions, ...this.customOptions, ...customOptions };
 
@@ -349,7 +347,7 @@ export async function getMetadata(
   if (path) {
     throw new Error("Skylink string should not contain a path");
   }
-  const getSkylinkUrlOpts = { endpointDownload: opts.endpointGetMetadata, query: opts.query };
+  const getSkylinkUrlOpts = { endpointDownload: opts.endpointGetMetadata };
   const url = await this.getSkylinkUrl(skylinkUrl, getSkylinkUrlOpts);
 
   const response = await this.executeRequest({
@@ -362,12 +360,6 @@ export async function getMetadata(
   validateGetMetadataResponse(response);
 
   const metadata = response.data;
-
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
 
   const portalUrl = response.headers["skynet-portal-api"] ?? "";
   const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
@@ -574,6 +566,9 @@ function validateGetMetadataResponse(response: AxiosResponse): void {
   try {
     if (!response.data) {
       throw new Error("response.data field missing");
+    }
+    if (!response.headers) {
+      throw new Error("response.headers field missing");
     }
   } catch (err) {
     throw new Error(

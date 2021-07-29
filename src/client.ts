@@ -1,5 +1,5 @@
-import axios, { AxiosResponse, ResponseType } from "axios";
-import type { Method } from "axios";
+import axios from "axios";
+import type { AxiosResponse, ResponseType, Method } from "axios";
 
 import {
   uploadFile,

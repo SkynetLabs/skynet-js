@@ -1,4 +1,5 @@
 import parse from "url-parse";
+
 import { trimForwardSlash, trimSuffix, trimUriPrefix } from "../utils/string";
 import { uriSkynetPrefix } from "../utils/url";
 import { validateOptionalObject, validateString } from "../utils/validation";

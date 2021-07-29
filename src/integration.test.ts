@@ -2,10 +2,10 @@ import { hashDataKey } from "./crypto";
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
-import { uriSkynetPrefix } from "./utils/url";
+import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
 
-// To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn test src/integration.test.ts
-const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || "https://siasky.net";
+// To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest src/integration.test.ts
+const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || defaultSkynetPortalUrl;
 const client = new SkynetClient(portal);
 
 const dataKey = "HelloWorld";
@@ -22,12 +22,12 @@ declare global {
 
 expect.extend({
   toEqualPortalUrl(received: string, argument: string) {
+    // The received prefix, e.g. "https://" or "http://".
     const prefix = `${received.split("//", 1)[0]}//`;
     const expectedUrl = trimPrefix(argument, prefix);
     const receivedUrl = trimPrefix(received, prefix);
 
-    // Support the case where we receive siasky.net while expecting eu-fin-1.siasky.net.
-    if (!expectedUrl.endsWith(receivedUrl)) {
+    if (expectedUrl !== receivedUrl) {
       return { pass: false, message: () => `expected ${received} to equal ${argument}` };
     }
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
@@ -47,7 +47,7 @@ expect.extend({
   },
 });
 
-describe(`Integration test for portal ${portal}`, () => {
+describe(`Integration test for portal '${portal}'`, () => {
   describe("initPortalUrl", () => {
     it("Calling initPortalUrl after providing a custom portal URL should have no effect", async () => {
       const portalUrl1 = await client.portalUrl();
