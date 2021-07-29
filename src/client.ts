@@ -238,40 +238,24 @@ export class SkynetClient {
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
-    const onDownloadProgress =
-      config.onDownloadProgress &&
-      /* istanbul ignore next */
-      function (event: ProgressEvent) {
-        let progress;
-        if (event.total === 0) {
-          // Special handling for 0-byte files to avoid NaN.
-          progress = 1;
-        } else {
-          progress = event.loaded / event.total;
-        }
-
-        // Need the if-statement or TS complains.
-        if (config.onDownloadProgress) {
-          config.onDownloadProgress(progress, event);
-        }
+    let onDownloadProgress = undefined;
+    if (config.onDownloadProgress) {
+      onDownloadProgress = function (event: ProgressEvent) {
+        // Avoid NaN for 0-byte file.
+        const progress = event.total ? event.loaded / event.total : 1;
+        // @ts-expect-error TS complains even though we've ensured this is defined.
+        config.onDownloadProgress(progress, event);
       };
-    const onUploadProgress =
-      config.onUploadProgress &&
-      /* istanbul ignore next */
-      function (event: ProgressEvent) {
-        let progress;
-        if (event.total === 0) {
-          // Special handling for 0-byte files to avoid NaN.
-          progress = 1;
-        } else {
-          progress = event.loaded / event.total;
-        }
-
-        // Need the if-statement or TS complains.
-        if (config.onUploadProgress) {
-          config.onUploadProgress(progress, event);
-        }
+    }
+    let onUploadProgress = undefined;
+    if (config.onUploadProgress) {
+      onUploadProgress = function (event: ProgressEvent) {
+        // Avoid NaN for 0-byte file.
+        const progress = event.total ? event.loaded / event.total : 1;
+        // @ts-expect-error TS complains even though we've ensured this is defined.
+        config.onUploadProgress(progress, event);
       };
+    }
 
     return axios({
       url,
