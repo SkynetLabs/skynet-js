@@ -27,7 +27,8 @@ expect.extend({
     const expectedUrl = trimPrefix(argument, prefix);
     const receivedUrl = trimPrefix(received, prefix);
 
-    if (expectedUrl !== receivedUrl) {
+    // Support the case where we receive siasky.net while expecting eu-fin-1.siasky.net.
+    if (!expectedUrl.endsWith(receivedUrl)) {
       return { pass: false, message: () => `expected ${received} to equal ${argument}` };
     }
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
