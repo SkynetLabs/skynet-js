@@ -5,7 +5,6 @@ name: Daily CI
 on:
   schedule:
     - cron: "0 0 * * *"
-  pull_request:
 
 jobs:
   provide_servers_json:
@@ -29,7 +28,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   test:
-    name: Daily Server Test
+    name: Daily Production Server Test
     # Wait for the "provide_servers_json" phase to finish.
     needs: provide_servers_json
     runs-on: ubuntu-latest
