@@ -1,5 +1,5 @@
-import parse from "url-parse";
 import urljoin from "url-join";
+import parse from "url-parse";
 
 import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
 import { throwValidationError, validateString } from "./validation";

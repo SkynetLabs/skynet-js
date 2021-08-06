@@ -61,9 +61,9 @@ export async function compareFormData(formData: Record<string, unknown>, entries
 export function extractNonSkylinkPath(url: string, skylink: string): string {
   const parsed = parse(url, {});
   let path = parsed.pathname.replace(skylink, ""); // Remove skylink to get the path.
-  // Ensure there is only one leading slash.
+  // Ensure there are no leading or trailing slashes.
   path = trimForwardSlash(path);
-  // Don't add back the slash if there is no path.
+  // Add back the slash, unless there is no path.
   if (path !== "") {
     path = `/${path}`;
   }
