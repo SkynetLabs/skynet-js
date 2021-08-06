@@ -81,14 +81,14 @@ export const regexRevisionNoQuotes = REGEX_REVISION_NO_QUOTES;
 /**
  * Regex for JSON revision value with quotes.
  */
-export const REGEX_REVISION_WITH_QUOTES = /"revision":\s*"([0-9]+)"/;
+const REGEX_REVISION_WITH_QUOTES = /"revision":\s*"([0-9]+)"/;
 
 /**
  * Regex for JSON revision value with quotes.
  *
  * @deprecated please use REGEX_REVISION_WITH_QUOTES.
  */
-export const regexRevisionWithQuotes = REGEX_REVISION_WITH_QUOTES;
+const regexRevisionWithQuotes = REGEX_REVISION_WITH_QUOTES;
 
 const ED25519_PREFIX = "ed25519:";
 
