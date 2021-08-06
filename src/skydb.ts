@@ -55,7 +55,7 @@ export type CustomGetJSONOptions = CustomGetEntryOptions &
     cachedDataLink?: string;
   };
 
-export const defaultGetJSONOptions = {
+export const DEFAULT_GET_JSON_OPTIONS = {
   ...defaultBaseOptions,
   ...defaultGetEntryOptions,
   ...defaultDownloadOptions,
@@ -63,16 +63,26 @@ export const defaultGetJSONOptions = {
 };
 
 /**
+ * @deprecated please use DEFAULT_GET_JSON_OPTIONS.
+ */
+export const defaultGetJSONOptions = DEFAULT_GET_JSON_OPTIONS;
+
+/**
  * Custom set JSON options.
  */
 export type CustomSetJSONOptions = CustomGetJSONOptions & CustomSetEntryOptions & CustomUploadOptions;
 
-export const defaultSetJSONOptions = {
+export const DEFAULT_SET_JSON_OPTIONS = {
   ...defaultBaseOptions,
   ...defaultGetJSONOptions,
   ...defaultSetEntryOptions,
   ...defaultUploadOptions,
 };
+
+/**
+ * @deprecated please use DEFAULT_SET_JSON_OPTIONS.
+ */
+export const defaultSetJSONOptions = DEFAULT_SET_JSON_OPTIONS;
 
 export type JSONResponse = {
   data: JsonData | null;

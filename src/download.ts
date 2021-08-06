@@ -87,7 +87,7 @@ export type ResolveHnsResponse = {
   skylink: string;
 };
 
-export const defaultDownloadOptions = {
+export const DEFAULT_DOWNLOAD_OPTIONS = {
   ...defaultBaseOptions,
   endpointDownload: "/",
   download: false,
@@ -97,6 +97,12 @@ export const defaultDownloadOptions = {
   query: undefined,
   subdomain: false,
 };
+
+/**
+ * @deprecated please use DEFAULT_DOWNLOAD_OPTIONS.
+ */
+export const defaultDownloadOptions = DEFAULT_DOWNLOAD_OPTIONS;
+
 const defaultGetMetadataOptions = {
   endpointGetMetadata: "/skynet/metadata",
   query: undefined,
