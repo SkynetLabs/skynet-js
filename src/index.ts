@@ -1,7 +1,15 @@
 /* istanbul ignore file */
 
 export { SkynetClient } from "./client";
-export { HASH_LENGTH, deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
+export {
+  HASH_LENGTH,
+  deriveChildSeed,
+  genKeyPairAndSeed,
+  genKeyPairFromSeed,
+  PUBLIC_KEY_LENGTH,
+  PRIVATE_KEY_LENGTH,
+  SIGNATURE_LENGTH,
+} from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
 export { getEntryLink, getEntryUrlForPortal, signEntry } from "./registry";
 export { DacLibrary, MySky, mySkyDomain, mySkyDevDomain } from "./mysky";
