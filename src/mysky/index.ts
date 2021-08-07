@@ -17,7 +17,7 @@ import {
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { CustomGetEntryOptions, defaultGetEntryOptions, defaultSetEntryOptions, RegistryEntry } from "../registry";
+import { CustomGetEntryOptions, defaultGetEntryOptions, defaultSetEntryOptions, getEntryLink, RegistryEntry } from "../registry";
 import {
   defaultGetJSONOptions,
   defaultSetJSONOptions,
@@ -336,7 +336,7 @@ export class MySky {
     // Do not hash the tweak anymore.
     const opts = { ...defaultGetEntryOptions, hashedDataKeyHex: true };
 
-    return await this.connector.client.registry.getEntryLink(publicKey, dataKey, opts);
+    return getEntryLink(publicKey, dataKey, opts);
   }
 
   /**

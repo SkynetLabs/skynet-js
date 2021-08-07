@@ -289,19 +289,17 @@ export function getEntryUrlForPortal(
 /**
  * Gets the entry link for the entry at the given public key and data key. This link stays the same even if the content at the entry changes.
  *
- * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry link.
  * @throws - Will throw if the given key is not valid.
  */
-export async function getEntryLink(
-  this: SkynetClient,
+export function getEntryLink(
   publicKey: string,
   dataKey: string,
   customOptions?: CustomGetEntryOptions
-): Promise<string> {
+): string {
   validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);

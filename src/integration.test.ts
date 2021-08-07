@@ -1,5 +1,6 @@
+import { getEntryLink, genKeyPairAndSeed, SkynetClient } from "./index";
+
 import { hashDataKey } from "./crypto";
-import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
@@ -139,7 +140,7 @@ describe(`Integration test for portal '${portal}'`, () => {
       const expectedEntryLink = `${uriSkynetPrefix}AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw`;
       const expectedDataLink = `${uriSkynetPrefix}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
 
-      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+      const entryLink = getEntryLink(publicKey, dataKey);
       expect(entryLink).toEqual(expectedEntryLink);
 
       const { data } = await client.getFileContent(entryLink);
@@ -244,7 +245,7 @@ describe(`Integration test for portal '${portal}'`, () => {
       await client.db.deleteJSON(privateKey, dataKey);
 
       // Get the entry link.
-      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+      const entryLink = getEntryLink(publicKey, dataKey);
 
       // Downloading the entry link should return a 404.
       // TODO: Should getFileContent return `null` on 404?

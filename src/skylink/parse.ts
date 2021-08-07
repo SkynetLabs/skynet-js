@@ -96,7 +96,7 @@ export function parseSkylink(skylinkUrl: string, customOptions?: ParseSkylinkOpt
  * @returns - The base32 skylink.
  */
 export function parseSkylinkBase32(skylinkUrl: string, customOptions?: ParseSkylinkOptions): string | null {
-  // Do not validate, this helper function should only be called from parseSkylink.
+  // Do not validate inputs, this helper function should only be called from parseSkylink.
 
   const opts = { ...defaultParseSkylinkOptions, ...customOptions };
 

@@ -1,6 +1,7 @@
 import { AxiosResponse, ResponseType } from "axios";
 import { SkynetClient } from "./client";
 
+import { getEntryLink } from "./registry";
 import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
@@ -555,7 +556,8 @@ export async function resolveHns(
   if (response.data.skylink) {
     return { data: response.data, skylink: response.data.skylink };
   } else {
-    const skylink = await this.registry.getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
+    // We got a registry entry instead of a skylink, so get the entry link.
+    const entryLink = getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
       hashedDataKeyHex: true,
     });
     return { data: response.data, skylink };

@@ -7,7 +7,7 @@ import {
   EncryptedJSONResponse,
 } from "./mysky/encrypted_files";
 import { deriveDiscoverableFileTweak } from "./mysky/tweak";
-import { CustomGetEntryOptions, defaultGetEntryOptions } from "./registry";
+import { CustomGetEntryOptions, defaultGetEntryOptions, getEntryLink as registryGetEntryLink } from "./registry";
 import { CustomGetJSONOptions, defaultGetJSONOptions, JSONResponse } from "./skydb";
 import { validateOptionalObject, validateString, validateStringLen } from "./utils/validation";
 
@@ -69,7 +69,7 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
   // Do not hash the tweak anymore.
   const opts = { ...defaultGetEntryOptions, hashedDataKeyHex: true };
 
-  return await this.registry.getEntryLink(userID, dataKey, opts);
+  return registryGetEntryLink(userID, dataKey, opts);
 }
 
 /**

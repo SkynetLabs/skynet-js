@@ -3,7 +3,7 @@
 export { SkynetClient } from "./client";
 export { HASH_LENGTH, deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
-export { getEntryUrlForPortal, signEntry } from "./registry";
+export { getEntryLink, getEntryUrlForPortal, signEntry } from "./registry";
 export { DacLibrary, MySky, mySkyDomain, mySkyDevDomain } from "./mysky";
 export {
   deriveEncryptedFileKeyEntropy,
