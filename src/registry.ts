@@ -7,7 +7,7 @@ import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
 import { ensurePrefix, hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
-import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
+import { hashDataKey, hashRegistryEntry, PUBLIC_KEY_LENGTH, Signature, SIGNATURE_LENGTH } from "./crypto";
 import {
   throwValidationError,
   validateBigint,
@@ -16,6 +16,7 @@ import {
   validateOptionalObject,
   validateString,
   validateUint8Array,
+  validateUint8ArrayLen,
 } from "./utils/validation";
 import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
 import { formatSkylink } from "./skylink/format";
@@ -199,18 +200,19 @@ export async function getEntry(
   };
 
   // Try verifying the returned data.
+  const signatureBytes = new Uint8Array(signedEntry.signature);
+  const publicKeyBytes = hexToUint8Array(publicKey);
+  // Verify length of signature and public key.
+  validateUint8ArrayLen("signatureArray", signatureBytes, "response value", SIGNATURE_LENGTH);
+  validateUint8ArrayLen("publicKeyArray", publicKeyBytes, "response value", PUBLIC_KEY_LENGTH / 2);
   if (
-    sign.detached.verify(
-      hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex),
-      new Uint8Array(signedEntry.signature),
-      hexToUint8Array(publicKey)
-    )
+    sign.detached.verify(hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex), signatureBytes, publicKeyBytes)
   ) {
     return signedEntry;
   }
 
   // The response could not be verified.
-  throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
+  throw new Error("Could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
 }
 
 /**
@@ -295,11 +297,7 @@ export function getEntryUrlForPortal(
  * @returns - The entry link.
  * @throws - Will throw if the given key is not valid.
  */
-export function getEntryLink(
-  publicKey: string,
-  dataKey: string,
-  customOptions?: CustomGetEntryOptions
-): string {
+export function getEntryLink(publicKey: string, dataKey: string, customOptions?: CustomGetEntryOptions): string {
   validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);

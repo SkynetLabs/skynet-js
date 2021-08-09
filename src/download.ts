@@ -1,14 +1,26 @@
 import { AxiosResponse, ResponseType } from "axios";
-import { SkynetClient } from "./client";
+import { toByteArray } from "base64-js";
+import { sign } from "tweetnacl";
 
+import { SkynetClient } from "./client";
+import { hashRegistryEntry, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH } from "./crypto";
 import { getEntryLink } from "./registry";
 import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
-import { trimUriPrefix } from "./utils/string";
+import { isSkylinkV1 } from "./skylink/sia";
+import { encodeSkylinkBase64 } from "./utils/encoding";
 import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix } from "./utils/url";
-import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
+import { hexToUint8Array, toHexString, trimUriPrefix } from "./utils/string";
+import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix, uriSkynetPrefix } from "./utils/url";
+import {
+  throwValidationError,
+  validateObject,
+  validateOptionalObject,
+  validateSkylinkString,
+  validateString,
+  validateUint8ArrayLen,
+} from "./utils/validation";
 
 /**
  * Custom download options.
@@ -42,6 +54,7 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
 
 export type CustomGetMetadataOptions = BaseCustomOptions & {
   endpointGetMetadata?: string;
+  // TODO: Add subdomain option.
 };
 
 export type CustomHnsResolveOptions = BaseCustomOptions & {
@@ -364,12 +377,14 @@ export async function getMetadata(
     url,
   });
 
-  validateGetMetadataResponse(response);
+  // TODO: Pass subdomain option.
+  const inputSkylink = parseSkylink(skylinkUrl);
+  validateGetMetadataResponse(response, inputSkylink as string);
 
   const metadata = response.data;
 
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
 
   return { metadata, portalUrl, skylink };
 }
@@ -451,22 +466,21 @@ export async function getFileContentRequest<T = unknown>(
     headers,
   });
 
-  if (typeof response.data === "undefined") {
-    throw new Error(
-      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
+  const inputSkylink = parseSkylink(url);
+  // The input skylink will be null for HNS URLs.
+  //
+  // TODO: Should we validate the registry proof when making GET requests to HNS
+  // domains? It would require an additional call to resolveHns (including a
+  // network request) to get the skylink for the HNS domain.
+  validateGetFileContentResponse(response, inputSkylink);
 
-  const contentType = response.headers["content-type"] ?? "";
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+  const data = response.data;
 
-  return { data: response.data, contentType, portalUrl, skylink };
+  const contentType = response.headers["content-type"];
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
+
+  return { data, contentType, portalUrl, skylink };
 }
 
 /**
@@ -560,7 +574,56 @@ export async function resolveHns(
     const entryLink = getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
       hashedDataKeyHex: true,
     });
-    return { data: response.data, skylink };
+    return { data: response.data, skylink: entryLink };
+  }
+}
+
+/**
+ * Validates the response from getFileContent.
+ *
+ * @param response - The Axios response.
+ * @param inputSkylink - The input skylink, required to validate the proof.
+ * @throws - Will throw if the response does not contain the expected fields.
+ */
+function validateGetFileContentResponse(response: AxiosResponse, inputSkylink: string | null): void {
+  try {
+    if (!response.data) {
+      throw new Error("'response.data' field missing");
+    }
+    if (!response.headers) {
+      throw new Error("'response.headers' field missing");
+    }
+
+    const contentType = response.headers["content-type"];
+    if (!contentType) {
+      throw new Error("'content-type' header missing");
+    }
+    validateString(`response.headers["content-type"]`, contentType, "getMetadata response header");
+
+    // const portalUrl = response.headers["skynet-portal-api"];
+    // if (!portalUrl) {
+    //   throw new Error("'skynet-portal-api' header missing");
+    // }
+    // validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getMetadata response header");
+
+    const skylink = response.headers["skynet-skylink"];
+    if (!skylink) {
+      throw new Error("'skynet-skylink' header missing");
+    }
+    validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getMetadata response header");
+
+    // console.log(response.headers);
+    const proof = response.headers["skynet-proof"];
+    // const proof = JSON.stringify([{"data":"01005450d146bc5dbad49baf0998c405020b75f07552a566696b8b4bc30a3eff3663","revision":2,"datakey":"8b310799b1b4c99c313642cb8a6bb57506e98eb1b7b03a6d42b7cc0b9d416785","publickey":{"algorithm":"ed25519","key":"53DNDyWI0DL+SKc9rdPHG0Gbl9Q6cQTE/6TjDu++ujg="},"signature":"3820b2f20bc52d02eeafa32c554792d93be4af67d2df20aa8a6585b9896595e68fa51c30d10a18598688c184c46dc767b20f5e2b3cb93b7083fe5eb35f208003","type":1},{"data":"10000582ad7b07e30ab22d004582943267fdbf16d9943a59900e846950421b860101","revision":2,"datakey":"7a7697234d7ce99e7672fb8765b3697bbd22b0531e3d5b738325c7c7e4f2ad6e","publickey":{"algorithm":"ed25519","key":"/tclMcIMtXlaE+TKtP4Cbo1p38A5dCSiCDMBIsNrhko="},"signature":"cbadf0c7210670768ff66edf53c45a0af88b14511616a922e22fdc0de045c9a17d0ba7d99315a632b2c350ccc94ce67d8da0ec69bc9fd922db2113ca14882704","type":1}]);
+    // const proof = JSON.stringify([{"data":"5c006f8bb26d25b412300703c275279a9d852833e383cfed4d314fe01c0c4b155d12","revision":0,"datakey":"43c8a9b01609544ab152dad397afc3b56c1518eb546750dbc6cad5944fec0292","publickey":{"algorithm":"ed25519","key":"y/l99FyfFm6JPhZL5xSkruhA06Qh9m5S9rnipQCc+rw="},"signature":"5a1437508eedb6f5352d7f744693908a91bb05c01370ce4743de9c25f761b4e87760b8172448c073a4ddd9d58d1a2bf978b3227e57e4fa8cbe830a2353be2207","type":1}]);
+    // console.log(`proof: ${proof}`);
+    if (inputSkylink !== null) {
+      validateRegistryProof(inputSkylink, skylink, proof);
+    }
+  } catch (err) {
+    throw new Error(
+      `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
+    );
   }
 }
 
@@ -568,16 +631,31 @@ export async function resolveHns(
  * Validates the response from getMetadata.
  *
  * @param response - The Axios response.
+ * @param inputSkylink - The input skylink, required to validate the proof.
  * @throws - Will throw if the response does not contain the expected fields.
  */
-function validateGetMetadataResponse(response: AxiosResponse): void {
+function validateGetMetadataResponse(response: AxiosResponse, inputSkylink: string): void {
   try {
     if (!response.data) {
-      throw new Error("response.data field missing");
+      throw new Error("'response.data' field missing");
     }
     if (!response.headers) {
-      throw new Error("response.headers field missing");
+      throw new Error("'response.headers' field missing");
     }
+
+    const portalUrl = response.headers["skynet-portal-api"];
+    if (!portalUrl) {
+      throw new Error("'skynet-portal-api' header missing");
+    }
+    validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getMetadata response header");
+
+    const skylink = response.headers["skynet-skylink"];
+    if (!skylink) {
+      throw new Error("'skynet-skylink' header missing");
+    }
+    validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getMetadata response header");
+
+    validateRegistryProof(inputSkylink, skylink, response.headers["skynet-proof"]);
   } catch (err) {
     throw new Error(
       `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
@@ -594,16 +672,19 @@ function validateGetMetadataResponse(response: AxiosResponse): void {
 function validateResolveHnsResponse(response: AxiosResponse): void {
   try {
     if (!response.data) {
-      throw new Error("response.data field missing");
+      throw new Error("'response.data' field missing");
     }
 
     if (response.data.skylink) {
-      validateString("response.data.skylink", response.data.skylink, "resolveHns response field");
+      // Skylink response.
+      validateSkylinkString("response.data.skylink", response.data.skylink, "resolveHns response field");
     } else if (response.data.registry) {
+      // Registry entry response.
       validateObject("response.data.registry", response.data.registry, "resolveHns response field");
       validateString("response.data.registry.publickey", response.data.registry.publickey, "resolveHns response field");
       validateString("response.data.registry.datakey", response.data.registry.datakey, "resolveHns response field");
     } else {
+      // Invalid response.
       throwValidationError(
         "response.data",
         response.data,
@@ -615,5 +696,82 @@ function validateResolveHnsResponse(response: AxiosResponse): void {
     throw new Error(
       `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
     );
+  }
+}
+
+/**
+ * Validates the registry proof.
+ *
+ * @param inputSkylink - The input skylink, required to validate the proof.
+ * @param dataLink - The returned data link.
+ * @param proof - The returned proof.
+ * @throws - Will throw if the registry proof header is not present, empty when it shouldn't be, or fails to verify.
+ */
+function validateRegistryProof(inputSkylink: string, dataLink: string, proof?: string): void {
+  let proofArray = [];
+  if (proof) {
+    // TODO: skyd currently omits the header if the array is empty, but in the future we should assert the header is always present
+    proofArray = JSON.parse(proof);
+    if (!proofArray) {
+      throw new Error("Could not parse 'skynet-proof' header as JSON");
+    }
+  }
+
+  if (isSkylinkV1(inputSkylink)) {
+    if (inputSkylink !== dataLink) {
+      throw new Error("Expected returned skylink to be the same as input data link");
+    }
+    // If input skylink is not an entry link, no proof should be present.
+    if (proofArray.length > 0) {
+      throw new Error("Expected 'skynet-proof' header to be empty for data link");
+    }
+    return;
+  } else {
+    if (inputSkylink === dataLink) {
+      // Input skylink is entry link and returned skylink is the same.
+      throw new Error("Expected returned skylink to be different from input entry link");
+    }
+    if (proofArray.length === 0) {
+      // Input skylink is entry link but registry proof is empty.
+      throw new Error("Expected 'skynet-proof' header not to be empty for entry link");
+    }
+  }
+
+  // Verify the registry proof.
+  let lastSkylink = inputSkylink;
+  for (const entry of proofArray) {
+    const publicKey = entry.publickey.key;
+    const publicKeyBytes = toByteArray(publicKey);
+    const publicKeyHex = toHexString(publicKeyBytes);
+    const dataKey = entry.datakey;
+    const data = entry.data;
+    const signatureBytes = hexToUint8Array(entry.signature);
+
+    // Verify the current entry corresponds to the previous skylink in the chain.
+    let entryLink = getEntryLink(publicKeyHex, dataKey, { hashedDataKeyHex: true });
+    entryLink = trimUriPrefix(entryLink, uriSkynetPrefix);
+    if (entryLink !== lastSkylink) {
+      throw new Error("Could not verify registry proof chain");
+    }
+
+    // Data bytes are hex-encoded raw skylink bytes.
+    const rawData = hexToUint8Array(data);
+    const skylink = encodeSkylinkBase64(rawData);
+
+    // Try verifying the returned data.
+    const entryToVerify = {
+      dataKey,
+      data: rawData,
+      revision: BigInt(entry.revision),
+    };
+    // Verify length of signature and public key.
+    validateUint8ArrayLen("signatureArray", signatureBytes, "response value", SIGNATURE_LENGTH);
+    validateUint8ArrayLen("publicKeyArray", publicKeyBytes, "parameter", PUBLIC_KEY_LENGTH / 2);
+    if (!sign.detached.verify(hashRegistryEntry(entryToVerify, true), signatureBytes, publicKeyBytes)) {
+      // Registry proof fails to verify.
+      throw new Error("Could not verify signature from retrieved, signed registry entry in registry proof");
+    }
+
+    lastSkylink = skylink;
   }
 }

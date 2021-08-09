@@ -3,7 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
-import { getEntryUrlForPortal, signEntry } from "./registry";
+import { getEntryLink, getEntryUrlForPortal, signEntry } from "./registry";
 import { uriSkynetPrefix } from "./utils/url";
 import { stringToUint8ArrayUtf8 } from "./utils/string";
 
@@ -81,7 +81,7 @@ describe("getEntryLink", () => {
     const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
     const expectedEntryLink = `${uriSkynetPrefix}AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ`;
 
-    const entryLink = await client.registry.getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });
+    const entryLink = getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });
 
     expect(entryLink).toEqual(expectedEntryLink);
   });

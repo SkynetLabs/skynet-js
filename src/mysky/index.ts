@@ -17,7 +17,13 @@ import {
 import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { CustomGetEntryOptions, defaultGetEntryOptions, defaultSetEntryOptions, getEntryLink, RegistryEntry } from "../registry";
+import {
+  CustomGetEntryOptions,
+  defaultGetEntryOptions,
+  defaultSetEntryOptions,
+  getEntryLink,
+  RegistryEntry,
+} from "../registry";
 import {
   defaultGetJSONOptions,
   defaultSetJSONOptions,

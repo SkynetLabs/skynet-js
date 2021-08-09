@@ -151,6 +151,10 @@ describe("getMetadata", () => {
   let mock: MockAdapter;
 
   const skylinkUrl = `${portalUrl}/skynet/metadata/${skylink}`;
+  const headers = {
+    "skynet-portal-api": portalUrl,
+    "skynet-skylink": skylink,
+  };
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -160,7 +164,7 @@ describe("getMetadata", () => {
   const skynetFileMetadata = { filename: "sia.pdf" };
 
   it("should successfully fetch skynet file metadata from skylink", async () => {
-    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata, {});
+    mock.onGet(skylinkUrl).replyOnce(200, skynetFileMetadata, headers);
 
     const { metadata } = await client.getMetadata(skylink);
 
@@ -179,7 +183,7 @@ describe("getMetadata", () => {
     mock.onGet(skylinkUrl).replyOnce(200);
 
     await expect(client.getMetadata(skylink)).rejects.toThrowError(
-      "Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.data field missing"
+      "Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: 'response.data' field missing"
     );
   });
 
@@ -187,7 +191,7 @@ describe("getMetadata", () => {
     mock.onGet(skylinkUrl).replyOnce(200, {});
 
     await expect(client.getMetadata(skylink)).rejects.toThrowError(
-      "Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.headers field missing"
+      "Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: 'response.headers' field missing"
     );
   });
 });
@@ -199,17 +203,16 @@ describe("getFileContent", () => {
     mock = new MockAdapter(axios);
     mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
   });
-  const skynetFileMetadata = { filename: "sia.pdf" };
+
   const skynetFileContents = { arbitrary: "json string" };
-  const fullHeaders = {
+  const headers = {
     "skynet-skylink": skylink,
     "content-type": "application/json",
-    "skynet-file-metadata": JSON.stringify(skynetFileMetadata),
   };
 
   it.each(validSkylinkVariations)("should successfully fetch skynet file content for %s", async (input) => {
     const skylinkUrl = await client.getSkylinkUrl(input);
-    mock.onGet(skylinkUrl).replyOnce(200, skynetFileContents, fullHeaders);
+    mock.onGet(skylinkUrl).replyOnce(200, skynetFileContents, headers);
 
     const { data, contentType, skylink: skylink2 } = await client.getFileContent(input);
 
@@ -218,26 +221,11 @@ describe("getFileContent", () => {
     expect(skylink2).toEqual(sialink);
   });
 
-  it.each(validSkylinkVariations)(
-    "should successfully fetch skynet file content even when headers are missing for %s",
-    async (input) => {
-      const skylinkUrl = await client.getSkylinkUrl(input);
-      mock.onGet(skylinkUrl).replyOnce(200, skynetFileContents, {});
-
-      const { data, contentType, skylink: skylink2, portalUrl } = await client.getFileContent(input);
-
-      expect(data).toEqual(skynetFileContents);
-      expect(contentType).toEqual("");
-      expect(portalUrl).toEqual("");
-      expect(skylink2).toEqual("");
-    }
-  );
-
   it("should throw if data is not returned", async () => {
     mock.onGet(expectedUrl).replyOnce(200);
 
     await expect(client.getFileContent(skylink)).rejects.toThrowError(
-      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: 'response.data' field missing"
     );
   });
 
@@ -245,12 +233,12 @@ describe("getFileContent", () => {
     mock.onGet(expectedUrl).replyOnce(200, {});
 
     await expect(client.getFileContent(skylink)).rejects.toThrowError(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: 'response.headers' field missing"
     );
   });
 
   it("should set range header if range option is set", async () => {
-    mock.onGet(expectedUrl).replyOnce(200, skynetFileContents, fullHeaders);
+    mock.onGet(expectedUrl).replyOnce(200, skynetFileContents, headers);
 
     const range = "4000-5000";
     await client.getFileContent(skylink, { range });
@@ -262,7 +250,7 @@ describe("getFileContent", () => {
   });
 
   it("should register onDownloadProgress callback if defined", async () => {
-    mock.onGet(expectedUrl).reply(200, skynetFileContents, fullHeaders);
+    mock.onGet(expectedUrl).reply(200, skynetFileContents, headers);
 
     // Assert `onDownloadProgress` is not defined if not set.
     await client.getFileContent(skylink);
@@ -287,13 +275,16 @@ describe("getFileContentHns", () => {
   });
 
   const skynetFileContents = { arbitrary: "json string" };
-  const headers = { "content-type": "application/json" };
+  const headers = {
+    "skynet-skylink": skylink,
+    "content-type": "application/json",
+  };
 
-  it.each(validHnsLinkVariations)("should successfully fetch skynet file content", async (input) => {
-    const hnsUrl = await client.getHnsUrl(input);
+  it.each(validHnsLinkVariations)("should successfully fetch skynet file content for domain '%s'", async (domain) => {
+    const hnsUrl = await client.getHnsUrl(domain);
     mock.onGet(hnsUrl).reply(200, skynetFileContents, headers);
 
-    const { data } = await client.getFileContentHns(input);
+    const { data } = await client.getFileContentHns(domain);
 
     expect(data).toEqual(skynetFileContents);
   });
@@ -380,7 +371,7 @@ describe("resolveHns", () => {
     mock.onGet(expectedHnsresUrl).replyOnce(200);
 
     await expect(client.resolveHns(hnsLink)).rejects.toThrowError(
-      "Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.data field missing"
+      "Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: 'response.data' field missing"
     );
   });
 

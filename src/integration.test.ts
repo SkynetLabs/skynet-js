@@ -4,6 +4,7 @@ import { hashDataKey } from "./crypto";
 import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
+import { convertSkylinkToBase64 } from "./skylink/format";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || defaultSkynetPortalUrl;
@@ -382,6 +383,23 @@ describe(`Integration test for portal '${portal}'`, () => {
         HelloWorld: { filename: dataKey, contenttype: plaintextType, len: fileData.length },
       },
     };
+
+    it("Should get file content for an existing entry link of depth 1", async () => {
+      const entryLink = "AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA";
+      const expectedDataLink = `${uriSkynetPrefix}XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg`;
+
+      const { skylink } = await client.getFileContent(entryLink);
+      expect(skylink).toEqual(expectedDataLink);
+    });
+
+    it("Should get file content for an existing entry link of depth 2", async () => {
+      const entryLinkBase32 = "0400mgds8arrfnu8e6b0sde9fbkmh4nl2etvun55m0fvidudsb7bk78";
+      const entryLink = convertSkylinkToBase64(entryLinkBase32);
+      const expectedDataLink = `${uriSkynetPrefix}EAAFgq17B-MKsi0ARYKUMmf9vxbZlDpZkA6EaVBCG4YBAQ`;
+
+      const { skylink } = await client.getFileContent(entryLink);
+      expect(skylink).toEqual(expectedDataLink);
+    });
 
     it("Should upload and download directories", async () => {
       const directory = {
