@@ -23,13 +23,18 @@ export type CustomConnectorOptions = {
   handshakeAttemptsInterval?: number;
 };
 
-export const defaultConnectorOptions = {
+export const DEFAULT_CONNECTOR_OPTIONS = {
   dev: false,
   debug: false,
   alpha: false,
   handshakeMaxAttempts: defaultHandshakeMaxAttempts,
   handshakeAttemptsInterval: defaultHandshakeAttemptsInterval,
 };
+
+/**
+ * @deprecated please use DEFAULT_CONNECTOR_OPTIONS.
+ */
+export const defaultConnectorOptions = DEFAULT_CONNECTOR_OPTIONS;
 
 export class Connector {
   constructor(

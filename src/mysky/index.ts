@@ -51,9 +51,26 @@ import {
   encryptJSONFile,
 } from "./encrypted_files";
 
-export const mySkyDomain = "skynet-mysky.hns";
-export const mySkyDevDomain = "skynet-mysky-dev.hns";
-export const mySkyAlphaDomain = "sandbridge.hns";
+export const MYSKY_DOMAIN = "skynet-mysky.hns";
+
+/**
+ * @deprecated please use MYSKY_DOMAIN.
+ */
+export const mySkyDomain = MYSKY_DOMAIN;
+
+export const MYSKY_DEV_DOMAIN = "skynet-mysky-dev.hns";
+
+/**
+ * @deprecated please use MYSKY_DEV_DOMAIN.
+ */
+export const mySkyDevDomain = MYSKY_DEV_DOMAIN;
+
+export const MYSKY_ALPHA_DOMAIN = "sandbridge.hns";
+
+/**
+ * @deprecated please use MYSKY_ALPHA_DOMAIN.
+ */
+export const mySkyAlphaDomain = MYSKY_ALPHA_DOMAIN;
 
 export const MAX_ENTRY_LENGTH = 70;
 

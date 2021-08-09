@@ -39,7 +39,7 @@ export const HASH_LENGTH = 32;
  * @returns - blake2b 256bit hasher.
  */
 function newHash() {
-  return blake2bInit(32, null);
+  return blake2bInit(32);
 }
 
 /**
