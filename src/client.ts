@@ -39,12 +39,14 @@ import { trimSuffix } from "./utils/string";
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
  * @property [customCookie] - Custom cookie header to set.
+ * @property [onDownloadProgress] - Optional callback to track download progress.
  * @property [onUploadProgress] - Optional callback to track upload progress.
  */
 export type CustomClientOptions = {
   APIKey?: string;
   customUserAgent?: string;
   customCookie?: string;
+  onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
 };
 
@@ -244,15 +246,26 @@ export class SkynetClient {
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
-    const onUploadProgress =
-      config.onUploadProgress &&
-      /* istanbul ignore next */
-      function (event: ProgressEvent) {
-        const progress = event.loaded / event.total;
-
-        // Need the if-statement or TS complains.
-        if (config.onUploadProgress) config.onUploadProgress(progress, event);
+    let onDownloadProgress = undefined;
+    if (config.onDownloadProgress) {
+      onDownloadProgress = function (event: ProgressEvent) {
+        // Avoid NaN for 0-byte file.
+        /* istanbul ignore next: Empty file test doesn't work yet. */
+        const progress = event.total ? event.loaded / event.total : 1;
+        // @ts-expect-error TS complains even though we've ensured this is defined.
+        config.onDownloadProgress(progress, event);
       };
+    }
+    let onUploadProgress = undefined;
+    if (config.onUploadProgress) {
+      onUploadProgress = function (event: ProgressEvent) {
+        // Avoid NaN for 0-byte file.
+        /* istanbul ignore next: event.total is always 0 in Node. */
+        const progress = event.total ? event.loaded / event.total : 1;
+        // @ts-expect-error TS complains even though we've ensured this is defined.
+        config.onUploadProgress(progress, event);
+      };
+    }
 
     return axios({
       url,
@@ -260,6 +273,7 @@ export class SkynetClient {
       data: config.data,
       headers,
       auth,
+      onDownloadProgress,
       onUploadProgress,
       responseType: config.responseType,
       transformRequest: config.transformRequest,

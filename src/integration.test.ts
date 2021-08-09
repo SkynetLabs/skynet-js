@@ -493,6 +493,40 @@ describe(`Integration test for portal '${portal}'`, () => {
       expect(data).toEqual(json);
       expect(contentType).toEqual("application/octet-stream");
     });
+
+    it("Should upload and download a 0-byte file", async () => {
+      const onProgress = (progress: number) => {
+        expect(progress).toEqual(1);
+      };
+
+      const file = new File([""], dataKey);
+      expect(file.size).toEqual(0);
+      const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+      expect(skylink).not.toEqual("");
+
+      // TODO: Downloads currently return 416 for empty files.
+      // // Get file content and check returned values.
+      // const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+
+      // expect(data).toEqual("");
+    });
+
+    it("Should upload and download a 1-byte file", async () => {
+      const filedata = "a";
+      const onProgress = (progress: number) => {
+        expect(progress).toBeLessThanOrEqual(1);
+      };
+
+      const file = new File([filedata], dataKey);
+      expect(file.size).toEqual(filedata.length);
+      const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+      expect(skylink).not.toEqual("");
+
+      // Get file content and check returned values.
+      const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+
+      expect(data).toEqual(filedata);
+    });
   });
 
   describe("pinSkylink", () => {
