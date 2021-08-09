@@ -22,7 +22,7 @@
   "scripts": {
     "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.cjs.json",
     "lint": "yarn lint:tsc && yarn lint:eslint",
-    "lint:eslint": "eslint --ext .ts utils src --max-warnings 0",
+    "lint:eslint": "eslint --ext .ts . --max-warnings 0",
     "lint:tsc": "tsc",
     "prepublishOnly": "yarn build",
     "test": "jest --coverage",
@@ -30,7 +30,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --ext .ts utils src --max-warnings 0",
+      "eslint --ext .ts --max-warnings 0",
       "prettier --write"
     ],
     "*.{json,yml,md}": [

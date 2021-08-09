@@ -218,18 +218,17 @@ describe("getFileContent", () => {
     expect(skylink2).toEqual(sialink);
   });
 
-  const headers = {};
-
   it.each(validSkylinkVariations)(
     "should successfully fetch skynet file content even when headers are missing for %s",
     async (input) => {
       const skylinkUrl = await client.getSkylinkUrl(input);
-      mock.onGet(skylinkUrl).replyOnce(200, skynetFileContents, headers);
+      mock.onGet(skylinkUrl).replyOnce(200, skynetFileContents, {});
 
-      const { data, contentType, skylink: skylink2 } = await client.getFileContent(input);
+      const { data, contentType, skylink: skylink2, portalUrl } = await client.getFileContent(input);
 
       expect(data).toEqual(skynetFileContents);
       expect(contentType).toEqual("");
+      expect(portalUrl).toEqual("");
       expect(skylink2).toEqual("");
     }
   );
@@ -242,7 +241,7 @@ describe("getFileContent", () => {
     );
   });
 
-  it("should throw if headers are not returned", async () => {
+  it("should throw if no headers are returned", async () => {
     mock.onGet(expectedUrl).replyOnce(200, {});
 
     await expect(client.getFileContent(skylink)).rejects.toThrowError(
