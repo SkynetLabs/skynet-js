@@ -4,10 +4,26 @@ import parse from "url-parse";
 import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
 import { throwValidationError, validateString } from "./validation";
 
-export const defaultSkynetPortalUrl = "https://siasky.net";
+export const DEFAULT_SKYNET_PORTAL_URL = "https://siasky.net";
 
-export const uriHandshakePrefix = "hns://";
-export const uriSkynetPrefix = "sia://";
+/**
+ * @deprecated please use DEFAULT_SKYNET_PORTAL_URL.
+ */
+export const defaultSkynetPortalUrl = DEFAULT_SKYNET_PORTAL_URL;
+
+export const URI_HANDSHAKE_PREFIX = "hns://";
+
+/**
+ * @deprecated please use URI_HANDSHAKE_PREFIX.
+ */
+export const uriHandshakePrefix = URI_HANDSHAKE_PREFIX;
+
+export const URI_SKYNET_PREFIX = "sia://";
+
+/**
+ * @deprecated please use URI_SKYNET_PREFIX.
+ */
+export const uriSkynetPrefix = URI_SKYNET_PREFIX;
 
 // TODO: This will be smarter. See
 // https://github.com/SkynetLabs/skynet-docs/issues/5.

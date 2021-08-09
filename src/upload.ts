@@ -54,7 +54,7 @@ export type UploadRequestResponse = {
   skylink: string;
 };
 
-export const defaultUploadOptions = {
+export const DEFAULT_UPLOAD_OPTIONS = {
   ...defaultBaseOptions,
 
   endpointUpload: "/skynet/skyfile",
@@ -64,6 +64,11 @@ export const defaultUploadOptions = {
   largeFileSize: TUS_CHUNK_SIZE,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
 };
+
+/**
+ * @deprecated please use DEFAULT_UPLOAD_OPTIONS.
+ */
+export const defaultUploadOptions = DEFAULT_UPLOAD_OPTIONS;
 
 /**
  * Uploads a file to Skynet.

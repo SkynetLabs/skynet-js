@@ -42,29 +42,53 @@ export type CustomSetEntryOptions = BaseCustomOptions & {
   hashedDataKeyHex?: boolean;
 };
 
-export const defaultGetEntryOptions = {
+export const DEFAULT_GET_ENTRY_OPTIONS = {
   ...defaultBaseOptions,
   endpointGetEntry: "/skynet/registry",
   hashedDataKeyHex: false,
 };
 
-export const defaultSetEntryOptions = {
+/**
+ * @deprecated please use DEFAULT_GET_ENTRY_OPTIONS.
+ */
+export const defaultGetEntryOptions = DEFAULT_GET_ENTRY_OPTIONS;
+
+export const DEFAULT_SET_ENTRY_OPTIONS = {
   ...defaultBaseOptions,
   endpointSetEntry: "/skynet/registry",
   hashedDataKeyHex: false,
 };
+
+/**
+ * @deprecated please use DEFAULT_SET_ENTRY_OPTIONS.
+ */
+export const defaultSetEntryOptions = DEFAULT_SET_ENTRY_OPTIONS;
 
 export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 
 /**
  * Regex for JSON revision value without quotes.
  */
-export const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
+export const REGEX_REVISION_NO_QUOTES = /"revision":\s*([0-9]+)/;
+
+/**
+ * Regex for JSON revision value without quotes.
+ *
+ * @deprecated please use REGEX_REVISION_NO_QUOTES.
+ */
+export const regexRevisionNoQuotes = REGEX_REVISION_NO_QUOTES;
 
 /**
  * Regex for JSON revision value with quotes.
  */
-const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
+const REGEX_REVISION_WITH_QUOTES = /"revision":\s*"([0-9]+)"/;
+
+/**
+ * Regex for JSON revision value with quotes.
+ *
+ * @deprecated please use REGEX_REVISION_WITH_QUOTES.
+ */
+const regexRevisionWithQuotes = REGEX_REVISION_WITH_QUOTES;
 
 const ED25519_PREFIX = "ed25519:";
 

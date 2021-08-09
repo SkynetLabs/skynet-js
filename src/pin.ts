@@ -23,11 +23,16 @@ export type PinResponse = {
   skylink: string;
 };
 
-export const defaultPinOptions = {
+export const DEFAULT_PIN_OPTIONS = {
   ...defaultBaseOptions,
 
   endpointPin: "/skynet/pin",
 };
+
+/**
+ * @deprecated please use DEFAULT_PIN_OPTIONS.
+ */
+export const defaultPinOptions = DEFAULT_PIN_OPTIONS;
 
 /**
  * Re-pins the given skylink.

@@ -8,12 +8,19 @@ export type BaseCustomOptions = CustomClientOptions;
 /**
  * The default base custom options.
  */
-export const defaultBaseOptions = {
+export const DEFAULT_BASE_OPTIONS = {
   APIKey: "",
   customUserAgent: "",
   customCookie: "",
   onUploadProgress: undefined,
 };
+
+/**
+ * The default base custom options.
+ *
+ * @deprecated please use DEFAULT_BASE_OPTIONS.
+ */
+export const defaultBaseOptions = DEFAULT_BASE_OPTIONS;
 
 /**
  * Extract only the model's custom options from the given options.
