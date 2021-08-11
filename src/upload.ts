@@ -246,10 +246,11 @@ export async function uploadLargeFileRequest(
         xhr.withCredentials = true;
       },
       onError: (error: Error) => {
+        // Return error body rather than entire error.
         // @ts-expect-error tus-client-js Error is not typed correctly.
         const res = error.originalResponse;
-        const message = res ? res.getBody() || error : error;
-        reject(new Error(message.trim()));
+        const newError = res ? new Error(res.getBody().trim()) || error : error;
+        reject(newError);
       },
       onSuccess: async () => {
         if (!upload.url) {

@@ -7,7 +7,8 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  provide_servers_json:
+  get_servers_json:
+    name: Get Servers
     runs-on: ubuntu-latest
 
     steps:
@@ -29,13 +30,13 @@ jobs:
 
   test:
     name: Daily Production Server Test
-    # Wait for the "provide_servers_json" phase to finish.
-    needs: provide_servers_json
+    # Wait for the "get_servers_json" phase to finish.
+    needs: get_servers_json
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        server: ${{ fromJson(needs.provide_servers_json.outputs.matrix) }}
+        server: ${{ fromJson(needs.get_servers_json.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v2
