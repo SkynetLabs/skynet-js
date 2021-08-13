@@ -774,4 +774,8 @@ function validateRegistryProof(inputSkylink: string, dataLink: string, proof?: s
 
     lastSkylink = skylink;
   }
+
+  if (lastSkylink !== dataLink) {
+    throw new Error("Could not verify registry proof chain");
+  }
 }
