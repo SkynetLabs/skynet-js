@@ -7,8 +7,8 @@ import {
   EncryptedJSONResponse,
 } from "./mysky/encrypted_files";
 import { deriveDiscoverableFileTweak } from "./mysky/tweak";
-import { CustomGetEntryOptions, defaultGetEntryOptions } from "./registry";
-import { CustomGetJSONOptions, defaultGetJSONOptions, JSONResponse } from "./skydb";
+import { CustomGetEntryOptions, DEFAULT_GET_ENTRY_OPTIONS } from "./registry";
+import { CustomGetJSONOptions, DEFAULT_GET_JSON_OPTIONS, JSONResponse } from "./skydb";
 import { validateOptionalObject, validateString, validateStringLen } from "./utils/validation";
 
 // ====
@@ -33,10 +33,10 @@ export async function getJSON(
 ): Promise<JSONResponse> {
   validateString("userID", userID, "parameter");
   validateString("path", path, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
   const opts = {
-    ...defaultGetJSONOptions,
+    ...DEFAULT_GET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -67,7 +67,7 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
 
   const dataKey = deriveDiscoverableFileTweak(path);
   // Do not hash the tweak anymore.
-  const opts = { ...defaultGetEntryOptions, hashedDataKeyHex: true };
+  const opts = { ...DEFAULT_GET_ENTRY_OPTIONS, hashedDataKeyHex: true };
 
   return await this.registry.getEntryLink(userID, dataKey, opts);
 }
@@ -90,10 +90,10 @@ export async function getEntryData(
 ): Promise<EntryData> {
   validateString("userID", userID, "parameter");
   validateString("path", path, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -131,10 +131,10 @@ export async function getJSONEncrypted(
 ): Promise<EncryptedJSONResponse> {
   validateString("userID", userID, "parameter");
   validateStringLen("pathSeed", pathSeed, "parameter", 64);
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
   const opts = {
-    ...defaultGetJSONOptions,
+    ...DEFAULT_GET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
     hashedDataKeyHex: true, // Do not hash the tweak anymore.

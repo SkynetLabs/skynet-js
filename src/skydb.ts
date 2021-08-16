@@ -1,10 +1,10 @@
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
-import { defaultDownloadOptions, CustomDownloadOptions } from "./download";
+import { DEFAULT_DOWNLOAD_OPTIONS, CustomDownloadOptions } from "./download";
 import {
-  defaultGetEntryOptions,
-  defaultSetEntryOptions,
+  DEFAULT_GET_ENTRY_OPTIONS,
+  DEFAULT_SET_ENTRY_OPTIONS,
   CustomGetEntryOptions,
   RegistryEntry,
   SignedRegistryEntry,
@@ -12,7 +12,7 @@ import {
 } from "./registry";
 import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { MAX_REVISION } from "./utils/number";
-import { uriSkynetPrefix } from "./utils/url";
+import { URI_SKYNET_PREFIX } from "./utils/url";
 import {
   hexToUint8Array,
   trimUriPrefix,
@@ -21,9 +21,9 @@ import {
   uint8ArrayToStringUtf8,
 } from "./utils/string";
 import { formatSkylink } from "./skylink/format";
-import { defaultUploadOptions, CustomUploadOptions, UploadRequestResponse } from "./upload";
+import { DEFAULT_UPLOAD_OPTIONS, CustomUploadOptions, UploadRequestResponse } from "./upload";
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
-import { defaultBaseOptions, extractOptions } from "./utils/options";
+import { DEFAULT_BASE_OPTIONS, extractOptions } from "./utils/options";
 import {
   throwValidationError,
   validateHexString,
@@ -56,16 +56,11 @@ export type CustomGetJSONOptions = CustomGetEntryOptions &
   };
 
 export const DEFAULT_GET_JSON_OPTIONS = {
-  ...defaultBaseOptions,
-  ...defaultGetEntryOptions,
-  ...defaultDownloadOptions,
+  ...DEFAULT_BASE_OPTIONS,
+  ...DEFAULT_GET_ENTRY_OPTIONS,
+  ...DEFAULT_DOWNLOAD_OPTIONS,
   cachedDataLink: undefined,
 };
-
-/**
- * @deprecated please use DEFAULT_GET_JSON_OPTIONS.
- */
-export const defaultGetJSONOptions = DEFAULT_GET_JSON_OPTIONS;
 
 /**
  * Custom set JSON options.
@@ -73,16 +68,11 @@ export const defaultGetJSONOptions = DEFAULT_GET_JSON_OPTIONS;
 export type CustomSetJSONOptions = CustomGetJSONOptions & CustomSetEntryOptions & CustomUploadOptions;
 
 export const DEFAULT_SET_JSON_OPTIONS = {
-  ...defaultBaseOptions,
-  ...defaultGetJSONOptions,
-  ...defaultSetEntryOptions,
-  ...defaultUploadOptions,
+  ...DEFAULT_BASE_OPTIONS,
+  ...DEFAULT_GET_JSON_OPTIONS,
+  ...DEFAULT_SET_ENTRY_OPTIONS,
+  ...DEFAULT_UPLOAD_OPTIONS,
 };
-
-/**
- * @deprecated please use DEFAULT_SET_JSON_OPTIONS.
- */
-export const defaultSetJSONOptions = DEFAULT_SET_JSON_OPTIONS;
 
 export type JSONResponse = {
   data: JsonData | null;
@@ -114,11 +104,11 @@ export async function getJSON(
   dataKey: string,
   customOptions?: CustomGetJSONOptions
 ): Promise<JSONResponse> {
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
   // Rest of validation is done in `getEntry`.
 
   const opts = {
-    ...defaultGetJSONOptions,
+    ...DEFAULT_GET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -139,7 +129,7 @@ export async function getJSON(
   }
 
   // Download the data in the returned data link.
-  const downloadOpts = extractOptions(opts, defaultDownloadOptions);
+  const downloadOpts = extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS);
   const { data } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
 
   if (typeof data !== "object" || data === null) {
@@ -179,10 +169,10 @@ export async function setJSON(
   validateHexString("privateKey", privateKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
   validateObject("json", json, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
   const opts = {
-    ...defaultSetJSONOptions,
+    ...DEFAULT_SET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -192,7 +182,7 @@ export async function setJSON(
   const [entry, dataLink] = await getOrCreateRegistryEntry(this, toHexString(publicKeyArray), dataKey, json, opts);
 
   // Update the registry.
-  const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 
   return { data: json, dataLink: formatSkylink(dataLink) };
@@ -215,17 +205,17 @@ export async function deleteJSON(
 ): Promise<void> {
   validateHexString("privateKey", privateKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
   const opts = {
-    ...defaultSetJSONOptions,
+    ...DEFAULT_SET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
 
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
   const entry = await getNextRegistryEntry(
     this,
     toHexString(publicKeyArray),
@@ -235,7 +225,7 @@ export async function deleteJSON(
   );
 
   // Update the registry.
-  const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 }
 
@@ -259,17 +249,17 @@ export async function setDataLink(
   validateHexString("privateKey", privateKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
   validateString("dataLink", dataLink, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
   const opts = {
-    ...defaultSetJSONOptions,
+    ...DEFAULT_SET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
 
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
   const entry = await getNextRegistryEntry(
     this,
     toHexString(publicKeyArray),
@@ -279,7 +269,7 @@ export async function setDataLink(
   );
 
   // Update the registry.
-  const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 }
 
@@ -305,11 +295,11 @@ export async function getRawBytes(
   // TODO: Take a new options type?
   customOptions?: CustomGetJSONOptions
 ): Promise<RawBytesResponse> {
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
   // Rest of validation is done in `getEntry`.
 
   const opts = {
-    ...defaultGetJSONOptions,
+    ...DEFAULT_GET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -330,7 +320,10 @@ export async function getRawBytes(
   }
 
   // Download the data in the returned data link.
-  const downloadOpts = { ...extractOptions(opts, defaultDownloadOptions), responseType: "arraybuffer" as ResponseType };
+  const downloadOpts = {
+    ...extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS),
+    responseType: "arraybuffer" as ResponseType,
+  };
   const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
 
   return { data: new Uint8Array(buffer), dataLink };
@@ -359,7 +352,7 @@ export async function getOrCreateRawBytesRegistryEntry(
   // Not publicly available, don't validate input.
 
   const opts = {
-    ...defaultSetJSONOptions,
+    ...DEFAULT_SET_JSON_OPTIONS,
     ...client.customOptions,
     ...customOptions,
   };
@@ -372,13 +365,13 @@ export async function getOrCreateRawBytesRegistryEntry(
   const file = new File([data], `dk:${dataKeyHex}`, { type: "application/octet-stream" });
 
   // Start file upload, do not block.
-  const uploadOpts = extractOptions(opts, defaultUploadOptions);
+  const uploadOpts = extractOptions(opts, DEFAULT_UPLOAD_OPTIONS);
   const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
 
   // Fetch the current value to find out the revision.
   //
   // Start getEntry, do not block.
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
   const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
 
   // Block until both getEntry and uploadFile are finished.
@@ -390,7 +383,7 @@ export async function getOrCreateRawBytesRegistryEntry(
   const revision = getNextRevisionFromEntry(signedEntry.entry);
 
   // Build the registry entry.
-  const dataLink = trimUriPrefix(skyfile.skylink, uriSkynetPrefix);
+  const dataLink = trimUriPrefix(skyfile.skylink, URI_SKYNET_PREFIX);
   const rawDataLink = decodeSkylinkBase64(dataLink);
   validateUint8ArrayLen("rawDataLink", rawDataLink, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
@@ -426,7 +419,7 @@ export async function getNextRegistryEntry(
   // Not publicly available, don't validate input.
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...client.customOptions,
     ...customOptions,
   };
@@ -467,7 +460,7 @@ export async function getOrCreateRegistryEntry(
   // Not publicly available, don't validate input.
 
   const opts = {
-    ...defaultSetJSONOptions,
+    ...DEFAULT_SET_JSON_OPTIONS,
     ...client.customOptions,
     ...customOptions,
   };
@@ -483,13 +476,13 @@ export async function getOrCreateRegistryEntry(
   const file = new File([JSON.stringify(fullData)], `dk:${dataKeyHex}`, { type: "application/json" });
 
   // Start file upload, do not block.
-  const uploadOpts = extractOptions(opts, defaultUploadOptions);
+  const uploadOpts = extractOptions(opts, DEFAULT_UPLOAD_OPTIONS);
   const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
 
   // Fetch the current value to find out the revision.
   //
   // Start getEntry, do not block.
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
   const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
 
   // Block until both getEntry and uploadFile are finished.
@@ -501,7 +494,7 @@ export async function getOrCreateRegistryEntry(
   const revision = getNextRevisionFromEntry(signedEntry.entry);
 
   // Build the registry entry.
-  const dataLink = trimUriPrefix(skyfile.skylink, uriSkynetPrefix);
+  const dataLink = trimUriPrefix(skyfile.skylink, URI_SKYNET_PREFIX);
   const data = decodeSkylinkBase64(dataLink);
   validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
@@ -566,7 +559,7 @@ async function getSkyDBRegistryEntry(
   dataKey: string,
   opts: CustomGetJSONOptions
 ): Promise<RegistryEntry | null> {
-  const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
   const { entry } = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return null;

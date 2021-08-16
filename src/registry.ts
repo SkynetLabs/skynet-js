@@ -4,7 +4,7 @@ import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
+import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { ensurePrefix, hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
 import { addUrlQuery, makeUrl } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
@@ -43,26 +43,16 @@ export type CustomSetEntryOptions = BaseCustomOptions & {
 };
 
 export const DEFAULT_GET_ENTRY_OPTIONS = {
-  ...defaultBaseOptions,
+  ...DEFAULT_BASE_OPTIONS,
   endpointGetEntry: "/skynet/registry",
   hashedDataKeyHex: false,
 };
 
-/**
- * @deprecated please use DEFAULT_GET_ENTRY_OPTIONS.
- */
-export const defaultGetEntryOptions = DEFAULT_GET_ENTRY_OPTIONS;
-
 export const DEFAULT_SET_ENTRY_OPTIONS = {
-  ...defaultBaseOptions,
+  ...DEFAULT_BASE_OPTIONS,
   endpointSetEntry: "/skynet/registry",
   hashedDataKeyHex: false,
 };
-
-/**
- * @deprecated please use DEFAULT_SET_ENTRY_OPTIONS.
- */
-export const defaultSetEntryOptions = DEFAULT_SET_ENTRY_OPTIONS;
 
 export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 
@@ -72,23 +62,9 @@ export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 export const REGEX_REVISION_NO_QUOTES = /"revision":\s*([0-9]+)/;
 
 /**
- * Regex for JSON revision value without quotes.
- *
- * @deprecated please use REGEX_REVISION_NO_QUOTES.
- */
-export const regexRevisionNoQuotes = REGEX_REVISION_NO_QUOTES;
-
-/**
  * Regex for JSON revision value with quotes.
  */
 const REGEX_REVISION_WITH_QUOTES = /"revision":\s*"([0-9]+)"/;
-
-/**
- * Regex for JSON revision value with quotes.
- *
- * @deprecated please use REGEX_REVISION_WITH_QUOTES.
- */
-const regexRevisionWithQuotes = REGEX_REVISION_WITH_QUOTES;
 
 const ED25519_PREFIX = "ed25519:";
 
@@ -135,7 +111,7 @@ export async function getEntry(
   // Validation is done in `getEntryUrl`.
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -156,7 +132,7 @@ export async function getEntry(
           return {};
         }
         // Change the revision value from a JSON integer to a string.
-        data = data.replace(regexRevisionNoQuotes, '"revision":"$1"');
+        data = data.replace(REGEX_REVISION_NO_QUOTES, '"revision":"$1"');
         // Try converting the JSON data to an object.
         try {
           return JSON.parse(data);
@@ -232,7 +208,7 @@ export async function getEntryUrl(
   // Validation is done in `getEntryUrlForPortal`.
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -261,10 +237,10 @@ export function getEntryUrlForPortal(
   validateString("portalUrl", portalUrl, "parameter");
   validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...customOptions,
   };
 
@@ -304,10 +280,10 @@ export async function getEntryLink(
 ): Promise<string> {
   validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...customOptions,
   };
 
@@ -341,13 +317,13 @@ export async function setEntry(
 ): Promise<void> {
   validateHexString("privateKey", privateKey, "parameter");
   validateRegistryEntry("entry", entry, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_OPTIONS);
 
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
 
   const opts = {
-    ...defaultSetEntryOptions,
+    ...DEFAULT_SET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -401,10 +377,10 @@ export async function postSignedEntry(
   validateHexString("publicKey", publicKey, "parameter");
   validateRegistryEntry("entry", entry, "parameter");
   validateUint8Array("signature", signature, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_OPTIONS);
 
   const opts = {
-    ...defaultSetEntryOptions,
+    ...DEFAULT_SET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -440,7 +416,7 @@ export async function postSignedEntry(
       // Convert the object data to JSON.
       const json = JSON.stringify(data);
       // Change the revision value from a string to a JSON integer.
-      return json.replace(regexRevisionWithQuotes, '"revision":$1');
+      return json.replace(REGEX_REVISION_WITH_QUOTES, '"revision":$1');
     },
   });
 }

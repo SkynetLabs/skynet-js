@@ -2,7 +2,7 @@ import { AxiosResponse } from "axios";
 import { SkynetClient } from "./client";
 import { formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
+import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { validateSkylinkString, validateString } from "./utils/validation";
 
 /**
@@ -24,15 +24,10 @@ export type PinResponse = {
 };
 
 export const DEFAULT_PIN_OPTIONS = {
-  ...defaultBaseOptions,
+  ...DEFAULT_BASE_OPTIONS,
 
   endpointPin: "/skynet/pin",
 };
-
-/**
- * @deprecated please use DEFAULT_PIN_OPTIONS.
- */
-export const defaultPinOptions = DEFAULT_PIN_OPTIONS;
 
 /**
  * Re-pins the given skylink.
@@ -50,7 +45,7 @@ export async function pinSkylink(
 ): Promise<PinResponse> {
   const skylink = validateSkylinkString("skylinkUrl", skylinkUrl, "parameter");
 
-  const opts = { ...defaultPinOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_PIN_OPTIONS, ...this.customOptions, ...customOptions };
 
   // Don't include the path since the endpoint doesn't support it.
   const path = parseSkylink(skylinkUrl, { onlyPath: true });
