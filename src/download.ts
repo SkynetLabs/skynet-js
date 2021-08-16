@@ -383,7 +383,8 @@ export async function getMetadata(
 
   const metadata = response.data;
 
-  const portalUrl = response.headers["skynet-portal-api"];
+  // TODO: Don't default to "". Currently doing it because sthe header is sometimes erroneously missing.
+  const portalUrl = response.headers["skynet-portal-api"] ?? "";
   const skylink = formatSkylink(response.headers["skynet-skylink"]);
 
   return { metadata, portalUrl, skylink };
@@ -477,7 +478,8 @@ export async function getFileContentRequest<T = unknown>(
   const data = response.data;
 
   const contentType = response.headers["content-type"];
-  const portalUrl = response.headers["skynet-portal-api"];
+  // TODO: Don't default to "". Currently doing it because sthe header is sometimes erroneously missing.
+  const portalUrl = response.headers["skynet-portal-api"] ?? "";
   const skylink = formatSkylink(response.headers["skynet-skylink"]);
 
   return { data, contentType, portalUrl, skylink };
@@ -600,6 +602,7 @@ function validateGetFileContentResponse(response: AxiosResponse, inputSkylink: s
     }
     validateString(`response.headers["content-type"]`, contentType, "getMetadata response header");
 
+    // TODO: Reinstate this check.
     // const portalUrl = response.headers["skynet-portal-api"];
     // if (!portalUrl) {
     //   throw new Error("'skynet-portal-api' header missing");
@@ -643,11 +646,12 @@ function validateGetMetadataResponse(response: AxiosResponse, inputSkylink: stri
       throw new Error("'response.headers' field missing");
     }
 
-    const portalUrl = response.headers["skynet-portal-api"];
-    if (!portalUrl) {
-      throw new Error("'skynet-portal-api' header missing");
-    }
-    validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getMetadata response header");
+    // TODO: Reinstate this check.
+    // const portalUrl = response.headers["skynet-portal-api"];
+    // if (!portalUrl) {
+    //   throw new Error("'skynet-portal-api' header missing");
+    // }
+    // validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getMetadata response header");
 
     const skylink = response.headers["skynet-skylink"];
     if (!skylink) {
