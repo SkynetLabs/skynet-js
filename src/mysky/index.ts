@@ -51,6 +51,9 @@ import {
   encryptJSONFile,
 } from "./encrypted_files";
 
+/**
+ * The domain for MySky.
+ */
 export const MYSKY_DOMAIN = "skynet-mysky.hns";
 
 /**
@@ -58,6 +61,9 @@ export const MYSKY_DOMAIN = "skynet-mysky.hns";
  */
 export const mySkyDomain = MYSKY_DOMAIN;
 
+/**
+ * The domain for MySky dev.
+ */
 export const MYSKY_DEV_DOMAIN = "skynet-mysky-dev.hns";
 
 /**
@@ -65,6 +71,9 @@ export const MYSKY_DEV_DOMAIN = "skynet-mysky-dev.hns";
  */
 export const mySkyDevDomain = MYSKY_DEV_DOMAIN;
 
+/**
+ * The domain for MySky alpha. Intentionally not exported in index file.
+ */
 export const MYSKY_ALPHA_DOMAIN = "sandbridge.hns";
 
 /**
