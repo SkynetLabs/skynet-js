@@ -139,10 +139,10 @@ export class MySky {
     const hostDomain = await client.extractDomain(window.location.hostname);
     const permissions = [];
     if (skappDomain) {
-      // TODO: Are these permissions correct?
-      const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Read);
-      const perm2 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Write);
-      permissions.push(perm1, perm2);
+      const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Discoverable, PermType.Write);
+      const perm2 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Read);
+      const perm3 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Write);
+      permissions.push(perm1, perm2, perm3);
     }
 
     MySky.instance = new MySky(connector, permissions, hostDomain);
