@@ -46,7 +46,8 @@ export type JsonFullData = {
 const JSON_RESPONSE_VERSION = 2;
 
 /**
- * Custom get JSON options.
+ * Custom get JSON options. Includes the options for get entry, to get the
+ * skylink; and download, to download the file from the skylink.
  *
  * @property [cachedDataLink] - The last known data link. If it hasn't changed, do not download the file contents again.
  */
@@ -55,6 +56,10 @@ export type CustomGetJSONOptions = CustomGetEntryOptions &
     cachedDataLink?: string;
   };
 
+/**
+ * The default options for get JSON. Includes the default get entry and download
+ * options.
+ */
 export const DEFAULT_GET_JSON_OPTIONS = {
   ...DEFAULT_BASE_OPTIONS,
   ...DEFAULT_GET_ENTRY_OPTIONS,
@@ -63,15 +68,21 @@ export const DEFAULT_GET_JSON_OPTIONS = {
 };
 
 /**
- * Custom set JSON options.
+ * Custom set JSON options. Includes the options for upload, to get the file for
+ * the skylink; get JSON, to retrieve the revision; and set entry, to set the
+ * entry with the skylink and revision.
  */
-export type CustomSetJSONOptions = CustomGetJSONOptions & CustomSetEntryOptions & CustomUploadOptions;
+export type CustomSetJSONOptions = CustomUploadOptions & CustomGetJSONOptions & CustomSetEntryOptions;
 
+/**
+ * The default options for set JSON. Includes the default upload, get JSON, and
+ * set entry options.
+ */
 export const DEFAULT_SET_JSON_OPTIONS = {
   ...DEFAULT_BASE_OPTIONS,
+  ...DEFAULT_UPLOAD_OPTIONS,
   ...DEFAULT_GET_JSON_OPTIONS,
   ...DEFAULT_SET_ENTRY_OPTIONS,
-  ...DEFAULT_UPLOAD_OPTIONS,
 };
 
 export type JSONResponse = {
