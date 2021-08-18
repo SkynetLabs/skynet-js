@@ -188,27 +188,7 @@ export class SkynetClient {
     }
 
     if (!SkynetClient.resolvedPortalUrl) {
-      SkynetClient.resolvedPortalUrl = new Promise((resolve, reject) => {
-        this.executeRequest({
-          ...this.customOptions,
-          method: "head",
-          url: this.initialPortalUrl,
-          endpointPath: "/",
-        }).then((response) => {
-          if (typeof response.headers === "undefined") {
-            reject(
-              new Error(
-                "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-              )
-            );
-          }
-          const portalUrl = response.headers["skynet-portal-api"];
-          if (!portalUrl) {
-            reject(new Error("Could not get portal URL for the given portal"));
-          }
-          resolve(trimSuffix(portalUrl, "/"));
-        });
-      });
+      SkynetClient.resolvedPortalUrl = this.resolvePortalUrl();
     }
 
     await SkynetClient.resolvedPortalUrl;
@@ -227,10 +207,14 @@ export class SkynetClient {
     }
 
     // Make the request if needed and not done so.
-    this.initPortalUrl();
+    await this.initPortalUrl();
 
     return await SkynetClient.resolvedPortalUrl!; // eslint-disable-line
   }
+
+  // ===============
+  // Private Methods
+  // ===============
 
   /**
    * Creates and executes a request.
@@ -285,7 +269,31 @@ export class SkynetClient {
       withCredentials: true,
     });
   }
+
+  async resolvePortalUrl(): Promise<string> {
+    const response = await this.executeRequest({
+      ...this.customOptions,
+      method: "head",
+      url: this.initialPortalUrl,
+      endpointPath: "/",
+    });
+
+    if (typeof response.headers === "undefined") {
+      throw new Error(
+        "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      );
+    }
+    const portalUrl = response.headers["skynet-portal-api"];
+    if (!portalUrl) {
+      throw new Error("Could not get portal URL for the given portal");
+    }
+    return trimSuffix(portalUrl, "/");
+  }
 }
+
+// =======
+// Helpers
+// =======
 
 /**
  * Helper function that builds the request URL.

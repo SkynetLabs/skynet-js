@@ -184,7 +184,7 @@ export class MySky {
     this.pendingPermissions = failedPermissions;
 
     const loggedIn = seedFound && failedPermissions.length === 0;
-    this.handleLogin(loggedIn);
+    await this.handleLogin(loggedIn);
     return loggedIn;
   }
 
@@ -246,7 +246,7 @@ export class MySky {
       try {
         // Launch the UI.
 
-        uiWindow = await this.launchUI();
+        uiWindow = this.launchUI();
         uiConnection = await this.connectUi(uiWindow);
 
         // Send the UI the list of required permissions.
@@ -287,7 +287,7 @@ export class MySky {
       });
 
     const loggedIn = seedFound && this.pendingPermissions.length === 0;
-    this.handleLogin(loggedIn);
+    await this.handleLogin(loggedIn);
     return loggedIn;
   }
 
@@ -638,7 +638,7 @@ export class MySky {
     window.dispatchEvent(event);
   }
 
-  protected async launchUI(): Promise<Window> {
+  protected launchUI(): Window {
     const mySkyUrl = new URL(this.connector.url);
     mySkyUrl.pathname = mySkyUiRelativeUrl;
     const uiUrl = mySkyUrl.toString();
@@ -682,14 +682,21 @@ export class MySky {
 
     // Add DAC permissions.
     const perms = dac.getPermissions();
-    this.addPermissions(...perms);
+    await this.addPermissions(...perms);
   }
 
-  protected handleLogin(loggedIn: boolean): void {
+  protected async handleLogin(loggedIn: boolean): Promise<void> {
     if (loggedIn) {
-      for (const dac of this.dacs) {
-        dac.onUserLogin();
-      }
+      await Promise.all(
+        this.dacs.map(async (dac) => {
+          try {
+            await dac.onUserLogin();
+          } catch (error) {
+            // Don't throw on error, just print a console warning.
+            console.warn(error);
+          }
+        })
+      );
     }
   }
 
