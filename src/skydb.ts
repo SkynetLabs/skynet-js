@@ -297,7 +297,6 @@ export async function setDataLink(
  * @returns - The returned bytes.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
-// TODO: Should we expose this in the API?
 export async function getRawBytes(
   this: SkynetClient,
   publicKey: string,
