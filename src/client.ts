@@ -329,21 +329,19 @@ type Headers = { [key: string]: string };
 /**
  * Helper function that builds the request headers.
  *
- * @param [headers] - Any base headers.
+ * @param [baseHeaders] - Any base headers.
  * @param [customUserAgent] - A custom user agent to set.
  * @param [customCookie] - A custom cookie.
  * @returns - The built headers.
  */
-export function buildRequestHeaders(headers?: Headers, customUserAgent?: string, customCookie?: string): Headers {
-  if (!headers) {
-    headers = {};
-  }
+export function buildRequestHeaders(baseHeaders?: Headers, customUserAgent?: string, customCookie?: string): Headers {
+  const returnHeaders = { ...baseHeaders };
   // Set some headers from common options.
   if (customUserAgent) {
-    headers["User-Agent"] = customUserAgent;
+    returnHeaders["User-Agent"] = customUserAgent;
   }
   if (customCookie) {
-    headers["Cookie"] = customCookie;
+    returnHeaders["Cookie"] = customCookie;
   }
-  return headers;
+  return returnHeaders;
 }
