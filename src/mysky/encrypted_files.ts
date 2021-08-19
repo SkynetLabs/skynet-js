@@ -47,7 +47,7 @@ const ENCRYPTION_OVERHEAD_LENGTH = 16;
 /**
  * The length of the share-able path seed.
  */
-export const ENCRYPTION_PATH_SEED_LENGTH = 32;
+export const ENCRYPTION_PATH_SEED_LENGTH = 64;
 
 // Descriptive salt that should not be changed.
 const SALT_ENCRYPTED_CHILD = "encrypted filesystem child";
@@ -222,8 +222,8 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
     pathSeedBytes = sha512(bytes);
   });
 
-  // Truncate and hex-encode the final output.
-  return toHexString(pathSeedBytes.slice(0, ENCRYPTION_PATH_SEED_LENGTH));
+  // Hex-encode the final output.
+  return toHexString(pathSeedBytes);
 }
 
 /**
