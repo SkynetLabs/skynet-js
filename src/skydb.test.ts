@@ -3,22 +3,22 @@ import MockAdapter from "axios-mock-adapter";
 
 import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
-import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
+import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
-import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
+import { getEntryUrlForPortal, REGEX_REVISION_NO_QUOTES } from "./registry";
 import { checkCachedDataLink } from "./skydb";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
-const sialink = `${uriSkynetPrefix}${skylink}`;
+const sialink = `${URI_SKYNET_PREFIX}${skylink}`;
 const jsonData = { data: "thisistext" };
 const fullJsonData = { _data: jsonData, _v: 2 };
 const legacyJsonData = jsonData;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 
-const portalUrl = defaultSkynetPortalUrl;
+const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
 const registryUrl = `${portalUrl}/skynet/registry`;
 const registryLookupUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
@@ -202,7 +202,7 @@ describe("setJSON", () => {
         "18c76e88141c7cc76d8a77abcd91b5d64d8fc3833eae407ab8a5339e5fcf7940e3fa5830a8ad9439a0c0cc72236ed7b096ae05772f81eee120cbd173bfd6600e",
     };
     // Replace the quotes around the stringed bigint.
-    const json = JSON.stringify(entryData).replace(regexRevisionNoQuotes, '"revision":"$1"');
+    const json = JSON.stringify(entryData).replace(REGEX_REVISION_NO_QUOTES, '"revision":"$1"');
     mock.onGet(registryLookupUrl).reply(200, json);
 
     // mock a successful registry update

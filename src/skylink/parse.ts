@@ -1,7 +1,7 @@
 import parse from "url-parse";
 
 import { trimForwardSlash, trimSuffix, trimUriPrefix } from "../utils/string";
-import { uriSkynetPrefix } from "../utils/url";
+import { URI_SKYNET_PREFIX } from "../utils/url";
 import { validateOptionalObject, validateString } from "../utils/validation";
 
 /**
@@ -59,7 +59,7 @@ export function parseSkylink(skylinkUrl: string, customOptions?: ParseSkylinkOpt
   // Check for skylink prefixed with sia: or sia:// and extract it.
   // Example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   // Example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  skylinkUrl = trimUriPrefix(skylinkUrl, uriSkynetPrefix);
+  skylinkUrl = trimUriPrefix(skylinkUrl, URI_SKYNET_PREFIX);
 
   // Check for direct base64 skylink match.
   const matchDirect = skylinkUrl.match(SKYLINK_DIRECT_REGEX);

@@ -146,7 +146,7 @@ export class SkynetClient {
     getRawBytes: getRawBytes.bind(this),
   };
 
-  // SkyDB helpers
+  // Registry
 
   registry = {
     getEntry: getEntry.bind(this),
