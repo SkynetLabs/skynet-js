@@ -504,11 +504,10 @@ describe(`Integration test for portal '${portal}'`, () => {
       const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
       expect(skylink).not.toEqual("");
 
-      // TODO: Downloads currently return 416 for empty files.
-      // // Get file content and check returned values.
-      // const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+      // Get file content and check returned values.
+      const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
 
-      // expect(data).toEqual("");
+      expect(data).toEqual("");
     });
 
     it("Should upload and download a 1-byte file", async () => {
