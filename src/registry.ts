@@ -63,6 +63,20 @@ export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 export const REGEX_REVISION_NO_QUOTES = /"revision":\s*([0-9]+)/;
 
 /**
+ * The type of an entry that doesn't contain a pubkey. All of the data is
+ * considered to be arbitrary.
+ */
+export const REGISTRY_TYPE_WITHOUT_PUBKEY = 1;
+
+/**
+ * The type of an entry which is expected to have a RegistryPubKeyHashSize long
+ * hash of a host's pubkey at the beginning of its data. The key is used to
+ * determine whether an entry is considered a primary or secondary entry on a
+ * host.
+ */
+export const REGISTRY_TYPE_WITH_PUBKEY = 2;
+
+/**
  * Regex for JSON revision value with quotes.
  */
 const REGEX_REVISION_WITH_QUOTES = /"revision":\s*"([0-9]+)"/;

@@ -4,7 +4,7 @@ import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
 import { hashRegistryEntry, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH } from "./crypto";
-import { getEntryLink } from "./registry";
+import { getEntryLink, REGISTRY_TYPE_WITHOUT_PUBKEY } from "./registry";
 import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
@@ -741,6 +741,10 @@ function validateRegistryProof(inputSkylink: string, dataLink: string, proof?: s
   // Verify the registry proof.
   let lastSkylink = inputSkylink;
   for (const entry of proofArray) {
+    if (entry.type !== REGISTRY_TYPE_WITHOUT_PUBKEY) {
+      throw new Error(`Unsupported registry type in proof: '${entry.type}'`);
+    }
+
     const publicKey = entry.publickey.key;
     const publicKeyBytes = toByteArray(publicKey);
     const publicKeyHex = toHexString(publicKeyBytes);
