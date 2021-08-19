@@ -14,13 +14,18 @@ import {
   PermType,
 } from "skynet-mysky-utils";
 
-import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
+import { Connector, CustomConnectorOptions, DEFAULT_CONNECTOR_OPTIONS } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { CustomGetEntryOptions, defaultGetEntryOptions, defaultSetEntryOptions, RegistryEntry } from "../registry";
 import {
-  defaultGetJSONOptions,
-  defaultSetJSONOptions,
+  CustomGetEntryOptions,
+  DEFAULT_GET_ENTRY_OPTIONS,
+  DEFAULT_SET_ENTRY_OPTIONS,
+  RegistryEntry,
+} from "../registry";
+import {
+  DEFAULT_GET_JSON_OPTIONS,
+  DEFAULT_SET_JSON_OPTIONS,
   CustomGetJSONOptions,
   CustomSetJSONOptions,
   getOrCreateRegistryEntry,
@@ -51,6 +56,9 @@ import {
   encryptJSONFile,
 } from "./encrypted_files";
 
+/**
+ * The domain for MySky.
+ */
 export const MYSKY_DOMAIN = "skynet-mysky.hns";
 
 /**
@@ -58,6 +66,9 @@ export const MYSKY_DOMAIN = "skynet-mysky.hns";
  */
 export const mySkyDomain = MYSKY_DOMAIN;
 
+/**
+ * The domain for MySky dev.
+ */
 export const MYSKY_DEV_DOMAIN = "skynet-mysky-dev.hns";
 
 /**
@@ -65,13 +76,14 @@ export const MYSKY_DEV_DOMAIN = "skynet-mysky-dev.hns";
  */
 export const mySkyDevDomain = MYSKY_DEV_DOMAIN;
 
+/**
+ * The domain for MySky alpha. Intentionally not exported in index file.
+ */
 export const MYSKY_ALPHA_DOMAIN = "sandbridge.hns";
 
 /**
- * @deprecated please use MYSKY_ALPHA_DOMAIN.
+ * The maximum length for entry data when setting entry data.
  */
-export const mySkyAlphaDomain = MYSKY_ALPHA_DOMAIN;
-
 export const MAX_ENTRY_LENGTH = 70;
 
 const mySkyUiRelativeUrl = "ui.html";
@@ -121,18 +133,18 @@ export class MySky {
   }
 
   static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
-    const opts = { ...defaultConnectorOptions, ...customOptions };
+    const opts = { ...DEFAULT_CONNECTOR_OPTIONS, ...customOptions };
 
     // Enforce singleton.
     if (MySky.instance) {
       return MySky.instance;
     }
 
-    let domain = mySkyDomain;
+    let domain = MYSKY_DOMAIN;
     if (opts.alpha) {
-      domain = mySkyAlphaDomain;
+      domain = MYSKY_ALPHA_DOMAIN;
     } else if (opts.dev) {
-      domain = mySkyDevDomain;
+      domain = MYSKY_DEV_DOMAIN;
     }
     const connector = await Connector.init(client, domain, customOptions);
 
@@ -306,10 +318,10 @@ export class MySky {
    */
   async getJSON(path: string, customOptions?: CustomGetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultGetJSONOptions,
+      ...DEFAULT_GET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
@@ -334,7 +346,7 @@ export class MySky {
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableFileTweak(path);
     // Do not hash the tweak anymore.
-    const opts = { ...defaultGetEntryOptions, hashedDataKeyHex: true };
+    const opts = { ...DEFAULT_GET_ENTRY_OPTIONS, hashedDataKeyHex: true };
 
     return await this.connector.client.registry.getEntryLink(publicKey, dataKey, opts);
   }
@@ -352,10 +364,10 @@ export class MySky {
   async setJSON(path: string, json: JsonData, customOptions?: CustomSetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
     validateObject("json", json, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_SET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
@@ -368,7 +380,7 @@ export class MySky {
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: json, dataLink };
@@ -386,10 +398,10 @@ export class MySky {
   async setDataLink(path: string, dataLink: string, customOptions?: CustomSetJSONOptions): Promise<void> {
     validateString("path", path, "parameter");
     validateString("dataLink", dataLink, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_SET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
@@ -398,7 +410,7 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry = await getNextRegistryEntry(
       this.connector.client,
       publicKey,
@@ -409,7 +421,7 @@ export class MySky {
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
   }
 
@@ -425,10 +437,10 @@ export class MySky {
    */
   async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
     validateString("path", path, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_SET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
@@ -437,7 +449,7 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry = await getNextRegistryEntry(
       this.connector.client,
       publicKey,
@@ -448,7 +460,7 @@ export class MySky {
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
   }
 
@@ -463,10 +475,10 @@ export class MySky {
    */
   async getEntryData(path: string, customOptions?: CustomGetEntryOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
     const opts = {
-      ...defaultGetEntryOptions,
+      ...DEFAULT_GET_ENTRY_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
@@ -496,7 +508,7 @@ export class MySky {
   async setEntryData(path: string, data: Uint8Array, customOptions?: CustomSetJSONOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
     validateUint8Array("data", data, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_OPTIONS);
 
     if (data.length > MAX_ENTRY_LENGTH) {
       throwValidationError(
@@ -508,7 +520,7 @@ export class MySky {
     }
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_SET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
@@ -517,12 +529,12 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const getEntryOpts = extractOptions(opts, defaultGetEntryOptions);
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry = await getNextRegistryEntry(this.connector.client, publicKey, dataKey, data, getEntryOpts);
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: entry.data };
@@ -559,10 +571,10 @@ export class MySky {
    */
   async getJSONEncrypted(path: string, customOptions?: CustomGetJSONOptions): Promise<EncryptedJSONResponse> {
     validateString("path", path, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultGetJSONOptions,
+      ...DEFAULT_GET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
       hashedDataKeyHex: true, // Do not hash the tweak anymore.
@@ -601,10 +613,10 @@ export class MySky {
   ): Promise<EncryptedJSONResponse> {
     validateString("path", path, "parameter");
     validateObject("json", json, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_SET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
@@ -623,7 +635,7 @@ export class MySky {
     // Call MySky which checks for write permissions on the path.
     const signature = await this.signEncryptedRegistryEntry(entry, path);
 
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: json };

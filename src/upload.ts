@@ -2,7 +2,7 @@ import { AxiosResponse } from "axios";
 import { HttpRequest, Upload } from "tus-js-client";
 
 import { getFileMimeType } from "./utils/file";
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
+import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
 import { buildRequestHeaders, buildRequestUrl, SkynetClient } from "./client";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
@@ -55,7 +55,7 @@ export type UploadRequestResponse = {
 };
 
 export const DEFAULT_UPLOAD_OPTIONS = {
-  ...defaultBaseOptions,
+  ...DEFAULT_BASE_OPTIONS,
 
   endpointUpload: "/skynet/skyfile",
   endpointLargeUpload: "/skynet/tus",
@@ -64,11 +64,6 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   largeFileSize: TUS_CHUNK_SIZE,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
 };
-
-/**
- * @deprecated please use DEFAULT_UPLOAD_OPTIONS.
- */
-export const defaultUploadOptions = DEFAULT_UPLOAD_OPTIONS;
 
 /**
  * Uploads a file to Skynet.
@@ -88,7 +83,7 @@ export async function uploadFile(
 ): Promise<UploadRequestResponse> {
   // Validation is done in `uploadFileRequest` or `uploadLargeFileRequest`.
 
-  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   if (file.size < opts.largeFileSize) {
     return this.uploadSmallFile(file, opts);
@@ -137,9 +132,9 @@ export async function uploadSmallFileRequest(
   customOptions?: CustomUploadOptions
 ): Promise<AxiosResponse> {
   validateFile("file", file, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_UPLOAD_OPTIONS);
 
-  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
   const formData = new FormData();
 
   file = ensureFileObjectConsistency(file);
@@ -207,9 +202,9 @@ export async function uploadLargeFileRequest(
   customOptions?: CustomUploadOptions
 ): Promise<AxiosResponse> {
   validateFile("file", file, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_UPLOAD_OPTIONS);
 
-  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   // TODO: Add back upload options once they are implemented in skyd.
   const url = await buildRequestUrl(this, opts.endpointLargeUpload);
@@ -323,9 +318,9 @@ export async function uploadDirectoryRequest(
 ): Promise<AxiosResponse> {
   validateObject("directory", directory, "parameter");
   validateString("filename", filename, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultUploadOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_UPLOAD_OPTIONS);
 
-  const opts = { ...defaultUploadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const formData = new FormData();
   Object.entries(directory).forEach(([path, file]) => {
