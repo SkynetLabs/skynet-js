@@ -22,8 +22,10 @@ import {
 } from "./utils/string";
 import { formatSkylink } from "./skylink/format";
 import { DEFAULT_UPLOAD_OPTIONS, CustomUploadOptions, UploadRequestResponse } from "./upload";
+import { areEqualUint8Arrays } from "./utils/array";
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { DEFAULT_BASE_OPTIONS, extractOptions } from "./utils/options";
+import { JsonData } from "./utils/types";
 import {
   throwValidationError,
   validateHexString,
@@ -33,10 +35,7 @@ import {
   validateString,
   validateUint8ArrayLen,
 } from "./utils/validation";
-import { areEqualUint8Arrays } from "./utils/array";
 import { ResponseType } from "axios";
-
-export type JsonData = Record<string, unknown>;
 
 export type JsonFullData = {
   _data: JsonData;
