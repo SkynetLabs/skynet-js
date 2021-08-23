@@ -5,8 +5,8 @@ import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { trimUriPrefix } from "./utils/string";
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix } from "./utils/url";
+import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
+import { addSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 
 /**
@@ -86,7 +86,7 @@ export type ResolveHnsResponse = {
 };
 
 export const DEFAULT_DOWNLOAD_OPTIONS = {
-  ...defaultBaseOptions,
+  ...DEFAULT_BASE_OPTIONS,
   endpointDownload: "/",
   download: false,
   path: undefined,
@@ -95,24 +95,21 @@ export const DEFAULT_DOWNLOAD_OPTIONS = {
   subdomain: false,
 };
 
-/**
- * @deprecated please use DEFAULT_DOWNLOAD_OPTIONS.
- */
-export const defaultDownloadOptions = DEFAULT_DOWNLOAD_OPTIONS;
-
-const defaultGetMetadataOptions = {
-  ...defaultBaseOptions,
+const DEFAULT_GET_METADATA_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
   endpointGetMetadata: "/skynet/metadata",
 };
-const defaultDownloadHnsOptions = {
-  ...defaultDownloadOptions,
+
+const DEFAULT_DOWNLOAD_HNS_OPTIONS = {
+  ...DEFAULT_DOWNLOAD_OPTIONS,
   endpointDownloadHns: "hns",
   hnsSubdomain: "hns",
   // Default to subdomain format for HNS URLs.
   subdomain: true,
 };
-const defaultResolveHnsOptions = {
-  ...defaultBaseOptions,
+
+const DEFAULT_RESOLVE_HNS_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
   endpointResolveHns: "hnsres",
 };
 
@@ -133,7 +130,7 @@ export async function downloadFile(
 ): Promise<string> {
   // Validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions, download: true };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -160,7 +157,7 @@ export async function downloadFileHns(
 ): Promise<string> {
   // Validation is done in `getHnsUrl`.
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions, download: true };
 
   const url = await this.getHnsUrl(domain, opts);
 
@@ -187,7 +184,7 @@ export async function getSkylinkUrl(
 ): Promise<string> {
   // Validation is done in `getSkylinkUrlForPortal`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const portalUrl = await this.portalUrl();
 
@@ -211,9 +208,9 @@ export function getSkylinkUrlForPortal(
 ): string {
   validateString("portalUrl", portalUrl, "parameter");
   validateString("skylinkUrl", skylinkUrl, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultDownloadOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_DOWNLOAD_OPTIONS);
 
-  const opts = { ...defaultDownloadOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...customOptions };
 
   const query: Record<string, unknown> = {};
   if (opts.download) {
@@ -284,16 +281,16 @@ export async function getHnsUrl(
   customOptions?: CustomHnsDownloadOptions
 ): Promise<string> {
   validateString("domain", domain, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultDownloadHnsOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_DOWNLOAD_HNS_OPTIONS);
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   const query: Record<string, unknown> = {};
   if (opts.download) {
     query.attachment = true;
   }
 
-  domain = trimUriPrefix(domain, uriHandshakePrefix);
+  domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);
   const portalUrl = await this.portalUrl();
   const url = opts.subdomain
     ? addSubdomain(addSubdomain(portalUrl, opts.hnsSubdomain), domain)
@@ -318,11 +315,11 @@ export async function getHnsresUrl(
   customOptions?: CustomHnsResolveOptions
 ): Promise<string> {
   validateString("domain", domain, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultResolveHnsOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_RESOLVE_HNS_OPTIONS);
 
-  const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_RESOLVE_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
-  domain = trimUriPrefix(domain, uriHandshakePrefix);
+  domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);
   const portalUrl = await this.portalUrl();
 
   return makeUrl(portalUrl, opts.endpointResolveHns, domain);
@@ -343,10 +340,10 @@ export async function getMetadata(
   skylinkUrl: string,
   customOptions?: CustomGetMetadataOptions
 ): Promise<GetMetadataResponse> {
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetMetadataOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_METADATA_OPTIONS);
   // Rest of validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultGetMetadataOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_GET_METADATA_OPTIONS, ...this.customOptions, ...customOptions };
 
   // Don't include the path for now since the endpoint doesn't support it.
   const path = parseSkylink(skylinkUrl, { onlyPath: true });
@@ -390,7 +387,7 @@ export async function getFileContent<T = unknown>(
 ): Promise<GetFileContentResponse<T>> {
   // Validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -414,7 +411,7 @@ export async function getFileContentHns<T = unknown>(
 ): Promise<GetFileContentResponse<T>> {
   // Validation is done in `getHnsUrl`.
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getHnsUrl(domain, opts);
 
@@ -437,7 +434,7 @@ export async function getFileContentRequest<T = unknown>(
 ): Promise<GetFileContentResponse<T>> {
   // Not publicly available, don't validate input.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const headers = opts.range ? { Range: opts.range } : undefined;
 
@@ -485,7 +482,7 @@ export async function openFile(
 ): Promise<string> {
   // Validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -511,7 +508,7 @@ export async function openFileHns(
 ): Promise<string> {
   // Validation is done in `getHnsUrl`.
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getHnsUrl(domain, opts);
 
@@ -538,7 +535,7 @@ export async function resolveHns(
 ): Promise<ResolveHnsResponse> {
   // Validation is done in `getHnsresUrl`.
 
-  const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_RESOLVE_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getHnsresUrl(domain, opts);
 
