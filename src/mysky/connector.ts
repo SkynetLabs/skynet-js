@@ -31,11 +31,6 @@ export const DEFAULT_CONNECTOR_OPTIONS = {
   handshakeAttemptsInterval: defaultHandshakeAttemptsInterval,
 };
 
-/**
- * @deprecated please use DEFAULT_CONNECTOR_OPTIONS.
- */
-export const defaultConnectorOptions = DEFAULT_CONNECTOR_OPTIONS;
-
 export class Connector {
   constructor(
     public url: string,
@@ -48,7 +43,7 @@ export class Connector {
   // Static initializer
 
   static async init(client: SkynetClient, domain: string, customOptions?: CustomConnectorOptions): Promise<Connector> {
-    const opts = { ...defaultConnectorOptions, ...customOptions };
+    const opts = { ...DEFAULT_CONNECTOR_OPTIONS, ...customOptions };
 
     // Get the URL for the domain on the current portal.
     let domainUrl = await client.getFullDomainUrl(domain);

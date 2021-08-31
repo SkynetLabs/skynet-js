@@ -1,7 +1,7 @@
 import { hashAll } from "../crypto";
 import { stringToUint8ArrayUtf8, toHexString } from "../utils/string";
 
-const discoverableBucketTweakVersion = 1;
+const DISCOVERABLE_BUCKET_TWEAK_VERSION = 1;
 
 /**
  * Derives the discoverable file tweak for the given path.
@@ -22,7 +22,7 @@ export class DiscoverableBucketTweak {
   constructor(path: string) {
     const paths = splitPath(path);
     const pathHashes = paths.map(hashPathComponent);
-    this.version = discoverableBucketTweakVersion;
+    this.version = DISCOVERABLE_BUCKET_TWEAK_VERSION;
     this.path = pathHashes;
   }
 

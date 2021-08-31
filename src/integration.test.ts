@@ -1,9 +1,11 @@
-import { randomUnicodeString } from "../utils/testing";
+import { AxiosError } from "axios";
+
 import { hashDataKey } from "./crypto";
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
+import { randomUnicodeString } from "../utils/testing";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || defaultSkynetPortalUrl;
@@ -253,7 +255,7 @@ describe(`Integration test for portal '${portal}'`, () => {
         await client.getFileContent(entryLink);
         throw new Error("getFileContent should not have succeeded");
       } catch (err) {
-        expect(err.response.status).toEqual(404);
+        expect((err as AxiosError).response?.status).toEqual(404);
       }
 
       // The SkyDB entry should be null.
@@ -559,6 +561,39 @@ describe(`Integration test for portal '${portal}'`, () => {
       expect(data).toEqual(expect.any(Object));
       expect(data).toEqual(json);
       expect(contentType).toEqual("application/octet-stream");
+    });
+
+    it("Should upload and download a 0-byte file", async () => {
+      const onProgress = (progress: number) => {
+        expect(progress).toEqual(1);
+      };
+
+      const file = new File([""], dataKey);
+      expect(file.size).toEqual(0);
+      const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+      expect(skylink).not.toEqual("");
+
+      // Get file content and check returned values.
+      const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+
+      expect(data).toEqual("");
+    });
+
+    it("Should upload and download a 1-byte file", async () => {
+      const filedata = "a";
+      const onProgress = (progress: number) => {
+        expect(progress).toBeLessThanOrEqual(1);
+      };
+
+      const file = new File([filedata], dataKey);
+      expect(file.size).toEqual(filedata.length);
+      const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+      expect(skylink).not.toEqual("");
+
+      // Get file content and check returned values.
+      const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+
+      expect(data).toEqual(filedata);
     });
   });
 

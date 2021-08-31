@@ -260,6 +260,22 @@ describe("getFileContent", () => {
 
     expect(request.headers["Range"]).toEqual(range);
   });
+
+  it("should register onDownloadProgress callback if defined", async () => {
+    mock.onGet(expectedUrl).reply(200, skynetFileContents, fullHeaders);
+
+    // Assert `onDownloadProgress` is not defined if not set.
+    await client.getFileContent(skylink);
+    expect(mock.history.get.length).toBe(1);
+    const request1 = mock.history.get[0];
+    expect(request1.onDownloadProgress).not.toBeDefined();
+
+    // Assert `onDownloadProgress` is defined when passed as an option.
+    await client.getFileContent(skylink, { onDownloadProgress: jest.fn() });
+    expect(mock.history.get.length).toBe(2);
+    const request2 = mock.history.get[1];
+    expect(request2.onDownloadProgress).toBeDefined();
+  });
 });
 
 describe("getFileContentHns", () => {
