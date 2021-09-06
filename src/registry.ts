@@ -158,7 +158,7 @@ export async function getEntry(
       },
     });
   } catch (err) {
-    return handleGetEntryErrResponse(err);
+    return handleGetEntryErrResponse(err as AxiosError);
   }
 
   // Sanity check.

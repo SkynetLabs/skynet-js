@@ -1,5 +1,6 @@
-import { getEntryLink, genKeyPairAndSeed, SkynetClient } from "./index";
+import { AxiosError } from "axios";
 
+import { getEntryLink, genKeyPairAndSeed, SkynetClient } from "./index";
 import { hashDataKey } from "./crypto";
 import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
@@ -254,7 +255,7 @@ describe(`Integration test for portal '${portal}'`, () => {
         await client.getFileContent(entryLink);
         throw new Error("getFileContent should not have succeeded");
       } catch (err) {
-        expect(err.response.status).toEqual(404);
+        expect((err as AxiosError).response?.status).toEqual(404);
       }
 
       // The SkyDB entry should be null.
