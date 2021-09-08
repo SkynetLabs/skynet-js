@@ -380,6 +380,7 @@ describe(`Integration test for portal '${portal}'`, () => {
       subfiles: {
         HelloWorld: { filename: dataKey, contenttype: plaintextType, len: fileData.length },
       },
+      tryfiles: ["index.html"],
     };
 
     it("Should upload and download directories", async () => {
