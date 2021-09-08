@@ -5,7 +5,6 @@ import { sign } from "tweetnacl";
 import { Headers, SkynetClient } from "./client";
 import { hashRegistryEntry, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH } from "./crypto";
 import { getEntryLink, REGISTRY_TYPE_WITHOUT_PUBKEY } from "./registry";
-import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { isSkylinkV1 } from "./skylink/sia";
@@ -21,6 +20,7 @@ import {
   validateString,
   validateUint8ArrayLen,
 } from "./utils/validation";
+import { JsonData } from "./utils/types";
 
 /**
  * Custom download options.
