@@ -1,3 +1,4 @@
+import { AxiosError } from "axios";
 import { hashDataKey } from "./crypto";
 import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { decodeSkylinkBase64 } from "./utils/encoding";
@@ -252,7 +253,7 @@ describe(`Integration test for portal '${portal}'`, () => {
         await client.getFileContent(entryLink);
         throw new Error("getFileContent should not have succeeded");
       } catch (err) {
-        expect(err.response.status).toEqual(404);
+        expect((err as AxiosError).response?.status).toEqual(404);
       }
 
       // The SkyDB entry should be null.
@@ -505,11 +506,10 @@ describe(`Integration test for portal '${portal}'`, () => {
       const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
       expect(skylink).not.toEqual("");
 
-      // TODO: Downloads currently return 416 for empty files.
-      // // Get file content and check returned values.
-      // const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+      // Get file content and check returned values.
+      const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
 
-      // expect(data).toEqual("");
+      expect(data).toEqual("");
     });
 
     it("Should upload and download a 1-byte file", async () => {

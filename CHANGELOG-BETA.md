@@ -4,6 +4,23 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.14-beta]
+
+### Changed
+
+- Include tryfiles metadata
+
+## [4.0.13-beta]
+
+### Added
+
+- Added onDownloadProgress client option.
+
+### Changed
+
+- Updated default requested permissions when `skappDomain` != skapp URL to include Discoverable Write.
+- Removed case sensitivity from MySky URL and domain processing.
+
 ## [4.0.12-beta]
 
 ### Added
