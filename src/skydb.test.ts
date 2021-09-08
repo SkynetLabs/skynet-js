@@ -45,6 +45,7 @@ describe("getJSON", () => {
   });
 
   const headers = {
+    "skynet-portal-api": portalUrl,
     "skynet-skylink": skylink,
     "content-type": "application/json",
   };

@@ -19,7 +19,6 @@ import {
   getMetadata,
   getFileContent,
   getFileContentHns,
-  getFileContentRequest,
   openFile,
   openFileHns,
   resolveHns,
@@ -112,7 +111,6 @@ export class SkynetClient {
   getMetadata = getMetadata;
   getFileContent = getFileContent;
   getFileContentHns = getFileContentHns;
-  protected getFileContentRequest = getFileContentRequest;
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;
@@ -315,7 +313,7 @@ export async function buildRequestUrl(
   return url;
 }
 
-type Headers = { [key: string]: string };
+export type Headers = { [key: string]: string };
 
 /**
  * Helper function that builds the request headers.
