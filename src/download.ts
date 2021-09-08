@@ -54,7 +54,6 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
 
 export type CustomGetMetadataOptions = BaseCustomOptions & {
   endpointGetMetadata?: string;
-  // TODO: Add subdomain option.
 };
 
 export type CustomHnsResolveOptions = BaseCustomOptions & {
@@ -732,16 +731,18 @@ function validateRegistryProof(inputSkylink: string, dataLink: string, proof?: s
     if (proofArray.length > 0) {
       throw new Error("Expected 'skynet-proof' header to be empty for data link");
     }
+    // Nothing else to do for data links, there is no proof to validate.
     return;
-  } else {
-    if (inputSkylink === dataLink) {
-      // Input skylink is entry link and returned skylink is the same.
-      throw new Error("Expected returned skylink to be different from input entry link");
-    }
-    if (proofArray.length === 0) {
-      // Input skylink is entry link but registry proof is empty.
-      throw new Error("Expected 'skynet-proof' header not to be empty for entry link");
-    }
+  }
+
+  // Validation for input entry link.
+  if (inputSkylink === dataLink) {
+    // Input skylink is entry link and returned skylink is the same.
+    throw new Error("Expected returned skylink to be different from input entry link");
+  }
+  if (proofArray.length === 0) {
+    // Input skylink is entry link but registry proof is empty.
+    throw new Error("Expected 'skynet-proof' header not to be empty for entry link");
   }
 
   // Verify the registry proof.

@@ -310,6 +310,44 @@ export function getEntryLink(publicKey: string, dataKey: string, customOptions?:
 }
 
 /**
+ * Gets the entry link for the entry at the given public key and data key. This link stays the same even if the content at the entry changes.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry link.
+ * @throws - Will throw if the given key is not valid.
+ * @deprecated - Please use the standalone, non-async function `getEntryLink`.
+ */
+export async function getEntryLinkAsync(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): Promise<string> {
+  validatePublicKey("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
+
+  const opts = {
+    ...DEFAULT_GET_ENTRY_OPTIONS,
+    ...customOptions,
+  };
+
+  const siaPublicKey = newEd25519PublicKey(trimPrefix(publicKey, ED25519_PREFIX));
+  let tweak;
+  if (opts.hashedDataKeyHex) {
+    tweak = hexToUint8Array(dataKey);
+  } else {
+    tweak = hashDataKey(dataKey);
+  }
+
+  const skylink = newSkylinkV2(siaPublicKey, tweak).toString();
+  return formatSkylink(skylink);
+}
+
+/**
  * Sets the registry entry.
  *
  * @param this - SkynetClient
