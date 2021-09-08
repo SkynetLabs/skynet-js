@@ -309,6 +309,7 @@ export function getEntryLink(publicKey: string, dataKey: string, customOptions?:
   return formatSkylink(skylink);
 }
 
+/* istanbul ignore next */
 /**
  * Gets the entry link for the entry at the given public key and data key. This link stays the same even if the content at the entry changes.
  *

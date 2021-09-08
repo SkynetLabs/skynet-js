@@ -383,6 +383,7 @@ describe(`Integration test for portal '${portal}'`, () => {
       subfiles: {
         HelloWorld: { filename: dataKey, contenttype: plaintextType, len: fileData.length },
       },
+      tryfiles: ["index.html"],
     };
 
     it("Should get file content for an existing entry link of depth 1", async () => {
