@@ -48,6 +48,7 @@ describe("SkynetClient", () => {
     expect(client).toHaveProperty("registry");
     expect(client.registry).toHaveProperty("getEntry");
     expect(client.registry).toHaveProperty("getEntryUrl");
+    expect(client.registry).toHaveProperty("getEntryLink");
     expect(client.registry).toHaveProperty("setEntry");
     expect(client.registry).toHaveProperty("postSignedEntry");
   });
