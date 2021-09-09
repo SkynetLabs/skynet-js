@@ -29,7 +29,6 @@ import {
   CustomGetJSONOptions,
   CustomSetJSONOptions,
   getOrCreateRegistryEntry,
-  JsonData,
   JSONResponse,
   getNextRegistryEntry,
   getOrCreateRawBytesRegistryEntry,
@@ -38,6 +37,7 @@ import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
+import { JsonData } from "../utils/types";
 import {
   throwValidationError,
   validateBoolean,
