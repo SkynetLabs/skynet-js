@@ -388,7 +388,7 @@ describe("getFileContent", () => {
       mock.onGet(expectedEntryLinkUrl).reply(200, {}, headersWithProof);
 
       await expect(client.getFileContent(entryLink)).rejects.toThrowError(
-        "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected 'skynet-proof' header not to be empty for entry link"
+        "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected registry proof not to be empty"
       );
     });
 

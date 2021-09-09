@@ -5,8 +5,8 @@ import { sign } from "tweetnacl";
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
-import { ensurePrefix, hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
-import { addUrlQuery, makeUrl } from "./utils/url";
+import { ensurePrefix, hexToUint8Array, isHexString, toHexString, trimPrefix, trimUriPrefix } from "./utils/string";
+import { addUrlQuery, makeUrl, URI_SKYNET_PREFIX } from "./utils/url";
 import { hashDataKey, hashRegistryEntry, PUBLIC_KEY_LENGTH, Signature, SIGNATURE_LENGTH } from "./crypto";
 import {
   throwValidationError,
@@ -20,6 +20,8 @@ import {
 } from "./utils/validation";
 import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
 import { formatSkylink } from "./skylink/format";
+import { toByteArray } from "base64-js";
+import { encodeSkylinkBase64 } from "./utils/encoding";
 
 /**
  * Custom get entry options.
@@ -41,6 +43,17 @@ export type CustomGetEntryOptions = BaseCustomOptions & {
 export type CustomSetEntryOptions = BaseCustomOptions & {
   endpointSetEntry?: string;
   hashedDataKeyHex?: boolean;
+};
+
+/**
+ * Custom validate registry proof options.
+ *
+ * @property [resolverSkylink] - The returned resolver skylink to verify.
+ * @property [skylink] - The returned resolved skylink to verify.
+ */
+export type CustomValidateRegistryProofOptions = {
+  resolverSkylink?: string;
+  skylink?: string;
 };
 
 export const DEFAULT_GET_ENTRY_OPTIONS = {
@@ -94,6 +107,21 @@ export type RegistryEntry = {
   dataKey: string;
   data: Uint8Array;
   revision: bigint;
+};
+
+/**
+ * A single registry proof entry in a registry proof chain.
+ */
+export type RegistryProofEntry = {
+  data: string;
+  revision: number;
+  datakey: string;
+  publickey: {
+    algorithm: string;
+    key: string;
+  };
+  signature: string;
+  type: number;
 };
 
 /**
@@ -468,6 +496,82 @@ export async function postSignedEntry(
       return json.replace(REGEX_REVISION_WITH_QUOTES, '"revision":$1');
     },
   });
+}
+
+/**
+ * Validates the registry proof.
+ *
+ * @param proof - The registry proof.
+ * @param [opts] - Optional custom options.
+ * @returns - The resolver skylink and resolved skylink from the proof.
+ * @throws - Will throw if the registry proof fails to verify.
+ */
+export function validateRegistryProof(
+  proof: Array<RegistryProofEntry>,
+  opts?: CustomValidateRegistryProofOptions
+): { skylink: string; resolverSkylink: string } {
+  let resolverSkylink = undefined;
+  let lastSkylink = opts?.resolverSkylink;
+  const dataLink = opts?.skylink;
+
+  // Verify the proof is not empty.
+  if (proof.length === 0) {
+    throw new Error("Expected registry proof not to be empty");
+  }
+
+  // Verify the registry proof.
+  for (const entry of proof) {
+    if (entry.type !== REGISTRY_TYPE_WITHOUT_PUBKEY) {
+      throw new Error(`Unsupported registry type in proof: '${entry.type}'`);
+    }
+
+    const publicKey = entry.publickey.key;
+    const publicKeyBytes = toByteArray(publicKey);
+    const publicKeyHex = toHexString(publicKeyBytes);
+    const dataKey = entry.datakey;
+    const data = entry.data;
+    const signatureBytes = hexToUint8Array(entry.signature);
+
+    // Verify the current entry corresponds to the previous skylink in the chain.
+    let entryLink = getEntryLink(publicKeyHex, dataKey, { hashedDataKeyHex: true });
+    entryLink = trimUriPrefix(entryLink, URI_SKYNET_PREFIX);
+    if (lastSkylink && entryLink !== lastSkylink) {
+      throw new Error("Could not verify registry proof chain");
+    }
+
+    // Set the resolver skylink if this is the first link in the chain.
+    if (!resolverSkylink) {
+      resolverSkylink = entryLink;
+    }
+
+    // Data bytes are hex-encoded raw skylink bytes.
+    const rawData = hexToUint8Array(data);
+    const skylink = encodeSkylinkBase64(rawData);
+
+    // Try verifying the returned data.
+    const entryToVerify = {
+      dataKey,
+      data: rawData,
+      revision: BigInt(entry.revision),
+    };
+    // Verify length of signature and public key.
+    validateUint8ArrayLen("signatureArray", signatureBytes, "response value", SIGNATURE_LENGTH);
+    validateUint8ArrayLen("publicKeyArray", publicKeyBytes, "parameter", PUBLIC_KEY_LENGTH / 2);
+    if (!sign.detached.verify(hashRegistryEntry(entryToVerify, true), signatureBytes, publicKeyBytes)) {
+      // Registry proof fails to verify.
+      throw new Error("Could not verify signature from retrieved, signed registry entry in registry proof");
+    }
+
+    lastSkylink = skylink;
+  }
+
+  if (dataLink && lastSkylink !== dataLink) {
+    throw new Error("Could not verify registry proof chain");
+  }
+
+  // These variables are guaranteed to be defined because at least one link in
+  // the chain had to have been verified by this point.
+  return { skylink: lastSkylink as string, resolverSkylink: resolverSkylink as string };
 }
 
 /**

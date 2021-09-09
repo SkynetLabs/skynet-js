@@ -1,24 +1,19 @@
 import { AxiosResponse, ResponseType } from "axios";
-import { toByteArray } from "base64-js";
-import { sign } from "tweetnacl";
 
 import { Headers, SkynetClient } from "./client";
-import { hashRegistryEntry, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH } from "./crypto";
-import { getEntryLink, REGISTRY_TYPE_WITHOUT_PUBKEY } from "./registry";
+import { getEntryLink, validateRegistryProof } from "./registry";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { isSkylinkV1 } from "./skylink/sia";
-import { encodeSkylinkBase64 } from "./utils/encoding";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
-import { hexToUint8Array, toHexString, trimUriPrefix } from "./utils/string";
-import { addSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX, URI_SKYNET_PREFIX } from "./utils/url";
+import { trimUriPrefix } from "./utils/string";
+import { addSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
 import {
   throwValidationError,
   validateObject,
   validateOptionalObject,
   validateSkylinkString,
   validateString,
-  validateUint8ArrayLen,
 } from "./utils/validation";
 import { JsonData } from "./utils/types";
 
@@ -621,7 +616,7 @@ function validateGetFileContentResponse(response: AxiosResponse, inputSkylink: s
     validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getFileContent response header");
 
     const proof = response.headers["skynet-proof"];
-    validateRegistryProof(inputSkylink, skylink, proof);
+    validateRegistryProofResponse(inputSkylink, skylink, proof);
   } catch (err) {
     throw new Error(
       `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
@@ -657,7 +652,7 @@ function validateGetMetadataResponse(response: AxiosResponse, inputSkylink: stri
     }
     validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getMetadata response header");
 
-    validateRegistryProof(inputSkylink, skylink, response.headers["skynet-proof"]);
+    validateRegistryProofResponse(inputSkylink, skylink, response.headers["skynet-proof"]);
   } catch (err) {
     throw new Error(
       `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
@@ -702,14 +697,14 @@ function validateResolveHnsResponse(response: AxiosResponse): void {
 }
 
 /**
- * Validates the registry proof.
+ * Validates the registry proof response.
  *
  * @param inputSkylink - The input skylink, required to validate the proof.
  * @param dataLink - The returned data link.
  * @param proof - The returned proof.
  * @throws - Will throw if the registry proof header is not present, empty when it shouldn't be, or fails to verify.
  */
-function validateRegistryProof(inputSkylink: string, dataLink: string, proof?: string): void {
+function validateRegistryProofResponse(inputSkylink: string, dataLink: string, proof?: string): void {
   let proofArray = [];
   try {
     // skyd omits the header if the array is empty.
@@ -740,54 +735,6 @@ function validateRegistryProof(inputSkylink: string, dataLink: string, proof?: s
     // Input skylink is entry link and returned skylink is the same.
     throw new Error("Expected returned skylink to be different from input entry link");
   }
-  if (proofArray.length === 0) {
-    // Input skylink is entry link but registry proof is empty.
-    throw new Error("Expected 'skynet-proof' header not to be empty for entry link");
-  }
 
-  // Verify the registry proof.
-  let lastSkylink = inputSkylink;
-  for (const entry of proofArray) {
-    if (entry.type !== REGISTRY_TYPE_WITHOUT_PUBKEY) {
-      throw new Error(`Unsupported registry type in proof: '${entry.type}'`);
-    }
-
-    const publicKey = entry.publickey.key;
-    const publicKeyBytes = toByteArray(publicKey);
-    const publicKeyHex = toHexString(publicKeyBytes);
-    const dataKey = entry.datakey;
-    const data = entry.data;
-    const signatureBytes = hexToUint8Array(entry.signature);
-
-    // Verify the current entry corresponds to the previous skylink in the chain.
-    let entryLink = getEntryLink(publicKeyHex, dataKey, { hashedDataKeyHex: true });
-    entryLink = trimUriPrefix(entryLink, URI_SKYNET_PREFIX);
-    if (entryLink !== lastSkylink) {
-      throw new Error("Could not verify registry proof chain");
-    }
-
-    // Data bytes are hex-encoded raw skylink bytes.
-    const rawData = hexToUint8Array(data);
-    const skylink = encodeSkylinkBase64(rawData);
-
-    // Try verifying the returned data.
-    const entryToVerify = {
-      dataKey,
-      data: rawData,
-      revision: BigInt(entry.revision),
-    };
-    // Verify length of signature and public key.
-    validateUint8ArrayLen("signatureArray", signatureBytes, "response value", SIGNATURE_LENGTH);
-    validateUint8ArrayLen("publicKeyArray", publicKeyBytes, "parameter", PUBLIC_KEY_LENGTH / 2);
-    if (!sign.detached.verify(hashRegistryEntry(entryToVerify, true), signatureBytes, publicKeyBytes)) {
-      // Registry proof fails to verify.
-      throw new Error("Could not verify signature from retrieved, signed registry entry in registry proof");
-    }
-
-    lastSkylink = skylink;
-  }
-
-  if (lastSkylink !== dataLink) {
-    throw new Error("Could not verify registry proof chain");
-  }
+  validateRegistryProof(proofArray, { resolverSkylink: inputSkylink, skylink: dataLink });
 }
