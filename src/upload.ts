@@ -14,6 +14,11 @@ import { throwValidationError, validateObject, validateOptionalObject, validateS
 const TUS_CHUNK_SIZE = (1 << 22) * 10;
 
 /**
+ * A number indicating how many parts should be uploaded in parallel.
+ */
+const TUS_PARALLEL_UPLOADS = 2;
+
+/**
  * The retry delays, in ms. Data is stored in skyd for up to 20 minutes, so the
  * total delays should not exceed that length of time.
  */
@@ -232,6 +237,19 @@ export async function uploadLargeFileRequest(
       opts.onUploadProgress(progress, { loaded: bytesSent, total: bytesTotal });
     };
 
+  // Make an OPTIONS request to find out whether parallel uploads are supported.
+  // TODO: Remove this once parallel uploads are fully supported and rolled-out.
+  const resp = await this.executeRequest({
+    ...opts,
+    endpointPath: opts.endpointLargeUpload,
+    method: "options",
+  });
+
+  let parallelUploads = 1;
+  if (resp.headers["Tus-Extension"].contains("concatenation")) {
+    parallelUploads = TUS_PARALLEL_UPLOADS;
+  }
+
   return new Promise((resolve, reject) => {
     const tusOpts = {
       endpoint: url,
@@ -241,6 +259,7 @@ export async function uploadLargeFileRequest(
         filename,
         filetype: file.type,
       },
+      parallelUploads,
       headers,
       onProgress,
       onBeforeRequest: function (req: HttpRequest) {
