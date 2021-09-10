@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 
 import { Permission } from "skynet-mysky-utils";
-import { SkynetClient } from "../client";
 
+import { SkynetClient } from "../client";
 import { Connector, CustomConnectorOptions } from "./connector";
 
 export abstract class DacLibrary {
@@ -17,11 +17,11 @@ export abstract class DacLibrary {
 
   abstract getPermissions(): Permission[];
 
-  onUserLogin(): void {
+  async onUserLogin(): Promise<void> {
     if (!this.connector) {
       throw new Error("init was not called");
     }
 
-    this.connector.connection.remoteHandle().call("onUserLogin");
+    await this.connector.connection.remoteHandle().call("onUserLogin");
   }
 }

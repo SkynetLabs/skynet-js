@@ -5,6 +5,7 @@ import { getFileMimeType } from "./utils/file";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
 import { buildRequestHeaders, buildRequestUrl, SkynetClient } from "./client";
+import { JsonData } from "./utils/types";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 
 /**
@@ -39,15 +40,19 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  * @property [endpointLargeUpload] - The relative URL path of the portal endpoint to contact for large uploads.
  * @property [customFilename] - The custom filename to use when uploading files.
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
+ * @property [errorPages] - Defines a mapping of error codes and subfiles which are to be served in case we are serving the respective error code. All subfiles referred like this must be defined with absolute paths and must exist.
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
+ * @property [tryFiles] - Allows us to set a list of potential subfiles to return in case the requested one does not exist or is a directory. Those subfiles might be listed with relative or absolute paths. If the path is absolute the file must exist.
  */
 export type CustomUploadOptions = BaseCustomOptions & {
   endpointUpload?: string;
   endpointLargeUpload?: string;
 
   customFilename?: string;
+  errorPages?: JsonData;
   largeFileSize?: number;
   retryDelays?: number[];
+  tryFiles?: string[];
 };
 
 /**
@@ -66,8 +71,10 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   endpointLargeUpload: "/skynet/tus",
 
   customFilename: "",
+  errorPages: undefined,
   largeFileSize: TUS_CHUNK_SIZE,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
+  tryFiles: undefined,
 };
 
 /**
@@ -347,12 +354,20 @@ export async function uploadDirectoryRequest(
     formData.append(PORTAL_DIRECTORY_FILE_FIELD_NAME, file as File, path);
   });
 
+  const query: Record<string, unknown> = { filename };
+  if (opts.tryFiles) {
+    query.tryfiles = JSON.stringify(opts.tryFiles);
+  }
+  if (opts.errorPages) {
+    query.errorpages = JSON.stringify(opts.errorPages);
+  }
+
   const response = await this.executeRequest({
     ...opts,
     endpointPath: opts.endpointUpload,
     method: "post",
     data: formData,
-    query: { filename },
+    query,
   });
 
   return response;

@@ -54,7 +54,7 @@ export function getRootDirectory(file: File): string {
  */
 export function getFileMimeType(file: File): string {
   if (file.type) return file.type;
-  let { ext } = path.parse(file.name);
+  let ext = path.extname(file.name);
   ext = trimPrefix(ext, ".");
   if (ext !== "") {
     const mimeType = mime.getType(ext);

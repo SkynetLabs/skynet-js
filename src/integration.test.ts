@@ -29,10 +29,10 @@ expect.extend({
     const receivedUrl = trimPrefix(received, prefix);
 
     // Support the case where we receive siasky.net while expecting eu-fin-1.siasky.net.
-    if (!expectedUrl.endsWith(receivedUrl)) {
-      return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+    if (!expectedUrl.endsWith(receivedUrl) && !receivedUrl.endsWith(expectedUrl)) {
+      return { pass: false, message: () => `expected portal '${received}' to equal '${argument}'` };
     }
-    return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
+    return { pass: true, message: () => `expected portal '${received}' not to equal '${argument}'` };
   },
 
   // source https://stackoverflow.com/a/60818105/6085242
@@ -47,6 +47,12 @@ expect.extend({
     }
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
+});
+
+describe("toEqualPortalUrl", () => {
+  it("Subdomained portal servers should equal main portal", () => {
+    expect("https://us-ny-2.siasky.net").toEqualPortalUrl("https://siasky.net");
+  });
 });
 
 describe(`Integration test for portal '${portal}'`, () => {
@@ -381,6 +387,7 @@ describe(`Integration test for portal '${portal}'`, () => {
       subfiles: {
         HelloWorld: { filename: dataKey, contenttype: plaintextType, len: fileData.length },
       },
+      tryfiles: ["index.html"],
     };
 
     it("Should upload and download directories", async () => {
