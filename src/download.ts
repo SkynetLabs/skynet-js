@@ -723,7 +723,7 @@ function validateRegistryProofResponse(inputSkylink: string, dataLink: string, p
       throw new Error("Expected returned skylink to be the same as input data link");
     }
     // If input skylink is not an entry link, no proof should be present.
-    if (proofArray.length > 0) {
+    if (proof) {
       throw new Error("Expected 'skynet-proof' header to be empty for data link");
     }
     // Nothing else to do for data links, there is no proof to validate.
