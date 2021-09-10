@@ -3,6 +3,7 @@
   "plugins": ["jsdoc", "@typescript-eslint"],
   "parserOptions": {
     "ecmaVersion": 2020,
+    "project": ["tsconfig.json"],
     "sourceType": "module"
   },
   "env": {
@@ -11,6 +12,8 @@
   },
   "extends": ["eslint:recommended", "plugin:jsdoc/recommended", "plugin:@typescript-eslint/recommended"],
   "rules": {
+    "@typescript-eslint/no-floating-promises": 1,
+
     "jsdoc/require-description": 1,
     "jsdoc/require-param-type": 0,
     "jsdoc/require-property-type": 0,

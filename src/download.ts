@@ -1,12 +1,12 @@
 import { AxiosResponse, ResponseType } from "axios";
 import { SkynetClient, Headers } from "./client";
 
-import { JsonData } from "./skydb";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { trimUriPrefix } from "./utils/string";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { addSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
+import { JsonData } from "./utils/types";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
 
 /**
