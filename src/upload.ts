@@ -246,7 +246,7 @@ export async function uploadLargeFileRequest(
   });
 
   let parallelUploads = 1;
-  if (resp.headers["Tus-Extension"].contains("concatenation")) {
+  if (resp.headers["Tus-Extension"]?.contains("concatenation")) {
     parallelUploads = TUS_PARALLEL_UPLOADS;
   }
 
