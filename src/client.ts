@@ -18,6 +18,7 @@ import {
   getHnsresUrl,
   getMetadata,
   getFileContent,
+  getFileContentRequest,
   getFileContentHns,
   openFile,
   openFileHns,
@@ -110,6 +111,7 @@ export class SkynetClient {
   getHnsresUrl = getHnsresUrl;
   getMetadata = getMetadata;
   getFileContent = getFileContent;
+  protected getFileContentRequest = getFileContentRequest;
   getFileContentHns = getFileContentHns;
   openFile = openFile;
   openFileHns = openFileHns;
@@ -268,6 +270,7 @@ export class SkynetClient {
     });
   }
 
+  /* istanbul ignore next */
   async resolvePortalUrl(): Promise<string> {
     const response = await this.executeRequest({
       ...this.customOptions,

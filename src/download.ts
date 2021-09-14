@@ -388,29 +388,49 @@ export async function getFileContent<T = unknown>(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
-  // Validation is done in `getSkylinkUrl`.
+  // Validation is done in `getFileContentRequest`.
 
-  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
-
-  const url = await this.getSkylinkUrl(skylinkUrl, opts);
+  const response = await this.getFileContentRequest(skylinkUrl, customOptions);
   const inputSkylink = parseSkylink(skylinkUrl);
-
-  const headers = buildGetFileContentHeaders(opts.range);
-
-  // GET request the data at the skylink.
-  const response = await this.executeRequest({
-    ...opts,
-    endpointPath: opts.endpointDownload,
-    method: "get",
-    url,
-    headers,
-  });
 
   // `inputSkylink` cannot be null. `getSkylinkUrl` would have thrown on an
   // invalid skylink.
   validateGetFileContentResponse(response, inputSkylink as string);
 
   return await extractGetFileContentResponse<T>(response);
+}
+
+/**
+ * Makes the request to get the contents of the file at the given skylink.
+ *
+ * @param this - SkynetClient
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The get file content response.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
+ */
+export async function getFileContentRequest(
+  this: SkynetClient,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): Promise<AxiosResponse> {
+  // Validation is done in `getSkylinkUrl`.
+
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
+
+  const url = await this.getSkylinkUrl(skylinkUrl, opts);
+
+  const headers = buildGetFileContentHeaders(opts.range);
+
+  // GET request the data at the skylink.
+  return await this.executeRequest({
+    ...opts,
+    endpointPath: opts.endpointDownload,
+    method: "get",
+    url,
+    headers,
+  });
 }
 
 /**
@@ -588,9 +608,9 @@ function buildQuery(download: boolean): Record<string, unknown> {
  * @returns - The extracted get file content response fields.
  */
 async function extractGetFileContentResponse<T = unknown>(response: AxiosResponse): Promise<GetFileContentResponse<T>> {
-  const contentType = response.headers["content-type"] ?? "";
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+  const contentType = response.headers["content-type"];
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
 
   return { data: response.data, contentType, portalUrl, skylink };
 }
