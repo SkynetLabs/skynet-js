@@ -3,7 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
-import { getEntryUrlForPortal, signEntry } from "./registry";
+import { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
 import { uriSkynetPrefix } from "./utils/url";
 import { stringToUint8ArrayUtf8 } from "./utils/string";
 
@@ -81,7 +81,7 @@ describe("getEntryLink", () => {
     const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
     const expectedEntryLink = `${uriSkynetPrefix}AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ`;
 
-    const entryLink = await client.registry.getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });
+    const entryLink = getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });
 
     expect(entryLink).toEqual(expectedEntryLink);
   });
@@ -137,5 +137,28 @@ describe("signEntry", () => {
     await expect(signEntry(privateKey, entry, true)).rejects.toThrowError(
       "Expected parameter 'str' to be a hex-encoded string, was type 'string', value 'test'"
     );
+  });
+});
+
+describe("validateRegistryProof", () => {
+  it("Should verify a valid registry proof", () => {
+    const proof = [
+      {
+        data: "5c006f8bb26d25b412300703c275279a9d852833e383cfed4d314fe01c0c4b155d12",
+        revision: 0,
+        datakey: "43c8a9b01609544ab152dad397afc3b56c1518eb546750dbc6cad5944fec0292",
+        publickey: { algorithm: "ed25519", key: "y/l99FyfFm6JPhZL5xSkruhA06Qh9m5S9rnipQCc+rw=" },
+        signature:
+          "5a1437508eedb6f5352d7f744693908a91bb05c01370ce4743de9c25f761b4e87760b8172448c073a4ddd9d58d1a2bf978b3227e57e4fa8cbe830a2353be2207",
+        type: 1,
+      },
+    ];
+    const expectedSkylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+    const expectedResolverSkylink = "AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA";
+
+    const { skylink, resolverSkylink } = validateRegistryProof(proof);
+
+    expect(skylink).toEqual(expectedSkylink);
+    expect(resolverSkylink).toEqual(expectedResolverSkylink);
   });
 });
