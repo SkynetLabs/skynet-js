@@ -19,14 +19,13 @@ import {
   getMetadata,
   getFileContent,
   getFileContentHns,
-  getFileContentRequest,
   openFile,
   openFileHns,
   resolveHns,
 } from "./download";
 import { getJSONEncrypted, getEntryData, getEntryLink as fileGetEntryLink, getJSON as fileGetJSON } from "./file";
 import { pinSkylink } from "./pin";
-import { getEntry, getEntryUrl, getEntryLink, setEntry, postSignedEntry } from "./registry";
+import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
 import { deleteJSON, getJSON, setJSON, setDataLink, getRawBytes } from "./skydb";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
@@ -112,7 +111,6 @@ export class SkynetClient {
   getMetadata = getMetadata;
   getFileContent = getFileContent;
   getFileContentHns = getFileContentHns;
-  protected getFileContentRequest = getFileContentRequest;
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;
@@ -151,7 +149,7 @@ export class SkynetClient {
   registry = {
     getEntry: getEntry.bind(this),
     getEntryUrl: getEntryUrl.bind(this),
-    getEntryLink: getEntryLink.bind(this),
+    getEntryLink: getEntryLinkAsync.bind(this),
     setEntry: setEntry.bind(this),
     postSignedEntry: postSignedEntry.bind(this),
   };
@@ -324,7 +322,7 @@ export async function buildRequestUrl(
   return url;
 }
 
-type Headers = { [key: string]: string };
+export type Headers = { [key: string]: string };
 
 /**
  * Helper function that builds the request headers.

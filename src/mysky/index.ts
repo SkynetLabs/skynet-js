@@ -21,6 +21,7 @@ import {
   CustomGetEntryOptions,
   DEFAULT_GET_ENTRY_OPTIONS,
   DEFAULT_SET_ENTRY_OPTIONS,
+  getEntryLink,
   RegistryEntry,
 } from "../registry";
 import {
@@ -348,7 +349,7 @@ export class MySky {
     // Do not hash the tweak anymore.
     const opts = { ...DEFAULT_GET_ENTRY_OPTIONS, hashedDataKeyHex: true };
 
-    return await this.connector.client.registry.getEntryLink(publicKey, dataKey, opts);
+    return getEntryLink(publicKey, dataKey, opts);
   }
 
   /**
