@@ -4,6 +4,20 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.15-beta]
+
+### Changed
+
+- Downloads now verify the registry proofs returned from the portal.
+- Large file uploads now upload in parallel for more efficient uploads.
+- Deprecated `client.registry.getEntryLink` in flavor of the standalone and non-async `getEntryLink` function.
+
+### Added
+
+- Added `validateRegistryProof` function.
+- Added the `errorPages` and `tryFiles` options for directory uploads.
+- Exported some crypto length constants.
+
 ## [4.0.14-beta]
 
 ### Changed
