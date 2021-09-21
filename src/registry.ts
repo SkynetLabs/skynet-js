@@ -68,7 +68,7 @@ export const DEFAULT_SET_ENTRY_OPTIONS = {
   hashedDataKeyHex: false,
 };
 
-export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
+const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 
 /**
  * Regex for JSON revision value without quotes.
@@ -297,7 +297,7 @@ export function getEntryUrlForPortal(
   const query = {
     publickey: ensurePrefix(publicKey, ED25519_PREFIX),
     datakey: dataKeyHashHex,
-    timeout: DEFAULT_GET_ENTRY_TIMEOUT,
+    timeout: DEFAULT_GET_ENTRY_TIMEOUT.toString(),
   };
 
   let url = makeUrl(portalUrl, opts.endpointGetEntry);

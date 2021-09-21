@@ -220,10 +220,10 @@ export function getSkylinkUrlForPortal(
 
   const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...customOptions };
 
-  const query: Record<string, unknown> = {};
+  const query: { [key: string]: string | undefined } = {};
   if (opts.download) {
     // Set the "attachment" parameter.
-    query.attachment = true;
+    query.attachment = "true";
   }
 
   // URL-encode the path.
@@ -293,9 +293,9 @@ export async function getHnsUrl(
 
   const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
-  const query: Record<string, unknown> = {};
+  const query: { [key: string]: string | undefined } = {};
   if (opts.download) {
-    query.attachment = true;
+    query.attachment = "true";
   }
 
   domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);

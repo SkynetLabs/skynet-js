@@ -354,7 +354,7 @@ export async function uploadDirectoryRequest(
     formData.append(PORTAL_DIRECTORY_FILE_FIELD_NAME, file as File, path);
   });
 
-  const query: Record<string, unknown> = { filename };
+  const query: { [key: string]: string | undefined } = { filename };
   if (opts.tryFiles) {
     query.tryfiles = JSON.stringify(opts.tryFiles);
   }
