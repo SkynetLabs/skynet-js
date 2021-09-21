@@ -89,7 +89,7 @@ export const MAX_ENTRY_LENGTH = 70;
 
 const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
-const [mySkyUiW, mySkyUiH] = [600, 600];
+const [mySkyUiW, mySkyUiH] = [640, 750];
 
 export type EntryData = {
   data: Uint8Array | null;
