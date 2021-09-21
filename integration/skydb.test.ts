@@ -1,0 +1,191 @@
+import { client, dataKey, portal } from ".";
+import { genKeyPairAndSeed, URI_SKYNET_PREFIX } from "../src";
+import { hashDataKey } from "../src/crypto";
+import { decodeSkylinkBase64 } from "../src/utils/encoding";
+import { toHexString } from "../src/utils/string";
+
+describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
+  it("Should get existing SkyDB data", async () => {
+    const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+    const dataKey = "dataKey1";
+    const expectedDataLink = `${URI_SKYNET_PREFIX}AACDPHoC2DCV_kLGUdpdRJr3CcxCmKadLGPi6OAMl7d48w`;
+    const expectedData = { message: "hi there" };
+
+    const { data: received, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(expectedData).toEqual(received);
+    expect(dataLink).toEqual(expectedDataLink);
+  });
+
+  it("Should get existing SkyDB data using entry link", async () => {
+    const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+    const dataKey = "dataKey3";
+    const expectedJson = { message: "hi there!" };
+    const expectedData = { _data: expectedJson };
+    const expectedEntryLink = `${URI_SKYNET_PREFIX}AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw`;
+    const expectedDataLink = `${URI_SKYNET_PREFIX}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
+
+    const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+    expect(entryLink).toEqual(expectedEntryLink);
+
+    const { data } = await client.getFileContent(entryLink);
+
+    expect(data).toEqual(expect.objectContaining(expectedData));
+
+    const { data: json, dataLink } = await client.db.getJSON(publicKey, dataKey);
+    expect(dataLink).toEqual(expectedDataLink);
+    expect(json).toEqual(expectedJson);
+  });
+
+  it("getRawBytes should perform a lookup but not a skylink GET if the cachedDataLink is a hit for existing data", async () => {
+    const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
+    const dataKey = "dataKey3";
+    const expectedDataLink = `${URI_SKYNET_PREFIX}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
+
+    const { data: returnedData, dataLink } = await client.db.getRawBytes(publicKey, dataKey, {
+      cachedDataLink: expectedDataLink,
+    });
+    expect(returnedData).toBeNull();
+    expect(dataLink).toEqual(expectedDataLink);
+  });
+
+  it("Should get existing SkyDB data with unicode data key", async () => {
+    const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
+    const dataKey = "dataKeyż";
+    const expected = { message: "Hello" };
+
+    const { data: received } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(expected).toEqual(received);
+  });
+
+  it("Should return null for an inexistent entry", async () => {
+    const { publicKey } = genKeyPairAndSeed();
+
+    // Try getting an inexistent entry.
+    const { data, dataLink } = await client.db.getJSON(publicKey, "foo");
+    expect(data).toBeNull();
+    expect(dataLink).toBeNull();
+  });
+
+  it("Should set and get new entries", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const json = { data: "thisistext" };
+    const json2 = { data: "foo2" };
+
+    // Set the file in SkyDB.
+    await client.db.setJSON(privateKey, dataKey, json);
+
+    // Get the file in SkyDB.
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+    expect(data).toEqual(json);
+    expect(dataLink).toBeTruthy();
+
+    // Set the file again.
+    await client.db.setJSON(privateKey, dataKey, json2);
+
+    // Get the file again, should have been updated.
+    const { data: data2, dataLink: dataLink2 } = await client.db.getJSON(publicKey, dataKey);
+    expect(data2).toEqual(json2);
+    expect(dataLink2).toBeTruthy();
+  });
+
+  // Regression test: Use some strange data keys that have failed in previous versions.
+  const dataKeys = [".", "..", "http://localhost:8000/", ""];
+
+  it.each(dataKeys)("Should set and get new entry with dataKey '%s'", async (dataKey) => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const json = { data: "thisistext" };
+
+    await client.db.setJSON(privateKey, dataKey, json);
+
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(data).toEqual(json);
+    expect(dataLink).toBeTruthy();
+  });
+
+  it("Should be able to delete an existing entry", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const json = { data: "thisistext" };
+
+    await client.db.setJSON(privateKey, dataKey, json);
+
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(data).toEqual(json);
+    expect(dataLink).toBeTruthy();
+
+    await client.db.deleteJSON(privateKey, dataKey);
+
+    const { data: data2, dataLink: dataLink2 } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(data2).toBeNull();
+    expect(dataLink2).toBeNull();
+  });
+
+  it("Should be able to set a new entry as deleted and then write over it", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+
+    await client.db.deleteJSON(privateKey, dataKey);
+
+    // Get the entry link.
+    const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+
+    // Downloading the entry link should return a 404.
+    // TODO: Should getFileContent return `null` on 404?
+    try {
+      await client.getFileContent(entryLink);
+      throw new Error("getFileContent should not have succeeded");
+    } catch (err) {
+      expect(err.response.status).toEqual(404);
+    }
+
+    // The SkyDB entry should be null.
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(data).toBeNull();
+    expect(dataLink).toBeNull();
+
+    // Write to the entry.
+    const json = { data: "thisistext" };
+    await client.db.setJSON(privateKey, dataKey, json);
+
+    // The entry should be readable.
+
+    const { data: data2, dataLink: dataLink2 } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(data2).toEqual(json);
+    expect(dataLink2).toBeTruthy();
+  });
+
+  it("Should correctly set a data link", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const dataLink = "AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw";
+    const dataLinkBytes = decodeSkylinkBase64(dataLink);
+
+    await client.db.setDataLink(privateKey, dataKey, dataLink);
+
+    const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
+    expect(returnedEntry).not.toBeNull();
+    expect(returnedEntry).toEqual(expect.objectContaining({}));
+
+    // @ts-expect-error TS still thinks returnedEntry can be null
+    expect(returnedEntry.data).toEqualUint8Array(dataLinkBytes);
+  });
+
+  it("Should correctly handle the hashedDataKeyHex option", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const dataKey = "test";
+    const hashedDataKeyHex = toHexString(hashDataKey(dataKey));
+    const json = { message: "foo" };
+
+    // Set JSON using the hashed data key hex.
+    await client.db.setJSON(privateKey, hashedDataKeyHex, json, { hashedDataKeyHex: true });
+
+    // Get JSON using the original data key.
+    const { data } = await client.db.getJSON(publicKey, dataKey, { hashedDataKeyHex: false });
+
+    expect(data).toEqual(json);
+  });
+});

@@ -26,7 +26,7 @@ const config: Config.InitialOptions = {
     },
   },
   // The root directory that Jest should scan for tests and modules within
-  rootDir: "src",
+  roots: ["src", "integration"],
 
   // All imported modules in your tests should be mocked automatically
   // automock: false,
