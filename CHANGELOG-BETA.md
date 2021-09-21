@@ -4,6 +4,12 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.17-beta]
+
+### Changed
+
+- Fixed some bugs affecting the MySky UI window.
+
 ## [4.0.16-beta]
 
 ### Added
