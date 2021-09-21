@@ -1,5 +1,6 @@
+import { AxiosError } from "axios";
 import { client, dataKey, portal } from ".";
-import { genKeyPairAndSeed, URI_SKYNET_PREFIX } from "../src";
+import { genKeyPairAndSeed, getEntryLink, URI_SKYNET_PREFIX } from "../src";
 import { hashDataKey } from "../src/crypto";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
@@ -25,7 +26,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const expectedEntryLink = `${URI_SKYNET_PREFIX}AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw`;
     const expectedDataLink = `${URI_SKYNET_PREFIX}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
 
-    const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+    const entryLink = getEntryLink(publicKey, dataKey);
     expect(entryLink).toEqual(expectedEntryLink);
 
     const { data } = await client.getFileContent(entryLink);
@@ -130,7 +131,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     await client.db.deleteJSON(privateKey, dataKey);
 
     // Get the entry link.
-    const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+    const entryLink = getEntryLink(publicKey, dataKey);
 
     // Downloading the entry link should return a 404.
     // TODO: Should getFileContent return `null` on 404?
@@ -138,7 +139,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
       await client.getFileContent(entryLink);
       throw new Error("getFileContent should not have succeeded");
     } catch (err) {
-      expect(err.response.status).toEqual(404);
+      expect((err as AxiosError).response?.status).toEqual(404);
     }
 
     // The SkyDB entry should be null.

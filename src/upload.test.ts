@@ -1,13 +1,13 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
+import { SkynetClient, DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./index";
 import { compareFormData } from "../utils/testing";
 
-const portalUrl = defaultSkynetPortalUrl;
+const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
-const sialink = `${uriSkynetPrefix}${skylink}`;
+const sialink = `${URI_SKYNET_PREFIX}${skylink}`;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 const data = { skylink, merkleroot, bitfield };
@@ -202,6 +202,34 @@ describe("uploadDirectory", () => {
     expect(mock.history.post.length).toBe(2);
     const request2 = mock.history.post[1];
     expect(request2.onUploadProgress).toBeDefined();
+  });
+
+  it("should send errorpages if given", async () => {
+    mock.resetHandlers();
+    mock.onPost().replyOnce(200, data);
+
+    const errorPages = { 404: "404.html", 500: "500.html" };
+    // Percent-encoding for `{"404":"404.html","500":"500.html"}`.
+    const encodedJSON = "%7B%22404%22%3A%22404.html%22%2C%22500%22%3A%22500.html%22%7D";
+
+    await client.uploadDirectory(directory, filename, { errorPages });
+
+    expect(mock.history.post.length).toBe(1);
+    expect(mock.history.post[0].url).toContain(`errorpages=${encodedJSON}`);
+  });
+
+  it("should send tryfiles if given", async () => {
+    mock.resetHandlers();
+    mock.onPost().replyOnce(200, data);
+
+    const tryFiles = ["foo", "bar"];
+    // Percent-encoding for `["foo","bar"]`.
+    const encodedArray = "%5B%22foo%22%2C%22bar%22%5D";
+
+    await client.uploadDirectory(directory, filename, { tryFiles });
+
+    expect(mock.history.post.length).toBe(1);
+    expect(mock.history.post[0].url).toContain(`tryfiles=${encodedArray}`);
   });
 
   it("should encode special characters in the URL", async () => {

@@ -21,6 +21,7 @@ import {
   CustomGetEntryOptions,
   DEFAULT_GET_ENTRY_OPTIONS,
   DEFAULT_SET_ENTRY_OPTIONS,
+  getEntryLink,
   RegistryEntry,
 } from "../registry";
 import {
@@ -29,7 +30,6 @@ import {
   CustomGetJSONOptions,
   CustomSetJSONOptions,
   getOrCreateRegistryEntry,
-  JsonData,
   JSONResponse,
   getNextRegistryEntry,
   getOrCreateRawBytesRegistryEntry,
@@ -38,6 +38,7 @@ import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
+import { JsonData } from "../utils/types";
 import {
   throwValidationError,
   validateBoolean,
@@ -88,7 +89,7 @@ export const MAX_ENTRY_LENGTH = 70;
 
 const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
-const [mySkyUiW, mySkyUiH] = [600, 600];
+const [mySkyUiW, mySkyUiH] = [640, 750];
 
 export type EntryData = {
   data: Uint8Array | null;
@@ -166,6 +167,20 @@ export class MySky {
   // ==========
 
   /**
+   * Checks if the current browser is supported by MySky.
+   *
+   * @returns - A promise with a boolean indicating whether the browser is supported and, if not, a string containing the user-friendly error message.
+   */
+  static async isBrowserSupported(): Promise<[boolean, string]> {
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      return [false, "MySky is currently not supported in Safari browsers."];
+    }
+
+    return [true, ""];
+  }
+
+  /**
    * Loads the given DACs.
    *
    * @param dacs - The DAC library instances to call `init` on.
@@ -196,7 +211,7 @@ export class MySky {
     this.pendingPermissions = failedPermissions;
 
     const loggedIn = seedFound && failedPermissions.length === 0;
-    this.handleLogin(loggedIn);
+    await this.handleLogin(loggedIn);
     return loggedIn;
   }
 
@@ -258,7 +273,7 @@ export class MySky {
       try {
         // Launch the UI.
 
-        uiWindow = await this.launchUI();
+        uiWindow = this.launchUI();
         uiConnection = await this.connectUi(uiWindow);
 
         // Send the UI the list of required permissions.
@@ -299,7 +314,7 @@ export class MySky {
       });
 
     const loggedIn = seedFound && this.pendingPermissions.length === 0;
-    this.handleLogin(loggedIn);
+    await this.handleLogin(loggedIn);
     return loggedIn;
   }
 
@@ -348,7 +363,7 @@ export class MySky {
     // Do not hash the tweak anymore.
     const opts = { ...DEFAULT_GET_ENTRY_OPTIONS, hashedDataKeyHex: true };
 
-    return await this.connector.client.registry.getEntryLink(publicKey, dataKey, opts);
+    return getEntryLink(publicKey, dataKey, opts);
   }
 
   /**
@@ -650,7 +665,7 @@ export class MySky {
     window.dispatchEvent(event);
   }
 
-  protected async launchUI(): Promise<Window> {
+  protected launchUI(): Window {
     const mySkyUrl = new URL(this.connector.url);
     mySkyUrl.pathname = mySkyUiRelativeUrl;
     const uiUrl = mySkyUrl.toString();
@@ -694,14 +709,21 @@ export class MySky {
 
     // Add DAC permissions.
     const perms = dac.getPermissions();
-    this.addPermissions(...perms);
+    await this.addPermissions(...perms);
   }
 
-  protected handleLogin(loggedIn: boolean): void {
+  protected async handleLogin(loggedIn: boolean): Promise<void> {
     if (loggedIn) {
-      for (const dac of this.dacs) {
-        dac.onUserLogin();
-      }
+      await Promise.all(
+        this.dacs.map(async (dac) => {
+          try {
+            await dac.onUserLogin();
+          } catch (error) {
+            // Don't throw on error, just print a console warning.
+            console.warn(error);
+          }
+        })
+      );
     }
   }
 

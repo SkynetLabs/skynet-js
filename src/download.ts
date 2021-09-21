@@ -1,13 +1,21 @@
 import { AxiosResponse, ResponseType } from "axios";
-import { SkynetClient } from "./client";
 
-import { JsonData } from "./skydb";
+import { Headers, SkynetClient } from "./client";
+import { getEntryLink, validateRegistryProof } from "./registry";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
-import { trimUriPrefix } from "./utils/string";
+import { isSkylinkV1 } from "./skylink/sia";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
+import { trimUriPrefix } from "./utils/string";
 import { addSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
-import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
+import {
+  throwValidationError,
+  validateObject,
+  validateOptionalObject,
+  validateSkylinkString,
+  validateString,
+} from "./utils/validation";
+import { JsonData } from "./utils/types";
 
 /**
  * Custom download options.
@@ -360,12 +368,14 @@ export async function getMetadata(
     url,
   });
 
-  validateGetMetadataResponse(response);
+  // TODO: Pass subdomain option.
+  const inputSkylink = parseSkylink(skylinkUrl);
+  validateGetMetadataResponse(response, inputSkylink as string);
 
   const metadata = response.data;
 
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
 
   return { metadata, portalUrl, skylink };
 }
@@ -390,8 +400,29 @@ export async function getFileContent<T = unknown>(
   const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
+  const inputSkylink = parseSkylink(skylinkUrl);
 
-  return this.getFileContentRequest<T>(url, opts);
+  const headers = buildGetFileContentHeaders(opts.range);
+
+  // GET request the data at the skylink.
+  const response = await this.executeRequest({
+    ...opts,
+    endpointPath: opts.endpointDownload,
+    method: "get",
+    url,
+    headers,
+  });
+
+  // `inputSkylink` cannot be null.
+  validateGetFileContentResponse(response, inputSkylink as string);
+
+  const data = response.data;
+
+  const contentType = response.headers["content-type"];
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
+
+  return { data, contentType, portalUrl, skylink };
 }
 
 /**
@@ -415,54 +446,29 @@ export async function getFileContentHns<T = unknown>(
 
   const url = await this.getHnsUrl(domain, opts);
 
-  return this.getFileContentRequest<T>(url, opts);
-}
+  const headers = buildGetFileContentHeaders(opts.range);
 
-/**
- * Does a GET request of the skylink, returning the data property of the response.
- *
- * @param this - SkynetClient
- * @param url - URL.
- * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
- * @throws - Will throw if the request does not succeed or the response is missing data.
- */
-export async function getFileContentRequest<T = unknown>(
-  this: SkynetClient,
-  url: string,
-  customOptions?: CustomDownloadOptions
-): Promise<GetFileContentResponse<T>> {
-  // Not publicly available, don't validate input.
+  // GET request the data at the HNS domain and resolve the skylink in parallel.
+  const [response, { skylink: inputSkylink }] = await Promise.all([
+    this.executeRequest({
+      ...opts,
+      endpointPath: opts.endpointDownload,
+      method: "get",
+      url,
+      headers,
+    }),
+    this.resolveHns(domain),
+  ]);
 
-  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
+  validateGetFileContentResponse(response, inputSkylink);
 
-  const headers = opts.range ? { Range: opts.range } : undefined;
+  const data = response.data;
 
-  // GET request the data at the skylink.
-  const response = await this.executeRequest({
-    ...opts,
-    endpointPath: opts.endpointDownload,
-    method: "get",
-    url,
-    headers,
-  });
+  const contentType = response.headers["content-type"];
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
 
-  if (typeof response.data === "undefined") {
-    throw new Error(
-      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-
-  const contentType = response.headers["content-type"] ?? "";
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
-
-  return { data: response.data, contentType, portalUrl, skylink };
+  return { data, contentType, portalUrl, skylink };
 }
 
 /**
@@ -552,10 +558,69 @@ export async function resolveHns(
   if (response.data.skylink) {
     return { data: response.data, skylink: response.data.skylink };
   } else {
-    const skylink = await this.registry.getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
+    // We got a registry entry instead of a skylink, so get the entry link.
+    const entryLink = getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
       hashedDataKeyHex: true,
     });
-    return { data: response.data, skylink };
+    return { data: response.data, skylink: entryLink };
+  }
+}
+
+/**
+ * Builds the headers for getFileContent.
+ *
+ * @param range - The optional range header.
+ * @returns - The headers.
+ */
+function buildGetFileContentHeaders(range?: string): Headers {
+  const headers: Headers = {};
+  if (range) {
+    headers["Range"] = range;
+  }
+  return headers;
+}
+
+/**
+ * Validates the response from getFileContent.
+ *
+ * @param response - The Axios response.
+ * @param inputSkylink - The input skylink, required to validate the proof.
+ * @throws - Will throw if the response does not contain the expected fields.
+ */
+function validateGetFileContentResponse(response: AxiosResponse, inputSkylink: string): void {
+  try {
+    // Allow data === "" to support 0-byte files.
+    if (!response.data && response.data !== "") {
+      throw new Error("'response.data' field missing");
+    }
+    if (!response.headers) {
+      throw new Error("'response.headers' field missing");
+    }
+
+    const contentType = response.headers["content-type"];
+    if (!contentType) {
+      throw new Error("'content-type' header missing");
+    }
+    validateString(`response.headers["content-type"]`, contentType, "getFileContent response header");
+
+    const portalUrl = response.headers["skynet-portal-api"];
+    if (!portalUrl) {
+      throw new Error("'skynet-portal-api' header missing");
+    }
+    validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getFileContent response header");
+
+    const skylink = response.headers["skynet-skylink"];
+    if (!skylink) {
+      throw new Error("'skynet-skylink' header missing");
+    }
+    validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getFileContent response header");
+
+    const proof = response.headers["skynet-proof"];
+    validateRegistryProofResponse(inputSkylink, skylink, proof);
+  } catch (err) {
+    throw new Error(
+      `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
+    );
   }
 }
 
@@ -563,16 +628,31 @@ export async function resolveHns(
  * Validates the response from getMetadata.
  *
  * @param response - The Axios response.
+ * @param inputSkylink - The input skylink, required to validate the proof.
  * @throws - Will throw if the response does not contain the expected fields.
  */
-function validateGetMetadataResponse(response: AxiosResponse): void {
+function validateGetMetadataResponse(response: AxiosResponse, inputSkylink: string): void {
   try {
     if (!response.data) {
-      throw new Error("response.data field missing");
+      throw new Error("'response.data' field missing");
     }
     if (!response.headers) {
-      throw new Error("response.headers field missing");
+      throw new Error("'response.headers' field missing");
     }
+
+    const portalUrl = response.headers["skynet-portal-api"];
+    if (!portalUrl) {
+      throw new Error("'skynet-portal-api' header missing");
+    }
+    validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getMetadata response header");
+
+    const skylink = response.headers["skynet-skylink"];
+    if (!skylink) {
+      throw new Error("'skynet-skylink' header missing");
+    }
+    validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getMetadata response header");
+
+    validateRegistryProofResponse(inputSkylink, skylink, response.headers["skynet-proof"]);
   } catch (err) {
     throw new Error(
       `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
@@ -589,16 +669,19 @@ function validateGetMetadataResponse(response: AxiosResponse): void {
 function validateResolveHnsResponse(response: AxiosResponse): void {
   try {
     if (!response.data) {
-      throw new Error("response.data field missing");
+      throw new Error("'response.data' field missing");
     }
 
     if (response.data.skylink) {
-      validateString("response.data.skylink", response.data.skylink, "resolveHns response field");
+      // Skylink response.
+      validateSkylinkString("response.data.skylink", response.data.skylink, "resolveHns response field");
     } else if (response.data.registry) {
+      // Registry entry response.
       validateObject("response.data.registry", response.data.registry, "resolveHns response field");
       validateString("response.data.registry.publickey", response.data.registry.publickey, "resolveHns response field");
       validateString("response.data.registry.datakey", response.data.registry.datakey, "resolveHns response field");
     } else {
+      // Invalid response.
       throwValidationError(
         "response.data",
         response.data,
@@ -611,4 +694,47 @@ function validateResolveHnsResponse(response: AxiosResponse): void {
       `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
     );
   }
+}
+
+/**
+ * Validates the registry proof response.
+ *
+ * @param inputSkylink - The input skylink, required to validate the proof.
+ * @param dataLink - The returned data link.
+ * @param proof - The returned proof.
+ * @throws - Will throw if the registry proof header is not present, empty when it shouldn't be, or fails to verify.
+ */
+function validateRegistryProofResponse(inputSkylink: string, dataLink: string, proof?: string): void {
+  let proofArray = [];
+  try {
+    // skyd omits the header if the array is empty.
+    if (proof) {
+      proofArray = JSON.parse(proof);
+      if (!proofArray) {
+        throw new Error("Could not parse 'skynet-proof' header as JSON");
+      }
+    }
+  } catch (err) {
+    throw new Error(`Could not parse 'skynet-proof' header as JSON: ${err}`);
+  }
+
+  if (isSkylinkV1(inputSkylink)) {
+    if (inputSkylink !== dataLink) {
+      throw new Error("Expected returned skylink to be the same as input data link");
+    }
+    // If input skylink is not an entry link, no proof should be present.
+    if (proof) {
+      throw new Error("Expected 'skynet-proof' header to be empty for data link");
+    }
+    // Nothing else to do for data links, there is no proof to validate.
+    return;
+  }
+
+  // Validation for input entry link.
+  if (inputSkylink === dataLink) {
+    // Input skylink is entry link and returned skylink is the same.
+    throw new Error("Expected returned skylink to be different from input entry link");
+  }
+
+  validateRegistryProof(proofArray, { resolverSkylink: inputSkylink, skylink: dataLink });
 }

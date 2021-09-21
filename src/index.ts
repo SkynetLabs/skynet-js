@@ -3,9 +3,17 @@
 // Main exports.
 
 export { SkynetClient } from "./client";
-export { HASH_LENGTH, deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
+export {
+  HASH_LENGTH,
+  deriveChildSeed,
+  genKeyPairAndSeed,
+  genKeyPairFromSeed,
+  PUBLIC_KEY_LENGTH,
+  PRIVATE_KEY_LENGTH,
+  SIGNATURE_LENGTH,
+} from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
-export { getEntryUrlForPortal, signEntry } from "./registry";
+export { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
 export {
   DacLibrary,
   MAX_ENTRY_LENGTH,
@@ -60,7 +68,15 @@ export type { KeyPair, KeyPairAndSeed, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomConnectorOptions, EntryData } from "./mysky";
 export type { CustomPinOptions, PinResponse } from "./pin";
-export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";
-export type { CustomGetJSONOptions, CustomSetJSONOptions, JsonData, JSONResponse, RawBytesResponse } from "./skydb";
-export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
+export type {
+  CustomGetEntryOptions,
+  CustomSetEntryOptions,
+  CustomValidateRegistryProofOptions,
+  SignedRegistryEntry,
+  RegistryEntry,
+  RegistryProofEntry,
+} from "./registry";
+export type { CustomGetJSONOptions, CustomSetJSONOptions, JSONResponse, RawBytesResponse } from "./skydb";
 export type { ParseSkylinkOptions } from "./skylink/parse";
+export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
+export type { JsonData } from "./utils/types";

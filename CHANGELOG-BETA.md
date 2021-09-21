@@ -4,6 +4,49 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.17-beta]
+
+### Changed
+
+- Fixed some bugs affecting the MySky UI window.
+
+## [4.0.16-beta]
+
+### Added
+
+- Added `mySky.isBrowserSupported` method to check for unsupported browsers.
+
+## [4.0.15-beta]
+
+### Changed
+
+- Downloads now verify the registry proofs returned from the portal.
+- Large file uploads now upload in parallel for more efficient uploads.
+- Deprecated `client.registry.getEntryLink` in flavor of the standalone and non-async `getEntryLink` function.
+
+### Added
+
+- Added `validateRegistryProof` function.
+- Added the `errorPages` and `tryFiles` options for directory uploads.
+- Exported some crypto length constants.
+
+## [4.0.14-beta]
+
+### Changed
+
+- Include tryfiles metadata
+
+## [4.0.13-beta]
+
+### Added
+
+- Added onDownloadProgress client option.
+
+### Changed
+
+- Updated default requested permissions when `skappDomain` != skapp URL to include Discoverable Write.
+- Removed case sensitivity from MySky URL and domain processing.
+
 ## [4.0.12-beta]
 
 ### Added

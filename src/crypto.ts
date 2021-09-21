@@ -33,6 +33,12 @@ export type KeyPairAndSeed = KeyPair & {
 
 export const HASH_LENGTH = 32;
 
+export const PUBLIC_KEY_LENGTH = sign.publicKeyLength * 2;
+
+export const PRIVATE_KEY_LENGTH = sign.secretKeyLength * 2;
+
+export const SIGNATURE_LENGTH = sign.signatureLength;
+
 /**
  * Returns a blake2b 256bit hasher. See `NewHash` in Sia.
  *
