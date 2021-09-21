@@ -167,6 +167,20 @@ export class MySky {
   // ==========
 
   /**
+   * Checks if the current browser is supported by MySky.
+   *
+   * @returns - A promise with a boolean indicating whether the browser is supported and, if not, a string containing the user-friendly error message.
+   */
+  static async isBrowserSupported(): Promise<[boolean, string]> {
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      return [false, "MySky is currently not supported in Safari browsers."];
+    }
+
+    return [true, ""];
+  }
+
+  /**
    * Loads the given DACs.
    *
    * @param dacs - The DAC library instances to call `init` on.
