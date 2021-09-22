@@ -1,4 +1,4 @@
-/* istanbul ignore file */
+/* istanbul ignore file: Incomplete coverage reported erroneously, no line numbers given */
 
 import { DEFAULT_SKYNET_PORTAL_URL, SkynetClient } from "../src";
 import { trimPrefix } from "../src/utils/string";

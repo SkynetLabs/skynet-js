@@ -1,4 +1,4 @@
-/* istanbul ignore file */
+/* istanbul ignore file: Much of this functionality is only testable from a browser */
 
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
