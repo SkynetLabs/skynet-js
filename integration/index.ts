@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { DEFAULT_SKYNET_PORTAL_URL, SkynetClient } from "../src";
 import { trimPrefix } from "../src/utils/string";
 
