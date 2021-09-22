@@ -48,7 +48,7 @@ jobs:
         run: yarn
 
       - name: Integration test on server
-        run: yarn run jest src/integration.test.ts
+        run: yarn run jest integration
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "${{ matrix.server }}"
 
@@ -70,6 +70,6 @@ jobs:
         run: yarn
 
       - name: Integration test on dev server
-        run: yarn run jest src/integration.test.ts
+        run: yarn run jest integration
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.dev-server }}"

@@ -268,6 +268,7 @@ export class SkynetClient {
     });
   }
 
+  /* istanbul ignore next */
   async resolvePortalUrl(): Promise<string> {
     const response = await this.executeRequest({
       ...this.customOptions,

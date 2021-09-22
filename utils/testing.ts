@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import parse from "url-parse";
 import { trimForwardSlash } from "../src/utils/string";
 
