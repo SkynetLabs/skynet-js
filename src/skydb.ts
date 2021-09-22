@@ -33,9 +33,11 @@ import {
   validateOptionalObject,
   validateSkylinkString,
   validateString,
+  validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
 import { ResponseType } from "axios";
+import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
 export type JsonFullData = {
   _data: JsonData;
@@ -239,6 +241,10 @@ export async function deleteJSON(
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
 }
 
+// ==========
+// Entry Data
+// ==========
+
 /**
  * Sets the datalink for the entry at the given private key and data key.
  *
@@ -281,6 +287,100 @@ export async function setDataLink(
   // Update the registry.
   const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
+}
+
+/**
+ * Gets the raw registry entry data at the given public key and data key.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The data key.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry data.
+ */
+export async function getEntryData(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): Promise<EntryData> {
+  validateHexString("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
+
+  const opts = {
+    ...DEFAULT_GET_ENTRY_OPTIONS,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const { entry } = await this.registry.getEntry(publicKey, dataKey, opts);
+  if (!entry) {
+    return { data: null };
+  }
+  return { data: entry.data };
+}
+
+/**
+ * Sets the raw entry data at the given private key and data key.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param dataKey - The data key.
+ * @param data - The raw entry data to set.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry data.
+ * @throws - Will throw if the length of the data is > 70 bytes.
+ */
+export async function setEntryData(
+  this: SkynetClient,
+  privateKey: string,
+  dataKey: string,
+  data: Uint8Array,
+  customOptions?: CustomSetJSONOptions
+): Promise<EntryData> {
+  validateHexString("privateKey", privateKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateUint8Array("data", data, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_OPTIONS);
+
+  validateEntryData(data);
+
+  const opts = {
+    ...DEFAULT_SET_JSON_OPTIONS,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+  const entry = await getNextRegistryEntry(this, toHexString(publicKeyArray), dataKey, data, getEntryOpts);
+
+  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+  await this.registry.setEntry(privateKey, entry, setEntryOpts);
+
+  return { data: entry.data };
+}
+
+/**
+ * Deletes the entry data at the given private key and data key.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param dataKey - The data key.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - An empty promise.
+ */
+export async function deleteEntryData(
+  this: SkynetClient,
+  privateKey: string,
+  dataKey: string,
+  customOptions?: CustomSetJSONOptions
+): Promise<void> {
+  // Validation is done in `setEntryData`.
+
+  await this.db.setEntryData(privateKey, dataKey, new Uint8Array(RAW_SKYLINK_SIZE), customOptions);
 }
 
 // =========
@@ -551,6 +651,23 @@ export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string
     return rawDataLink === cachedDataLink;
   }
   return false;
+}
+
+/**
+ * Validates the given entry data.
+ *
+ * @param data - The entry data to validate.
+ * @throws - Will throw if the data is invalid.
+ */
+export function validateEntryData(data: Uint8Array): void {
+  if (data.length > MAX_ENTRY_LENGTH) {
+    throwValidationError(
+      "data",
+      data,
+      "parameter",
+      `'Uint8Array' of length <= ${MAX_ENTRY_LENGTH}, was length ${data.length}`
+    );
+  }
 }
 
 /**

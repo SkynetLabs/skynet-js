@@ -101,11 +101,7 @@ export async function getEntryData(
   const dataKey = deriveDiscoverableFileTweak(path);
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-  const { entry } = await this.registry.getEntry(userID, dataKey, opts);
-  if (!entry) {
-    return { data: null };
-  }
-  return { data: entry.data };
+  return await this.db.getEntryData(userID, dataKey, opts);
 }
 
 // ===============
