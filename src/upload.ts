@@ -93,7 +93,7 @@ export async function uploadFile(
   file: File,
   customOptions?: CustomUploadOptions
 ): Promise<UploadRequestResponse> {
-  // Validation is done in `uploadFileRequest` or `uploadLargeFileRequest`.
+  // Validation is done in `uploadSmallFileRequest` or `uploadLargeFileRequest`.
 
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 

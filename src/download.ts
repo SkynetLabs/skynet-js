@@ -220,11 +220,7 @@ export function getSkylinkUrlForPortal(
 
   const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...customOptions };
 
-  const query: { [key: string]: string | undefined } = {};
-  if (opts.download) {
-    // Set the "attachment" parameter.
-    query.attachment = "true";
-  }
+  const query = buildQuery(opts.download);
 
   // URL-encode the path.
   let path = "";
@@ -293,10 +289,7 @@ export async function getHnsUrl(
 
   const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
-  const query: { [key: string]: string | undefined } = {};
-  if (opts.download) {
-    query.attachment = "true";
-  }
+  const query = buildQuery(opts.download);
 
   domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);
   const portalUrl = await this.portalUrl();
@@ -387,7 +380,7 @@ export async function getMetadata(
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getFileContent<T = unknown>(
@@ -395,34 +388,49 @@ export async function getFileContent<T = unknown>(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
+  // Validation is done in `getFileContentRequest`.
+
+  const response = await this.getFileContentRequest(skylinkUrl, customOptions);
+  const inputSkylink = parseSkylink(skylinkUrl);
+
+  // `inputSkylink` cannot be null. `getSkylinkUrl` would have thrown on an
+  // invalid skylink.
+  validateGetFileContentResponse(response, inputSkylink as string);
+
+  return await extractGetFileContentResponse<T>(response);
+}
+
+/**
+ * Makes the request to get the contents of the file at the given skylink.
+ *
+ * @param this - SkynetClient
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The get file content response.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
+ */
+export async function getFileContentRequest(
+  this: SkynetClient,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): Promise<AxiosResponse> {
   // Validation is done in `getSkylinkUrl`.
 
   const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
-  const inputSkylink = parseSkylink(skylinkUrl);
 
   const headers = buildGetFileContentHeaders(opts.range);
 
   // GET request the data at the skylink.
-  const response = await this.executeRequest({
+  return await this.executeRequest({
     ...opts,
     endpointPath: opts.endpointDownload,
     method: "get",
     url,
     headers,
   });
-
-  // `inputSkylink` cannot be null.
-  validateGetFileContentResponse(response, inputSkylink as string);
-
-  const data = response.data;
-
-  const contentType = response.headers["content-type"];
-  const portalUrl = response.headers["skynet-portal-api"];
-  const skylink = formatSkylink(response.headers["skynet-skylink"]);
-
-  return { data, contentType, portalUrl, skylink };
 }
 
 /**
@@ -432,7 +440,7 @@ export async function getFileContent<T = unknown>(
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
  * @throws - Will throw if the domain does not contain a skylink.
  */
 export async function getFileContentHns<T = unknown>(
@@ -462,13 +470,7 @@ export async function getFileContentHns<T = unknown>(
 
   validateGetFileContentResponse(response, inputSkylink);
 
-  const data = response.data;
-
-  const contentType = response.headers["content-type"];
-  const portalUrl = response.headers["skynet-portal-api"];
-  const skylink = formatSkylink(response.headers["skynet-skylink"]);
-
-  return { data, contentType, portalUrl, skylink };
+  return await extractGetFileContentResponse<T>(response);
 }
 
 /**
@@ -566,6 +568,10 @@ export async function resolveHns(
   }
 }
 
+// =======
+// Helpers
+// =======
+
 /**
  * Builds the headers for getFileContent.
  *
@@ -578,6 +584,35 @@ function buildGetFileContentHeaders(range?: string): Headers {
     headers["Range"] = range;
   }
   return headers;
+}
+
+/**
+ * Helper function that builds the URL query.
+ *
+ * @param download - Whether to set attachment=true.
+ * @returns - The URL query.
+ */
+function buildQuery(download: boolean): { [key: string]: string | undefined } {
+  const query: { [key: string]: string | undefined } = {};
+  if (download) {
+    // Set the "attachment" parameter.
+    query.attachment = "true";
+  }
+  return query;
+}
+
+/**
+ * Extracts the response from getFileContent.
+ *
+ * @param response - The Axios response.
+ * @returns - The extracted get file content response fields.
+ */
+async function extractGetFileContentResponse<T = unknown>(response: AxiosResponse): Promise<GetFileContentResponse<T>> {
+  const contentType = response.headers["content-type"];
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
+
+  return { data: response.data, contentType, portalUrl, skylink };
 }
 
 /**
