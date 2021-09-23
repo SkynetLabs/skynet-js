@@ -7,6 +7,7 @@ import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, REGEX_REVISION_NO_QUOTES } from "./registry";
 import { checkCachedDataLink } from "./skydb";
+import { MAX_ENTRY_LENGTH } from "./mysky";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
@@ -232,6 +233,16 @@ describe("setJSON", () => {
     // @ts-expect-error We do not pass the json on purpose.
     await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
       "Expected parameter 'json' to be type 'object', was type 'undefined'"
+    );
+  });
+});
+
+describe("setEntryData", () => {
+  it("should throw if trying to set entry data > 70 bytes", async () => {
+    await expect(
+      client.db.setEntryData(privateKey, dataKey, new Uint8Array(MAX_ENTRY_LENGTH + 1))
+    ).rejects.toThrowError(
+      "Expected parameter 'data' to be 'Uint8Array' of length <= 70, was length 71, was type 'object', value '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'"
     );
   });
 });

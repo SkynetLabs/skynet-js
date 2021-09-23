@@ -6,6 +6,7 @@ import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
 import { convertSkylinkToBase64 } from "./skylink/format";
+import { RAW_SKYLINK_SIZE } from "./skylink/sia";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || defaultSkynetPortalUrl;
@@ -295,6 +296,43 @@ describe(`Integration test for portal '${portal}'`, () => {
 
       // @ts-expect-error TS still thinks returnedEntry can be null
       expect(returnedEntry.data).toEqualUint8Array(dataLinkBytes);
+    });
+
+    it("should set and get entry data", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const data = new Uint8Array([1, 2, 3]);
+
+      // Set the entry data.
+      await client.db.setEntryData(privateKey, dataKey, data);
+
+      // Get the entry data.
+      const { data: returnedData } = await client.db.getEntryData(publicKey, dataKey);
+
+      // Assert the returned data equals the original data.
+      expect(returnedData).toEqualUint8Array(data);
+    });
+
+    it("should set and delete entry data", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const data = new Uint8Array([1, 2, 3]);
+
+      // Set the entry data.
+      await client.db.setEntryData(privateKey, dataKey, data);
+
+      // Delete the entry data.
+      await client.db.deleteEntryData(privateKey, dataKey);
+
+      // Trying to get the deleted data should result in null.
+      const { data: returnedData } = await client.db.getEntryData(publicKey, dataKey);
+      // TODO: Should this equal null?
+      expect(returnedData).toEqualUint8Array(new Uint8Array(RAW_SKYLINK_SIZE));
+    });
+
+    it("should not be able to delete inexistent data", async () => {
+      const { privateKey } = genKeyPairAndSeed();
+
+      // Try deleting the entry data.
+      await client.db.deleteEntryData(privateKey, dataKey);
     });
 
     it("Should correctly handle the hashedDataKeyHex option", async () => {
