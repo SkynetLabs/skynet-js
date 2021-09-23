@@ -284,7 +284,7 @@ export class SkynetClient {
         "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
       );
     }
-    const portalUrl = response.headers["skynet-portal-api"];
+    const portalUrl = response.headers["skynet-server-api"] || response.headers["skynet-portal-api"];
     if (!portalUrl) {
       throw new Error("Could not get portal URL for the given portal");
     }
