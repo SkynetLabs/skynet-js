@@ -9,6 +9,7 @@ import {
   RegistryEntry,
   SignedRegistryEntry,
   CustomSetEntryOptions,
+  validatePublicKey,
 } from "./registry";
 import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { MAX_REVISION } from "./utils/number";
@@ -116,8 +117,9 @@ export async function getJSON(
   dataKey: string,
   customOptions?: CustomGetJSONOptions
 ): Promise<JSONResponse> {
+  validatePublicKey("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
-  // Rest of validation is done in `getEntry`.
 
   const opts = {
     ...DEFAULT_GET_JSON_OPTIONS,
@@ -304,7 +306,7 @@ export async function getEntryData(
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<EntryData> {
-  validateHexString("publicKey", publicKey, "parameter");
+  validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
@@ -378,7 +380,7 @@ export async function deleteEntryData(
   dataKey: string,
   customOptions?: CustomSetJSONOptions
 ): Promise<void> {
-  // Validation is done in `setEntryData`.
+  // Validation is done below in `db.setEntryData`.
 
   await this.db.setEntryData(privateKey, dataKey, new Uint8Array(RAW_SKYLINK_SIZE), customOptions);
 }
@@ -404,8 +406,9 @@ export async function getRawBytes(
   // TODO: Take a new options type?
   customOptions?: CustomGetJSONOptions
 ): Promise<RawBytesResponse> {
+  validatePublicKey("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
-  // Rest of validation is done in `getEntry`.
 
   const opts = {
     ...DEFAULT_GET_JSON_OPTIONS,
