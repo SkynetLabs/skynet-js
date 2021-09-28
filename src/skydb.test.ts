@@ -6,7 +6,7 @@ import { MAX_REVISION } from "./utils/number";
 import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
 import { getEntryUrlForPortal, REGEX_REVISION_NO_QUOTES } from "./registry";
-import { checkCachedDataLink } from "./skydb";
+import { checkCachedDataLink, DELETION_ENTRY_DATA } from "./skydb";
 import { MAX_ENTRY_LENGTH } from "./mysky";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
@@ -243,6 +243,12 @@ describe("setEntryData", () => {
       client.db.setEntryData(privateKey, dataKey, new Uint8Array(MAX_ENTRY_LENGTH + 1))
     ).rejects.toThrowError(
       "Expected parameter 'data' to be 'Uint8Array' of length <= 70, was length 71, was type 'object', value '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'"
+    );
+  });
+
+  it("should throw if trying to set the deletion entry data", async () => {
+    await expect(client.db.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA)).rejects.toThrowError(
+      "Tried to set 'Uint8Array' entry data that is the deletion sentinel ('Uint8Array(RAW_SKYLINK_SIZE)'), please use the 'deleteEntryData' method instead`"
     );
   });
 });

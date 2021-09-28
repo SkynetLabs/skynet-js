@@ -8,7 +8,6 @@ import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string"
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
 import { randomUnicodeString } from "../utils/testing";
 import { convertSkylinkToBase64 } from "./skylink/format";
-import { RAW_SKYLINK_SIZE } from "./skylink/sia";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || defaultSkynetPortalUrl;
@@ -327,14 +326,29 @@ describe(`Integration test for portal '${portal}'`, () => {
       // Trying to get the deleted data should result in null.
       const { data: returnedData } = await client.db.getEntryData(publicKey, dataKey);
       // TODO: Should this equal null?
-      expect(returnedData).toEqualUint8Array(new Uint8Array(RAW_SKYLINK_SIZE));
+      expect(returnedData).toBeNull();
     });
 
-    it("should not be able to delete inexistent data", async () => {
-      const { privateKey } = genKeyPairAndSeed();
+    it("should be able to delete a new entry and then write over it", async () => {
+      const data = new Uint8Array([1, 2, 3]);
 
-      // Try deleting the entry data.
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      // Delete the entry data.
       await client.db.deleteEntryData(privateKey, dataKey);
+
+      // Trying to fetch the entry should result in null.
+      const { data: returnedData } = await client.db.getEntryData(publicKey, dataKey);
+      expect(returnedData).toBeNull();
+
+      // Write to the entry.
+      await client.db.setEntryData(privateKey, dataKey, data);
+
+      // The entry should be readable.
+
+      const { data: returnedData2 } = await client.db.getEntryData(publicKey, dataKey);
+
+      expect(returnedData2).toEqual(data);
     });
 
     it("Should correctly handle the hashedDataKeyHex option", async () => {
