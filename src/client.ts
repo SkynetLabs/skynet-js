@@ -18,6 +18,7 @@ import {
   getHnsresUrl,
   getMetadata,
   getFileContent,
+  getFileContentRequest,
   getFileContentHns,
   openFile,
   openFileHns,
@@ -124,6 +125,7 @@ export class SkynetClient {
   getHnsresUrl = getHnsresUrl;
   getMetadata = getMetadata;
   getFileContent = getFileContent;
+  protected getFileContentRequest = getFileContentRequest;
   getFileContentHns = getFileContentHns;
   openFile = openFile;
   openFileHns = openFileHns;
