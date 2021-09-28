@@ -671,6 +671,9 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
   // The skylinks should differ.
   expect(skylink1).not.toEqual(skylink2);
 
+  // Sleep for a bit to account for the portal's load balancer switching servers. This helps ensure that the uploaded files are available.
+  await new Promise((r) => setTimeout(r, 3000));
+
   // Download the files.
   let [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
   const [response1, response2] = await Promise.all([
