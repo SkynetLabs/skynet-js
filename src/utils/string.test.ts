@@ -1,8 +1,6 @@
-import { fromByteArray } from "base64-js";
-import randomBytes from "randombytes";
-
 import { uriHandshakePrefix } from "./url";
 import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
+import { randomUnicodeString } from "../../utils/testing";
 
 const hnsLink = "doesn";
 
@@ -32,16 +30,14 @@ expect.extend({
 
 describe("string/bytearray conversions", () => {
   it("should convert to and from valid UTF-8 strings without any loss of data", () => {
-    const bytes = randomBytes(length);
+    const str = randomUnicodeString(length);
 
-    // Convert random bytes to base64. Should be valid utf-8.
-    const base64Str = fromByteArray(bytes);
     // Convert between string and array a few times.
-    const array = stringToUint8ArrayUtf8(base64Str);
-    const base64Str2 = uint8ArrayToStringUtf8(array);
-    const array2 = stringToUint8ArrayUtf8(base64Str2);
+    const array = stringToUint8ArrayUtf8(str);
+    const str2 = uint8ArrayToStringUtf8(array);
+    const array2 = stringToUint8ArrayUtf8(str2);
 
-    expect(base64Str).toEqual(base64Str2);
+    expect(str).toEqual(str2);
     expect(array).toEqualUint8Array(array2);
   });
 });

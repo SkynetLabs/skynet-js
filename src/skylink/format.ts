@@ -2,7 +2,7 @@ import { BASE32_ENCODED_SKYLINK_SIZE, BASE64_ENCODED_SKYLINK_SIZE } from "./sia"
 import { decodeSkylinkBase32, decodeSkylinkBase64, encodeSkylinkBase32, encodeSkylinkBase64 } from "../utils/encoding";
 import { trimUriPrefix } from "../utils/string";
 import { URI_SKYNET_PREFIX } from "../utils/url";
-import { validateStringLen } from "../utils/validation";
+import { validateString, validateStringLen } from "../utils/validation";
 
 /**
  * Converts the given base64 skylink to base32.
@@ -39,6 +39,8 @@ export function convertSkylinkToBase64(skylink: string): string {
  * @returns - The formatted skylink.
  */
 export function formatSkylink(skylink: string): string {
+  validateString("skylink", skylink, "parameter");
+
   if (skylink === "") {
     return skylink;
   }

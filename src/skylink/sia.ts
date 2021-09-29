@@ -140,7 +140,7 @@ function isBitfieldSkylinkV1(bitfield: number): boolean {
 function isBitfieldSkylinkV2(bitfield: number): boolean {
   // We compare against 1 here because a V2 skylink only uses the version
   // bits. All other bits should be set to 0.
-  return bitfield == 1;
+  return bitfield === 1;
 }
 
 const SPECIFIER_LEN = 16;

@@ -1,8 +1,13 @@
+import { AxiosError } from "axios";
+
+import { getEntryLink, genKeyPairAndSeed, SkynetClient } from "./index";
+
 import { hashDataKey } from "./crypto";
-import { genKeyPairAndSeed, SkynetClient } from "./index";
 import { decodeSkylinkBase64 } from "./utils/encoding";
 import { stringToUint8ArrayUtf8, toHexString, trimPrefix } from "./utils/string";
 import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
+import { randomUnicodeString } from "../utils/testing";
+import { convertSkylinkToBase64 } from "./skylink/format";
 
 // To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest src/integration.test.ts
 const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || defaultSkynetPortalUrl;
@@ -28,10 +33,10 @@ expect.extend({
     const receivedUrl = trimPrefix(received, prefix);
 
     // Support the case where we receive siasky.net while expecting eu-fin-1.siasky.net.
-    if (!expectedUrl.endsWith(receivedUrl)) {
-      return { pass: false, message: () => `expected ${received} to equal ${argument}` };
+    if (!expectedUrl.endsWith(receivedUrl) && !receivedUrl.endsWith(expectedUrl)) {
+      return { pass: false, message: () => `expected portal '${received}' to equal '${argument}'` };
     }
-    return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
+    return { pass: true, message: () => `expected portal '${received}' not to equal '${argument}'` };
   },
 
   // source https://stackoverflow.com/a/60818105/6085242
@@ -46,6 +51,12 @@ expect.extend({
     }
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
+});
+
+describe("toEqualPortalUrl", () => {
+  it("Subdomained portal servers should equal main portal", () => {
+    expect("https://us-ny-2.siasky.net").toEqualPortalUrl("https://siasky.net");
+  });
 });
 
 describe(`Integration test for portal '${portal}'`, () => {
@@ -139,7 +150,7 @@ describe(`Integration test for portal '${portal}'`, () => {
       const expectedEntryLink = `${uriSkynetPrefix}AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw`;
       const expectedDataLink = `${uriSkynetPrefix}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
 
-      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+      const entryLink = getEntryLink(publicKey, dataKey);
       expect(entryLink).toEqual(expectedEntryLink);
 
       const { data } = await client.getFileContent(entryLink);
@@ -244,7 +255,7 @@ describe(`Integration test for portal '${portal}'`, () => {
       await client.db.deleteJSON(privateKey, dataKey);
 
       // Get the entry link.
-      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+      const entryLink = getEntryLink(publicKey, dataKey);
 
       // Downloading the entry link should return a 404.
       // TODO: Should getFileContent return `null` on 404?
@@ -252,7 +263,7 @@ describe(`Integration test for portal '${portal}'`, () => {
         await client.getFileContent(entryLink);
         throw new Error("getFileContent should not have succeeded");
       } catch (err) {
-        expect(err.response.status).toEqual(404);
+        expect((err as AxiosError).response?.status).toEqual(404);
       }
 
       // The SkyDB entry should be null.
@@ -380,7 +391,25 @@ describe(`Integration test for portal '${portal}'`, () => {
       subfiles: {
         HelloWorld: { filename: dataKey, contenttype: plaintextType, len: fileData.length },
       },
+      tryfiles: ["index.html"],
     };
+
+    it("Should get file content for an existing entry link of depth 1", async () => {
+      const entryLink = "AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA";
+      const expectedDataLink = `${uriSkynetPrefix}XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg`;
+
+      const { skylink } = await client.getFileContent(entryLink);
+      expect(skylink).toEqual(expectedDataLink);
+    });
+
+    it("Should get file content for an existing entry link of depth 2", async () => {
+      const entryLinkBase32 = "0400mgds8arrfnu8e6b0sde9fbkmh4nl2etvun55m0fvidudsb7bk78";
+      const entryLink = convertSkylinkToBase64(entryLinkBase32);
+      const expectedDataLink = `${uriSkynetPrefix}EAAFgq17B-MKsi0ARYKUMmf9vxbZlDpZkA6EaVBCG4YBAQ`;
+
+      const { skylink } = await client.getFileContent(entryLink);
+      expect(skylink).toEqual(expectedDataLink);
+    });
 
     it("Should upload and download directories", async () => {
       const directory = {
@@ -417,6 +446,72 @@ describe(`Integration test for portal '${portal}'`, () => {
 
       const { metadata } = await client.getMetadata(skylink);
       expect(metadata).toEqual(expect.objectContaining({ filename: customFilename }));
+    });
+
+    it("Should upload and download two files with different names and compare their etags", async () => {
+      // Generate random filenames.
+      const [filename1, filename2] = [randomUnicodeString(16), randomUnicodeString(16)];
+      const data = "file";
+
+      // Upload the files.
+      const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
+        client.uploadFile(new File([data], filename1)),
+        client.uploadFile(new File([data], filename2)),
+      ]);
+
+      await expectDifferentEtags(skylink1, skylink2);
+    });
+
+    it("Should upload and download two files with different contents and compare their etags", async () => {
+      // Generate random file data.
+      const [data1, data2] = [randomUnicodeString(4096), randomUnicodeString(4096)];
+      const filename = "file";
+
+      // Upload the files.
+      const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
+        client.uploadFile(new File([data1], filename)),
+        client.uploadFile(new File([data2], filename)),
+      ]);
+
+      await expectDifferentEtags(skylink1, skylink2);
+    });
+
+    it("Should update an etag for a resolver skylink after changing its data", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      // Generate random file data.
+      const [data1, data2] = [randomUnicodeString(4096), randomUnicodeString(4096)];
+      const filename = "file";
+
+      // Generate a data key and get its entry link.
+      const dataKey = randomUnicodeString(16);
+      const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
+
+      // Upload two random files.
+      const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
+        client.uploadFile(new File([data1], filename)),
+        client.uploadFile(new File([data2], filename)),
+      ]);
+
+      // Set the data link for the first file at a random data key.
+      await client.db.setDataLink(privateKey, dataKey, skylink1);
+
+      // Get the entry link's etag.
+      const url = await client.getSkylinkUrl(entryLink);
+      // @ts-expect-error Calling a private method.
+      const response1 = await client.getFileContentRequest(url);
+      const etag1 = response1.headers["etag"];
+      expect(etag1).toBeTruthy();
+
+      // Set the data link for the second file.
+      await client.db.setDataLink(privateKey, dataKey, skylink2);
+
+      // Check that the etag was updated.
+      // @ts-expect-error Calling a private method.
+      const response2 = await client.getFileContentRequest(url);
+      const etag2 = response2.headers["etag"];
+      expect(etag2).toBeTruthy();
+      expect(etag2).not.toEqual(etag1);
     });
 
     it("Should get plaintext file contents", async () => {
@@ -504,11 +599,10 @@ describe(`Integration test for portal '${portal}'`, () => {
       const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
       expect(skylink).not.toEqual("");
 
-      // TODO: Downloads currently return 416 for empty files.
-      // // Get file content and check returned values.
-      // const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
+      // Get file content and check returned values.
+      const { data } = await client.getFileContent(skylink, { onDownloadProgress: onProgress });
 
-      // expect(data).toEqual("");
+      expect(data).toEqual("");
     });
 
     it("Should upload and download a 1-byte file", async () => {
@@ -566,3 +660,48 @@ describe(`Integration test for portal '${portal}'`, () => {
     });
   });
 });
+
+/**
+ * Runs the etag test on the given skylinks that expects different etags.
+ *
+ * @param skylink1 - The first skylink.
+ * @param skylink2 - The second skylink.
+ */
+export async function expectDifferentEtags(skylink1: string, skylink2: string): Promise<void> {
+  // The skylinks should differ.
+  expect(skylink1).not.toEqual(skylink2);
+
+  // Sleep for a bit to account for the portal's load balancer switching servers. This helps ensure that the uploaded files are available.
+  await new Promise((r) => setTimeout(r, 3000));
+
+  // Download the files.
+  let [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
+  const [response1, response2] = await Promise.all([
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url1),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url2),
+  ]);
+
+  // Get the etags.
+  const [etag1, etag2] = [response1.headers["etag"], response2.headers["etag"]];
+  expect(etag1).toBeTruthy();
+  expect(etag2).toBeTruthy();
+
+  // The etags should differ.
+  expect(etag1).not.toEqual(etag2);
+
+  // Download the files using nocache.
+  [url1, url2] = [`${url1}?nocache=true`, `${url2}?nocache=true`];
+  const [response3, response4] = await Promise.all([
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url1),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url2),
+  ]);
+
+  // The etags should not have changed.
+  const [etag3, etag4] = [response3.headers["etag"], response4.headers["etag"]];
+  expect(etag3).toEqual(etag1);
+  expect(etag4).toEqual(etag2);
+}

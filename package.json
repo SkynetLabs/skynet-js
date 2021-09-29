@@ -1,6 +1,6 @@
 {
   "name": "skynet-js",
-  "version": "4.0.12-beta",
+  "version": "4.0.17-beta",
   "description": "Sia Skynet Javascript Client",
   "main": "dist/cjs/index.js",
   "types": "dist/cjs/index.d.ts",
@@ -30,7 +30,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --ext .ts --max-warnings 0",
+      "eslint --max-warnings 0",
       "prettier --write"
     ],
     "*.{json,yml,md}": [

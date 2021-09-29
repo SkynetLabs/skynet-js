@@ -36,46 +36,29 @@ export async function extractDomain(this: SkynetClient, fullDomain: string): Pro
  * Create a new popup window. From SkyID.
  *
  * @param url - The URL to open.
- * @param title - The title of the popup window.
+ * @param winName - The name of the popup window.
  * @param w - The width of the popup window.
  * @param h - the height of the popup window.
  * @returns - The window.
  * @throws - Will throw if the window could not be opened.
  */
-export function popupCenter(url: string, title: string, w: number, h: number): Window {
+export function popupCenter(url: string, winName: string, w: number, h: number): Window {
+  if (!window.top) {
+    throw new Error("Current window is not valid");
+  }
+
   url = ensureUrl(url);
 
-  // Fixes dual-screen position                             Most browsers      Firefox
-  const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
-  const dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
+  const y = window.top.outerHeight / 2 + window.top.screenY - h / 2;
+  const x = window.top.outerWidth / 2 + window.top.screenX - w / 2;
 
-  const width = window.innerWidth
-    ? window.innerWidth
-    : document.documentElement.clientWidth
-    ? document.documentElement.clientWidth
-    : screen.width;
-  const height = window.innerHeight
-    ? window.innerHeight
-    : document.documentElement.clientHeight
-    ? document.documentElement.clientHeight
-    : screen.height;
-
-  const systemZoom = width / window.screen.availWidth;
-  const left = (width - w) / 2 / systemZoom + dualScreenLeft;
-  const top = (height - h) / 2 / systemZoom + dualScreenTop;
   const newWindow = window.open(
     url,
-    title,
-    `
-scrollbars=yes,
-width=${w / systemZoom},
-height=${h / systemZoom},
-top=${top},
-left=${left}
-`
+    winName,
+    `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, copyhistory=no, width=${w}, height=${h}, top=${y}, left=${x}`
   );
   if (!newWindow) {
-    throw new Error("could not open window");
+    throw new Error("Could not open window");
   }
 
   if (newWindow.focus) {

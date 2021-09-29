@@ -43,12 +43,13 @@ async function filter<T>(arr: Array<T>, fn: (input: T) => Promise<boolean>): Pro
   ) as Array<T>;
 }
 
+let healthy_servers: Array<string> = [];
 (async () => {
   // Server is healthy if the server is operational, which means:
   // 1. it's up
   // 2. it's not disabled
   // 3. it's healthy (all of its checks show "up: true")
-  const healthy_servers = await filter(servers, async (server: string) => {
+  healthy_servers = await filter(servers, async (server: string) => {
     const url = `${server}/health-check`;
 
     try {
@@ -72,6 +73,6 @@ async function filter<T>(arr: Array<T>, fn: (input: T) => Promise<boolean>): Pro
     // Server healthy.
     return true;
   });
-
+})().finally(() => {
   process.stdout.write(JSON.stringify(healthy_servers));
-})();
+});

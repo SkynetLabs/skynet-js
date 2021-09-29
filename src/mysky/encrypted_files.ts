@@ -3,8 +3,8 @@ import { sanitizePath } from "skynet-mysky-utils";
 import { secretbox } from "tweetnacl";
 
 import { HASH_LENGTH, sha512 } from "../crypto";
-import { JsonData } from "../skydb";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, uint8ArrayToStringUtf8 } from "../utils/string";
+import { JsonData } from "../utils/types";
 import {
   validateBoolean,
   validateHexString,
