@@ -2,8 +2,8 @@ import { SkynetClient } from "./client";
 import { EntryData } from "./mysky";
 import {
   decryptJSONFile,
-  deriveEncryptedFileKeyEntropy,
-  deriveEncryptedFileTweak,
+  deriveEncryptedPathKeyEntropy,
+  deriveEncryptedPathTweak,
   EncryptedJSONResponse,
 } from "./mysky/encrypted_files";
 import { deriveDiscoverableFileTweak } from "./mysky/tweak";
@@ -130,7 +130,7 @@ export async function getJSONEncrypted(
   customOptions?: CustomGetJSONOptions
 ): Promise<EncryptedJSONResponse> {
   validateString("userID", userID, "parameter");
-  // Full validation of the path seed is in `deriveEncryptedFileKeyEntropy` below.
+  // Full validation of the path seed is in `deriveEncryptedPathKeyEntropy` below.
   validateString("pathSeed", pathSeed, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
@@ -142,10 +142,10 @@ export async function getJSONEncrypted(
   };
 
   // Validate the path seed and get the key.
-  const key = deriveEncryptedFileKeyEntropy(pathSeed);
+  const key = deriveEncryptedPathKeyEntropy(pathSeed);
 
   // Fetch the raw encrypted JSON data.
-  const dataKey = deriveEncryptedFileTweak(pathSeed);
+  const dataKey = deriveEncryptedPathTweak(pathSeed);
   const { data } = await this.db.getRawBytes(userID, dataKey, opts);
   if (data === null) {
     return { data: null };

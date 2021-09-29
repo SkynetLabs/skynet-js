@@ -50,8 +50,8 @@ import {
 import { decodeSkylink, RAW_SKYLINK_SIZE } from "../skylink/sia";
 import {
   decryptJSONFile,
-  deriveEncryptedFileKeyEntropy,
-  deriveEncryptedFileTweak,
+  deriveEncryptedPathKeyEntropy,
+  deriveEncryptedPathTweak,
   EncryptedJSONResponse,
   ENCRYPTED_JSON_RESPONSE_VERSION,
   encryptJSONFile,
@@ -599,13 +599,13 @@ export class MySky {
     const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedFileSeed(path, false)]);
 
     // Fetch the raw encrypted JSON data.
-    const dataKey = deriveEncryptedFileTweak(pathSeed);
+    const dataKey = deriveEncryptedPathTweak(pathSeed);
     const { data } = await this.connector.client.db.getRawBytes(publicKey, dataKey, opts);
     if (data === null) {
       return { data: null };
     }
 
-    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
+    const encryptionKey = deriveEncryptedPathKeyEntropy(pathSeed);
     const json = decryptJSONFile(data, encryptionKey);
 
     return { data: json };
@@ -638,9 +638,9 @@ export class MySky {
 
     // Call MySky which checks for read permissions on the path.
     const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedFileSeed(path, false)]);
-    const dataKey = deriveEncryptedFileTweak(pathSeed);
+    const dataKey = deriveEncryptedPathTweak(pathSeed);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
-    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
+    const encryptionKey = deriveEncryptedPathKeyEntropy(pathSeed);
 
     // Pad and encrypt json file.
     const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);

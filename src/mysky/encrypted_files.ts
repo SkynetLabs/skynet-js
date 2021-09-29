@@ -178,8 +178,19 @@ export function encryptJSONFile(json: JsonData, metadata: EncryptedFileMetadata,
  *
  * @param pathSeed - The given path seed.
  * @returns - The key entropy.
+ * @deprecated - This function has been deprecated in favor of deriveEncryptedPathKeyEntropy.
  */
 export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
+  return deriveEncryptedPathKeyEntropy(pathSeed);
+}
+
+/**
+ * Derives key entropy for the given path seed.
+ *
+ * @param pathSeed - The given path seed.
+ * @returns - The key entropy.
+ */
+export function deriveEncryptedPathKeyEntropy(pathSeed: string): Uint8Array {
   // Validate the path seed and get bytes.
   const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
 
@@ -194,8 +205,19 @@ export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
  *
  * @param pathSeed - the given path seed.
  * @returns - The encrypted file tweak.
+ * @deprecated - This function has been deprecated in favor of deriveEncryptedPathTweak.
  */
 export function deriveEncryptedFileTweak(pathSeed: string): string {
+  return deriveEncryptedPathTweak(pathSeed);
+}
+
+/**
+ * Derives the encrypted file tweak for the given path seed.
+ *
+ * @param pathSeed - the given path seed.
+ * @returns - The encrypted file tweak.
+ */
+export function deriveEncryptedPathTweak(pathSeed: string): string {
   // Validate the path seed and get bytes.
   const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
 
@@ -215,8 +237,24 @@ export function deriveEncryptedFileTweak(pathSeed: string): string {
  * @param isDirectory - Whether the path is a directory.
  * @returns - The path seed for the given path.
  * @throws - Will throw if the input sub path is not a valid path.
+ * @deprecated - This function has been deprecated in favor of deriveEncryptedPathSeed.
  */
 export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
+  return deriveEncryptedPathSeed(pathSeed, subPath, isDirectory);
+}
+
+/**
+ * Derives the path seed for the relative path, given the starting path seed and
+ * whether it is a directory. The path can be an absolute path if the root seed
+ * is given.
+ *
+ * @param pathSeed - The given starting path seed.
+ * @param subPath - The path.
+ * @param isDirectory - Whether the path is a directory.
+ * @returns - The path seed for the given path.
+ * @throws - Will throw if the input sub path is not a valid path.
+ */
+export function deriveEncryptedPathSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
   validateHexString("pathSeed", pathSeed, "parameter");
   validateString("subPath", subPath, "parameter");
   validateBoolean("isDirectory", isDirectory, "parameter");

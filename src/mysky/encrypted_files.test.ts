@@ -3,9 +3,9 @@ import { readFileSync } from "fs";
 import {
   checkPaddedBlock,
   decryptJSONFile,
-  deriveEncryptedFileKeyEntropy,
-  deriveEncryptedFileSeed,
-  deriveEncryptedFileTweak,
+  deriveEncryptedPathKeyEntropy,
+  deriveEncryptedPathSeed,
+  deriveEncryptedPathTweak,
   encodeEncryptedFileMetadata,
   ENCRYPTED_JSON_RESPONSE_VERSION,
   ENCRYPTION_KEY_LENGTH,
@@ -39,7 +39,7 @@ expect.extend({
   },
 });
 
-describe("deriveEncryptedFileKeyEntropy", () => {
+describe("deriveEncryptedPathKeyEntropy", () => {
   it("Should derive the correct encrypted file key entropy", () => {
     // Hard-code expected value to catch breaking changes.
     const pathSeed = "a".repeat(64);
@@ -48,13 +48,13 @@ describe("deriveEncryptedFileKeyEntropy", () => {
       94, 186, 244, 48, 171, 115, 171,
     ];
 
-    const result = deriveEncryptedFileKeyEntropy(pathSeed);
+    const result = deriveEncryptedPathKeyEntropy(pathSeed);
 
     expect(result).toEqualUint8Array(new Uint8Array(expectedEntropy));
   });
 });
 
-describe("deriveEncryptedFileSeed", () => {
+describe("deriveEncryptedPathSeed", () => {
   // Hard-code expected value to catch breaking changes.
   const pathSeed = "a".repeat(128);
   const subPath = "path/to/file.json";
@@ -64,24 +64,24 @@ describe("deriveEncryptedFileSeed", () => {
 
   it("should derive the correct encrypted file seed for a file", () => {
     // Derive seed for a file.
-    const fileSeed = deriveEncryptedFileSeed(pathSeed, subPath, false);
+    const fileSeed = deriveEncryptedPathSeed(pathSeed, subPath, false);
 
     expect(fileSeed).toEqual(expectedFileSeed);
   });
 
   it("should derive the correct encrypted file seed for a directory", () => {
     // Derive seed for a directory.
-    const directorySeed = deriveEncryptedFileSeed(pathSeed, subPath, true);
+    const directorySeed = deriveEncryptedPathSeed(pathSeed, subPath, true);
 
     expect(directorySeed).toEqual(expectedDirectorySeed);
   });
 
   it("should result in the same path seed when deriving path for directory first", () => {
     // Derive seed for directory first.
-    const directorySeed = deriveEncryptedFileSeed(pathSeed, "path/to", true);
+    const directorySeed = deriveEncryptedPathSeed(pathSeed, "path/to", true);
 
     // Derive seed for file.
-    const fileSeed = deriveEncryptedFileSeed(directorySeed, "file.json", false);
+    const fileSeed = deriveEncryptedPathSeed(directorySeed, "file.json", false);
 
     expect(fileSeed).toEqual(expectedFileSeed);
   });
@@ -90,23 +90,23 @@ describe("deriveEncryptedFileSeed", () => {
     const pathSeed = "a".repeat(128);
     const subPath = "";
 
-    expect(() => deriveEncryptedFileSeed(pathSeed, subPath, false)).toThrowError("Input subPath '' not a valid path");
+    expect(() => deriveEncryptedPathSeed(pathSeed, subPath, false)).toThrowError("Input subPath '' not a valid path");
   });
 
   it("should throw for a file path seed", () => {
     const pathSeed = "a".repeat(64);
 
-    expect(() => deriveEncryptedFileSeed(pathSeed, subPath, false)).toThrowError(
+    expect(() => deriveEncryptedPathSeed(pathSeed, subPath, false)).toThrowError(
       "Expected parameter 'pathSeed' to be a directory path seed of length '128', was type 'string', value 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'"
     );
   });
 });
 
-describe("deriveEncryptedFileTweak", () => {
+describe("deriveEncryptedPathTweak", () => {
   it("should throw if an invalid seed is provided", () => {
     const seed = "test.hns/foo";
 
-    expect(() => deriveEncryptedFileTweak(seed)).toThrowError(
+    expect(() => deriveEncryptedPathTweak(seed)).toThrowError(
       "Expected parameter 'pathSeed' to be a valid file or directory path seed of length '64' or '128', was type 'string', value 'test.hns/foo'"
     );
   });
@@ -116,7 +116,7 @@ describe("deriveEncryptedFileTweak", () => {
     const pathSeed = "b".repeat(64);
     const expectedTweak = "bf7f0e6566234184541e44ad2b2084ca207132a90a7b927e05fef9d24789caa7";
 
-    const result = deriveEncryptedFileTweak(pathSeed);
+    const result = deriveEncryptedPathTweak(pathSeed);
 
     expect(result).toEqual(expectedTweak);
   });
