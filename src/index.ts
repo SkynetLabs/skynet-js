@@ -27,7 +27,8 @@ export {
   deriveEncryptedFileKeyEntropy,
   deriveEncryptedFileSeed,
   deriveEncryptedFileTweak,
-  ENCRYPTION_PATH_SEED_LENGTH,
+  ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH,
+  ENCRYPTION_PATH_SEED_FILE_LENGTH,
 } from "./mysky/encrypted_files";
 export { deriveDiscoverableFileTweak } from "./mysky/tweak";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";

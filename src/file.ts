@@ -9,7 +9,7 @@ import {
 import { deriveDiscoverableFileTweak } from "./mysky/tweak";
 import { CustomGetEntryOptions, DEFAULT_GET_ENTRY_OPTIONS, getEntryLink as registryGetEntryLink } from "./registry";
 import { CustomGetJSONOptions, DEFAULT_GET_JSON_OPTIONS, JSONResponse } from "./skydb";
-import { validateOptionalObject, validateString, validateStringLen } from "./utils/validation";
+import { validateOptionalObject, validateString } from "./utils/validation";
 
 // ====
 // JSON
@@ -130,7 +130,8 @@ export async function getJSONEncrypted(
   customOptions?: CustomGetJSONOptions
 ): Promise<EncryptedJSONResponse> {
   validateString("userID", userID, "parameter");
-  validateStringLen("pathSeed", pathSeed, "parameter", 64);
+  // Full validation of the path seed is in `deriveEncryptedFileKeyEntropy` below.
+  validateString("pathSeed", pathSeed, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
   const opts = {
@@ -140,6 +141,9 @@ export async function getJSONEncrypted(
     hashedDataKeyHex: true, // Do not hash the tweak anymore.
   };
 
+  // Validate the path seed and get the key.
+  const key = deriveEncryptedFileKeyEntropy(pathSeed);
+
   // Fetch the raw encrypted JSON data.
   const dataKey = deriveEncryptedFileTweak(pathSeed);
   const { data } = await this.db.getRawBytes(userID, dataKey, opts);
@@ -147,7 +151,6 @@ export async function getJSONEncrypted(
     return { data: null };
   }
 
-  const key = deriveEncryptedFileKeyEntropy(pathSeed);
   const json = decryptJSONFile(data, key);
 
   return { data: json };

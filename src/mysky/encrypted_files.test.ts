@@ -56,42 +56,67 @@ describe("deriveEncryptedFileKeyEntropy", () => {
 
 describe("deriveEncryptedFileSeed", () => {
   // Hard-code expected value to catch breaking changes.
-  const pathSeed = "a".repeat(64);
+  const pathSeed = "a".repeat(128);
   const subPath = "path/to/file.json";
+  const expectedDirectorySeed =
+    "ae6e5be22469f4c6d89d8490906207d70753a06072db3af44c66e35b37c968a2c5457417f1cf099e3630e8255a58208d6a4b32a174c56c74877fef6412d1a02d";
+  const expectedFileSeed = "40fb1701ab23fb020358baa5d5a2cba97d2de64c1e1418382ee6623fd9c17995";
 
-  it("Should derive the correct encrypted file seed for a file", () => {
+  it("should derive the correct encrypted file seed for a file", () => {
     // Derive seed for a file.
     const fileSeed = deriveEncryptedFileSeed(pathSeed, subPath, false);
 
-    expect(fileSeed).toEqual(
-      "ace80613629a4049386b3007c17aa9aa2a7f86a7649326c03d56eb40df23593bee4a19fc4dcf5118c2cf85649551a780acf07b7b2d13e098612351e59c472bd0"
-    );
+    expect(fileSeed).toEqual(expectedFileSeed);
   });
 
-  it("Should derive the correct encrypted file seed for a directory", () => {
+  it("should derive the correct encrypted file seed for a directory", () => {
     // Derive seed for a directory.
     const directorySeed = deriveEncryptedFileSeed(pathSeed, subPath, true);
 
-    expect(directorySeed).toEqual(
-      "fa91607af922c9e57d794b7980e550fb15db99e62960fb0908b0f5af10afaf16876b7ac314c1815eb1ca0e51701c11489f08002e8ff3d61c7798bed1c7f016fb"
-    );
+    expect(directorySeed).toEqual(expectedDirectorySeed);
   });
 
-  it("Should throw for an empty input sub path", () => {
-    const pathSeed = "a".repeat(64);
+  it("should result in the same path seed when deriving path for directory first", () => {
+    // Derive seed for directory first.
+    const directorySeed = deriveEncryptedFileSeed(pathSeed, "path/to", true);
+
+    // Derive seed for file.
+    const fileSeed = deriveEncryptedFileSeed(directorySeed, "file.json", false);
+
+    expect(fileSeed).toEqual(expectedFileSeed);
+  });
+
+  it("should throw for an empty input sub path", () => {
+    const pathSeed = "a".repeat(128);
     const subPath = "";
 
     expect(() => deriveEncryptedFileSeed(pathSeed, subPath, false)).toThrowError("Input subPath '' not a valid path");
   });
+
+  it("should throw for a file path seed", () => {
+    const pathSeed = "a".repeat(64);
+
+    expect(() => deriveEncryptedFileSeed(pathSeed, subPath, false)).toThrowError(
+      "Expected parameter 'pathSeed' to be a directory path seed of length '128', was type 'string', value 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'"
+    );
+  });
 });
 
 describe("deriveEncryptedFileTweak", () => {
-  it("Should derive the correct encrypted file tweak", () => {
-    // Hard-code expected value to catch breaking changes.
+  it("should throw if an invalid seed is provided", () => {
     const seed = "test.hns/foo";
-    const expectedTweak = "352140f347807438f8f74edf3e0750a408f39b9f2ae4147eb9055d396b467fc8";
 
-    const result = deriveEncryptedFileTweak(seed);
+    expect(() => deriveEncryptedFileTweak(seed)).toThrowError(
+      "Expected parameter 'pathSeed' to be a valid file or directory path seed of length '64' or '128', was type 'string', value 'test.hns/foo'"
+    );
+  });
+
+  it("should derive the correct encrypted file tweak", () => {
+    // Hard-code expected value to catch breaking changes.
+    const pathSeed = "b".repeat(64);
+    const expectedTweak = "bf7f0e6566234184541e44ad2b2084ca207132a90a7b927e05fef9d24789caa7";
+
+    const result = deriveEncryptedFileTweak(pathSeed);
 
     expect(result).toEqual(expectedTweak);
   });
