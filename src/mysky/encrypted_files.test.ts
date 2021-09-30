@@ -3,9 +3,9 @@ import { readFileSync } from "fs";
 import {
   checkPaddedBlock,
   decryptJSONFile,
-  deriveEncryptedPathKeyEntropy,
+  deriveEncryptedFileKeyEntropy,
   deriveEncryptedPathSeed,
-  deriveEncryptedPathTweak,
+  deriveEncryptedFileTweak,
   encodeEncryptedFileMetadata,
   ENCRYPTED_JSON_RESPONSE_VERSION,
   ENCRYPTION_KEY_LENGTH,
@@ -39,7 +39,7 @@ expect.extend({
   },
 });
 
-describe("deriveEncryptedPathKeyEntropy", () => {
+describe("deriveEncryptedFileKeyEntropy", () => {
   it("Should derive the correct encrypted file key entropy", () => {
     // Hard-code expected value to catch breaking changes.
     const pathSeed = "a".repeat(64);
@@ -48,7 +48,7 @@ describe("deriveEncryptedPathKeyEntropy", () => {
       94, 186, 244, 48, 171, 115, 171,
     ];
 
-    const result = deriveEncryptedPathKeyEntropy(pathSeed);
+    const result = deriveEncryptedFileKeyEntropy(pathSeed);
 
     expect(result).toEqualUint8Array(new Uint8Array(expectedEntropy));
   });
@@ -150,23 +150,32 @@ describe("deriveEncryptedPathSeed", () => {
   );
 });
 
-describe("deriveEncryptedPathTweak", () => {
-  it("should throw if an invalid seed is provided", () => {
-    const seed = "test.hns/foo";
-
-    expect(() => deriveEncryptedPathTweak(seed)).toThrowError(
-      "Expected parameter 'pathSeed' to be a valid file or directory path seed of length '64' or '128', was type 'string', value 'test.hns/foo'"
-    );
-  });
-
+describe("deriveEncryptedFileTweak", () => {
   it("should derive the correct encrypted file tweak", () => {
     // Hard-code expected value to catch breaking changes.
-    const pathSeed = "b".repeat(64);
+    const filePathSeed = "b".repeat(64);
     const expectedTweak = "bf7f0e6566234184541e44ad2b2084ca207132a90a7b927e05fef9d24789caa7";
 
-    const result = deriveEncryptedPathTweak(pathSeed);
+    const result = deriveEncryptedFileTweak(filePathSeed);
 
     expect(result).toEqual(expectedTweak);
+  });
+
+  const invalidFilePathSeedError = "Expected parameter 'pathSeed' to be a valid file path seed of length '64'";
+
+  const invalidSeeds = [
+    [
+      "test.hns/foo",
+      "Expected parameter 'pathSeed' to be a hex-encoded string, was type 'string', value 'test.hns/foo'",
+    ],
+    ["", invalidFilePathSeedError],
+    ["b".repeat(128), invalidFilePathSeedError],
+    ["b".repeat(63), invalidFilePathSeedError],
+    ["b".repeat(65), invalidFilePathSeedError],
+  ];
+
+  it.each(invalidSeeds)("deriveEncryptedFileTweak(%s) should throw with error %s", (pathSeed, error) => {
+    expect(() => deriveEncryptedFileTweak(pathSeed)).toThrowError(error);
   });
 });
 

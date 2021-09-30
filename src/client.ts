@@ -192,12 +192,12 @@ export class SkynetClient {
     this.customOptions = customOptions;
   }
 
+  /* istanbul ignore next */
   /**
    * Make the request for the API portal URL.
    *
    * @returns - A promise that resolves when the request is complete.
    */
-  /* istanbul ignore next */
   async initPortalUrl(): Promise<void> {
     if (this.customPortalUrl) {
       // Tried to make a request for the API portal URL when a custom URL was already provided.
@@ -212,12 +212,12 @@ export class SkynetClient {
     return;
   }
 
+  /* istanbul ignore next */
   /**
    * Returns the API portal URL. Makes the request to get it if not done so already.
    *
    * @returns - the portal URL.
    */
-  /* istanbul ignore next */
   async portalUrl(): Promise<string> {
     if (this.customPortalUrl) {
       return this.customPortalUrl;

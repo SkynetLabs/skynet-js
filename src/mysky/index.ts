@@ -54,8 +54,8 @@ import {
 import { decodeSkylink } from "../skylink/sia";
 import {
   decryptJSONFile,
-  deriveEncryptedPathKeyEntropy,
-  deriveEncryptedPathTweak,
+  deriveEncryptedFileKeyEntropy,
+  deriveEncryptedFileTweak,
   EncryptedJSONResponse,
   ENCRYPTED_JSON_RESPONSE_VERSION,
   encryptJSONFile,
@@ -537,8 +537,22 @@ export class MySky {
    * @param isDirectory - Whether the path is a directory.
    * @returns - The seed for the path.
    * @throws - Will throw if the user does not have Hidden Read permission on the path.
+   * @deprecated - This function has been deprecated in favor of `getEncryptedPathSeed`.
    */
   async getEncryptedFileSeed(path: string, isDirectory: boolean): Promise<string> {
+    return await this.getEncryptedPathSeed(path, isDirectory);
+  }
+
+  /**
+   * Lets you get the share-able path seed, which can be passed to
+   * file.getJSONEncrypted. Requires Hidden Read permission on the path.
+   *
+   * @param path - The given path.
+   * @param isDirectory - Whether the path is a directory.
+   * @returns - The seed for the path.
+   * @throws - Will throw if the user does not have Hidden Read permission on the path.
+   */
+  async getEncryptedPathSeed(path: string, isDirectory: boolean): Promise<string> {
     validateString("path", path, "parameter");
     validateBoolean("isDirectory", isDirectory, "parameter");
 
@@ -566,16 +580,16 @@ export class MySky {
     };
 
     // Call MySky which checks for read permissions on the path.
-    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedFileSeed(path, false)]);
+    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedPathSeed(path, false)]);
 
     // Fetch the raw encrypted JSON data.
-    const dataKey = deriveEncryptedPathTweak(pathSeed);
+    const dataKey = deriveEncryptedFileTweak(pathSeed);
     const { data } = await this.connector.client.db.getRawBytes(publicKey, dataKey, opts);
     if (data === null) {
       return { data: null };
     }
 
-    const encryptionKey = deriveEncryptedPathKeyEntropy(pathSeed);
+    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
     const json = decryptJSONFile(data, encryptionKey);
 
     return { data: json };
@@ -607,10 +621,10 @@ export class MySky {
     };
 
     // Call MySky which checks for read permissions on the path.
-    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedFileSeed(path, false)]);
-    const dataKey = deriveEncryptedPathTweak(pathSeed);
+    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedPathSeed(path, false)]);
+    const dataKey = deriveEncryptedFileTweak(pathSeed);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
-    const encryptionKey = deriveEncryptedPathKeyEntropy(pathSeed);
+    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
     // Pad and encrypt json file.
     const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);

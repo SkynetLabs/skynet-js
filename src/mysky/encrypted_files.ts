@@ -172,21 +172,10 @@ export function encryptJSONFile(json: JsonData, metadata: EncryptedFileMetadata,
  *
  * @param pathSeed - The given path seed.
  * @returns - The key entropy.
- * @deprecated - This function has been deprecated in favor of deriveEncryptedPathKeyEntropy.
  */
 export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
-  return deriveEncryptedPathKeyEntropy(pathSeed);
-}
-
-/**
- * Derives key entropy for the given path seed.
- *
- * @param pathSeed - The given path seed.
- * @returns - The key entropy.
- */
-export function deriveEncryptedPathKeyEntropy(pathSeed: string): Uint8Array {
   // Validate the path seed and get bytes.
-  const pathSeedBytes = validateAndGetPathSeedBytes(pathSeed);
+  const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
 
   const bytes = new Uint8Array([...sha512(SALT_ENCRYPTION), ...sha512(pathSeedBytes)]);
   const hashBytes = sha512(bytes);
@@ -199,21 +188,10 @@ export function deriveEncryptedPathKeyEntropy(pathSeed: string): Uint8Array {
  *
  * @param pathSeed - the given path seed.
  * @returns - The encrypted file tweak.
- * @deprecated - This function has been deprecated in favor of deriveEncryptedPathTweak.
  */
 export function deriveEncryptedFileTweak(pathSeed: string): string {
-  return deriveEncryptedPathTweak(pathSeed);
-}
-
-/**
- * Derives the encrypted file tweak for the given path seed.
- *
- * @param pathSeed - the given path seed.
- * @returns - The encrypted file tweak.
- */
-export function deriveEncryptedPathTweak(pathSeed: string): string {
   // Validate the path seed and get bytes.
-  const pathSeedBytes = validateAndGetPathSeedBytes(pathSeed);
+  const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
 
   let hashBytes = sha512(new Uint8Array([...sha512(SALT_ENCRYPTED_TWEAK), ...sha512(pathSeedBytes)]));
   // Truncate the hash or it will be rejected in skyd.
@@ -221,6 +199,7 @@ export function deriveEncryptedPathTweak(pathSeed: string): string {
   return toHexString(hashBytes);
 }
 
+/* istanbul ignore next */
 /**
  * Derives the path seed for the relative path, given the starting path seed and
  * whether it is a directory. The path can be an absolute path if the root seed
@@ -417,19 +396,24 @@ export function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Ui
  * @param pathSeed - The given path seed.
  * @returns - The path seed bytes.
  */
-function validateAndGetPathSeedBytes(pathSeed: string): Uint8Array {
+function validateAndGetFilePathSeedBytes(pathSeed: string): Uint8Array {
   validateHexString("pathSeed", pathSeed, "parameter");
 
-  const acceptedLengths = [ENCRYPTION_PATH_SEED_FILE_LENGTH, ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH];
-  if (!acceptedLengths.includes(pathSeed.length)) {
+  if (pathSeed.length !== ENCRYPTION_PATH_SEED_FILE_LENGTH) {
     throwValidationError(
       "pathSeed",
       pathSeed,
       "parameter",
-      `a valid file or directory path seed of length '${ENCRYPTION_PATH_SEED_FILE_LENGTH}' or '${ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH}'`
+      `a valid file path seed of length '${ENCRYPTION_PATH_SEED_FILE_LENGTH}'`
     );
   }
 
   // Convert hex string to bytes.
+  //
+  // NOTE: This should have been `hexToUint8Array` but it has been left for
+  // backwards compatibility with existing encrypted file tweaks. Because hex
+  // strings are valid UTF8 strings, `stringToUint8ArrayUtf8` converts them to
+  // byte arrays that are suitable for deriving tweaks from. These bytes are
+  // never used to derive further path seed bytes.
   return stringToUint8ArrayUtf8(pathSeed);
 }
