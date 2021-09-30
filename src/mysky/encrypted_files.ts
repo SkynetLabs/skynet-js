@@ -3,13 +3,7 @@ import { sanitizePath } from "skynet-mysky-utils";
 import { secretbox } from "tweetnacl";
 
 import { HASH_LENGTH, sha512 } from "../crypto";
-import {
-  hexToUint8Array,
-  isHexString,
-  stringToUint8ArrayUtf8,
-  toHexString,
-  uint8ArrayToStringUtf8,
-} from "../utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, uint8ArrayToStringUtf8 } from "../utils/string";
 import { JsonData } from "../utils/types";
 import {
   throwValidationError,
@@ -192,7 +186,7 @@ export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
  */
 export function deriveEncryptedPathKeyEntropy(pathSeed: string): Uint8Array {
   // Validate the path seed and get bytes.
-  const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
+  const pathSeedBytes = validateAndGetPathSeedBytes(pathSeed);
 
   const bytes = new Uint8Array([...sha512(SALT_ENCRYPTION), ...sha512(pathSeedBytes)]);
   const hashBytes = sha512(bytes);
@@ -219,7 +213,7 @@ export function deriveEncryptedFileTweak(pathSeed: string): string {
  */
 export function deriveEncryptedPathTweak(pathSeed: string): string {
   // Validate the path seed and get bytes.
-  const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
+  const pathSeedBytes = validateAndGetPathSeedBytes(pathSeed);
 
   let hashBytes = sha512(new Uint8Array([...sha512(SALT_ENCRYPTED_TWEAK), ...sha512(pathSeedBytes)]));
   // Truncate the hash or it will be rejected in skyd.
@@ -423,12 +417,11 @@ export function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Ui
  * @param pathSeed - The given path seed.
  * @returns - The path seed bytes.
  */
-function validateAndGetFilePathSeedBytes(pathSeed: string): Uint8Array {
-  if (
-    (pathSeed.length !== ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH &&
-      pathSeed.length !== ENCRYPTION_PATH_SEED_FILE_LENGTH) ||
-    !isHexString(pathSeed)
-  ) {
+function validateAndGetPathSeedBytes(pathSeed: string): Uint8Array {
+  validateHexString("pathSeed", pathSeed, "parameter");
+
+  const acceptedLengths = [ENCRYPTION_PATH_SEED_FILE_LENGTH, ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH];
+  if (!acceptedLengths.includes(pathSeed.length)) {
     throwValidationError(
       "pathSeed",
       pathSeed,
