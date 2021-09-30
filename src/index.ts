@@ -35,6 +35,7 @@ export {
   deriveEncryptedFileTweak,
 } from "./mysky/encrypted_files";
 export { deriveDiscoverableFileTweak } from "./mysky/tweak";
+export { DELETION_ENTRY_DATA } from "./skydb";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
@@ -81,7 +82,13 @@ export type {
   RegistryEntry,
   RegistryProofEntry,
 } from "./registry";
-export type { CustomGetJSONOptions, CustomSetJSONOptions, JSONResponse, RawBytesResponse } from "./skydb";
+export type {
+  CustomGetJSONOptions,
+  CustomSetJSONOptions,
+  CustomSetEntryDataOptions,
+  JSONResponse,
+  RawBytesResponse,
+} from "./skydb";
 export type { ParseSkylinkOptions } from "./skylink/parse";
 export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
 export type { JsonData } from "./utils/types";

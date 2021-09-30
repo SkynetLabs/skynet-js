@@ -33,6 +33,10 @@ import {
   JSONResponse,
   getNextRegistryEntry,
   getOrCreateRawBytesRegistryEntry,
+  validateEntryData,
+  CustomSetEntryDataOptions,
+  DEFAULT_SET_ENTRY_DATA_OPTIONS,
+  DELETION_ENTRY_DATA,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
@@ -40,14 +44,14 @@ import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
 import { JsonData } from "../utils/types";
 import {
-  throwValidationError,
   validateBoolean,
   validateObject,
   validateOptionalObject,
+  validateSkylinkString,
   validateString,
   validateUint8Array,
 } from "../utils/validation";
-import { decodeSkylink, RAW_SKYLINK_SIZE } from "../skylink/sia";
+import { decodeSkylink } from "../skylink/sia";
 import {
   decryptJSONFile,
   deriveEncryptedPathKeyEntropy,
@@ -402,45 +406,6 @@ export class MySky {
   }
 
   /**
-   * Sets entry at the given path to point to the data link. Like setJSON, but it doesn't upload a file.
-   *
-   * @param path - The data path.
-   * @param dataLink - The data link to set at the path.
-   * @param [customOptions] - Additional settings that can optionally be set.
-   * @returns - An empty promise.
-   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
-   */
-  async setDataLink(path: string, dataLink: string, customOptions?: CustomSetJSONOptions): Promise<void> {
-    validateString("path", path, "parameter");
-    validateString("dataLink", dataLink, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
-
-    const opts = {
-      ...DEFAULT_SET_JSON_OPTIONS,
-      ...this.connector.client.customOptions,
-      ...customOptions,
-    };
-
-    const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableFileTweak(path);
-    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
-
-    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-    const entry = await getNextRegistryEntry(
-      this.connector.client,
-      publicKey,
-      dataKey,
-      decodeSkylink(dataLink),
-      getEntryOpts
-    );
-
-    const signature = await this.signRegistryEntry(entry, path);
-
-    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
-  }
-
-  /**
    * Deletes Discoverable JSON at the given path through MySky, if the user has
    * given Discoverable Write permissions to do so.
    *
@@ -450,33 +415,34 @@ export class MySky {
    * @throws - Will throw if the revision is already the maximum value.
    * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
-  async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
-    validateString("path", path, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
+  async deleteJSON(path: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
+    // Validation is done below in `setEntryData`.
 
     const opts = {
-      ...DEFAULT_SET_JSON_OPTIONS,
+      ...DEFAULT_SET_ENTRY_DATA_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
 
-    const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableFileTweak(path);
-    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+    await this.setEntryData(path, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
+  }
 
-    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-    const entry = await getNextRegistryEntry(
-      this.connector.client,
-      publicKey,
-      dataKey,
-      new Uint8Array(RAW_SKYLINK_SIZE),
-      getEntryOpts
-    );
+  /**
+   * Sets entry at the given path to point to the data link. Like setJSON, but it doesn't upload a file.
+   *
+   * @param path - The data path.
+   * @param dataLink - The data link to set at the path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An empty promise.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+   */
+  async setDataLink(path: string, dataLink: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
+    const parsedSkylink = validateSkylinkString("dataLink", dataLink, "parameter");
+    // Rest of validation is done below in `setEntryData`.
 
-    const signature = await this.signRegistryEntry(entry, path);
+    const data = decodeSkylink(parsedSkylink);
 
-    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+    await this.setEntryData(path, data, customOptions);
   }
 
   /**
@@ -502,15 +468,11 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const { entry } = await this.connector.client.registry.getEntry(publicKey, dataKey, opts);
-    if (!entry) {
-      return { data: null };
-    }
-    return { data: entry.data };
+    return await this.connector.client.db.getEntryData(publicKey, dataKey, opts);
   }
 
   /**
-   * Sets the entry data at the given path, if the user has given Discoverable
+   * Sets the raw registry entry data at the given path, if the user has given Discoverable
    * Write permissions.
    *
    * @param path - The data path.
@@ -520,25 +482,18 @@ export class MySky {
    * @throws - Will throw if the length of the data is > 70 bytes.
    * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
-  async setEntryData(path: string, data: Uint8Array, customOptions?: CustomSetJSONOptions): Promise<EntryData> {
+  async setEntryData(path: string, data: Uint8Array, customOptions?: CustomSetEntryDataOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
     validateUint8Array("data", data, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_OPTIONS);
-
-    if (data.length > MAX_ENTRY_LENGTH) {
-      throwValidationError(
-        "data",
-        data,
-        "parameter",
-        `'Uint8Array' of length <= ${MAX_ENTRY_LENGTH}, was length ${data.length}`
-      );
-    }
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_DATA_OPTIONS);
 
     const opts = {
-      ...DEFAULT_SET_JSON_OPTIONS,
+      ...DEFAULT_SET_ENTRY_DATA_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
+
+    validateEntryData(data, opts.allowDeletionEntryData);
 
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableFileTweak(path);
@@ -553,6 +508,21 @@ export class MySky {
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: entry.data };
+  }
+
+  /**
+   * Deletes the entry data at the given path, if the user has given Discoverable
+   * Write permissions.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An empty promise.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+   */
+  async deleteEntryData(path: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
+    // Validation is done in `setEntryData`.
+
+    await this.setEntryData(path, DELETION_ENTRY_DATA, { ...customOptions, allowDeletionEntryData: true });
   }
 
   // ===============

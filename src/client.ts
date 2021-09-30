@@ -24,10 +24,24 @@ import {
   openFileHns,
   resolveHns,
 } from "./download";
-import { getJSONEncrypted, getEntryData, getEntryLink as fileGetEntryLink, getJSON as fileGetJSON } from "./file";
+import {
+  getJSONEncrypted,
+  getEntryData as fileGetEntryData,
+  getEntryLink as fileGetEntryLink,
+  getJSON as fileGetJSON,
+} from "./file";
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
-import { deleteJSON, getJSON, setJSON, setDataLink, getRawBytes } from "./skydb";
+import {
+  deleteJSON,
+  getJSON,
+  setJSON,
+  setDataLink,
+  getRawBytes,
+  getEntryData,
+  setEntryData,
+  deleteEntryData,
+} from "./skydb";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -131,7 +145,7 @@ export class SkynetClient {
 
   file = {
     getJSON: fileGetJSON.bind(this),
-    getEntryData: getEntryData.bind(this),
+    getEntryData: fileGetEntryData.bind(this),
     getEntryLink: fileGetEntryLink.bind(this),
     getJSONEncrypted: getJSONEncrypted.bind(this),
   };
@@ -142,8 +156,11 @@ export class SkynetClient {
     deleteJSON: deleteJSON.bind(this),
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
-    setDataLink: setDataLink.bind(this),
     getRawBytes: getRawBytes.bind(this),
+    setDataLink: setDataLink.bind(this),
+    getEntryData: getEntryData.bind(this),
+    setEntryData: setEntryData.bind(this),
+    deleteEntryData: deleteEntryData.bind(this),
   };
 
   // Registry
