@@ -299,6 +299,58 @@ describe(`Integration test for portal '${portal}'`, () => {
       expect(returnedEntry.data).toEqualUint8Array(dataLinkBytes);
     });
 
+    it("should set and get entry data", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const data = new Uint8Array([1, 2, 3]);
+
+      // Set the entry data.
+      await client.db.setEntryData(privateKey, dataKey, data);
+
+      // Get the entry data.
+      const { data: returnedData } = await client.db.getEntryData(publicKey, dataKey);
+
+      // Assert the returned data equals the original data.
+      expect(returnedData).toEqualUint8Array(data);
+    });
+
+    it("should set and delete entry data", async () => {
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const data = new Uint8Array([1, 2, 3]);
+
+      // Set the entry data.
+      await client.db.setEntryData(privateKey, dataKey, data);
+
+      // Delete the entry data.
+      await client.db.deleteEntryData(privateKey, dataKey);
+
+      // Trying to get the deleted data should result in null.
+      const { data: returnedData } = await client.db.getEntryData(publicKey, dataKey);
+      // TODO: Should this equal null?
+      expect(returnedData).toBeNull();
+    });
+
+    it("should be able to delete a new entry and then write over it", async () => {
+      const data = new Uint8Array([1, 2, 3]);
+
+      const { publicKey, privateKey } = genKeyPairAndSeed();
+
+      // Delete the entry data.
+      await client.db.deleteEntryData(privateKey, dataKey);
+
+      // Trying to fetch the entry should result in null.
+      const { data: returnedData } = await client.db.getEntryData(publicKey, dataKey);
+      expect(returnedData).toBeNull();
+
+      // Write to the entry.
+      await client.db.setEntryData(privateKey, dataKey, data);
+
+      // The entry should be readable.
+
+      const { data: returnedData2 } = await client.db.getEntryData(publicKey, dataKey);
+
+      expect(returnedData2).toEqual(data);
+    });
+
     it("Should correctly handle the hashedDataKeyHex option", async () => {
       const { publicKey, privateKey } = genKeyPairAndSeed();
       const dataKey = "test";

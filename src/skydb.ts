@@ -9,6 +9,7 @@ import {
   RegistryEntry,
   SignedRegistryEntry,
   CustomSetEntryOptions,
+  validatePublicKey,
 } from "./registry";
 import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { MAX_REVISION } from "./utils/number";
@@ -33,14 +34,18 @@ import {
   validateOptionalObject,
   validateSkylinkString,
   validateString,
+  validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
 import { ResponseType } from "axios";
+import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
 export type JsonFullData = {
   _data: JsonData;
   _v: number;
 };
+
+export const DELETION_ENTRY_DATA = new Uint8Array(RAW_SKYLINK_SIZE);
 
 const JSON_RESPONSE_VERSION = 2;
 
@@ -84,6 +89,23 @@ export const DEFAULT_SET_JSON_OPTIONS = {
   ...DEFAULT_SET_ENTRY_OPTIONS,
 };
 
+/**
+ * Custom set entry data options. Includes the options for get and set entry.
+ */
+export type CustomSetEntryDataOptions = CustomGetEntryOptions &
+  CustomSetEntryOptions & { allowDeletionEntryData: boolean };
+
+/**
+ * The default options for set entry data. Includes the default get entry and
+ * set entry options.
+ */
+export const DEFAULT_SET_ENTRY_DATA_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
+  ...DEFAULT_GET_ENTRY_OPTIONS,
+  ...DEFAULT_SET_ENTRY_OPTIONS,
+  allowDeletionEntryData: false,
+};
+
 export type JSONResponse = {
   data: JsonData | null;
   dataLink: string | null;
@@ -114,8 +136,9 @@ export async function getJSON(
   dataKey: string,
   customOptions?: CustomGetJSONOptions
 ): Promise<JSONResponse> {
+  validatePublicKey("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
-  // Rest of validation is done in `getEntry`.
 
   const opts = {
     ...DEFAULT_GET_JSON_OPTIONS,
@@ -124,7 +147,8 @@ export async function getJSON(
   };
 
   // Lookup the registry entry.
-  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, opts);
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, getEntryOpts);
   if (entry === null) {
     return { data: null, dataLink: null };
   }
@@ -211,33 +235,22 @@ export async function deleteJSON(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
-  customOptions?: CustomSetJSONOptions
+  customOptions?: CustomSetEntryDataOptions
 ): Promise<void> {
-  validateHexString("privateKey", privateKey, "parameter");
-  validateString("dataKey", dataKey, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
+  // Validation is done below in `db.setEntryData`.
 
   const opts = {
-    ...DEFAULT_SET_JSON_OPTIONS,
+    ...DEFAULT_SET_ENTRY_DATA_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
 
-  const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
-
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entry = await getNextRegistryEntry(
-    this,
-    toHexString(publicKeyArray),
-    dataKey,
-    new Uint8Array(RAW_SKYLINK_SIZE),
-    getEntryOpts
-  );
-
-  // Update the registry.
-  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-  await this.registry.setEntry(privateKey, entry, setEntryOpts);
+  await this.db.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
 }
+
+// ==========
+// Entry Data
+// ==========
 
 /**
  * Sets the datalink for the entry at the given private key and data key.
@@ -254,33 +267,112 @@ export async function setDataLink(
   privateKey: string,
   dataKey: string,
   dataLink: string,
-  customOptions?: CustomSetJSONOptions
+  customOptions?: CustomSetEntryDataOptions
 ): Promise<void> {
-  validateHexString("privateKey", privateKey, "parameter");
+  const parsedSkylink = validateSkylinkString("dataLink", dataLink, "parameter");
+  // Rest of validation is done below in `db.setEntryData`.
+
+  const data = decodeSkylink(parsedSkylink);
+
+  await this.db.setEntryData(privateKey, dataKey, data, customOptions);
+}
+
+/**
+ * Gets the raw registry entry data at the given public key and data key.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The data key.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry data.
+ */
+export async function getEntryData(
+  this: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  customOptions?: CustomGetEntryOptions
+): Promise<EntryData> {
+  validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
-  validateString("dataLink", dataLink, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
   const opts = {
-    ...DEFAULT_SET_JSON_OPTIONS,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
 
+  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, opts);
+  if (entry === null) {
+    return { data: null };
+  }
+  return { data: entry.data };
+}
+
+/**
+ * Sets the raw entry data at the given private key and data key.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param dataKey - The data key.
+ * @param data - The raw entry data to set.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry data.
+ * @throws - Will throw if the length of the data is > 70 bytes.
+ */
+export async function setEntryData(
+  this: SkynetClient,
+  privateKey: string,
+  dataKey: string,
+  data: Uint8Array,
+  customOptions?: CustomSetEntryDataOptions
+): Promise<EntryData> {
+  validateHexString("privateKey", privateKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateUint8Array("data", data, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_DATA_OPTIONS);
+
+  const opts = {
+    ...DEFAULT_SET_ENTRY_DATA_OPTIONS,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  validateEntryData(data, opts.allowDeletionEntryData);
+
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
 
   const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entry = await getNextRegistryEntry(
-    this,
-    toHexString(publicKeyArray),
-    dataKey,
-    decodeSkylink(dataLink),
-    getEntryOpts
-  );
+  const entry = await getNextRegistryEntry(this, toHexString(publicKeyArray), dataKey, data, getEntryOpts);
 
-  // Update the registry.
   const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
   await this.registry.setEntry(privateKey, entry, setEntryOpts);
+
+  return { data: entry.data };
+}
+
+/**
+ * Deletes the entry data at the given private key and data key. Trying to
+ * access the data again with e.g. getEntryData will result in null.
+ *
+ * @param this - SkynetClient
+ * @param privateKey - The user private key.
+ * @param dataKey - The data key.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - An empty promise.
+ */
+export async function deleteEntryData(
+  this: SkynetClient,
+  privateKey: string,
+  dataKey: string,
+  customOptions?: CustomSetEntryDataOptions
+): Promise<void> {
+  // Validation is done below in `db.setEntryData`.
+
+  await this.db.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA, {
+    ...customOptions,
+    allowDeletionEntryData: true,
+  });
 }
 
 // =========
@@ -304,8 +396,9 @@ export async function getRawBytes(
   // TODO: Take a new options type?
   customOptions?: CustomGetJSONOptions
 ): Promise<RawBytesResponse> {
+  validatePublicKey("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
-  // Rest of validation is done in `getEntry`.
 
   const opts = {
     ...DEFAULT_GET_JSON_OPTIONS,
@@ -314,7 +407,8 @@ export async function getRawBytes(
   };
 
   // Lookup the registry entry.
-  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, opts);
+  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, getEntryOpts);
   if (entry === null) {
     return { data: null, dataLink: null };
   }
@@ -554,6 +648,32 @@ export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string
 }
 
 /**
+ * Validates the given entry data.
+ *
+ * @param data - The entry data to validate.
+ * @param allowDeletionEntryData - If set to false, disallows setting the entry data that marks a deletion. This is a likely developer error if it was not done through the deleteEntryData method.
+ * @throws - Will throw if the data is invalid.
+ */
+export function validateEntryData(data: Uint8Array, allowDeletionEntryData: boolean): void {
+  // Check that the length is not greater than the maximum allowed.
+  if (data.length > MAX_ENTRY_LENGTH) {
+    throwValidationError(
+      "data",
+      data,
+      "parameter",
+      `'Uint8Array' of length <= ${MAX_ENTRY_LENGTH}, was length ${data.length}`
+    );
+  }
+
+  // Check that we are not setting the deletion sentinel as that is probably a developer mistake.
+  if (!allowDeletionEntryData && areEqualUint8Arrays(data, DELETION_ENTRY_DATA)) {
+    throw new Error(
+      "Tried to set 'Uint8Array' entry data that is the deletion sentinel ('Uint8Array(RAW_SKYLINK_SIZE)'), please use the 'deleteEntryData' method instead`"
+    );
+  }
+}
+
+/**
  * Gets the registry entry, returning null if the entry contains an empty skylink (the deletion sentinel).
  *
  * @param client - The Skynet Client
@@ -566,10 +686,9 @@ async function getSkyDBRegistryEntry(
   client: SkynetClient,
   publicKey: string,
   dataKey: string,
-  opts: CustomGetJSONOptions
+  opts: CustomGetEntryOptions
 ): Promise<RegistryEntry | null> {
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const { entry } = await client.registry.getEntry(publicKey, dataKey, getEntryOpts);
+  const { entry } = await client.registry.getEntry(publicKey, dataKey, opts);
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return null;
   }
