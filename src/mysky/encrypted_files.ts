@@ -6,6 +6,7 @@ import { HASH_LENGTH, sha512 } from "../crypto";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, uint8ArrayToStringUtf8 } from "../utils/string";
 import { JsonData } from "../utils/types";
 import {
+  throwValidationError,
   validateBoolean,
   validateHexString,
   validateNumber,
@@ -45,9 +46,14 @@ export const ENCRYPTION_NONCE_LENGTH = 24;
 const ENCRYPTION_OVERHEAD_LENGTH = 16;
 
 /**
- * The length of the share-able path seed.
+ * The length of the hex-encoded share-able directory path seed.
  */
-export const ENCRYPTION_PATH_SEED_LENGTH = 32;
+export const ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH = 128;
+
+/**
+ * The length of the hex-encoded share-able file path seed.
+ */
+export const ENCRYPTION_PATH_SEED_FILE_LENGTH = 64;
 
 // Descriptive salt that should not be changed.
 const SALT_ENCRYPTED_CHILD = "encrypted filesystem child";
@@ -168,7 +174,10 @@ export function encryptJSONFile(json: JsonData, metadata: EncryptedFileMetadata,
  * @returns - The key entropy.
  */
 export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
-  const bytes = new Uint8Array([...sha512(SALT_ENCRYPTION), ...sha512(pathSeed)]);
+  // Validate the path seed and get bytes.
+  const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
+
+  const bytes = new Uint8Array([...sha512(SALT_ENCRYPTION), ...sha512(pathSeedBytes)]);
   const hashBytes = sha512(bytes);
   // Truncate the hash to the size of an encryption key.
   return hashBytes.slice(0, ENCRYPTION_KEY_LENGTH);
@@ -181,10 +190,30 @@ export function deriveEncryptedFileKeyEntropy(pathSeed: string): Uint8Array {
  * @returns - The encrypted file tweak.
  */
 export function deriveEncryptedFileTweak(pathSeed: string): string {
-  let hashBytes = sha512(new Uint8Array([...sha512(SALT_ENCRYPTED_TWEAK), ...sha512(pathSeed)]));
+  // Validate the path seed and get bytes.
+  const pathSeedBytes = validateAndGetFilePathSeedBytes(pathSeed);
+
+  let hashBytes = sha512(new Uint8Array([...sha512(SALT_ENCRYPTED_TWEAK), ...sha512(pathSeedBytes)]));
   // Truncate the hash or it will be rejected in skyd.
   hashBytes = hashBytes.slice(0, HASH_LENGTH);
   return toHexString(hashBytes);
+}
+
+/* istanbul ignore next */
+/**
+ * Derives the path seed for the relative path, given the starting path seed and
+ * whether it is a directory. The path can be an absolute path if the root seed
+ * is given.
+ *
+ * @param pathSeed - The given starting path seed.
+ * @param subPath - The path.
+ * @param isDirectory - Whether the path is a directory.
+ * @returns - The path seed for the given path.
+ * @throws - Will throw if the input sub path is not a valid path.
+ * @deprecated - This function has been deprecated in favor of deriveEncryptedPathSeed.
+ */
+export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
+  return deriveEncryptedPathSeed(pathSeed, subPath, isDirectory);
 }
 
 /**
@@ -198,10 +227,20 @@ export function deriveEncryptedFileTweak(pathSeed: string): string {
  * @returns - The path seed for the given path.
  * @throws - Will throw if the input sub path is not a valid path.
  */
-export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
+export function deriveEncryptedPathSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
   validateHexString("pathSeed", pathSeed, "parameter");
   validateString("subPath", subPath, "parameter");
   validateBoolean("isDirectory", isDirectory, "parameter");
+
+  // The path seed must be for a directory and not a file.
+  if (pathSeed.length !== ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH) {
+    throwValidationError(
+      "pathSeed",
+      pathSeed,
+      "parameter",
+      `a directory path seed of length '${ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH}'`
+    );
+  }
 
   let pathSeedBytes = hexToUint8Array(pathSeed);
   const sanitizedPath = sanitizePath(subPath);
@@ -222,8 +261,13 @@ export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDir
     pathSeedBytes = sha512(bytes);
   });
 
-  // Truncate and hex-encode the final output.
-  return toHexString(pathSeedBytes.slice(0, ENCRYPTION_PATH_SEED_LENGTH));
+  // Truncate the path seed bytes for files only.
+  if (!isDirectory) {
+    // Divide `ENCRYPTION_PATH_SEED_FILE_LENGTH` by 2 since that is the final hex-encoded length.
+    pathSeedBytes = pathSeedBytes.slice(0, ENCRYPTION_PATH_SEED_FILE_LENGTH / 2);
+  }
+  // Hex-encode the final output.
+  return toHexString(pathSeedBytes);
 }
 
 /**
@@ -344,4 +388,32 @@ export function encodeEncryptedFileMetadata(metadata: EncryptedFileMetadata): Ui
   bytes[0] = metadata.version;
 
   return bytes;
+}
+
+/**
+ * Validates the path seed and converts it to bytes.
+ *
+ * @param pathSeed - The given path seed.
+ * @returns - The path seed bytes.
+ */
+function validateAndGetFilePathSeedBytes(pathSeed: string): Uint8Array {
+  validateHexString("pathSeed", pathSeed, "parameter");
+
+  if (pathSeed.length !== ENCRYPTION_PATH_SEED_FILE_LENGTH) {
+    throwValidationError(
+      "pathSeed",
+      pathSeed,
+      "parameter",
+      `a valid file path seed of length '${ENCRYPTION_PATH_SEED_FILE_LENGTH}'`
+    );
+  }
+
+  // Convert hex string to bytes.
+  //
+  // NOTE: This should have been `hexToUint8Array` but it has been left for
+  // backwards compatibility with existing encrypted file tweaks. Because hex
+  // strings are valid UTF8 strings, `stringToUint8ArrayUtf8` converts them to
+  // byte arrays that are suitable for deriving tweaks from. These bytes are
+  // never used to derive further path seed bytes.
+  return stringToUint8ArrayUtf8(pathSeed);
 }
