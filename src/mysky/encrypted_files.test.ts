@@ -77,7 +77,7 @@ describe("deriveEncryptedPathSeed", () => {
   });
 
   /**
-   * REGRESSION TEST
+   * Regression test:
    *
    * The issue was that `deriveEncryptedPathSeed` calculated path seeds of 64
    * bytes internally for each directory and then truncated to 32 bytes at the
@@ -100,9 +100,8 @@ describe("deriveEncryptedPathSeed", () => {
   });
 
   const filePathSeed = "a".repeat(64);
-  const filePathSeedError = "Expected parameter 'pathSeed' to be a directory path seed of length '128'";
-  const fullFilePathSeedError =
-    "Expected parameter 'pathSeed' to be a directory path seed of length '128', was type 'string', value 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'";
+  const filePathSeedError =
+    "Expected parameter 'pathSeed' to be a valid file or directory path seed of length '64' or '128'";
 
   // [pathSeed, subPath, isDirectory]
   const validTestCases: Array<[string, string, boolean]> = [
@@ -115,6 +114,9 @@ describe("deriveEncryptedPathSeed", () => {
     [rootPathSeed, "path/file.json/bar", false],
     [rootPathSeed, "path//to/file.json", true],
     [rootPathSeed, "path//to/file.json", false],
+    // should accept file path seeds
+    [filePathSeed, "path/to/file", true],
+    [filePathSeed, "path/to/file", false],
   ];
 
   it.each(validTestCases)("deriveEncryptedPathSeed(%s, %s, %s) should not throw", (pathSeed, subPath, isDirectory) => {
@@ -126,11 +128,6 @@ describe("deriveEncryptedPathSeed", () => {
     // should throw for an empty input sub path
     [rootPathSeed, "", true, "Input subPath '' not a valid path"],
     [rootPathSeed, "", false, "Input subPath '' not a valid path"],
-    // should not accept file path seeds
-    [filePathSeed, "path/to/file", true, fullFilePathSeedError],
-    [filePathSeed, "path/to/file", false, fullFilePathSeedError],
-    [filePathSeed, "", true, fullFilePathSeedError],
-    [filePathSeed, "", false, fullFilePathSeedError],
     // should not accept other non-directory path seeds
     ["b".repeat(63), "path/to/file", true, filePathSeedError],
     ["b".repeat(65), "path/to/file", false, filePathSeedError],
