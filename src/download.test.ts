@@ -304,7 +304,7 @@ describe("getFileContent", () => {
     expect(mock.history.get.length).toBe(1);
     const request = mock.history.get[0];
 
-    expect(request.headers["Range"]).toEqual(range);
+    expect(request.headers["range"]).toEqual(range);
   });
 
   it("should register onDownloadProgress callback if defined", async () => {
