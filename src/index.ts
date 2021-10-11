@@ -19,17 +19,22 @@ export {
   MAX_ENTRY_LENGTH,
   MySky,
   MYSKY_DOMAIN,
-  mySkyDomain,
   MYSKY_DEV_DOMAIN,
+  // Deprecated.
   mySkyDevDomain,
+  mySkyDomain,
 } from "./mysky";
 export {
   deriveEncryptedFileKeyEntropy,
-  deriveEncryptedFileSeed,
   deriveEncryptedFileTweak,
-  ENCRYPTION_PATH_SEED_LENGTH,
+  deriveEncryptedPathSeed,
+  ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH,
+  ENCRYPTION_PATH_SEED_FILE_LENGTH,
+  // Deprecated.
+  deriveEncryptedFileSeed,
 } from "./mysky/encrypted_files";
 export { deriveDiscoverableFileTweak } from "./mysky/tweak";
+export { DELETION_ENTRY_DATA } from "./skydb";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
@@ -39,12 +44,13 @@ export { stringToUint8ArrayUtf8, uint8ArrayToStringUtf8 } from "./utils/string";
 export {
   defaultPortalUrl,
   DEFAULT_SKYNET_PORTAL_URL,
-  defaultSkynetPortalUrl,
   extractDomainForPortal,
   getFullDomainUrlForPortal,
   URI_HANDSHAKE_PREFIX,
-  uriHandshakePrefix,
   URI_SKYNET_PREFIX,
+  // Deprecated.
+  defaultSkynetPortalUrl,
+  uriHandshakePrefix,
   uriSkynetPrefix,
 } from "./utils/url";
 
@@ -76,7 +82,13 @@ export type {
   RegistryEntry,
   RegistryProofEntry,
 } from "./registry";
-export type { CustomGetJSONOptions, CustomSetJSONOptions, JSONResponse, RawBytesResponse } from "./skydb";
+export type {
+  CustomGetJSONOptions,
+  CustomSetJSONOptions,
+  CustomSetEntryDataOptions,
+  JSONResponse,
+  RawBytesResponse,
+} from "./skydb";
 export type { ParseSkylinkOptions } from "./skylink/parse";
 export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
 export type { JsonData } from "./utils/types";

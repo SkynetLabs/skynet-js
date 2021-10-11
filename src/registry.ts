@@ -620,7 +620,7 @@ export function validateRegistryEntry(name: string, value: unknown, valueKind: s
  * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
  * @throws - Will throw if not a valid hex-encoded public key.
  */
-function validatePublicKey(name: string, publicKey: string, valueKind: string): void {
+export function validatePublicKey(name: string, publicKey: string, valueKind: string): void {
   if (!isHexString(trimPrefix(publicKey, ED25519_PREFIX))) {
     throwValidationError(name, publicKey, valueKind, "a hex-encoded string with a valid prefix");
   }

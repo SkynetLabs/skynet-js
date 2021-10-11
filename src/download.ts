@@ -581,7 +581,7 @@ export async function resolveHns(
 function buildGetFileContentHeaders(range?: string): Headers {
   const headers: Headers = {};
   if (range) {
-    headers["Range"] = range;
+    headers["range"] = range;
   }
   return headers;
 }

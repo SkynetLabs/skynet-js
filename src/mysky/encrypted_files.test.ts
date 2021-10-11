@@ -4,7 +4,7 @@ import {
   checkPaddedBlock,
   decryptJSONFile,
   deriveEncryptedFileKeyEntropy,
-  deriveEncryptedFileSeed,
+  deriveEncryptedPathSeed,
   deriveEncryptedFileTweak,
   encodeEncryptedFileMetadata,
   ENCRYPTED_JSON_RESPONSE_VERSION,
@@ -54,42 +54,128 @@ describe("deriveEncryptedFileKeyEntropy", () => {
   });
 });
 
-describe("deriveEncryptedFileSeed", () => {
-  it("Should derive the correct encrypted file seed", () => {
-    // Hard-code expected value to catch breaking changes.
-    const pathSeed = "a".repeat(64);
-    const subPath = "path/to/file.json";
+describe("deriveEncryptedPathSeed", () => {
+  // Hard-code expected value to catch breaking changes.
+  const rootPathSeed = "a".repeat(128);
+  const subPath = "path/to/file.json";
+  const expectedDirectorySeed =
+    "ae6e5be22469f4c6d89d8490906207d70753a06072db3af44c66e35b37c968a2c5457417f1cf099e3630e8255a58208d6a4b32a174c56c74877fef6412d1a02d";
+  const expectedFileSeed = "40fb1701ab23fb020358baa5d5a2cba97d2de64c1e1418382ee6623fd9c17995";
 
+  it("should derive the correct encrypted file seed for a file", () => {
     // Derive seed for a file.
-    const fileSeed = deriveEncryptedFileSeed(pathSeed, subPath, false);
+    const fileSeed = deriveEncryptedPathSeed(rootPathSeed, subPath, false);
 
-    expect(fileSeed).toEqual("ace80613629a4049386b3007c17aa9aa2a7f86a7649326c03d56eb40df23593b");
+    expect(fileSeed).toEqual(expectedFileSeed);
+  });
 
+  it("should derive the correct encrypted file seed for a directory", () => {
     // Derive seed for a directory.
-    const directorySeed = deriveEncryptedFileSeed(pathSeed, subPath, true);
+    const directorySeed = deriveEncryptedPathSeed(rootPathSeed, subPath, true);
 
-    expect(directorySeed).toEqual("fa91607af922c9e57d794b7980e550fb15db99e62960fb0908b0f5af10afaf16");
-
-    expect(fileSeed).not.toEqual(directorySeed);
+    expect(directorySeed).toEqual(expectedDirectorySeed);
   });
 
-  it("Should throw for an empty input sub path", () => {
-    const pathSeed = "a".repeat(64);
-    const subPath = "";
+  /**
+   * REGRESSION TEST
+   *
+   * The issue was that `deriveEncryptedPathSeed` calculated path seeds of 64
+   * bytes internally for each directory and then truncated to 32 bytes at the
+   * end. For example, the path seed for `path/foo/bar.json` was 64 bytes for
+   * `path`, 64 for `foo` and 32 for `bar.json` (which is the final output).
+   * However, you could request the path seed for `path` which would give you a
+   * 32-byte truncated seed. If you then tried to use that and requested
+   * `foo/bar.json` for `path`, you would end up with a different seed than for
+   * `path/foo/bar.json`. The fix is to keep truncating to 32 bytes for files,
+   * but change the output to the full 64 bytes for directories.
+   */
+  it("should result in the same path seed when deriving path for directory first", () => {
+    // Derive seed for directory first.
+    const directorySeed = deriveEncryptedPathSeed(rootPathSeed, "path/to", true);
 
-    expect(() => deriveEncryptedFileSeed(pathSeed, subPath, false)).toThrowError("Input subPath '' not a valid path");
+    // Derive seed for file.
+    const fileSeed = deriveEncryptedPathSeed(directorySeed, "file.json", false);
+
+    expect(fileSeed).toEqual(expectedFileSeed);
   });
+
+  const filePathSeed = "a".repeat(64);
+  const filePathSeedError = "Expected parameter 'pathSeed' to be a directory path seed of length '128'";
+  const fullFilePathSeedError =
+    "Expected parameter 'pathSeed' to be a directory path seed of length '128', was type 'string', value 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'";
+
+  // [pathSeed, subPath, isDirectory]
+  const validTestCases: Array<[string, string, boolean]> = [
+    // should accept standard paths
+    [rootPathSeed, "path/file.json", false],
+    [rootPathSeed, "path", true],
+    [rootPathSeed, "path", false],
+    // should accept funny-looking but valid sub paths
+    [rootPathSeed, "path/file.json/bar", true],
+    [rootPathSeed, "path/file.json/bar", false],
+    [rootPathSeed, "path//to/file.json", true],
+    [rootPathSeed, "path//to/file.json", false],
+  ];
+
+  it.each(validTestCases)("deriveEncryptedPathSeed(%s, %s, %s) should not throw", (pathSeed, subPath, isDirectory) => {
+    deriveEncryptedPathSeed(pathSeed, subPath, isDirectory);
+  });
+
+  // [pathSeed, subPath, isDirectory, error]
+  const invalidTestCases: Array<[string, string, boolean, string]> = [
+    // should throw for an empty input sub path
+    [rootPathSeed, "", true, "Input subPath '' not a valid path"],
+    [rootPathSeed, "", false, "Input subPath '' not a valid path"],
+    // should not accept file path seeds
+    [filePathSeed, "path/to/file", true, fullFilePathSeedError],
+    [filePathSeed, "path/to/file", false, fullFilePathSeedError],
+    [filePathSeed, "", true, fullFilePathSeedError],
+    [filePathSeed, "", false, fullFilePathSeedError],
+    // should not accept other non-directory path seeds
+    ["b".repeat(63), "path/to/file", true, filePathSeedError],
+    ["b".repeat(65), "path/to/file", false, filePathSeedError],
+    ["c".repeat(127), "", true, filePathSeedError],
+    ["c".repeat(129), "", false, filePathSeedError],
+    ["c".repeat(127), "path", true, filePathSeedError],
+    ["c".repeat(129), "path", false, filePathSeedError],
+    ["z".repeat(0), "path/to/file", true, filePathSeedError],
+    ["z".repeat(0), "path/to/file", false, filePathSeedError],
+  ];
+
+  it.each(invalidTestCases)(
+    "deriveEncryptedPathSeed(%s, %s, %s) should throw with error %s",
+    (pathSeed, subPath, isDirectory, error) => {
+      expect(() => deriveEncryptedPathSeed(pathSeed, subPath, isDirectory)).toThrowError(error);
+    }
+  );
 });
 
 describe("deriveEncryptedFileTweak", () => {
-  it("Should derive the correct encrypted file tweak", () => {
+  it("should derive the correct encrypted file tweak", () => {
     // Hard-code expected value to catch breaking changes.
-    const seed = "test.hns/foo";
-    const expectedTweak = "352140f347807438f8f74edf3e0750a408f39b9f2ae4147eb9055d396b467fc8";
+    const filePathSeed = "b".repeat(64);
+    const expectedTweak = "bf7f0e6566234184541e44ad2b2084ca207132a90a7b927e05fef9d24789caa7";
 
-    const result = deriveEncryptedFileTweak(seed);
+    const result = deriveEncryptedFileTweak(filePathSeed);
 
     expect(result).toEqual(expectedTweak);
+  });
+
+  const invalidFilePathSeedError = "Expected parameter 'pathSeed' to be a valid file path seed of length '64'";
+
+  const invalidSeeds = [
+    [
+      "test.hns/foo",
+      "Expected parameter 'pathSeed' to be a hex-encoded string, was type 'string', value 'test.hns/foo'",
+    ],
+    ["", invalidFilePathSeedError],
+    ["b".repeat(128), invalidFilePathSeedError],
+    ["b".repeat(63), invalidFilePathSeedError],
+    ["b".repeat(65), invalidFilePathSeedError],
+  ];
+
+  it.each(invalidSeeds)("deriveEncryptedFileTweak(%s) should throw with error %s", (pathSeed, error) => {
+    expect(() => deriveEncryptedFileTweak(pathSeed)).toThrowError(error);
   });
 });
 
