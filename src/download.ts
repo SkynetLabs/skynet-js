@@ -592,11 +592,11 @@ function buildGetFileContentHeaders(range?: string): Headers {
  * @param download - Whether to set attachment=true.
  * @returns - The URL query.
  */
-function buildQuery(download: boolean): Record<string, unknown> {
-  const query: Record<string, unknown> = {};
+function buildQuery(download: boolean): { [key: string]: string | undefined } {
+  const query: { [key: string]: string | undefined } = {};
   if (download) {
     // Set the "attachment" parameter.
-    query.attachment = true;
+    query.attachment = "true";
   }
   return query;
 }

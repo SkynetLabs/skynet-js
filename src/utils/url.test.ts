@@ -7,14 +7,14 @@ const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 
 describe("addUrlQuery", () => {
-  const parts: Array<[string, Record<string, unknown>, string]> = [
+  const parts: Array<[string, { [key: string]: string | undefined }, string]> = [
     [portalUrl, { filename: "test" }, `${portalUrl}/?filename=test`],
-    [portalUrl, { attachment: true }, `${portalUrl}/?attachment=true`],
-    [`${portalUrl}/path`, { download: true }, `${portalUrl}/path?download=true`],
-    [`${portalUrl}/path/`, { download: true }, `${portalUrl}/path/?download=true`],
-    [`${portalUrl}/skynet/`, { foo: 1, bar: 2 }, `${portalUrl}/skynet/?foo=1&bar=2`],
-    [`${portalUrl}/`, { attachment: true }, `${portalUrl}/?attachment=true`],
-    [`${portalUrl}?foo=bar`, { attachment: true }, `${portalUrl}/?foo=bar&attachment=true`],
+    [portalUrl, { attachment: "true" }, `${portalUrl}/?attachment=true`],
+    [`${portalUrl}/path`, { download: "true" }, `${portalUrl}/path?download=true`],
+    [`${portalUrl}/path/`, { download: "true" }, `${portalUrl}/path/?download=true`],
+    [`${portalUrl}/skynet/`, { foo: "1", bar: "2" }, `${portalUrl}/skynet/?foo=1&bar=2`],
+    [`${portalUrl}/`, { attachment: "true" }, `${portalUrl}/?attachment=true`],
+    [`${portalUrl}?foo=bar`, { attachment: "true" }, `${portalUrl}/?foo=bar&attachment=true`],
     [`${portalUrl}/?attachment=true`, { foo: "bar" }, `${portalUrl}/?attachment=true&foo=bar`],
     [`${portalUrl}#foobar`, { foo: "bar" }, `${portalUrl}/?foo=bar#foobar`],
   ];

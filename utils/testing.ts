@@ -1,3 +1,5 @@
+/* istanbul ignore file: Test utils, coverage does not matter */
+
 import parse from "url-parse";
 import { trimForwardSlash } from "../src/utils/string";
 

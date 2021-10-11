@@ -84,7 +84,7 @@ export type RequestConfig = CustomClientOptions & {
   url?: string;
   method?: Method;
   headers?: Headers;
-  query?: Record<string, unknown>;
+  query?: { [key: string]: string | undefined };
   extraPath?: string;
   responseType?: ResponseType;
   transformRequest?: (data: unknown) => string;
@@ -328,7 +328,7 @@ export async function buildRequestUrl(
   endpointPath: string,
   url?: string,
   extraPath?: string,
-  query?: Record<string, unknown>
+  query?: { [key: string]: string | undefined }
 ): Promise<string> {
   // Build the URL.
   if (!url) {

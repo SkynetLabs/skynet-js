@@ -25,15 +25,6 @@ expect.extend({
   },
 });
 
-describe("toEqualUint8Array", () => {
-  it("should correctly check whether uint8arrays are equal", () => {
-    expect(new Uint8Array([0])).toEqualUint8Array(new Uint8Array([0]));
-    expect(new Uint8Array([1, 1, 0])).toEqualUint8Array(new Uint8Array([1, 1, 0]));
-    expect(new Uint8Array([1, 0, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0]));
-    expect(new Uint8Array([1, 1, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0, 0]));
-  });
-});
-
 describe("encodeBigint", () => {
   const bigints: Array<[bigint, number[]]> = [
     [BigInt(0), [0, 0, 0, 0, 0, 0, 0, 0]],
