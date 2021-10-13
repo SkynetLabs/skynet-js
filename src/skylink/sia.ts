@@ -1,6 +1,7 @@
 import { hashAll } from "../crypto";
 import { decodeSkylinkBase64, encodeSkylinkBase64, encodePrefixedBytes, decodeSkylinkBase32 } from "../utils/encoding";
-import { hexToUint8Array, stringToUint8ArrayUtf8 } from "../utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix } from "../utils/string";
+import { URI_SKYNET_PREFIX } from "../utils/url";
 import { validateHexString, validateNumber, validateString, validateUint8ArrayLen } from "../utils/validation";
 
 /**
@@ -17,7 +18,7 @@ export const BASE64_ENCODED_SKYLINK_SIZE = 46;
  * Returned when a string could not be decoded into a Skylink due to it having
  * an incorrect size.
  */
-const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
+export const ERR_SKYLINK_INCORRECT_SIZE = "skylink has incorrect size";
 
 /**
  * The raw size in bytes of the data that gets put into a link.
@@ -49,15 +50,52 @@ export class SiaSkylink {
   toString(): string {
     return encodeSkylinkBase64(this.toBytes());
   }
+
+  /**
+   * Loads the given raw data and returns the result. Based on sl.LoadBytes in
+   * skyd.
+   *
+   * @param data - The raw bytes to load.
+   * @returns - The sia skylink.
+   * @throws - Will throw if the data has an unexpected size.
+   */
+  static fromBytes(data: Uint8Array): SiaSkylink {
+    validateUint8ArrayLen("data", data, "parameter", RAW_SKYLINK_SIZE);
+
+    const view = new DataView(data.buffer);
+
+    // Load the bitfield.
+    const bitfield = view.getUint16(0, true);
+    // TODO: Validate v1 bitfields.
+
+    const merkleRoot = new Uint8Array(32);
+    merkleRoot.set(data.slice(2));
+
+    return new SiaSkylink(bitfield, merkleRoot);
+  }
+
+  /**
+   * Converts from a string and returns the result. Based on sl.LoadString in
+   * skyd.
+   *
+   * @param skylink - The skylink string to load.
+   * @returns - The sia skylink.
+   * @throws - Will throw if the data has an unexpected size.
+   */
+  static fromString(skylink: string): SiaSkylink {
+    const bytes = decodeSkylink(skylink);
+    return SiaSkylink.fromBytes(bytes);
+  }
 }
 
 /**
- * Checks if the given string is a v1 skylink.
+ * Checks if the given string is a V1 skylink.
  *
- * @param s
+ * @param skylink - The skylink to check.
+ * @returns - Whether the skylink is a V1 skylink.
  */
-export function isSkylinkV1(s: string): boolean {
-  const raw = decodeSkylink(s);
+export function isSkylinkV1(skylink: string): boolean {
+  const raw = decodeSkylink(skylink);
 
   // Load and check the bitfield.
   const view = new DataView(raw.buffer);
@@ -67,13 +105,14 @@ export function isSkylinkV1(s: string): boolean {
 }
 
 /**
- * Checks if the given string is a v2 skylink.
+ * Checks if the given string is a V2 skylink.
  *
- * @param s
+ * @param skylink - The skylink to check.
+ * @returns - Whether the skylink is a V2 skylink.
  */
-export function isSkylinkV2(s: string): boolean {
+export function isSkylinkV2(skylink: string): boolean {
   // Decode the base into raw data.
-  const raw = decodeSkylink(s);
+  const raw = decodeSkylink(skylink);
 
   // Load and check the bitfield.
   const view = new DataView(raw.buffer);
@@ -85,7 +124,8 @@ export function isSkylinkV2(s: string): boolean {
 /**
  * Returns a boolean indicating if the Skylink is a V1 skylink
  *
- * @param bitfield
+ * @param bitfield - The bitfield to check.
+ * @returns - Whether the bitfield corresponds to a V1 skylink.
  */
 function isBitfieldSkylinkV1(bitfield: number): boolean {
   return (bitfield & 3) === 0;
@@ -94,12 +134,13 @@ function isBitfieldSkylinkV1(bitfield: number): boolean {
 /**
  * Returns a boolean indicating if the Skylink is a V2 skylink
  *
- * @param bitfield
+ * @param bitfield - The bitfield to check.
+ * @returns - Whether the bitfield corresponds to a V2 skylink.
  */
 function isBitfieldSkylinkV2(bitfield: number): boolean {
   // We compare against 1 here because a V2 skylink only uses the version
   // bits. All other bits should be set to 0.
-  return bitfield == 1;
+  return bitfield === 1;
 }
 
 const SPECIFIER_LEN = 16;
@@ -149,7 +190,7 @@ export function newEd25519PublicKey(publicKey: string): SiaPublicKey {
 }
 
 /**
- * Creates a new v2 skylink. Matches NewSkylinkV2 in skyd.
+ * Creates a new v2 skylink. Matches `NewSkylinkV2` in skyd.
  *
  * @param siaPublicKey - The public key as a SiaPublicKey.
  * @param tweak - The hashed tweak.
@@ -169,8 +210,11 @@ export function newSkylinkV2(siaPublicKey: SiaPublicKey, tweak: Uint8Array): Sia
  *
  * @param encoded - The encoded string.
  * @returns - The decoded raw bytes.
+ * @throws - Will throw if the skylink is not a V1 or V2 skylink string.
  */
 export function decodeSkylink(encoded: string): Uint8Array {
+  encoded = trimUriPrefix(encoded, URI_SKYNET_PREFIX);
+
   let bytes;
   if (encoded.length === BASE32_ENCODED_SKYLINK_SIZE) {
     bytes = decodeSkylinkBase32(encoded);
@@ -181,6 +225,7 @@ export function decodeSkylink(encoded: string): Uint8Array {
   }
 
   // Sanity check the size of the given data.
+  /* istanbul ignore next */
   if (bytes.length != RAW_SKYLINK_SIZE) {
     throw new Error("failed to load skylink data");
   }

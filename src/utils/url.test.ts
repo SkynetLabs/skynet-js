@@ -7,14 +7,14 @@ const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 
 describe("addUrlQuery", () => {
-  const parts: Array<[string, Record<string, unknown>, string]> = [
+  const parts: Array<[string, { [key: string]: string | undefined }, string]> = [
     [portalUrl, { filename: "test" }, `${portalUrl}/?filename=test`],
-    [portalUrl, { attachment: true }, `${portalUrl}/?attachment=true`],
-    [`${portalUrl}/path`, { download: true }, `${portalUrl}/path?download=true`],
-    [`${portalUrl}/path/`, { download: true }, `${portalUrl}/path/?download=true`],
-    [`${portalUrl}/skynet/`, { foo: 1, bar: 2 }, `${portalUrl}/skynet/?foo=1&bar=2`],
-    [`${portalUrl}/`, { attachment: true }, `${portalUrl}/?attachment=true`],
-    [`${portalUrl}?foo=bar`, { attachment: true }, `${portalUrl}/?foo=bar&attachment=true`],
+    [portalUrl, { attachment: "true" }, `${portalUrl}/?attachment=true`],
+    [`${portalUrl}/path`, { download: "true" }, `${portalUrl}/path?download=true`],
+    [`${portalUrl}/path/`, { download: "true" }, `${portalUrl}/path/?download=true`],
+    [`${portalUrl}/skynet/`, { foo: "1", bar: "2" }, `${portalUrl}/skynet/?foo=1&bar=2`],
+    [`${portalUrl}/`, { attachment: "true" }, `${portalUrl}/?attachment=true`],
+    [`${portalUrl}?foo=bar`, { attachment: "true" }, `${portalUrl}/?foo=bar&attachment=true`],
     [`${portalUrl}/?attachment=true`, { foo: "bar" }, `${portalUrl}/?attachment=true&foo=bar`],
     [`${portalUrl}#foobar`, { foo: "bar" }, `${portalUrl}/?foo=bar#foobar`],
   ];
@@ -28,32 +28,47 @@ describe("addUrlQuery", () => {
   );
 });
 
+/**
+ * Adds the given inputs with the expected output as test cases to the array.
+ *
+ * @param cases - The test cases array to append to.
+ * @param inputs - The given inputs.
+ * @param expected - The expected output for all the inputs.
+ */
+function addTestCases(cases: Array<[string, string]>, inputs: Array<string>, expected: string): void {
+  const mappedInputs: Array<[string, string]> = inputs.map((input) => [input, expected]);
+  cases.push(...mappedInputs);
+}
+
 describe("getFullDomainUrlForPortal", () => {
-  const domains = [];
+  const domains: Array<[string, string]> = [];
+  // The casing in the path should not be affected by URL parsing.
+  const path = "/path/File.json";
 
   const expectedUrl = "https://dac.hns.siasky.net";
-  const hnsDomains = combineStrings(["", "sia:", "sia://"], ["dac.hns"], ["", "/"]);
-  domains.push(...hnsDomains.map((domain) => [domain, expectedUrl]));
+  // Test with uppercase to ensure that it is properly converted to lowercase.
+  const hnsDomains = combineStrings(["", "sia:", "sia://", "SIA:", "SIA://"], ["dac.hns", "DAC.HNS"], ["", "/"]);
+  addTestCases(domains, hnsDomains, expectedUrl);
 
-  const expectedPathUrl = `${expectedUrl}/path/file.json`;
-  const hnsPathDomains = combineStrings(hnsDomains, ["/path/file.json"]);
-  domains.push(...hnsPathDomains.map((domain) => [domain, expectedPathUrl]));
+  const expectedPathUrl = `${expectedUrl}${path}`;
+  const hnsPathDomains = combineStrings(hnsDomains, [path]);
+  addTestCases(domains, hnsPathDomains, expectedPathUrl);
 
   const expectedSkylinkUrl = `https://${skylinkBase32}.siasky.net`;
   const skylinkDomains = combineStrings(["", "sia:", "sia://"], [skylinkBase32], ["", "/"]);
-  domains.push(...skylinkDomains.map((domain) => [domain, expectedSkylinkUrl]));
+  addTestCases(domains, skylinkDomains, expectedSkylinkUrl);
 
-  const expectedSkylinkPathUrl = `${expectedSkylinkUrl}/path/file.json`;
-  const skylinkPathDomains = combineStrings(skylinkDomains, ["/path/file.json"]);
-  domains.push(...skylinkPathDomains.map((domain) => [domain, expectedSkylinkPathUrl]));
+  const expectedSkylinkPathUrl = `${expectedSkylinkUrl}${path}`;
+  const skylinkPathDomains = combineStrings(skylinkDomains, [path]);
+  addTestCases(domains, skylinkPathDomains, expectedSkylinkPathUrl);
 
   const expectedLocalhostUrl = `localhost`;
   const localhostDomains = combineStrings(["", "sia:", "sia://"], ["localhost"], ["", "/"]);
-  domains.push(...localhostDomains.map((domain) => [domain, expectedLocalhostUrl]));
+  addTestCases(domains, localhostDomains, expectedLocalhostUrl);
 
-  const expectedLocalhostPathUrl = `${expectedLocalhostUrl}/path/file.json`;
-  const localhostPathDomains = combineStrings(localhostDomains, ["/path/file.json"]);
-  domains.push(...localhostPathDomains.map((domain) => [domain, expectedLocalhostPathUrl]));
+  const expectedLocalhostPathUrl = `${expectedLocalhostUrl}${path}`;
+  const localhostPathDomains = combineStrings(localhostDomains, [path]);
+  addTestCases(domains, localhostPathDomains, expectedLocalhostPathUrl);
 
   it.each(domains)("domain %s should return correctly formed full URL %s", (domain, fullUrl) => {
     const url = getFullDomainUrlForPortal(portalUrl, domain);
@@ -62,37 +77,55 @@ describe("getFullDomainUrlForPortal", () => {
 });
 
 describe("extractDomainForPortal", () => {
-  const urls = [];
+  const urls: Array<[string, string]> = [];
+  // The casing in the path should not be affected by URL parsing.
+  const path = "/path/File.json";
 
   // Add simple HNS domain URLs.
   const expectedDomain = "dac.hns";
-  const hnsUrls = combineStrings(["", "https://"], ["dac.hns.siasky.net"], ["", "/"]);
-  urls.push(...hnsUrls.map((url) => [url, expectedDomain]));
+  // Test with uppercase to ensure that it is properly converted to lowercase by the URL parsing.
+  const hnsUrls = combineStrings(["", "https://", "HTTPS://"], ["dac.hns.siasky.net", "DAC.HNS.SIASKY.NET"], ["", "/"]);
+  addTestCases(urls, hnsUrls, expectedDomain);
 
   // Add HNS domain URLs with a path.
-  const expectedPathDomain = `${expectedDomain}/path/file.json`;
-  const hnsPathUrls = combineStrings(hnsUrls, ["/path/file.json"]);
-  urls.push(...hnsPathUrls.map((url) => [url, expectedPathDomain]));
+  const expectedPathDomain = `${expectedDomain}${path}`;
+  const hnsPathUrls = combineStrings(hnsUrls, [path]);
+  addTestCases(urls, hnsPathUrls, expectedPathDomain);
 
   // Add skylink domain URLs.
   const expectedSkylinkDomain = skylinkBase32;
   const skylinkUrls = combineStrings(["", "https://"], [`${skylinkBase32}.siasky.net`], ["", "/"]);
-  urls.push(...skylinkUrls.map((url) => [url, expectedSkylinkDomain]));
+  addTestCases(urls, skylinkUrls, expectedSkylinkDomain);
 
   // Add skylink domain URLs with a path.
-  const expectedSkylinkPathDomain = `${expectedSkylinkDomain}/path/file.json`;
-  const skylinkPathUrls = combineStrings(skylinkUrls, ["/path/file.json"]);
-  urls.push(...skylinkPathUrls.map((url) => [url, expectedSkylinkPathDomain]));
+  const expectedSkylinkPathDomain = `${expectedSkylinkDomain}${path}`;
+  const skylinkPathUrls = combineStrings(skylinkUrls, [path]);
+  addTestCases(urls, skylinkPathUrls, expectedSkylinkPathDomain);
 
   // Add localhost domain URLs.
   const expectedLocalhostDomain = "localhost";
   const localhostUrls = combineStrings(["", "https://"], ["localhost"], ["", "/"]);
-  urls.push(...localhostUrls.map((url) => [url, expectedLocalhostDomain]));
+  addTestCases(urls, localhostUrls, expectedLocalhostDomain);
 
   // Add localhost domain URLs with a path.
-  const expectedLocalhostPathDomain = `${expectedLocalhostDomain}/path/file.json`;
-  const localhostPathUrls = combineStrings(localhostUrls, ["/path/file.json"]);
-  urls.push(...localhostPathUrls.map((url) => [url, expectedLocalhostPathDomain]));
+  const expectedLocalhostPathDomain = `${expectedLocalhostDomain}${path}`;
+  const localhostPathUrls = combineStrings(localhostUrls, [path]);
+  addTestCases(urls, localhostPathUrls, expectedLocalhostPathDomain);
+
+  // Add traditional URLs.
+  const expectedTraditionalUrlDomain = "traditionalurl.com";
+  const traditionalUrls = combineStrings(["", "https://"], ["traditionalUrl.com"], ["", "/"]);
+  addTestCases(urls, traditionalUrls, expectedTraditionalUrlDomain);
+
+  // Add traditional URLs with a path.
+  const expectedTraditionalUrlPathDomain = `${expectedTraditionalUrlDomain}${path}`;
+  const traditionalPathUrls = combineStrings(traditionalUrls, [path]);
+  addTestCases(urls, traditionalPathUrls, expectedTraditionalUrlPathDomain);
+
+  // Add traditional URLs with subdomains.
+  const expectedTraditionalUrlSubdomain = "subdomain.traditionalurl.com";
+  const traditionalSubdomainUrls = combineStrings(["", "https://"], ["subdomain.traditionalUrl.com"], ["", "/"]);
+  addTestCases(urls, traditionalSubdomainUrls, expectedTraditionalUrlSubdomain);
 
   it.each(urls)("should extract from full url %s the domain %s", (fullDomain, domain) => {
     const receivedDomain = extractDomainForPortal(portalUrl, fullDomain);
@@ -115,7 +148,7 @@ describe("makeUrl", () => {
   });
 
   it("Should throw if no args provided", () => {
-    expect(() => makeUrl()).toThrowError("Expected parameter 'args' to be non-empty, was ''");
+    expect(() => makeUrl()).toThrowError("Expected parameter 'args' to be non-empty, was type 'object', value ''");
   });
 });
 

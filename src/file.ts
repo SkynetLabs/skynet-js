@@ -1,14 +1,26 @@
 import { SkynetClient } from "./client";
-import { deriveDiscoverableTweak } from "./mysky/tweak";
-import { defaultGetEntryOptions } from "./registry";
-import { CustomGetJSONOptions, defaultGetJSONOptions, JSONResponse } from "./skydb";
+import { EntryData } from "./mysky";
+import {
+  decryptJSONFile,
+  deriveEncryptedFileKeyEntropy,
+  deriveEncryptedFileTweak,
+  EncryptedJSONResponse,
+} from "./mysky/encrypted_files";
+import { deriveDiscoverableFileTweak } from "./mysky/tweak";
+import { CustomGetEntryOptions, DEFAULT_GET_ENTRY_OPTIONS, getEntryLink as registryGetEntryLink } from "./registry";
+import { CustomGetJSONOptions, DEFAULT_GET_JSON_OPTIONS, JSONResponse } from "./skydb";
 import { validateOptionalObject, validateString } from "./utils/validation";
 
+// ====
+// JSON
+// ====
+
 /**
- * Gets Discoverable JSON at the given data path for the given public user ID.
+ * Gets Discoverable JSON set with MySky at the given data path for the given
+ * public user ID.
  *
  * @param this - SkynetClient
- * @param userID - The public user ID.
+ * @param userID - The MySky public user ID.
  * @param path - The data path.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the json data as well as the skylink for the data.
@@ -21,27 +33,31 @@ export async function getJSON(
 ): Promise<JSONResponse> {
   validateString("userID", userID, "parameter");
   validateString("path", path, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
   const opts = {
-    ...defaultGetJSONOptions,
+    ...DEFAULT_GET_JSON_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
 
-  const dataKey = deriveDiscoverableTweak(path);
+  const dataKey = deriveDiscoverableFileTweak(path);
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
   return await this.db.getJSON(userID, dataKey, opts);
 }
 
+// =====
+// Entry
+// =====
+
 /**
- * Gets the entry link for the entry at the given data path, for the given
- * public user ID. This is a v2 skylink. This link stays the same even if the
- * content at the entry changes.
+ * Gets the entry link for the entry set with MySky at the given data path, for
+ * the given public user ID. This is a v2 skylink. This link stays the same even
+ * if the content at the entry changes.
  *
  * @param this - SkynetClient
- * @param userID - The public user ID.
+ * @param userID - The MySky public user ID.
  * @param path - The data path.
  * @returns - The entry link.
  */
@@ -49,9 +65,89 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
   validateString("userID", userID, "parameter");
   validateString("path", path, "parameter");
 
-  const dataKey = deriveDiscoverableTweak(path);
-  const opts = defaultGetEntryOptions;
+  const dataKey = deriveDiscoverableFileTweak(path);
+  // Do not hash the tweak anymore.
+  const opts = { ...DEFAULT_GET_ENTRY_OPTIONS, hashedDataKeyHex: true };
+
+  return registryGetEntryLink(userID, dataKey, opts);
+}
+
+/**
+ * Gets the entry data for the entry set with MySky at the given data path, for
+ * the given public user ID.
+ *
+ * @param this - SkynetClient
+ * @param userID - The MySky public user ID.
+ * @param path - The data path.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry data.
+ */
+export async function getEntryData(
+  this: SkynetClient,
+  userID: string,
+  path: string,
+  customOptions?: CustomGetEntryOptions
+): Promise<EntryData> {
+  validateString("userID", userID, "parameter");
+  validateString("path", path, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
+
+  const opts = {
+    ...DEFAULT_GET_ENTRY_OPTIONS,
+    ...this.customOptions,
+    ...customOptions,
+  };
+
+  const dataKey = deriveDiscoverableFileTweak(path);
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-  return await this.registry.getEntryLink(userID, dataKey, opts);
+  return await this.db.getEntryData(userID, dataKey, opts);
+}
+
+// ===============
+// Encrypted Files
+// ===============
+
+/**
+ * Gets Encrypted JSON set with MySky for the given file path seed for the given
+ * public user ID.
+ *
+ * @param this - SkynetClient
+ * @param userID - The MySky public user ID.
+ * @param pathSeed - The share-able secret file path seed.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - An object containing the decrypted json data.
+ */
+export async function getJSONEncrypted(
+  this: SkynetClient,
+  userID: string,
+  pathSeed: string,
+  // TODO: Take a new options type?
+  customOptions?: CustomGetJSONOptions
+): Promise<EncryptedJSONResponse> {
+  validateString("userID", userID, "parameter");
+  // Full validation of the path seed is in `deriveEncryptedFileKeyEntropy` below.
+  validateString("pathSeed", pathSeed, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
+
+  const opts = {
+    ...DEFAULT_GET_JSON_OPTIONS,
+    ...this.customOptions,
+    ...customOptions,
+    hashedDataKeyHex: true, // Do not hash the tweak anymore.
+  };
+
+  // Validate the path seed and get the key.
+  const key = deriveEncryptedFileKeyEntropy(pathSeed);
+
+  // Fetch the raw encrypted JSON data.
+  const dataKey = deriveEncryptedFileTweak(pathSeed);
+  const { data } = await this.db.getRawBytes(userID, dataKey, opts);
+  if (data === null) {
+    return { data: null };
+  }
+
+  const json = decryptJSONFile(data, key);
+
+  return { data: json };
 }

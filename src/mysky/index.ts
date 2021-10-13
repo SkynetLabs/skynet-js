@@ -1,3 +1,5 @@
+/* istanbul ignore file: Much of this functionality is only testable from a browser */
+
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
@@ -11,36 +13,91 @@ import {
   Permission,
   PermType,
 } from "skynet-mysky-utils";
-import type { CustomUserIDOptions } from "skynet-mysky-utils";
 
-import { Connector, CustomConnectorOptions, defaultConnectorOptions } from "./connector";
+import { Connector, CustomConnectorOptions, DEFAULT_CONNECTOR_OPTIONS } from "./connector";
 import { SkynetClient } from "../client";
 import { DacLibrary } from "./dac";
-import { defaultGetEntryOptions, defaultSetEntryOptions, RegistryEntry } from "../registry";
 import {
-  defaultGetJSONOptions,
-  defaultSetJSONOptions,
+  CustomGetEntryOptions,
+  DEFAULT_GET_ENTRY_OPTIONS,
+  DEFAULT_SET_ENTRY_OPTIONS,
+  getEntryLink,
+  RegistryEntry,
+} from "../registry";
+import {
+  DEFAULT_GET_JSON_OPTIONS,
+  DEFAULT_SET_JSON_OPTIONS,
   CustomGetJSONOptions,
   CustomSetJSONOptions,
   getOrCreateRegistryEntry,
-  JsonData,
   JSONResponse,
-  getDataLinkRegistryEntry,
-  getDeletionRegistryEntry,
+  getNextRegistryEntry,
+  getOrCreateRawBytesRegistryEntry,
+  validateEntryData,
+  CustomSetEntryDataOptions,
+  DEFAULT_SET_ENTRY_DATA_OPTIONS,
+  DELETION_ENTRY_DATA,
 } from "../skydb";
 import { Signature } from "../crypto";
-import { deriveDiscoverableTweak } from "./tweak";
+import { deriveDiscoverableFileTweak } from "./tweak";
 import { popupCenter } from "./utils";
 import { extractOptions } from "../utils/options";
-import { validateObject, validateOptionalObject, validateString } from "../utils/validation";
+import { JsonData } from "../utils/types";
+import {
+  validateBoolean,
+  validateObject,
+  validateOptionalObject,
+  validateSkylinkString,
+  validateString,
+  validateUint8Array,
+} from "../utils/validation";
+import { decodeSkylink } from "../skylink/sia";
+import {
+  decryptJSONFile,
+  deriveEncryptedFileKeyEntropy,
+  deriveEncryptedFileTweak,
+  EncryptedJSONResponse,
+  ENCRYPTED_JSON_RESPONSE_VERSION,
+  encryptJSONFile,
+} from "./encrypted_files";
 
-export const mySkyDomain = "skynet-mysky.hns";
-export const mySkyDevDomain = "skynet-mysky-dev.hns";
-export const mySkyAlphaDomain = "sandbridge.hns";
+/**
+ * The domain for MySky.
+ */
+export const MYSKY_DOMAIN = "skynet-mysky.hns";
+
+/**
+ * @deprecated please use MYSKY_DOMAIN.
+ */
+export const mySkyDomain = MYSKY_DOMAIN;
+
+/**
+ * The domain for MySky dev.
+ */
+export const MYSKY_DEV_DOMAIN = "skynet-mysky-dev.hns";
+
+/**
+ * @deprecated please use MYSKY_DEV_DOMAIN.
+ */
+export const mySkyDevDomain = MYSKY_DEV_DOMAIN;
+
+/**
+ * The domain for MySky alpha. Intentionally not exported in index file.
+ */
+export const MYSKY_ALPHA_DOMAIN = "sandbridge.hns";
+
+/**
+ * The maximum length for entry data when setting entry data.
+ */
+export const MAX_ENTRY_LENGTH = 70;
 
 const mySkyUiRelativeUrl = "ui.html";
 const mySkyUiTitle = "MySky UI";
-const [mySkyUiW, mySkyUiH] = [600, 600];
+const [mySkyUiW, mySkyUiH] = [640, 750];
+
+export type EntryData = {
+  data: Uint8Array | null;
+};
 
 /**
  * Loads MySky. Note that this does not log in the user.
@@ -81,28 +138,28 @@ export class MySky {
   }
 
   static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
-    const opts = { ...defaultConnectorOptions, ...customOptions };
+    const opts = { ...DEFAULT_CONNECTOR_OPTIONS, ...customOptions };
 
     // Enforce singleton.
     if (MySky.instance) {
       return MySky.instance;
     }
 
-    let domain = mySkyDomain;
+    let domain = MYSKY_DOMAIN;
     if (opts.alpha) {
-      domain = mySkyAlphaDomain;
+      domain = MYSKY_ALPHA_DOMAIN;
     } else if (opts.dev) {
-      domain = mySkyDevDomain;
+      domain = MYSKY_DEV_DOMAIN;
     }
     const connector = await Connector.init(client, domain, customOptions);
 
     const hostDomain = await client.extractDomain(window.location.hostname);
     const permissions = [];
     if (skappDomain) {
-      // TODO: Are these permissions correct?
-      const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Read);
-      const perm2 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Write);
-      permissions.push(perm1, perm2);
+      const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Discoverable, PermType.Write);
+      const perm2 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Read);
+      const perm3 = new Permission(hostDomain, skappDomain, PermCategory.Hidden, PermType.Write);
+      permissions.push(perm1, perm2, perm3);
     }
 
     MySky.instance = new MySky(connector, permissions, hostDomain);
@@ -112,6 +169,20 @@ export class MySky {
   // ==========
   // Public API
   // ==========
+
+  /**
+   * Checks if the current browser is supported by MySky.
+   *
+   * @returns - A promise with a boolean indicating whether the browser is supported and, if not, a string containing the user-friendly error message.
+   */
+  static async isBrowserSupported(): Promise<[boolean, string]> {
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      return [false, "MySky is currently not supported in Safari browsers."];
+    }
+
+    return [true, ""];
+  }
 
   /**
    * Loads the given DACs.
@@ -144,18 +215,20 @@ export class MySky {
     this.pendingPermissions = failedPermissions;
 
     const loggedIn = seedFound && failedPermissions.length === 0;
-    this.handleLogin(loggedIn);
+    await this.handleLogin(loggedIn);
     return loggedIn;
   }
 
   /**
    * Destroys the mysky connection by:
    *
-   * 1. Destroying the connected DACs,
+   * 1. Destroying the connected DACs.
    *
-   * 2. Closing the connection,
+   * 2. Closing the connection.
    *
-   * 3. Closing the child iframe
+   * 3. Closing the child iframe.
+   *
+   * @throws - Will throw if there is an unexpected DOM error.
    */
   async destroy(): Promise<void> {
     // TODO: For all connected dacs, send a destroy call.
@@ -166,8 +239,13 @@ export class MySky {
     this.connector.connection.close();
 
     // Close the child iframe.
-    if (this.connector.childFrame) {
-      this.connector.childFrame.parentNode!.removeChild(this.connector.childFrame);
+    const frame = this.connector.childFrame;
+    if (frame) {
+      // The parent node should always exist. Sanity check + make TS happy.
+      if (!frame.parentNode) {
+        throw new Error("'childFrame.parentNode' was not set");
+      }
+      frame.parentNode.removeChild(frame);
     }
   }
 
@@ -199,7 +277,7 @@ export class MySky {
       try {
         // Launch the UI.
 
-        uiWindow = await this.launchUI();
+        uiWindow = this.launchUI();
         uiConnection = await this.connectUi(uiWindow);
 
         // Send the UI the list of required permissions.
@@ -240,33 +318,35 @@ export class MySky {
       });
 
     const loggedIn = seedFound && this.pendingPermissions.length === 0;
-    this.handleLogin(loggedIn);
+    await this.handleLogin(loggedIn);
     return loggedIn;
   }
 
-  async userID(opts?: CustomUserIDOptions): Promise<string> {
-    return await this.connector.connection.remoteHandle().call("userID", opts);
+  async userID(): Promise<string> {
+    return await this.connector.connection.remoteHandle().call("userID");
   }
 
   /**
-   * Gets Discoverable JSON at the given path through MySky, if the user has given Read permissions to do so.
+   * Gets Discoverable JSON at the given path through MySky, if the user has
+   * given Discoverable Read permissions to do so.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the json data as well as the skylink for the data.
+   * @throws - Will throw if the user does not have Discoverable Read permission on the path.
    */
   async getJSON(path: string, customOptions?: CustomGetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultGetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultGetJSONOptions,
+      ...DEFAULT_GET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     return await this.connector.client.db.getJSON(publicKey, dataKey, opts);
@@ -283,44 +363,68 @@ export class MySky {
     validateString("path", path, "parameter");
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
-    const opts = defaultGetEntryOptions;
-    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+    const dataKey = deriveDiscoverableFileTweak(path);
+    // Do not hash the tweak anymore.
+    const opts = { ...DEFAULT_GET_ENTRY_OPTIONS, hashedDataKeyHex: true };
 
-    return await this.connector.client.registry.getEntryLink(publicKey, dataKey, opts);
+    return getEntryLink(publicKey, dataKey, opts);
   }
 
   /**
-   * Sets Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
+   * Sets Discoverable JSON at the given path through MySky, if the user has
+   * given Discoverable Write permissions to do so.
    *
    * @param path - The data path.
    * @param json - The json to set.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An object containing the json data as well as the skylink for the data.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
   async setJSON(path: string, json: JsonData, customOptions?: CustomSetJSONOptions): Promise<JSONResponse> {
     validateString("path", path, "parameter");
     validateObject("json", json, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_SET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     const [entry, dataLink] = await getOrCreateRegistryEntry(this.connector.client, publicKey, dataKey, json, opts);
 
     const signature = await this.signRegistryEntry(entry, path);
 
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
 
     return { data: json, dataLink };
+  }
+
+  /**
+   * Deletes Discoverable JSON at the given path through MySky, if the user has
+   * given Discoverable Write permissions to do so.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An empty promise.
+   * @throws - Will throw if the revision is already the maximum value.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+   */
+  async deleteJSON(path: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
+    // Validation is done below in `setEntryData`.
+
+    const opts = {
+      ...DEFAULT_SET_ENTRY_DATA_OPTIONS,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    await this.setEntryData(path, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
   }
 
   /**
@@ -330,58 +434,210 @@ export class MySky {
    * @param dataLink - The data link to set at the path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An empty promise.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
-  async setDataLink(path: string, dataLink: string, customOptions?: CustomSetJSONOptions): Promise<void> {
+  async setDataLink(path: string, dataLink: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
+    const parsedSkylink = validateSkylinkString("dataLink", dataLink, "parameter");
+    // Rest of validation is done below in `setEntryData`.
+
+    const data = decodeSkylink(parsedSkylink);
+
+    await this.setEntryData(path, data, customOptions);
+  }
+
+  /**
+   * Gets the raw registry entry data for the given path, if the user has given
+   * Discoverable Read permissions.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - The entry data.
+   * @throws - Will throw if the user does not have Discoverable Read permission on the path.
+   */
+  async getEntryData(path: string, customOptions?: CustomGetEntryOptions): Promise<EntryData> {
     validateString("path", path, "parameter");
-    validateString("dataLink", dataLink, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_GET_ENTRY_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
 
     const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const entry = await getDataLinkRegistryEntry(this.connector.client, publicKey, dataKey, dataLink, opts);
-
-    const signature = await this.signRegistryEntry(entry, path);
-
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+    return await this.connector.client.db.getEntryData(publicKey, dataKey, opts);
   }
 
   /**
-   * Deletes Discoverable JSON at the given path through MySky, if the user has given Write permissions to do so.
+   * Sets the raw registry entry data at the given path, if the user has given Discoverable
+   * Write permissions.
+   *
+   * @param path - The data path.
+   * @param data - The raw entry data to set.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - The entry data.
+   * @throws - Will throw if the length of the data is > 70 bytes.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+   */
+  async setEntryData(path: string, data: Uint8Array, customOptions?: CustomSetEntryDataOptions): Promise<EntryData> {
+    validateString("path", path, "parameter");
+    validateUint8Array("data", data, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_DATA_OPTIONS);
+
+    const opts = {
+      ...DEFAULT_SET_ENTRY_DATA_OPTIONS,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+    };
+
+    validateEntryData(data, opts.allowDeletionEntryData);
+
+    const publicKey = await this.userID();
+    const dataKey = deriveDiscoverableFileTweak(path);
+    opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+    const entry = await getNextRegistryEntry(this.connector.client, publicKey, dataKey, data, getEntryOpts);
+
+    const signature = await this.signRegistryEntry(entry, path);
+
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+
+    return { data: entry.data };
+  }
+
+  /**
+   * Deletes the entry data at the given path, if the user has given Discoverable
+   * Write permissions.
    *
    * @param path - The data path.
    * @param [customOptions] - Additional settings that can optionally be set.
    * @returns - An empty promise.
-   * @throws - Will throw if the revision is already the maximum value.
+   * @throws - Will throw if the user does not have Discoverable Write permission on the path.
    */
-  async deleteJSON(path: string, customOptions?: CustomSetJSONOptions): Promise<void> {
+  async deleteEntryData(path: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
+    // Validation is done in `setEntryData`.
+
+    await this.setEntryData(path, DELETION_ENTRY_DATA, { ...customOptions, allowDeletionEntryData: true });
+  }
+
+  // ===============
+  // Encrypted Files
+  // ===============
+
+  /**
+   * Lets you get the share-able path seed, which can be passed to
+   * file.getJSONEncrypted. Requires Hidden Read permission on the path.
+   *
+   * @param path - The given path.
+   * @param isDirectory - Whether the path is a directory.
+   * @returns - The seed for the path.
+   * @throws - Will throw if the user does not have Hidden Read permission on the path.
+   * @deprecated - This function has been deprecated in favor of `getEncryptedPathSeed`.
+   */
+  async getEncryptedFileSeed(path: string, isDirectory: boolean): Promise<string> {
+    return await this.getEncryptedPathSeed(path, isDirectory);
+  }
+
+  /**
+   * Lets you get the share-able path seed, which can be passed to
+   * file.getJSONEncrypted. Requires Hidden Read permission on the path.
+   *
+   * @param path - The given path.
+   * @param isDirectory - Whether the path is a directory.
+   * @returns - The seed for the path.
+   * @throws - Will throw if the user does not have Hidden Read permission on the path.
+   */
+  async getEncryptedPathSeed(path: string, isDirectory: boolean): Promise<string> {
     validateString("path", path, "parameter");
-    validateOptionalObject("customOptions", customOptions, "parameter", defaultSetJSONOptions);
+    validateBoolean("isDirectory", isDirectory, "parameter");
+
+    return await this.connector.connection.remoteHandle().call("getEncryptedFileSeed", path, isDirectory);
+  }
+
+  /**
+   * Gets Encrypted JSON at the given path through MySky, if the user has given
+   * Hidden Read permissions to do so.
+   *
+   * @param path - The data path.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An object containing the decrypted json data.
+   * @throws - Will throw if the user does not have Hidden Read permission on the path.
+   */
+  async getJSONEncrypted(path: string, customOptions?: CustomGetJSONOptions): Promise<EncryptedJSONResponse> {
+    validateString("path", path, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
     const opts = {
-      ...defaultSetJSONOptions,
+      ...DEFAULT_GET_JSON_OPTIONS,
+      ...this.connector.client.customOptions,
+      ...customOptions,
+      hashedDataKeyHex: true, // Do not hash the tweak anymore.
+    };
+
+    // Call MySky which checks for read permissions on the path.
+    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedPathSeed(path, false)]);
+
+    // Fetch the raw encrypted JSON data.
+    const dataKey = deriveEncryptedFileTweak(pathSeed);
+    const { data } = await this.connector.client.db.getRawBytes(publicKey, dataKey, opts);
+    if (data === null) {
+      return { data: null };
+    }
+
+    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
+    const json = decryptJSONFile(data, encryptionKey);
+
+    return { data: json };
+  }
+
+  /**
+   * Sets Encrypted JSON at the given path through MySky, if the user has given
+   * Hidden Write permissions to do so.
+   *
+   * @param path - The data path.
+   * @param json - The json to encrypt and set.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - An object containing the original json data.
+   * @throws - Will throw if the user does not have Hidden Write permission on the path.
+   */
+  async setJSONEncrypted(
+    path: string,
+    json: JsonData,
+    customOptions?: CustomSetJSONOptions
+  ): Promise<EncryptedJSONResponse> {
+    validateString("path", path, "parameter");
+    validateObject("json", json, "parameter");
+    validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_JSON_OPTIONS);
+
+    const opts = {
+      ...DEFAULT_SET_JSON_OPTIONS,
       ...this.connector.client.customOptions,
       ...customOptions,
     };
 
-    const publicKey = await this.userID();
-    const dataKey = deriveDiscoverableTweak(path);
+    // Call MySky which checks for read permissions on the path.
+    const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedPathSeed(path, false)]);
+    const dataKey = deriveEncryptedFileTweak(pathSeed);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
+    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
-    const entry = await getDeletionRegistryEntry(this.connector.client, publicKey, dataKey, opts);
+    // Pad and encrypt json file.
+    const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);
 
-    const signature = await this.signRegistryEntry(entry, path);
+    const entry = await getOrCreateRawBytesRegistryEntry(this.connector.client, publicKey, dataKey, data, opts);
 
-    const setEntryOpts = extractOptions(opts, defaultSetEntryOptions);
+    // Call MySky which checks for write permissions on the path.
+    const signature = await this.signEncryptedRegistryEntry(entry, path);
+
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+
+    return { data: json };
   }
 
   // ================
@@ -393,7 +649,7 @@ export class MySky {
     window.dispatchEvent(event);
   }
 
-  protected async launchUI(): Promise<Window> {
+  protected launchUI(): Window {
     const mySkyUrl = new URL(this.connector.url);
     mySkyUrl.pathname = mySkyUiRelativeUrl;
     const uiUrl = mySkyUrl.toString();
@@ -437,18 +693,29 @@ export class MySky {
 
     // Add DAC permissions.
     const perms = dac.getPermissions();
-    this.addPermissions(...perms);
+    await this.addPermissions(...perms);
   }
 
-  protected handleLogin(loggedIn: boolean): void {
+  protected async handleLogin(loggedIn: boolean): Promise<void> {
     if (loggedIn) {
-      for (const dac of this.dacs) {
-        dac.onUserLogin();
-      }
+      await Promise.all(
+        this.dacs.map(async (dac) => {
+          try {
+            await dac.onUserLogin();
+          } catch (error) {
+            // Don't throw on error, just print a console warning.
+            console.warn(error);
+          }
+        })
+      );
     }
   }
 
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
     return await this.connector.connection.remoteHandle().call("signRegistryEntry", entry, path);
+  }
+
+  protected async signEncryptedRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
+    return await this.connector.connection.remoteHandle().call("signEncryptedRegistryEntry", entry, path);
   }
 }

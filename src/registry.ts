@@ -4,10 +4,10 @@ import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
 import { assertUint64 } from "./utils/number";
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { hexToUint8Array, isHexString, toHexString, trimPrefix } from "./utils/string";
-import { addUrlQuery, makeUrl } from "./utils/url";
-import { hashDataKey, hashRegistryEntry, Signature } from "./crypto";
+import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
+import { ensurePrefix, hexToUint8Array, isHexString, toHexString, trimPrefix, trimUriPrefix } from "./utils/string";
+import { addUrlQuery, makeUrl, URI_SKYNET_PREFIX } from "./utils/url";
+import { hashDataKey, hashRegistryEntry, PUBLIC_KEY_LENGTH, Signature, SIGNATURE_LENGTH } from "./crypto";
 import {
   throwValidationError,
   validateBigint,
@@ -16,9 +16,12 @@ import {
   validateOptionalObject,
   validateString,
   validateUint8Array,
+  validateUint8ArrayLen,
 } from "./utils/validation";
 import { newEd25519PublicKey, newSkylinkV2 } from "./skylink/sia";
 import { formatSkylink } from "./skylink/format";
+import { toByteArray } from "base64-js";
+import { encodeSkylinkBase64 } from "./utils/encoding";
 
 /**
  * Custom get entry options.
@@ -42,29 +45,56 @@ export type CustomSetEntryOptions = BaseCustomOptions & {
   hashedDataKeyHex?: boolean;
 };
 
-export const defaultGetEntryOptions = {
-  ...defaultBaseOptions,
+/**
+ * Custom validate registry proof options.
+ *
+ * @property [resolverSkylink] - The returned resolver skylink to verify.
+ * @property [skylink] - The returned resolved skylink to verify.
+ */
+export type CustomValidateRegistryProofOptions = {
+  resolverSkylink?: string;
+  skylink?: string;
+};
+
+export const DEFAULT_GET_ENTRY_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
   endpointGetEntry: "/skynet/registry",
   hashedDataKeyHex: false,
 };
 
-export const defaultSetEntryOptions = {
-  ...defaultBaseOptions,
+export const DEFAULT_SET_ENTRY_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
   endpointSetEntry: "/skynet/registry",
   hashedDataKeyHex: false,
 };
 
-export const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
+const DEFAULT_GET_ENTRY_TIMEOUT = 5; // 5 seconds
 
 /**
  * Regex for JSON revision value without quotes.
  */
-export const regexRevisionNoQuotes = /"revision":\s*([0-9]+)/;
+export const REGEX_REVISION_NO_QUOTES = /"revision":\s*([0-9]+)/;
+
+/**
+ * The type of an entry that doesn't contain a pubkey. All of the data is
+ * considered to be arbitrary.
+ */
+export const REGISTRY_TYPE_WITHOUT_PUBKEY = 1;
+
+/**
+ * The type of an entry which is expected to have a RegistryPubKeyHashSize long
+ * hash of a host's pubkey at the beginning of its data. The key is used to
+ * determine whether an entry is considered a primary or secondary entry on a
+ * host.
+ */
+export const REGISTRY_TYPE_WITH_PUBKEY = 2;
 
 /**
  * Regex for JSON revision value with quotes.
  */
-const regexRevisionWithQuotes = /"revision":\s*"([0-9]+)"/;
+const REGEX_REVISION_WITH_QUOTES = /"revision":\s*"([0-9]+)"/;
+
+const ED25519_PREFIX = "ed25519:";
 
 /**
  * Registry entry.
@@ -77,6 +107,21 @@ export type RegistryEntry = {
   dataKey: string;
   data: Uint8Array;
   revision: bigint;
+};
+
+/**
+ * A single registry proof entry in a registry proof chain.
+ */
+export type RegistryProofEntry = {
+  data: string;
+  revision: number;
+  datakey: string;
+  publickey: {
+    algorithm: string;
+    key: string;
+  };
+  signature: string;
+  type: number;
 };
 
 /**
@@ -109,7 +154,7 @@ export async function getEntry(
   // Validation is done in `getEntryUrl`.
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -130,7 +175,7 @@ export async function getEntry(
           return {};
         }
         // Change the revision value from a JSON integer to a string.
-        data = data.replace(regexRevisionNoQuotes, '"revision":"$1"');
+        data = data.replace(REGEX_REVISION_NO_QUOTES, '"revision":"$1"');
         // Try converting the JSON data to an object.
         try {
           return JSON.parse(data);
@@ -141,7 +186,7 @@ export async function getEntry(
       },
     });
   } catch (err) {
-    return handleGetEntryErrResponse(err);
+    return handleGetEntryErrResponse(err as AxiosError);
   }
 
   // Sanity check.
@@ -173,18 +218,19 @@ export async function getEntry(
   };
 
   // Try verifying the returned data.
+  const signatureBytes = new Uint8Array(signedEntry.signature);
+  const publicKeyBytes = hexToUint8Array(publicKey);
+  // Verify length of signature and public key.
+  validateUint8ArrayLen("signatureArray", signatureBytes, "response value", SIGNATURE_LENGTH);
+  validateUint8ArrayLen("publicKeyArray", publicKeyBytes, "response value", PUBLIC_KEY_LENGTH / 2);
   if (
-    sign.detached.verify(
-      hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex),
-      new Uint8Array(signedEntry.signature),
-      hexToUint8Array(publicKey)
-    )
+    sign.detached.verify(hashRegistryEntry(signedEntry.entry, opts.hashedDataKeyHex), signatureBytes, publicKeyBytes)
   ) {
     return signedEntry;
   }
 
   // The response could not be verified.
-  throw new Error("could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
+  throw new Error("Could not verify signature from retrieved, signed registry entry -- possible corrupted entry");
 }
 
 /**
@@ -206,7 +252,7 @@ export async function getEntryUrl(
   // Validation is done in `getEntryUrlForPortal`.
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -233,18 +279,14 @@ export function getEntryUrlForPortal(
   customOptions?: CustomGetEntryOptions
 ): string {
   validateString("portalUrl", portalUrl, "parameter");
-  validateString("publicKey", publicKey, "parameter");
+  validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...customOptions,
   };
-
-  // Trim the prefix if it was passed in.
-  publicKey = trimPrefix(publicKey, "ed25519:");
-  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
 
   // Hash and hex encode the given data key if it is not a hash already.
   let dataKeyHashHex = dataKey;
@@ -253,9 +295,9 @@ export function getEntryUrlForPortal(
   }
 
   const query = {
-    publickey: `ed25519:${publicKey}`,
+    publickey: ensurePrefix(publicKey, ED25519_PREFIX),
     datakey: dataKeyHashHex,
-    timeout: DEFAULT_GET_ENTRY_TIMEOUT,
+    timeout: DEFAULT_GET_ENTRY_TIMEOUT.toString(),
   };
 
   let url = makeUrl(portalUrl, opts.endpointGetEntry);
@@ -267,33 +309,62 @@ export function getEntryUrlForPortal(
 /**
  * Gets the entry link for the entry at the given public key and data key. This link stays the same even if the content at the entry changes.
  *
- * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry link.
  * @throws - Will throw if the given key is not valid.
  */
-export async function getEntryLink(
+export function getEntryLink(publicKey: string, dataKey: string, customOptions?: CustomGetEntryOptions): string {
+  validatePublicKey("publicKey", publicKey, "parameter");
+  validateString("dataKey", dataKey, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
+
+  const opts = {
+    ...DEFAULT_GET_ENTRY_OPTIONS,
+    ...customOptions,
+  };
+
+  const siaPublicKey = newEd25519PublicKey(trimPrefix(publicKey, ED25519_PREFIX));
+  let tweak;
+  if (opts.hashedDataKeyHex) {
+    tweak = hexToUint8Array(dataKey);
+  } else {
+    tweak = hashDataKey(dataKey);
+  }
+
+  const skylink = newSkylinkV2(siaPublicKey, tweak).toString();
+  return formatSkylink(skylink);
+}
+
+/* istanbul ignore next */
+/**
+ * Gets the entry link for the entry at the given public key and data key. This link stays the same even if the content at the entry changes.
+ *
+ * @param this - SkynetClient
+ * @param publicKey - The user public key.
+ * @param dataKey - The key of the data to fetch for the given user.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @returns - The entry link.
+ * @throws - Will throw if the given key is not valid.
+ * @deprecated - Please use the standalone, non-async function `getEntryLink`.
+ */
+export async function getEntryLinkAsync(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
   customOptions?: CustomGetEntryOptions
 ): Promise<string> {
-  validateString("publicKey", publicKey, "parameter");
+  validatePublicKey("publicKey", publicKey, "parameter");
   validateString("dataKey", dataKey, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultGetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_ENTRY_OPTIONS);
 
   const opts = {
-    ...defaultGetEntryOptions,
+    ...DEFAULT_GET_ENTRY_OPTIONS,
     ...customOptions,
   };
 
-  // Trim the prefix if it was passed in.
-  publicKey = trimPrefix(publicKey, "ed25519:");
-  validateTrimmedPublicKey("publicKey", publicKey, "parameter");
-
-  const siaPublicKey = newEd25519PublicKey(publicKey);
+  const siaPublicKey = newEd25519PublicKey(trimPrefix(publicKey, ED25519_PREFIX));
   let tweak;
   if (opts.hashedDataKeyHex) {
     tweak = hexToUint8Array(dataKey);
@@ -323,13 +394,13 @@ export async function setEntry(
 ): Promise<void> {
   validateHexString("privateKey", privateKey, "parameter");
   validateRegistryEntry("entry", entry, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_OPTIONS);
 
   // Assert the input is 64 bits.
   assertUint64(entry.revision);
 
   const opts = {
-    ...defaultSetEntryOptions,
+    ...DEFAULT_SET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -381,12 +452,12 @@ export async function postSignedEntry(
   customOptions?: CustomSetEntryOptions
 ): Promise<void> {
   validateHexString("publicKey", publicKey, "parameter");
-  // TODO: Validate entry and signature
-  validateString("entry.dataKey", entry.dataKey, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultSetEntryOptions);
+  validateRegistryEntry("entry", entry, "parameter");
+  validateUint8Array("signature", signature, "parameter");
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_SET_ENTRY_OPTIONS);
 
   const opts = {
-    ...defaultSetEntryOptions,
+    ...DEFAULT_SET_ENTRY_OPTIONS,
     ...this.customOptions,
     ...customOptions,
   };
@@ -422,23 +493,85 @@ export async function postSignedEntry(
       // Convert the object data to JSON.
       const json = JSON.stringify(data);
       // Change the revision value from a string to a JSON integer.
-      return json.replace(regexRevisionWithQuotes, '"revision":$1');
+      return json.replace(REGEX_REVISION_WITH_QUOTES, '"revision":$1');
     },
   });
 }
 
 /**
- * Validates the given registry entry.
+ * Validates the registry proof.
  *
- * @param name - The name of the value.
- * @param value - The actual value.
- * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @param proof - The registry proof.
+ * @param [opts] - Optional custom options.
+ * @returns - The resolver skylink and resolved skylink from the proof.
+ * @throws - Will throw if the registry proof fails to verify.
  */
-export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
-  validateObject(name, value, valueKind);
-  validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
-  validateUint8Array(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
-  validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
+export function validateRegistryProof(
+  proof: Array<RegistryProofEntry>,
+  opts?: CustomValidateRegistryProofOptions
+): { skylink: string; resolverSkylink: string } {
+  let resolverSkylink = undefined;
+  let lastSkylink = opts?.resolverSkylink;
+  const dataLink = opts?.skylink;
+
+  // Verify the proof is not empty.
+  if (proof.length === 0) {
+    throw new Error("Expected registry proof not to be empty");
+  }
+
+  // Verify the registry proof.
+  for (const entry of proof) {
+    if (entry.type !== REGISTRY_TYPE_WITHOUT_PUBKEY) {
+      throw new Error(`Unsupported registry type in proof: '${entry.type}'`);
+    }
+
+    const publicKey = entry.publickey.key;
+    const publicKeyBytes = toByteArray(publicKey);
+    const publicKeyHex = toHexString(publicKeyBytes);
+    const dataKey = entry.datakey;
+    const data = entry.data;
+    const signatureBytes = hexToUint8Array(entry.signature);
+
+    // Verify the current entry corresponds to the previous skylink in the chain.
+    let entryLink = getEntryLink(publicKeyHex, dataKey, { hashedDataKeyHex: true });
+    entryLink = trimUriPrefix(entryLink, URI_SKYNET_PREFIX);
+    if (lastSkylink && entryLink !== lastSkylink) {
+      throw new Error("Could not verify registry proof chain");
+    }
+
+    // Set the resolver skylink if this is the first link in the chain.
+    if (!resolverSkylink) {
+      resolverSkylink = entryLink;
+    }
+
+    // Data bytes are hex-encoded raw skylink bytes.
+    const rawData = hexToUint8Array(data);
+    const skylink = encodeSkylinkBase64(rawData);
+
+    // Try verifying the returned data.
+    const entryToVerify = {
+      dataKey,
+      data: rawData,
+      revision: BigInt(entry.revision),
+    };
+    // Verify length of signature and public key.
+    validateUint8ArrayLen("signatureArray", signatureBytes, "response value", SIGNATURE_LENGTH);
+    validateUint8ArrayLen("publicKeyArray", publicKeyBytes, "parameter", PUBLIC_KEY_LENGTH / 2);
+    if (!sign.detached.verify(hashRegistryEntry(entryToVerify, true), signatureBytes, publicKeyBytes)) {
+      // Registry proof fails to verify.
+      throw new Error("Could not verify signature from retrieved, signed registry entry in registry proof");
+    }
+
+    lastSkylink = skylink;
+  }
+
+  if (dataLink && lastSkylink !== dataLink) {
+    throw new Error("Could not verify registry proof chain");
+  }
+
+  // These variables are guaranteed to be defined because at least one link in
+  // the chain had to have been verified by this point.
+  return { skylink: lastSkylink as string, resolverSkylink: resolverSkylink as string };
 }
 
 /**
@@ -466,15 +599,29 @@ function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
 }
 
 /**
- * Validates the given value as a hex-encoded public key.
+ * Validates the given registry entry.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ */
+export function validateRegistryEntry(name: string, value: unknown, valueKind: string): void {
+  validateObject(name, value, valueKind);
+  validateString(`${name}.dataKey`, (value as RegistryEntry).dataKey, `${valueKind} field`);
+  validateUint8Array(`${name}.data`, (value as RegistryEntry).data, `${valueKind} field`);
+  validateBigint(`${name}.revision`, (value as RegistryEntry).revision, `${valueKind} field`);
+}
+
+/**
+ * Validates the given value as a hex-encoded, potentially prefixed public key.
  *
  * @param name - The name of the value.
  * @param publicKey - The public key.
  * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
  * @throws - Will throw if not a valid hex-encoded public key.
  */
-function validateTrimmedPublicKey(name: string, publicKey: string, valueKind: string): void {
-  if (!isHexString(publicKey)) {
+export function validatePublicKey(name: string, publicKey: string, valueKind: string): void {
+  if (!isHexString(trimPrefix(publicKey, ED25519_PREFIX))) {
     throwValidationError(name, publicKey, valueKind, "a hex-encoded string with a valid prefix");
   }
 }

@@ -1,13 +1,21 @@
-import { AxiosResponse } from "axios";
-import { SkynetClient } from "./client";
+import { AxiosResponse, ResponseType } from "axios";
 
-import { JsonData } from "./skydb";
+import { Headers, SkynetClient } from "./client";
+import { getEntryLink, validateRegistryProof } from "./registry";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
+import { isSkylinkV1 } from "./skylink/sia";
+import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { trimUriPrefix } from "./utils/string";
-import { BaseCustomOptions, defaultBaseOptions } from "./utils/options";
-import { addSubdomain, addUrlQuery, makeUrl, uriHandshakePrefix } from "./utils/url";
-import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
+import { addSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
+import {
+  throwValidationError,
+  validateObject,
+  validateOptionalObject,
+  validateSkylinkString,
+  validateString,
+} from "./utils/validation";
+import { JsonData } from "./utils/types";
 
 /**
  * Custom download options.
@@ -16,7 +24,7 @@ import { throwValidationError, validateObject, validateOptionalObject, validateS
  * @property [download=false] - Indicates to `getSkylinkUrl` whether the file should be downloaded (true) or opened in the browser (false). `downloadFile` and `openFile` override this value.
  * @property [path] - A path to append to the skylink, e.g. `dir1/dir2/file`. A Unix-style path is expected. Each path component will be URL-encoded.
  * @property [range] - The Range request header to set for the download. Not applicable for in-borwser downloads.
- * @property [query] - A query object to convert to a query parameter string and append to the URL.
+ * @property [responseType] - The response type.
  * @property [subdomain=false] - Whether to return the final skylink in subdomain format.
  */
 export type CustomDownloadOptions = BaseCustomOptions & {
@@ -24,7 +32,7 @@ export type CustomDownloadOptions = BaseCustomOptions & {
   download?: boolean;
   path?: string;
   range?: string;
-  query?: Record<string, unknown>;
+  responseType?: ResponseType;
   subdomain?: boolean;
 };
 
@@ -41,7 +49,6 @@ export type CustomHnsDownloadOptions = CustomDownloadOptions & {
 
 export type CustomGetMetadataOptions = BaseCustomOptions & {
   endpointGetMetadata?: string;
-  query?: Record<string, unknown>;
 };
 
 export type CustomHnsResolveOptions = BaseCustomOptions & {
@@ -86,28 +93,31 @@ export type ResolveHnsResponse = {
   skylink: string;
 };
 
-export const defaultDownloadOptions = {
-  ...defaultBaseOptions,
+export const DEFAULT_DOWNLOAD_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
   endpointDownload: "/",
   download: false,
   path: undefined,
   range: undefined,
-  query: undefined,
+  responseType: undefined,
   subdomain: false,
 };
-const defaultGetMetadataOptions = {
+
+const DEFAULT_GET_METADATA_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
   endpointGetMetadata: "/skynet/metadata",
-  query: undefined,
 };
-const defaultDownloadHnsOptions = {
-  ...defaultDownloadOptions,
+
+const DEFAULT_DOWNLOAD_HNS_OPTIONS = {
+  ...DEFAULT_DOWNLOAD_OPTIONS,
   endpointDownloadHns: "hns",
   hnsSubdomain: "hns",
   // Default to subdomain format for HNS URLs.
   subdomain: true,
 };
-const defaultResolveHnsOptions = {
-  ...defaultBaseOptions,
+
+const DEFAULT_RESOLVE_HNS_OPTIONS = {
+  ...DEFAULT_BASE_OPTIONS,
   endpointResolveHns: "hnsres",
 };
 
@@ -128,7 +138,7 @@ export async function downloadFile(
 ): Promise<string> {
   // Validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions, download: true };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions, download: true };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -155,7 +165,7 @@ export async function downloadFileHns(
 ): Promise<string> {
   // Validation is done in `getHnsUrl`.
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions, download: true };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions, download: true };
 
   const url = await this.getHnsUrl(domain, opts);
 
@@ -182,7 +192,7 @@ export async function getSkylinkUrl(
 ): Promise<string> {
   // Validation is done in `getSkylinkUrlForPortal`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const portalUrl = await this.portalUrl();
 
@@ -206,15 +216,11 @@ export function getSkylinkUrlForPortal(
 ): string {
   validateString("portalUrl", portalUrl, "parameter");
   validateString("skylinkUrl", skylinkUrl, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultDownloadOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_DOWNLOAD_OPTIONS);
 
-  const opts = { ...defaultDownloadOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...customOptions };
 
-  const query = opts.query ?? {};
-  if (opts.download) {
-    // Set the "attachment" parameter.
-    query.attachment = true;
-  }
+  const query = buildQuery(opts.download);
 
   // URL-encode the path.
   let path = "";
@@ -236,6 +242,8 @@ export function getSkylinkUrlForPortal(
 
   let url;
   if (opts.subdomain) {
+    // The caller wants to use a URL with the skylink as a base32 subdomain.
+    //
     // Get the path from the skylink. Use the empty string if not found.
     const skylinkPath = parseSkylink(skylinkUrl, { onlyPath: true }) ?? "";
     // Get just the skylink.
@@ -257,6 +265,7 @@ export function getSkylinkUrlForPortal(
     url = makeUrl(portalUrl, opts.endpointDownload, skylink);
     url = makeUrl(url, path);
   }
+
   return addUrlQuery(url, query);
 }
 
@@ -276,16 +285,13 @@ export async function getHnsUrl(
   customOptions?: CustomHnsDownloadOptions
 ): Promise<string> {
   validateString("domain", domain, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultDownloadHnsOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_DOWNLOAD_HNS_OPTIONS);
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
-  const query = opts.query ?? {};
-  if (opts.download) {
-    query.attachment = true;
-  }
+  const query = buildQuery(opts.download);
 
-  domain = trimUriPrefix(domain, uriHandshakePrefix);
+  domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);
   const portalUrl = await this.portalUrl();
   const url = opts.subdomain
     ? addSubdomain(addSubdomain(portalUrl, opts.hnsSubdomain), domain)
@@ -310,11 +316,11 @@ export async function getHnsresUrl(
   customOptions?: CustomHnsResolveOptions
 ): Promise<string> {
   validateString("domain", domain, "parameter");
-  validateOptionalObject("customOptions", customOptions, "parameter", defaultResolveHnsOptions);
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_RESOLVE_HNS_OPTIONS);
 
-  const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_RESOLVE_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
-  domain = trimUriPrefix(domain, uriHandshakePrefix);
+  domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);
   const portalUrl = await this.portalUrl();
 
   return makeUrl(portalUrl, opts.endpointResolveHns, domain);
@@ -335,16 +341,17 @@ export async function getMetadata(
   skylinkUrl: string,
   customOptions?: CustomGetMetadataOptions
 ): Promise<GetMetadataResponse> {
-  // Validation is done in `getSkylinkUrl`.
+  validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_METADATA_OPTIONS);
+  // Rest of validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultGetMetadataOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_GET_METADATA_OPTIONS, ...this.customOptions, ...customOptions };
 
   // Don't include the path for now since the endpoint doesn't support it.
   const path = parseSkylink(skylinkUrl, { onlyPath: true });
   if (path) {
     throw new Error("Skylink string should not contain a path");
   }
-  const getSkylinkUrlOpts = { endpointDownload: opts.endpointGetMetadata, query: opts.query };
+  const getSkylinkUrlOpts = { endpointDownload: opts.endpointGetMetadata };
   const url = await this.getSkylinkUrl(skylinkUrl, getSkylinkUrlOpts);
 
   const response = await this.executeRequest({
@@ -354,18 +361,14 @@ export async function getMetadata(
     url,
   });
 
-  validateGetMetadataResponse(response);
+  // TODO: Pass subdomain option.
+  const inputSkylink = parseSkylink(skylinkUrl);
+  validateGetMetadataResponse(response, inputSkylink as string);
 
   const metadata = response.data;
 
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
 
   return { metadata, portalUrl, skylink };
 }
@@ -377,7 +380,7 @@ export async function getMetadata(
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getFileContent<T = unknown>(
@@ -385,13 +388,49 @@ export async function getFileContent<T = unknown>(
   skylinkUrl: string,
   customOptions?: CustomDownloadOptions
 ): Promise<GetFileContentResponse<T>> {
+  // Validation is done in `getFileContentRequest`.
+
+  const response = await this.getFileContentRequest(skylinkUrl, customOptions);
+  const inputSkylink = parseSkylink(skylinkUrl);
+
+  // `inputSkylink` cannot be null. `getSkylinkUrl` would have thrown on an
+  // invalid skylink.
+  validateGetFileContentResponse(response, inputSkylink as string);
+
+  return await extractGetFileContentResponse<T>(response);
+}
+
+/**
+ * Makes the request to get the contents of the file at the given skylink.
+ *
+ * @param this - SkynetClient
+ * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - The get file content response.
+ * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
+ */
+export async function getFileContentRequest(
+  this: SkynetClient,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): Promise<AxiosResponse> {
   // Validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
-  return this.getFileContentRequest<T>(url, opts);
+  const headers = buildGetFileContentHeaders(opts.range);
+
+  // GET request the data at the skylink.
+  return await this.executeRequest({
+    ...opts,
+    endpointPath: opts.endpointDownload,
+    method: "get",
+    url,
+    headers,
+  });
 }
 
 /**
@@ -401,7 +440,7 @@ export async function getFileContent<T = unknown>(
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
  * @throws - Will throw if the domain does not contain a skylink.
  */
 export async function getFileContentHns<T = unknown>(
@@ -411,58 +450,27 @@ export async function getFileContentHns<T = unknown>(
 ): Promise<GetFileContentResponse<T>> {
   // Validation is done in `getHnsUrl`.
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getHnsUrl(domain, opts);
 
-  return this.getFileContentRequest<T>(url, opts);
-}
+  const headers = buildGetFileContentHeaders(opts.range);
 
-/**
- * Does a GET request of the skylink, returning the data property of the response.
- *
- * @param this - SkynetClient
- * @param url - URL.
- * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - An object containing the data of the file, the content-type, metadata, and the file's skylink.
- * @throws - Will throw if the request does not succeed or the response is missing data.
- */
-export async function getFileContentRequest<T = unknown>(
-  this: SkynetClient,
-  url: string,
-  customOptions?: CustomDownloadOptions
-): Promise<GetFileContentResponse<T>> {
-  // Not publicly available, don't validate input.
+  // GET request the data at the HNS domain and resolve the skylink in parallel.
+  const [response, { skylink: inputSkylink }] = await Promise.all([
+    this.executeRequest({
+      ...opts,
+      endpointPath: opts.endpointDownload,
+      method: "get",
+      url,
+      headers,
+    }),
+    this.resolveHns(domain),
+  ]);
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  validateGetFileContentResponse(response, inputSkylink);
 
-  const headers = opts.range ? { Range: opts.range } : undefined;
-
-  // GET request the data at the skylink.
-  const response = await this.executeRequest({
-    ...opts,
-    endpointPath: opts.endpointDownload,
-    method: "get",
-    url,
-    headers,
-  });
-
-  if (typeof response.data === "undefined") {
-    throw new Error(
-      "Did not get 'data' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-  if (typeof response.headers === "undefined") {
-    throw new Error(
-      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-    );
-  }
-
-  const contentType = response.headers["content-type"] ?? "";
-  const portalUrl = response.headers["skynet-portal-api"] ?? "";
-  const skylink = response.headers["skynet-skylink"] ? formatSkylink(response.headers["skynet-skylink"]) : "";
-
-  return { data: response.data, contentType, portalUrl, skylink };
+  return await extractGetFileContentResponse<T>(response);
 }
 
 /**
@@ -482,7 +490,7 @@ export async function openFile(
 ): Promise<string> {
   // Validation is done in `getSkylinkUrl`.
 
-  const opts = { ...defaultDownloadOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getSkylinkUrl(skylinkUrl, opts);
 
@@ -508,7 +516,7 @@ export async function openFileHns(
 ): Promise<string> {
   // Validation is done in `getHnsUrl`.
 
-  const opts = { ...defaultDownloadHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_DOWNLOAD_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getHnsUrl(domain, opts);
 
@@ -535,7 +543,7 @@ export async function resolveHns(
 ): Promise<ResolveHnsResponse> {
   // Validation is done in `getHnsresUrl`.
 
-  const opts = { ...defaultResolveHnsOptions, ...this.customOptions, ...customOptions };
+  const opts = { ...DEFAULT_RESOLVE_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   const url = await this.getHnsresUrl(domain, opts);
 
@@ -552,44 +560,163 @@ export async function resolveHns(
   if (response.data.skylink) {
     return { data: response.data, skylink: response.data.skylink };
   } else {
-    const skylink = await this.registry.getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
+    // We got a registry entry instead of a skylink, so get the entry link.
+    const entryLink = getEntryLink(response.data.registry.publickey, response.data.registry.datakey, {
       hashedDataKeyHex: true,
     });
-    return { data: response.data, skylink };
+    return { data: response.data, skylink: entryLink };
   }
 }
 
+// =======
+// Helpers
+// =======
+
 /**
- * @param response
+ * Builds the headers for getFileContent.
+ *
+ * @param range - The optional range header.
+ * @returns - The headers.
  */
-function validateGetMetadataResponse(response: AxiosResponse): void {
+function buildGetFileContentHeaders(range?: string): Headers {
+  const headers: Headers = {};
+  if (range) {
+    headers["range"] = range;
+  }
+  return headers;
+}
+
+/**
+ * Helper function that builds the URL query.
+ *
+ * @param download - Whether to set attachment=true.
+ * @returns - The URL query.
+ */
+function buildQuery(download: boolean): { [key: string]: string | undefined } {
+  const query: { [key: string]: string | undefined } = {};
+  if (download) {
+    // Set the "attachment" parameter.
+    query.attachment = "true";
+  }
+  return query;
+}
+
+/**
+ * Extracts the response from getFileContent.
+ *
+ * @param response - The Axios response.
+ * @returns - The extracted get file content response fields.
+ */
+async function extractGetFileContentResponse<T = unknown>(response: AxiosResponse): Promise<GetFileContentResponse<T>> {
+  const contentType = response.headers["content-type"];
+  const portalUrl = response.headers["skynet-portal-api"];
+  const skylink = formatSkylink(response.headers["skynet-skylink"]);
+
+  return { data: response.data, contentType, portalUrl, skylink };
+}
+
+/**
+ * Validates the response from getFileContent.
+ *
+ * @param response - The Axios response.
+ * @param inputSkylink - The input skylink, required to validate the proof.
+ * @throws - Will throw if the response does not contain the expected fields.
+ */
+function validateGetFileContentResponse(response: AxiosResponse, inputSkylink: string): void {
   try {
-    if (!response.data) {
-      throw new Error("response.data field missing");
+    // Allow data === "" to support 0-byte files.
+    if (!response.data && response.data !== "") {
+      throw new Error("'response.data' field missing");
     }
+    if (!response.headers) {
+      throw new Error("'response.headers' field missing");
+    }
+
+    const contentType = response.headers["content-type"];
+    if (!contentType) {
+      throw new Error("'content-type' header missing");
+    }
+    validateString(`response.headers["content-type"]`, contentType, "getFileContent response header");
+
+    const portalUrl = response.headers["skynet-portal-api"];
+    if (!portalUrl) {
+      throw new Error("'skynet-portal-api' header missing");
+    }
+    validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getFileContent response header");
+
+    const skylink = response.headers["skynet-skylink"];
+    if (!skylink) {
+      throw new Error("'skynet-skylink' header missing");
+    }
+    validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getFileContent response header");
+
+    const proof = response.headers["skynet-proof"];
+    validateRegistryProofResponse(inputSkylink, skylink, proof);
   } catch (err) {
     throw new Error(
-      `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+      `File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
     );
   }
 }
 
 /**
- * @param response
+ * Validates the response from getMetadata.
+ *
+ * @param response - The Axios response.
+ * @param inputSkylink - The input skylink, required to validate the proof.
+ * @throws - Will throw if the response does not contain the expected fields.
+ */
+function validateGetMetadataResponse(response: AxiosResponse, inputSkylink: string): void {
+  try {
+    if (!response.data) {
+      throw new Error("'response.data' field missing");
+    }
+    if (!response.headers) {
+      throw new Error("'response.headers' field missing");
+    }
+
+    const portalUrl = response.headers["skynet-portal-api"];
+    if (!portalUrl) {
+      throw new Error("'skynet-portal-api' header missing");
+    }
+    validateString(`response.headers["skynet-portal-api"]`, portalUrl, "getMetadata response header");
+
+    const skylink = response.headers["skynet-skylink"];
+    if (!skylink) {
+      throw new Error("'skynet-skylink' header missing");
+    }
+    validateSkylinkString(`response.headers["skynet-skylink"]`, skylink, "getMetadata response header");
+
+    validateRegistryProofResponse(inputSkylink, skylink, response.headers["skynet-proof"]);
+  } catch (err) {
+    throw new Error(
+      `Metadata response invalid despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
+    );
+  }
+}
+
+/**
+ * Validates the response from resolveHns.
+ *
+ * @param response - The Axios response.
+ * @throws - Will throw if the response contains an unexpected format.
  */
 function validateResolveHnsResponse(response: AxiosResponse): void {
   try {
     if (!response.data) {
-      throw new Error("response.data field missing");
+      throw new Error("'response.data' field missing");
     }
 
     if (response.data.skylink) {
-      validateString("response.data.skylink", response.data.skylink, "resolveHns response field");
+      // Skylink response.
+      validateSkylinkString("response.data.skylink", response.data.skylink, "resolveHns response field");
     } else if (response.data.registry) {
+      // Registry entry response.
       validateObject("response.data.registry", response.data.registry, "resolveHns response field");
       validateString("response.data.registry.publickey", response.data.registry.publickey, "resolveHns response field");
       validateString("response.data.registry.datakey", response.data.registry.datakey, "resolveHns response field");
     } else {
+      // Invalid response.
       throwValidationError(
         "response.data",
         response.data,
@@ -599,7 +726,50 @@ function validateResolveHnsResponse(response: AxiosResponse): void {
     }
   } catch (err) {
     throw new Error(
-      `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. Error: ${err}`
+      `Did not get a complete resolve HNS response despite a successful request. Please try again and report this issue to the devs if it persists. ${err}`
     );
   }
+}
+
+/**
+ * Validates the registry proof response.
+ *
+ * @param inputSkylink - The input skylink, required to validate the proof.
+ * @param dataLink - The returned data link.
+ * @param proof - The returned proof.
+ * @throws - Will throw if the registry proof header is not present, empty when it shouldn't be, or fails to verify.
+ */
+function validateRegistryProofResponse(inputSkylink: string, dataLink: string, proof?: string): void {
+  let proofArray = [];
+  try {
+    // skyd omits the header if the array is empty.
+    if (proof) {
+      proofArray = JSON.parse(proof);
+      if (!proofArray) {
+        throw new Error("Could not parse 'skynet-proof' header as JSON");
+      }
+    }
+  } catch (err) {
+    throw new Error(`Could not parse 'skynet-proof' header as JSON: ${err}`);
+  }
+
+  if (isSkylinkV1(inputSkylink)) {
+    if (inputSkylink !== dataLink) {
+      throw new Error("Expected returned skylink to be the same as input data link");
+    }
+    // If input skylink is not an entry link, no proof should be present.
+    if (proof) {
+      throw new Error("Expected 'skynet-proof' header to be empty for data link");
+    }
+    // Nothing else to do for data links, there is no proof to validate.
+    return;
+  }
+
+  // Validation for input entry link.
+  if (inputSkylink === dataLink) {
+    // Input skylink is entry link and returned skylink is the same.
+    throw new Error("Expected returned skylink to be different from input entry link");
+  }
+
+  validateRegistryProof(proofArray, { resolverSkylink: inputSkylink, skylink: dataLink });
 }

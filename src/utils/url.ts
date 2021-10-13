@@ -1,16 +1,32 @@
-import parse from "url-parse";
 import urljoin from "url-join";
+import parse from "url-parse";
 
 import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
 import { throwValidationError, validateString } from "./validation";
 
-export const defaultSkynetPortalUrl = "https://siasky.net";
+export const DEFAULT_SKYNET_PORTAL_URL = "https://siasky.net";
 
-export const uriHandshakePrefix = "hns://";
-export const uriSkynetPrefix = "sia://";
+/**
+ * @deprecated please use DEFAULT_SKYNET_PORTAL_URL.
+ */
+export const defaultSkynetPortalUrl = DEFAULT_SKYNET_PORTAL_URL;
+
+export const URI_HANDSHAKE_PREFIX = "hns://";
+
+/**
+ * @deprecated please use URI_HANDSHAKE_PREFIX.
+ */
+export const uriHandshakePrefix = URI_HANDSHAKE_PREFIX;
+
+export const URI_SKYNET_PREFIX = "sia://";
+
+/**
+ * @deprecated please use URI_SKYNET_PREFIX.
+ */
+export const uriSkynetPrefix = URI_SKYNET_PREFIX;
 
 // TODO: This will be smarter. See
-// https://github.com/NebulousLabs/skynet-docs/issues/21.
+// https://github.com/SkynetLabs/skynet-docs/issues/5.
 /**
  * Returns the default portal URL.
  *
@@ -69,7 +85,7 @@ export function addSubdomain(url: string, subdomain: string): string {
  * @param query - The query parameters.
  * @returns - The final URL.
  */
-export function addUrlQuery(url: string, query: Record<string, unknown>): string {
+export function addUrlQuery(url: string, query: { [key: string]: string | undefined }): string {
   const parsed = parse(url, true);
   // Combine the desired query params with the already existing ones.
   query = { ...parsed.query, ...query };
@@ -151,6 +167,8 @@ export function extractDomainForPortal(portalUrl: string, fullDomain: string): s
     fullDomain = trimForwardSlash(fullDomain);
     // Split on first / to get the path.
     [fullDomain, path] = fullDomain.split(/\/(.+)/);
+    // Lowercase the domain to match URL parsing. Leave path as-is.
+    fullDomain = fullDomain.toLowerCase();
   }
 
   // Get the portal domain.

@@ -1,6 +1,7 @@
 import { hexToUint8Array } from "../utils/string";
 import {
   decodeSkylink,
+  ERR_SKYLINK_INCORRECT_SIZE,
   isSkylinkV1,
   isSkylinkV2,
   newEd25519PublicKey,
@@ -49,6 +50,10 @@ describe("decodeSkylink", () => {
     const bytes = decodeSkylink("bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g");
     expect(bytes).toEqualUint8Array(expectedBytes);
   });
+
+  it("should fail on invalid input string length", () => {
+    expect(() => decodeSkylink("")).toThrowError(ERR_SKYLINK_INCORRECT_SIZE);
+  });
 });
 
 describe("isSkylinkV1", () => {
@@ -87,18 +92,32 @@ describe("newSkylinkV2", () => {
   });
 });
 
-describe("SiaSkylink.toString", () => {
-  const skylinks = [
-    [
-      new SiaSkylink(1, hexToUint8Array("a0db12bf2960b0c989d5f64bedd3c9c16d5c0ed3430af411d0d0db3de4938ef2")),
-      "AQCg2xK_KWCwyYnV9kvt08nBbVwO00MK9BHQ0Ns95JOO8g",
-    ],
-    [
-      new SiaSkylink(1, hexToUint8Array("fda409fe5fb07b52647bf21f092b1748f34e1fc01ae269bcc743e0b10dbff12a")),
-      "AQD9pAn-X7B7UmR78h8JKxdI804fwBriabzHQ-CxDb_xKg",
-    ],
-  ];
+describe("SiaSkylink.fromBytes", () => {
+  it("Should fail on invalid input byte array length", () => {
+    expect(() => SiaSkylink.fromBytes(new Uint8Array(0))).toThrowError(
+      "Expected parameter 'data' to be type 'Uint8Array' of length 34, was length 0, was type 'object', value ''"
+    );
+  });
+});
 
+const skylinks: Array<[SiaSkylink, string]> = [
+  [
+    new SiaSkylink(1, hexToUint8Array("a0db12bf2960b0c989d5f64bedd3c9c16d5c0ed3430af411d0d0db3de4938ef2")),
+    "AQCg2xK_KWCwyYnV9kvt08nBbVwO00MK9BHQ0Ns95JOO8g",
+  ],
+  [
+    new SiaSkylink(1, hexToUint8Array("fda409fe5fb07b52647bf21f092b1748f34e1fc01ae269bcc743e0b10dbff12a")),
+    "AQD9pAn-X7B7UmR78h8JKxdI804fwBriabzHQ-CxDb_xKg",
+  ],
+];
+
+describe("SiaSkylink.fromString", () => {
+  it.each(skylinks)("should get the skylink %s from string %s", (skylink, str) => {
+    expect(SiaSkylink.fromString(str)).toEqual(skylink);
+  });
+});
+
+describe("SiaSkylink.toString", () => {
   it.each(skylinks)("should convert the skylink %s to string %s", (skylink, str) => {
     expect(skylink.toString()).toEqual(str);
   });

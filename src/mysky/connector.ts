@@ -1,3 +1,5 @@
+/* istanbul ignore file: Much of this functionality is only testable from a browser */
+
 import { Connection, ParentHandshake, WindowMessenger } from "post-me";
 import { createIframe, defaultHandshakeAttemptsInterval, defaultHandshakeMaxAttempts } from "skynet-mysky-utils";
 
@@ -21,7 +23,7 @@ export type CustomConnectorOptions = {
   handshakeAttemptsInterval?: number;
 };
 
-export const defaultConnectorOptions = {
+export const DEFAULT_CONNECTOR_OPTIONS = {
   dev: false,
   debug: false,
   alpha: false,
@@ -41,7 +43,7 @@ export class Connector {
   // Static initializer
 
   static async init(client: SkynetClient, domain: string, customOptions?: CustomConnectorOptions): Promise<Connector> {
-    const opts = { ...defaultConnectorOptions, ...customOptions };
+    const opts = { ...DEFAULT_CONNECTOR_OPTIONS, ...customOptions };
 
     // Get the URL for the domain on the current portal.
     let domainUrl = await client.getFullDomainUrl(domain);
@@ -58,7 +60,11 @@ export class Connector {
     // Create the iframe.
 
     const childFrame = createIframe(domainUrl, domainUrl);
-    const childWindow = childFrame.contentWindow!;
+    // The frame window should always exist. Sanity check + make TS happy.
+    if (!childFrame.contentWindow) {
+      throw new Error("'childFrame.contentWindow' was null");
+    }
+    const childWindow = childFrame.contentWindow;
 
     // Connect to the iframe.
 

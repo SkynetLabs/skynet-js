@@ -11,7 +11,7 @@ const config: Config.InitialOptions = {
   preset: "ts-jest",
 
   // From old package.json.
-  testTimeout: 60000,
+  testTimeout: 90000,
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
   // An array of glob patterns indicating a set of files for which coverage information should be collected
@@ -19,14 +19,14 @@ const config: Config.InitialOptions = {
   // An object that configures minimum threshold enforcement for coverage results
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 65,
-      lines: 70,
-      statements: 70,
+      branches: 98,
+      functions: 98,
+      lines: 98,
+      statements: 98,
     },
   },
   // The root directory that Jest should scan for tests and modules within
-  rootDir: "src",
+  roots: ["src", "integration"],
 
   // All imported modules in your tests should be mocked automatically
   // automock: false,

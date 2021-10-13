@@ -1,8 +1,8 @@
 import { BASE32_ENCODED_SKYLINK_SIZE, BASE64_ENCODED_SKYLINK_SIZE } from "./sia";
 import { decodeSkylinkBase32, decodeSkylinkBase64, encodeSkylinkBase32, encodeSkylinkBase64 } from "../utils/encoding";
 import { trimUriPrefix } from "../utils/string";
-import { uriSkynetPrefix } from "../utils/url";
-import { validateStringLen } from "../utils/validation";
+import { URI_SKYNET_PREFIX } from "../utils/url";
+import { validateString, validateStringLen } from "../utils/validation";
 
 /**
  * Converts the given base64 skylink to base32.
@@ -11,7 +11,7 @@ import { validateStringLen } from "../utils/validation";
  * @returns - The converted base32 skylink.
  */
 export function convertSkylinkToBase32(skylink: string): string {
-  skylink = trimUriPrefix(skylink, uriSkynetPrefix);
+  skylink = trimUriPrefix(skylink, URI_SKYNET_PREFIX);
   validateStringLen("skylink", skylink, "parameter", BASE64_ENCODED_SKYLINK_SIZE);
 
   const bytes = decodeSkylinkBase64(skylink);
@@ -25,7 +25,7 @@ export function convertSkylinkToBase32(skylink: string): string {
  * @returns - The converted base64 skylink.
  */
 export function convertSkylinkToBase64(skylink: string): string {
-  skylink = trimUriPrefix(skylink, uriSkynetPrefix);
+  skylink = trimUriPrefix(skylink, URI_SKYNET_PREFIX);
   validateStringLen("skylink", skylink, "parameter", BASE32_ENCODED_SKYLINK_SIZE);
 
   const bytes = decodeSkylinkBase32(skylink);
@@ -39,11 +39,13 @@ export function convertSkylinkToBase64(skylink: string): string {
  * @returns - The formatted skylink.
  */
 export function formatSkylink(skylink: string): string {
+  validateString("skylink", skylink, "parameter");
+
   if (skylink === "") {
     return skylink;
   }
-  if (!skylink.startsWith(uriSkynetPrefix)) {
-    skylink = `${uriSkynetPrefix}${skylink}`;
+  if (!skylink.startsWith(URI_SKYNET_PREFIX)) {
+    skylink = `${URI_SKYNET_PREFIX}${skylink}`;
   }
   return skylink;
 }

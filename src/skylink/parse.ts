@@ -1,6 +1,7 @@
 import parse from "url-parse";
+
 import { trimForwardSlash, trimSuffix, trimUriPrefix } from "../utils/string";
-import { uriSkynetPrefix } from "../utils/url";
+import { URI_SKYNET_PREFIX } from "../utils/url";
 import { validateOptionalObject, validateString } from "../utils/validation";
 
 /**
@@ -58,7 +59,7 @@ export function parseSkylink(skylinkUrl: string, customOptions?: ParseSkylinkOpt
   // Check for skylink prefixed with sia: or sia:// and extract it.
   // Example: sia:XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
   // Example: sia://XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg
-  skylinkUrl = trimUriPrefix(skylinkUrl, uriSkynetPrefix);
+  skylinkUrl = trimUriPrefix(skylinkUrl, URI_SKYNET_PREFIX);
 
   // Check for direct base64 skylink match.
   const matchDirect = skylinkUrl.match(SKYLINK_DIRECT_REGEX);
@@ -95,7 +96,7 @@ export function parseSkylink(skylinkUrl: string, customOptions?: ParseSkylinkOpt
  * @returns - The base32 skylink.
  */
 export function parseSkylinkBase32(skylinkUrl: string, customOptions?: ParseSkylinkOptions): string | null {
-  // Do not validate, this helper function should only be called from parseSkylink.
+  // Do not validate inputs, this helper function should only be called from parseSkylink.
 
   const opts = { ...defaultParseSkylinkOptions, ...customOptions };
 

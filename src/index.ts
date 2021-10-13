@@ -1,8 +1,40 @@
+/* istanbul ignore file */
+
+// Main exports.
+
 export { SkynetClient } from "./client";
-export { deriveChildSeed, genKeyPairAndSeed, genKeyPairFromSeed } from "./crypto";
+export {
+  HASH_LENGTH,
+  deriveChildSeed,
+  genKeyPairAndSeed,
+  genKeyPairFromSeed,
+  PUBLIC_KEY_LENGTH,
+  PRIVATE_KEY_LENGTH,
+  SIGNATURE_LENGTH,
+} from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
-export { getEntryUrlForPortal, signEntry } from "./registry";
-export { DacLibrary, mySkyDomain, mySkyDevDomain } from "./mysky";
+export { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
+export {
+  DacLibrary,
+  MAX_ENTRY_LENGTH,
+  MySky,
+  MYSKY_DOMAIN,
+  MYSKY_DEV_DOMAIN,
+  // Deprecated.
+  mySkyDevDomain,
+  mySkyDomain,
+} from "./mysky";
+export {
+  deriveEncryptedFileKeyEntropy,
+  deriveEncryptedFileTweak,
+  deriveEncryptedPathSeed,
+  ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH,
+  ENCRYPTION_PATH_SEED_FILE_LENGTH,
+  // Deprecated.
+  deriveEncryptedFileSeed,
+} from "./mysky/encrypted_files";
+export { deriveDiscoverableFileTweak } from "./mysky/tweak";
+export { DELETION_ENTRY_DATA } from "./skydb";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
@@ -11,13 +43,19 @@ export { MAX_REVISION } from "./utils/number";
 export { stringToUint8ArrayUtf8, uint8ArrayToStringUtf8 } from "./utils/string";
 export {
   defaultPortalUrl,
-  defaultSkynetPortalUrl,
+  DEFAULT_SKYNET_PORTAL_URL,
   extractDomainForPortal,
   getFullDomainUrlForPortal,
+  URI_HANDSHAKE_PREFIX,
+  URI_SKYNET_PREFIX,
+  // Deprecated.
+  defaultSkynetPortalUrl,
   uriHandshakePrefix,
   uriSkynetPrefix,
 } from "./utils/url";
+
 // Re-export Permission API.
+
 export {
   Permission,
   PermCategory,
@@ -34,8 +72,23 @@ export {
 export type { CustomClientOptions, RequestConfig } from "./client";
 export type { KeyPair, KeyPairAndSeed, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
-export type { CustomConnectorOptions, MySky } from "./mysky";
-export type { CustomGetEntryOptions, CustomSetEntryOptions, SignedRegistryEntry, RegistryEntry } from "./registry";
-export type { CustomGetJSONOptions, CustomSetJSONOptions, JsonData, JSONResponse } from "./skydb";
-export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
+export type { CustomConnectorOptions, EntryData } from "./mysky";
+export type { CustomPinOptions, PinResponse } from "./pin";
+export type {
+  CustomGetEntryOptions,
+  CustomSetEntryOptions,
+  CustomValidateRegistryProofOptions,
+  SignedRegistryEntry,
+  RegistryEntry,
+  RegistryProofEntry,
+} from "./registry";
+export type {
+  CustomGetJSONOptions,
+  CustomSetJSONOptions,
+  CustomSetEntryDataOptions,
+  JSONResponse,
+  RawBytesResponse,
+} from "./skydb";
 export type { ParseSkylinkOptions } from "./skylink/parse";
+export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
+export type { JsonData } from "./utils/types";

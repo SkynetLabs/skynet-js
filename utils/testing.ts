@@ -1,3 +1,5 @@
+/* istanbul ignore file: Test utils, coverage does not matter */
+
 import parse from "url-parse";
 import { trimForwardSlash } from "../src/utils/string";
 
@@ -61,11 +63,21 @@ export async function compareFormData(formData: Record<string, unknown>, entries
 export function extractNonSkylinkPath(url: string, skylink: string): string {
   const parsed = parse(url, {});
   let path = parsed.pathname.replace(skylink, ""); // Remove skylink to get the path.
-  // Ensure there is only one leading slash.
+  // Ensure there are no leading or trailing slashes.
   path = trimForwardSlash(path);
-  // Don't add back the slash if there is no path.
+  // Add back the slash, unless there is no path.
   if (path !== "") {
     path = `/${path}`;
   }
   return path;
+}
+
+/**
+ * Generates a random Unicode string using the code points between 0 and 65536.
+ *
+ * @param length - The length of the string.
+ * @returns - The string.
+ */
+export function randomUnicodeString(length: number): string {
+  return Array.from({ length }, () => String.fromCharCode(Math.floor(Math.random() * 65536))).join("");
 }

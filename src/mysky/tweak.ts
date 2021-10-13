@@ -1,7 +1,19 @@
 import { hashAll } from "../crypto";
 import { stringToUint8ArrayUtf8, toHexString } from "../utils/string";
 
-const discoverableBucketTweakVersion = 1;
+const DISCOVERABLE_BUCKET_TWEAK_VERSION = 1;
+
+/**
+ * Derives the discoverable file tweak for the given path.
+ *
+ * @param path - The given path.
+ * @returns - The hex-encoded tweak.
+ */
+export function deriveDiscoverableFileTweak(path: string): string {
+  const dbt = new DiscoverableBucketTweak(path);
+  const bytes = dbt.getHash();
+  return toHexString(bytes);
+}
 
 export class DiscoverableBucketTweak {
   version: number;
@@ -10,7 +22,7 @@ export class DiscoverableBucketTweak {
   constructor(path: string) {
     const paths = splitPath(path);
     const pathHashes = paths.map(hashPathComponent);
-    this.version = discoverableBucketTweakVersion;
+    this.version = DISCOVERABLE_BUCKET_TWEAK_VERSION;
     this.path = pathHashes;
   }
 
@@ -33,16 +45,23 @@ export class DiscoverableBucketTweak {
   }
 }
 
+/**
+ * Splits the path by forward slashes.
+ *
+ * @param path - The path to split.
+ * @returns - An array of path components.
+ */
 export function splitPath(path: string): Array<string> {
   return path.split("/");
 }
 
+/**
+ * Hashes the path component.
+ *
+ * @param component - The component extracted from the path.
+ * @returns - The hash.
+ */
+// TODO: Can we replace with hashString?
 export function hashPathComponent(component: string): Uint8Array {
   return hashAll(stringToUint8ArrayUtf8(component));
-}
-
-export function deriveDiscoverableTweak(path: string): string {
-  const dbt = new DiscoverableBucketTweak(path);
-  const bytes = dbt.getHash();
-  return toHexString(bytes);
 }

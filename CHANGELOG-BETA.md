@@ -4,12 +4,99 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.17-beta]
+
+### Changed
+
+- Fixed some bugs affecting the MySky UI window.
+
+## [4.0.16-beta]
+
+### Added
+
+- Added `mySky.isBrowserSupported` method to check for unsupported browsers.
+
+## [4.0.15-beta]
+
+### Changed
+
+- Downloads now verify the registry proofs returned from the portal.
+- Large file uploads now upload in parallel for more efficient uploads.
+- Deprecated `client.registry.getEntryLink` in flavor of the standalone and non-async `getEntryLink` function.
+
+### Added
+
+- Added `validateRegistryProof` function.
+- Added the `errorPages` and `tryFiles` options for directory uploads.
+- Exported some crypto length constants.
+
+## [4.0.14-beta]
+
+### Changed
+
+- Include tryfiles metadata
+
+## [4.0.13-beta]
+
+### Added
+
+- Added onDownloadProgress client option.
+
+### Changed
+
+- Updated default requested permissions when `skappDomain` != skapp URL to include Discoverable Write.
+- Removed case sensitivity from MySky URL and domain processing.
+
+## [4.0.12-beta]
+
+### Added
+
+- Encrypted files API.
+  - `mySky.setJSONEncrypted`
+  - `mySky.getJSONEncrypted`
+  - `mySky.getEncryptedFileSeed`
+  - `file.getJSONEncrypted`
+
+### Changed
+
+- Export MySky as value instead of as type + minor fixes.
+- Error reporting for large files has been improved.
+
+## [4.0.11-beta]
+
+### Changed
+
+- Fixed large file upload cookies and sticky sessions.
+
+### Added
+
+- Added `client.pinSkylink`.
+
+## [4.0.10-beta]
+
+### Changed
+
+- Fixed `mySky.getEntryLink` and `file.getEntryLink` bug.
+
+## [4.0.9-beta]
+
+### Removed
+
+- **[Breaking change]** Removed `merkleRoot` and `bitfield` from upload response.
+
+### Added
+
+- Added support for large file uploads. The tus protocol will be used for files greater than 40MiB in size.
+- Added `convertSkylinkToBase64`.
+- Added `mySky.getEntryData`, `mySky.setEntryData`, and `file.getEntryData`.
+- Added `range` option to download options.
+
 ## [4.0.8-beta]
 
 ### Changed
 
-- **[Breaking change]** - The `sia:` skylink prefix has been changed to `sia://`.
-- **[Breaking change]** - Added missing `sia://` prefixes to the skylinks returned from SkyDB and MySky.
+- **[Breaking change]** The `sia:` skylink prefix has been changed to `sia://`.
+- **[Breaking change]** Added missing `sia://` prefixes to the skylinks returned from SkyDB and MySky.
 - The `resolveHNS` method now works for Handshake domains with `skyns://` HNS entries.
 
 ### Added

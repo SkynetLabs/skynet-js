@@ -3,21 +3,23 @@ import MockAdapter from "axios-mock-adapter";
 
 import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
-import { defaultSkynetPortalUrl, uriSkynetPrefix } from "./utils/url";
+import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient, genKeyPairFromSeed } from "./index";
-import { getEntryUrlForPortal, regexRevisionNoQuotes } from "./registry";
+import { getEntryUrlForPortal, REGEX_REVISION_NO_QUOTES } from "./registry";
+import { checkCachedDataLink, DELETION_ENTRY_DATA } from "./skydb";
+import { MAX_ENTRY_LENGTH } from "./mysky";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
-const sialink = `${uriSkynetPrefix}${skylink}`;
+const sialink = `${URI_SKYNET_PREFIX}${skylink}`;
 const jsonData = { data: "thisistext" };
 const fullJsonData = { _data: jsonData, _v: 2 };
 const legacyJsonData = jsonData;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 
-const portalUrl = defaultSkynetPortalUrl;
+const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
 const registryUrl = `${portalUrl}/skynet/registry`;
 const registryLookupUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
@@ -43,10 +45,16 @@ describe("getJSON", () => {
     mock.resetHistory();
   });
 
+  const headers = {
+    "skynet-portal-api": portalUrl,
+    "skynet-skylink": skylink,
+    "content-type": "application/json",
+  };
+
   it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toEqual(jsonData);
@@ -65,20 +73,32 @@ describe("getJSON", () => {
   });
 
   it("should perform a lookup and a skylink GET if the cachedDataLink is not a hit", async () => {
+    const skylinkNoHit = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
-    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" });
+    const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: skylinkNoHit });
     expect(data).toEqual(jsonData);
     expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(2);
   });
 
+  it("should throw if the cachedDataLink is not a valid skylink", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
+
+    await expect(client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" })).rejects.toThrowError(
+      "Expected optional parameter 'cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
+    );
+  });
+
   it("should perform a lookup and skylink GET on legacy pre-v4 data", async () => {
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).replyOnce(200, legacyJsonData, {});
+    mock.onGet(skylinkUrl).replyOnce(200, legacyJsonData, headers);
 
     const jsonReturned = await client.db.getJSON(publicKey, dataKey);
     expect(jsonReturned.data).toEqual(jsonData);
@@ -96,10 +116,30 @@ describe("getJSON", () => {
   it("should throw if the returned file data is not JSON", async () => {
     // mock a successful registry lookup
     mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).reply(200, "thisistext", {});
+    mock.onGet(skylinkUrl).reply(200, "thisistext", { ...headers, "content-type": "text/plain" });
 
     await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
       `File data for the entry at data key '${dataKey}' is not JSON.`
+    );
+  });
+
+  it("should throw if the returned _data field in the file data is not JSON", async () => {
+    // mock a successful registry lookup
+    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).reply(200, { _data: "thisistext", _v: 1 }, headers);
+
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      "File data '_data' for the entry at data key 'app' is not JSON."
+    );
+  });
+
+  it("should throw if invalid entry data is returned", async () => {
+    const client = new SkynetClient(portalUrl);
+    const mockedFn = jest.fn();
+    mockedFn.mockReturnValueOnce({ entry: { data: new Uint8Array() } });
+    client.registry.getEntry = mockedFn;
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      "Expected returned entry data 'entry.data' to be length 34 bytes, was type 'object', value ''"
     );
   });
 });
@@ -164,7 +204,7 @@ describe("setJSON", () => {
         "18c76e88141c7cc76d8a77abcd91b5d64d8fc3833eae407ab8a5339e5fcf7940e3fa5830a8ad9439a0c0cc72236ed7b096ae05772f81eee120cbd173bfd6600e",
     };
     // Replace the quotes around the stringed bigint.
-    const json = JSON.stringify(entryData).replace(regexRevisionNoQuotes, '"revision":"$1"');
+    const json = JSON.stringify(entryData).replace(REGEX_REVISION_NO_QUOTES, '"revision":"$1"');
     mock.onGet(registryLookupUrl).reply(200, json);
 
     // mock a successful registry update
@@ -178,21 +218,57 @@ describe("setJSON", () => {
 
   it("Should throw an error if the private key is not hex-encoded", async () => {
     await expect(client.db.setJSON("foo", dataKey, {})).rejects.toThrowError(
-      "Expected parameter 'privateKey' to be a hex-encoded string, was 'foo'"
+      "Expected parameter 'privateKey' to be a hex-encoded string, was type 'string', value 'foo'"
     );
   });
 
   it("Should throw an error if the data key is not provided", async () => {
     // @ts-expect-error We do not pass the data key on purpose.
     await expect(client.db.setJSON(privateKey)).rejects.toThrowError(
-      "Expected parameter 'dataKey' to be type 'string', was 'undefined'"
+      "Expected parameter 'dataKey' to be type 'string', was type 'undefined'"
     );
   });
 
   it("Should throw an error if the json is not provided", async () => {
     // @ts-expect-error We do not pass the json on purpose.
     await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
-      "Expected parameter 'json' to be type 'object', was 'undefined'"
+      "Expected parameter 'json' to be type 'object', was type 'undefined'"
+    );
+  });
+});
+
+describe("setEntryData", () => {
+  it("should throw if trying to set entry data > 70 bytes", async () => {
+    await expect(
+      client.db.setEntryData(privateKey, dataKey, new Uint8Array(MAX_ENTRY_LENGTH + 1))
+    ).rejects.toThrowError(
+      "Expected parameter 'data' to be 'Uint8Array' of length <= 70, was length 71, was type 'object', value '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'"
+    );
+  });
+
+  it("should throw if trying to set the deletion entry data", async () => {
+    await expect(client.db.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA)).rejects.toThrowError(
+      "Tried to set 'Uint8Array' entry data that is the deletion sentinel ('Uint8Array(RAW_SKYLINK_SIZE)'), please use the 'deleteEntryData' method instead`"
+    );
+  });
+});
+
+describe("checkCachedDataLink", () => {
+  const differentSkylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+  const inputs: Array<[string, string | undefined, boolean]> = [
+    [skylink, undefined, false],
+    [skylink, skylink, true],
+    [skylink, differentSkylink, false],
+    [differentSkylink, skylink, false],
+  ];
+
+  it.each(inputs)("checkCachedDataLink(%s, %s) should return %s", (rawDataLink, cachedDataLink, output) => {
+    expect(checkCachedDataLink(rawDataLink, cachedDataLink)).toEqual(output);
+  });
+
+  it("Should throw on invalid cachedDataLink", () => {
+    expect(() => checkCachedDataLink(skylink, "asdf")).toThrowError(
+      "Expected optional parameter 'cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
     );
   });
 });

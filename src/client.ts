@@ -1,6 +1,15 @@
-import axios, { AxiosResponse } from "axios";
-import type { Method } from "axios";
-import { uploadFile, uploadDirectory, uploadDirectoryRequest, uploadFileRequest } from "./upload";
+import axios from "axios";
+import type { AxiosResponse, ResponseType, Method } from "axios";
+
+import {
+  uploadFile,
+  uploadLargeFile,
+  uploadDirectory,
+  uploadDirectoryRequest,
+  uploadSmallFile,
+  uploadSmallFileRequest,
+  uploadLargeFileRequest,
+} from "./upload";
 import {
   downloadFile,
   downloadFileHns,
@@ -9,15 +18,30 @@ import {
   getHnsresUrl,
   getMetadata,
   getFileContent,
-  getFileContentHns,
   getFileContentRequest,
+  getFileContentHns,
   openFile,
   openFileHns,
   resolveHns,
 } from "./download";
-import { getEntryLink as fileGetEntryLink, getJSON as fileGetJSON } from "./file";
-import { deleteJSON, getJSON, setJSON, setDataLink } from "./skydb";
-import { getEntry, getEntryUrl, getEntryLink, setEntry, postSignedEntry } from "./registry";
+import {
+  getJSONEncrypted,
+  getEntryData as fileGetEntryData,
+  getEntryLink as fileGetEntryLink,
+  getJSON as fileGetJSON,
+} from "./file";
+import { pinSkylink } from "./pin";
+import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
+import {
+  deleteJSON,
+  getJSON,
+  setJSON,
+  setDataLink,
+  getRawBytes,
+  getEntryData,
+  setEntryData,
+  deleteEntryData,
+} from "./skydb";
 import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -29,12 +53,14 @@ import { trimSuffix } from "./utils/string";
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
  * @property [customCookie] - Custom cookie header to set.
+ * @property [onDownloadProgress] - Optional callback to track download progress.
  * @property [onUploadProgress] - Optional callback to track upload progress.
  */
 export type CustomClientOptions = {
   APIKey?: string;
   customUserAgent?: string;
   customCookie?: string;
+  onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
 };
 
@@ -46,9 +72,9 @@ export type CustomClientOptions = {
  * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
  * @property [method] - The request method.
  * @property [query] - Query parameters.
- * @property [timeout] - Request timeout. May be deprecated.
  * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
  * @property [headers] - Any request headers to set.
+ * @property [responseType] - The response type.
  * @property [transformRequest] - A function that allows manually transforming the request.
  * @property [transformResponse] - A function that allows manually transforming the response.
  */
@@ -57,10 +83,10 @@ export type RequestConfig = CustomClientOptions & {
   data?: FormData | Record<string, unknown>;
   url?: string;
   method?: Method;
-  query?: Record<string, unknown>;
-  timeout?: number; // TODO: remove
+  headers?: Headers;
+  query?: { [key: string]: string | undefined };
   extraPath?: string;
-  headers?: Record<string, unknown>;
+  responseType?: ResponseType;
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;
 };
@@ -75,8 +101,8 @@ export class SkynetClient {
   protected initialPortalUrl: string;
   // The resolved API portal URL. The request won't be made until needed, or `initPortalUrl()` is called. The request is only made once, for all Skynet Clients.
   protected static resolvedPortalUrl?: Promise<string>;
-  // The given portal URL, if one was passed in to `new SkynetClient()`.
-  protected givenPortalUrl?: string;
+  // The custom portal URL, if one was passed in to `new SkynetClient()`.
+  protected customPortalUrl?: string;
 
   // Holds the cached revision numbers
   revisionNumberCache: { [key: string]: bigint } = {};
@@ -86,7 +112,10 @@ export class SkynetClient {
   // Upload
 
   uploadFile = uploadFile;
-  protected uploadFileRequest = uploadFileRequest;
+  protected uploadSmallFile = uploadSmallFile;
+  protected uploadSmallFileRequest = uploadSmallFileRequest;
+  protected uploadLargeFile = uploadLargeFile;
+  protected uploadLargeFileRequest = uploadLargeFileRequest;
   uploadDirectory = uploadDirectory;
   protected uploadDirectoryRequest = uploadDirectoryRequest;
 
@@ -99,11 +128,15 @@ export class SkynetClient {
   getHnsresUrl = getHnsresUrl;
   getMetadata = getMetadata;
   getFileContent = getFileContent;
-  getFileContentHns = getFileContentHns;
   protected getFileContentRequest = getFileContentRequest;
+  getFileContentHns = getFileContentHns;
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;
+
+  // Pin
+
+  pinSkylink = pinSkylink;
 
   // MySky
 
@@ -115,7 +148,9 @@ export class SkynetClient {
 
   file = {
     getJSON: fileGetJSON.bind(this),
+    getEntryData: fileGetEntryData.bind(this),
     getEntryLink: fileGetEntryLink.bind(this),
+    getJSONEncrypted: getJSONEncrypted.bind(this),
   };
 
   // SkyDB
@@ -124,17 +159,20 @@ export class SkynetClient {
     deleteJSON: deleteJSON.bind(this),
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
+    getRawBytes: getRawBytes.bind(this),
     setDataLink: setDataLink.bind(this),
+    getEntryData: getEntryData.bind(this),
+    setEntryData: setEntryData.bind(this),
+    deleteEntryData: deleteEntryData.bind(this),
   };
 
-  // SkyDB helpers
+  // Registry
 
   registry = {
     getEntry: getEntry.bind(this),
     getEntryUrl: getEntryUrl.bind(this),
-    getEntryLink: getEntryLink.bind(this),
+    getEntryLink: getEntryLinkAsync.bind(this),
     setEntry: setEntry.bind(this),
-
     postSignedEntry: postSignedEntry.bind(this),
   };
 
@@ -151,103 +189,87 @@ export class SkynetClient {
       initialPortalUrl = defaultPortalUrl();
     } else {
       // Portal was given, don't make the request for the resolved portal URL.
-      this.givenPortalUrl = initialPortalUrl;
+      this.customPortalUrl = initialPortalUrl;
     }
     this.initialPortalUrl = initialPortalUrl;
     this.customOptions = customOptions;
   }
 
+  /* istanbul ignore next */
   /**
    * Make the request for the API portal URL.
    *
    * @returns - A promise that resolves when the request is complete.
    */
-  /* istanbul ignore next */
   async initPortalUrl(): Promise<void> {
+    if (this.customPortalUrl) {
+      // Tried to make a request for the API portal URL when a custom URL was already provided.
+      return;
+    }
+
     if (!SkynetClient.resolvedPortalUrl) {
-      SkynetClient.resolvedPortalUrl = new Promise((resolve, reject) => {
-        this.executeRequest({
-          ...this.customOptions,
-          method: "head",
-          url: this.initialPortalUrl,
-          endpointPath: "/",
-        }).then((response) => {
-          if (typeof response.headers === "undefined") {
-            reject(
-              new Error(
-                "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
-              )
-            );
-          }
-          const portalUrl = response.headers["skynet-portal-api"];
-          if (!portalUrl) {
-            reject(new Error("Could not get portal URL for the given portal"));
-          }
-          resolve(trimSuffix(portalUrl, "/"));
-        });
-      });
+      SkynetClient.resolvedPortalUrl = this.resolvePortalUrl();
     }
 
     await SkynetClient.resolvedPortalUrl;
     return;
   }
 
+  /* istanbul ignore next */
   /**
    * Returns the API portal URL. Makes the request to get it if not done so already.
    *
    * @returns - the portal URL.
    */
-  /* istanbul ignore next */
   async portalUrl(): Promise<string> {
-    if (this.givenPortalUrl) {
-      return this.givenPortalUrl;
+    if (this.customPortalUrl) {
+      return this.customPortalUrl;
     }
 
     // Make the request if needed and not done so.
-    this.initPortalUrl();
+    await this.initPortalUrl();
 
     return await SkynetClient.resolvedPortalUrl!; // eslint-disable-line
   }
+
+  // ===============
+  // Private Methods
+  // ===============
 
   /**
    * Creates and executes a request.
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
-   * @throws - Will throw if unimplemented options have been passed in.
    */
   protected async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
-    // Build the URL.
-    let url = config.url;
-    if (!url) {
-      const portalUrl = await this.portalUrl();
-      url = makeUrl(portalUrl, config.endpointPath, config.extraPath ?? "");
-    }
-    if (config.query) {
-      url = addUrlQuery(url, config.query);
-    }
+    const url = await buildRequestUrl(this, config.endpointPath, config.url, config.extraPath, config.query);
 
     // Build headers.
-    const headers = { ...config.headers };
-    // Set some headers from common options.
-    if (config.customUserAgent) {
-      headers["User-Agent"] = config.customUserAgent;
-    }
-    if (config.customCookie) {
-      headers["Cookie"] = config.customCookie;
-    }
+    const headers = buildRequestHeaders(config.headers, config.customUserAgent, config.customCookie);
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
-    /* istanbul ignore next */
-    const onUploadProgress =
-      config.onUploadProgress &&
-      function (event: ProgressEvent) {
-        const progress = event.loaded / event.total;
-
-        // Need the if-statement or TS complains.
-        if (config.onUploadProgress) config.onUploadProgress(progress, event);
+    let onDownloadProgress = undefined;
+    if (config.onDownloadProgress) {
+      onDownloadProgress = function (event: ProgressEvent) {
+        // Avoid NaN for 0-byte file.
+        /* istanbul ignore next: Empty file test doesn't work yet. */
+        const progress = event.total ? event.loaded / event.total : 1;
+        // @ts-expect-error TS complains even though we've ensured this is defined.
+        config.onDownloadProgress(progress, event);
       };
+    }
+    let onUploadProgress = undefined;
+    if (config.onUploadProgress) {
+      onUploadProgress = function (event: ProgressEvent) {
+        // Avoid NaN for 0-byte file.
+        /* istanbul ignore next: event.total is always 0 in Node. */
+        const progress = event.total ? event.loaded / event.total : 1;
+        // @ts-expect-error TS complains even though we've ensured this is defined.
+        config.onUploadProgress(progress, event);
+      };
+    }
 
     return axios({
       url,
@@ -255,7 +277,9 @@ export class SkynetClient {
       data: config.data,
       headers,
       auth,
+      onDownloadProgress,
       onUploadProgress,
+      responseType: config.responseType,
       transformRequest: config.transformRequest,
       transformResponse: config.transformResponse,
 
@@ -265,4 +289,80 @@ export class SkynetClient {
       withCredentials: true,
     });
   }
+
+  /* istanbul ignore next */
+  async resolvePortalUrl(): Promise<string> {
+    const response = await this.executeRequest({
+      ...this.customOptions,
+      method: "head",
+      url: this.initialPortalUrl,
+      endpointPath: "/",
+    });
+
+    if (typeof response.headers === "undefined") {
+      throw new Error(
+        "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      );
+    }
+    const portalUrl = response.headers["skynet-portal-api"];
+    if (!portalUrl) {
+      throw new Error("Could not get portal URL for the given portal");
+    }
+    return trimSuffix(portalUrl, "/");
+  }
+}
+
+// =======
+// Helpers
+// =======
+
+/**
+ * Helper function that builds the request URL.
+ *
+ * @param client - The Skynet client.
+ * @param endpointPath - The endpoint to contact.
+ * @param [url] - The base URL to use, instead of the portal URL.
+ * @param [extraPath] - An optional path to append to the URL.
+ * @param [query] - Optional query parameters to append to the URL.
+ * @returns - The built URL.
+ */
+export async function buildRequestUrl(
+  client: SkynetClient,
+  endpointPath: string,
+  url?: string,
+  extraPath?: string,
+  query?: { [key: string]: string | undefined }
+): Promise<string> {
+  // Build the URL.
+  if (!url) {
+    const portalUrl = await client.portalUrl();
+    url = makeUrl(portalUrl, endpointPath, extraPath ?? "");
+  }
+  if (query) {
+    url = addUrlQuery(url, query);
+  }
+
+  return url;
+}
+
+export type Headers = { [key: string]: string };
+
+/**
+ * Helper function that builds the request headers.
+ *
+ * @param [baseHeaders] - Any base headers.
+ * @param [customUserAgent] - A custom user agent to set.
+ * @param [customCookie] - A custom cookie.
+ * @returns - The built headers.
+ */
+export function buildRequestHeaders(baseHeaders?: Headers, customUserAgent?: string, customCookie?: string): Headers {
+  const returnHeaders = { ...baseHeaders };
+  // Set some headers from common options.
+  if (customUserAgent) {
+    returnHeaders["User-Agent"] = customUserAgent;
+  }
+  if (customCookie) {
+    returnHeaders["Cookie"] = customCookie;
+  }
+  return returnHeaders;
 }
