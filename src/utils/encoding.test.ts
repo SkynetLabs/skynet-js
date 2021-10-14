@@ -61,6 +61,7 @@ describe("encodeUtf8String", () => {
   const strings: Array<[string, number[]]> = [
     ["", [0, 0, 0, 0, 0, 0, 0, 0]],
     ["skynet", [6, 0, 0, 0, 0, 0, 0, 0, 115, 107, 121, 110, 101, 116]],
+    ["żźć", [6, 0, 0, 0, 0, 0, 0, 0, 197, 188, 197, 186, 196, 135]],
   ];
 
   it.each(strings)("should correctly encode string %s as %s", (input, encoding) => {

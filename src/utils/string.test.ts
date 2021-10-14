@@ -1,5 +1,5 @@
 import { uriHandshakePrefix } from "./url";
-import { hexToUint8Array, stringToUint8ArrayUtf8, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
+import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, trimUriPrefix, uint8ArrayToStringUtf8 } from "./string";
 import { randomUnicodeString } from "../../utils/testing";
 
 const hnsLink = "doesn";
@@ -49,7 +49,7 @@ describe("hexToUint8Array", () => {
     ["ff0a", [255, 10]],
   ];
 
-  it.each(hexStrings)("the hex string '%s' should be decoded to %s", (str, array) => {
+  it.each(hexStrings)("the hex string '%s' should be decoded to '%s'", (str, array) => {
     const byteArray = hexToUint8Array(str);
     expect(byteArray).toEqualUint8Array(new Uint8Array(array));
   });
@@ -60,6 +60,18 @@ describe("hexToUint8Array", () => {
     expect(() => hexToUint8Array(str)).toThrowError(
       `Expected parameter 'str' to be a hex-encoded string, was type 'string', value '${str}'`
     );
+  });
+});
+
+describe("toHexString", () => {
+  const testCases: Array<[number[], string]> = [
+    [[255], "ff"],
+    [[10], "0a"],
+    [[255, 10], "ff0a"],
+  ];
+
+  it.each(testCases)("toHexString(%s) should be decoded to '%s'", (array, str) => {
+    expect(toHexString(new Uint8Array(array))).toEqual(str);
   });
 });
 
