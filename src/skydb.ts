@@ -49,6 +49,8 @@ export const DELETION_ENTRY_DATA = new Uint8Array(RAW_SKYLINK_SIZE);
 
 const JSON_RESPONSE_VERSION = 2;
 
+const UNCACHED_REVISION_NUMBER = BigInt(-1);
+
 /**
  * Custom get JSON options. Includes the options for get entry, to get the
  * skylink; and download, to download the file from the skylink.
@@ -151,12 +153,12 @@ export async function getJSON(
   const entry: RegistryEntry | null = await getSkyDBRegistryEntry(this, publicKey, dataKey, getEntryOpts);
 
   // Calculate the new revision and get the cached revision.
-  const revision = entry?.revision ?? BigInt(-1);
+  const revision = entry?.revision ?? UNCACHED_REVISION_NUMBER;
   const newRevision = incrementRevision(revision);
   const cacheKey = getCacheKey(publicKey, dataKey);
   const cachedRevision = this.revisionNumberCache[cacheKey];
 
-  if (cachedRevision && cachedRevision > newRevision) {
+  if (cachedRevision && cachedRevision >= newRevision) {
     throw new Error("A higher revision number for this userID and path is already cached");
   }
 
@@ -598,7 +600,8 @@ export async function getOrCreateRegistryEntry(
   const skyfile = await client.uploadFile(file, uploadOpts);
 
   // Get the new revision by incrementing the one in the cache, or use 0 if not cached.
-  let revision: bigint = client.revisionNumberCache[getCacheKey(publicKey, dataKey)] ?? BigInt(-1);
+  const cacheKey = getCacheKey(publicKey, dataKey);
+  let revision: bigint = client.revisionNumberCache[cacheKey] ?? UNCACHED_REVISION_NUMBER;
   revision = incrementRevision(revision);
 
   // Build the registry entry.
@@ -613,12 +616,20 @@ export async function getOrCreateRegistryEntry(
   return [entry, formatSkylink(dataLink)];
 }
 
+/**
+ * Gets the revision cache key for the given public key and data key.
+ *
+ * @param publicKey - The given public key.
+ * @param dataKey - The given data key.
+ * @returns - The revision cache key.
+ */
 function getCacheKey(publicKey: string, dataKey: string): string {
   return `${publicKey}/${dataKey}`;
 }
 
 /**
- * Gets the next revision from a returned entry (or 0 if the entry was not found).
+ * Gets the next revision from a returned entry (or 0 if the entry was not
+ * found).
  *
  * @param entry - The returned registry entry.
  * @returns - The revision.
@@ -631,6 +642,14 @@ export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
   return incrementRevision(entry.revision);
 }
 
+/**
+ * Increments the given revision number and checks to make sure it is not
+ * greater than the maximum revision.
+ *
+ * @param revision - The given revision number.
+ * @returns - The incremented revision number.
+ * @throws - Will throw if the incremented revision number is greater than the maximum revision.
+ */
 function incrementRevision(revision: bigint): bigint {
   revision = revision + BigInt(1);
 
@@ -685,7 +704,7 @@ export function validateEntryData(data: Uint8Array, allowDeletionEntryData: bool
 }
 
 /**
- * Gets the registry entry, returning null if the entry contains an empty skylink (the deletion sentinel).
+ * Gets the registry entry, returning null if the entry was not found or if it contained a sentinel value indicating deletion.
  *
  * @param client - The Skynet Client
  * @param publicKey - The user public key.
@@ -700,6 +719,8 @@ async function getSkyDBRegistryEntry(
   opts: CustomGetEntryOptions
 ): Promise<RegistryEntry | null> {
   const { entry } = await client.registry.getEntry(publicKey, dataKey, opts);
+
+  // Return null if the entry was not found or if it contained a sentinel value indicating deletion.
   if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
     return null;
   }
