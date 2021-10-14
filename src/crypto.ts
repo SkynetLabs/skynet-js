@@ -45,7 +45,7 @@ export const SIGNATURE_LENGTH = sign.signatureLength;
  * @returns - blake2b 256bit hasher.
  */
 function newHash() {
-  return blake2bInit(32);
+  return blake2bInit(HASH_LENGTH);
 }
 
 /**

@@ -85,7 +85,7 @@ export function addSubdomain(url: string, subdomain: string): string {
  * @param query - The query parameters.
  * @returns - The final URL.
  */
-export function addUrlQuery(url: string, query: Record<string, unknown>): string {
+export function addUrlQuery(url: string, query: { [key: string]: string | undefined }): string {
   const parsed = parse(url, true);
   // Combine the desired query params with the already existing ones.
   query = { ...parsed.query, ...query };

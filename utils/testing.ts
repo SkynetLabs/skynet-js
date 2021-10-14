@@ -1,8 +1,11 @@
+/* istanbul ignore file: Test utils, coverage does not matter */
+
 import parse from "url-parse";
 import { trimForwardSlash } from "../src/utils/string";
 
 /**
- * Returns an array of strings of all possible permutations by picking one string out of each of the input string arrays.
+ * Returns an array of strings of all possible permutations by picking one
+ * string out of each of the input string arrays.
  *
  * @param arrays - Array of string arrays.
  * @returns - Array of strings of all possible permutations.

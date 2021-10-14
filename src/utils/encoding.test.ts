@@ -25,15 +25,6 @@ expect.extend({
   },
 });
 
-describe("toEqualUint8Array", () => {
-  it("should correctly check whether uint8arrays are equal", () => {
-    expect(new Uint8Array([0])).toEqualUint8Array(new Uint8Array([0]));
-    expect(new Uint8Array([1, 1, 0])).toEqualUint8Array(new Uint8Array([1, 1, 0]));
-    expect(new Uint8Array([1, 0, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0]));
-    expect(new Uint8Array([1, 1, 0])).not.toEqualUint8Array(new Uint8Array([1, 1, 0, 0]));
-  });
-});
-
 describe("encodeBigint", () => {
   const bigints: Array<[bigint, number[]]> = [
     [BigInt(0), [0, 0, 0, 0, 0, 0, 0, 0]],
@@ -70,6 +61,7 @@ describe("encodeUtf8String", () => {
   const strings: Array<[string, number[]]> = [
     ["", [0, 0, 0, 0, 0, 0, 0, 0]],
     ["skynet", [6, 0, 0, 0, 0, 0, 0, 0, 115, 107, 121, 110, 101, 116]],
+    ["żźć", [6, 0, 0, 0, 0, 0, 0, 0, 197, 188, 197, 186, 196, 135]],
   ];
 
   it.each(strings)("should correctly encode string %s as %s", (input, encoding) => {
