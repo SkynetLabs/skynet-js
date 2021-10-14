@@ -4,12 +4,16 @@ import MockAdapter from "axios-mock-adapter";
 import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
 import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
-import { SkynetClient, genKeyPairFromSeed } from "./index";
+import { SkynetClient } from "./index";
 import { getEntryUrlForPortal, REGEX_REVISION_NO_QUOTES } from "./registry";
 import { checkCachedDataLink, DELETION_ENTRY_DATA } from "./skydb";
 import { MAX_ENTRY_LENGTH } from "./mysky";
 
-const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
+// Generated with genKeyPairFromSeed("insecure test seed")
+const [publicKey, privateKey] = [
+  "658b900df55e983ce85f3f9fb2a088d568ab514e7bbda51cfbfb16ea945378d9",
+  "7caffac49ac914a541b28723f11776d36ce81e7b9b0c96ccacd1302db429c79c658b900df55e983ce85f3f9fb2a088d568ab514e7bbda51cfbfb16ea945378d9",
+];
 const dataKey = "app";
 const skylink = "CABAB_1Dt0FJsxqsu_J4TodNCbCGvtFf1Uys_3EgzOlTcg";
 const sialink = `${URI_SKYNET_PREFIX}${skylink}`;

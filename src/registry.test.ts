@@ -76,9 +76,18 @@ describe("getEntry", () => {
 });
 
 describe("getEntryLink", () => {
-  it("should get the correct entry link", async () => {
-    const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
-    const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
+  const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
+  const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
+
+  it("should get the correct entry link for hashedDataKeyHex: false", async () => {
+    const expectedEntryLink = `${uriSkynetPrefix}AQBT237lo425ivk3Si6sOKretXxsDwO6DT1M0_Ui3oT0OA`;
+
+    const entryLink = getEntryLink(publicKey, dataKey, { hashedDataKeyHex: false });
+
+    expect(entryLink).toEqual(expectedEntryLink);
+  });
+
+  it("should get the correct entry link for hashedDataKeyHex: true", async () => {
     const expectedEntryLink = `${uriSkynetPrefix}AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ`;
 
     const entryLink = getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });

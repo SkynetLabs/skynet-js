@@ -44,11 +44,8 @@ describe("downloadFile", () => {
 
     const path = extractNonSkylinkPath(fullSkylink, skylink);
 
-    let fullExpectedUrl = `${expectedUrl}${path}${attachment}`;
-    // Change ?attachment=true to &attachment=true if need be.
-    if ((fullExpectedUrl.match(/\?/g) || []).length > 1) {
-      fullExpectedUrl = fullExpectedUrl.replace(attachment, "&attachment=true");
-    }
+    // Query parameters in the input skylink are ignored.
+    const fullExpectedUrl = `${expectedUrl}${path}${attachment}`;
 
     expect(url).toEqual(fullExpectedUrl);
     expect(mockLocationAssign).toHaveBeenCalledWith(fullExpectedUrl);
