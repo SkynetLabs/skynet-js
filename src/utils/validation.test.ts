@@ -3,6 +3,7 @@ import {
   validateBoolean,
   validateNumber,
   validateObject,
+  validateSkylinkString,
   validateString,
   validateStringLen,
   validateUint8Array,
@@ -37,6 +38,14 @@ describe("validateObject", () => {
   it("validateObject should catch null input", () => {
     expect(() => validateObject("test", null, "parameter")).toThrowError(
       "Expected parameter 'test' to be non-null, was type 'null'"
+    );
+  });
+});
+
+describe("validateSkylinkString", () => {
+  it("validateSkylinkString should catch invalid skylinks", () => {
+    expect(() => validateSkylinkString("skylink", "abc", "parameter")).toThrowError(
+      "Expected parameter 'skylink' to be valid skylink of type 'string', was type 'string', value 'abc'"
     );
   });
 });

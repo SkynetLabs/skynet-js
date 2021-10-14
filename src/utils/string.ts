@@ -1,6 +1,6 @@
 import { Buffer } from "buffer";
 
-import { throwValidationError, validateHexString, validateString } from "./validation";
+import { validateHexString, validateString, validationError } from "./validation";
 
 /**
  * Prepends the prefix to the given string only if the string does not already start with the prefix.
@@ -128,7 +128,7 @@ export function hexToUint8Array(str: string): Uint8Array {
 
   const matches = str.match(/.{1,2}/g);
   if (matches === null) {
-    throw throwValidationError("str", str, "parameter", "a hex-encoded string");
+    throw validationError("str", str, "parameter", "a hex-encoded string");
   }
 
   return new Uint8Array(matches.map((byte) => parseInt(byte, 16)));
