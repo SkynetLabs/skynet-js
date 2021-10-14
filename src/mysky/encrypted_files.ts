@@ -232,17 +232,13 @@ export function deriveEncryptedPathSeed(pathSeed: string, subPath: string, isDir
   validateString("subPath", subPath, "parameter");
   validateBoolean("isDirectory", isDirectory, "parameter");
 
-  // The path seed must be for a directory or a MySky root path seed.
-  //
-  // NOTE: As a historical artifact, the root path seed is the same length as a
-  // file path seed.
-  const acceptedLengths = [ENCRYPTION_PATH_SEED_FILE_LENGTH, ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH];
-  if (!acceptedLengths.includes(pathSeed.length)) {
+  // The path seed must be for a directory and not a file.
+  if (pathSeed.length !== ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH) {
     throwValidationError(
       "pathSeed",
       pathSeed,
       "parameter",
-      `a valid file or directory path seed of length '${ENCRYPTION_PATH_SEED_FILE_LENGTH}' or '${ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH}'`
+      `a directory path seed of length '${ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH}'`
     );
   }
 

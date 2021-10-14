@@ -100,8 +100,7 @@ describe("deriveEncryptedPathSeed", () => {
   });
 
   const filePathSeed = "a".repeat(64);
-  const filePathSeedError =
-    "Expected parameter 'pathSeed' to be a valid file or directory path seed of length '64' or '128'";
+  const pathSeedError = "Expected parameter 'pathSeed' to be a directory path seed of length '128'";
 
   // [pathSeed, subPath, isDirectory]
   const validTestCases: Array<[string, string, boolean]> = [
@@ -114,9 +113,6 @@ describe("deriveEncryptedPathSeed", () => {
     [rootPathSeed, "path/file.json/bar", false],
     [rootPathSeed, "path//to/file.json", true],
     [rootPathSeed, "path//to/file.json", false],
-    // should accept file path seeds
-    [filePathSeed, "path/to/file", true],
-    [filePathSeed, "path/to/file", false],
   ];
 
   it.each(validTestCases)("deriveEncryptedPathSeed(%s, %s, %s) should not throw", (pathSeed, subPath, isDirectory) => {
@@ -128,15 +124,18 @@ describe("deriveEncryptedPathSeed", () => {
     // should throw for an empty input sub path
     [rootPathSeed, "", true, "Input subPath '' not a valid path"],
     [rootPathSeed, "", false, "Input subPath '' not a valid path"],
+    // should not accept file path seeds
+    [filePathSeed, "path/to/file", true, pathSeedError],
+    [filePathSeed, "path/to/file", false, pathSeedError],
     // should not accept other non-directory path seeds
-    ["b".repeat(63), "path/to/file", true, filePathSeedError],
-    ["b".repeat(65), "path/to/file", false, filePathSeedError],
-    ["c".repeat(127), "", true, filePathSeedError],
-    ["c".repeat(129), "", false, filePathSeedError],
-    ["c".repeat(127), "path", true, filePathSeedError],
-    ["c".repeat(129), "path", false, filePathSeedError],
-    ["z".repeat(0), "path/to/file", true, filePathSeedError],
-    ["z".repeat(0), "path/to/file", false, filePathSeedError],
+    ["b".repeat(63), "path/to/file", true, pathSeedError],
+    ["b".repeat(65), "path/to/file", false, pathSeedError],
+    ["c".repeat(127), "", true, pathSeedError],
+    ["c".repeat(129), "", false, pathSeedError],
+    ["c".repeat(127), "path", true, pathSeedError],
+    ["c".repeat(129), "path", false, pathSeedError],
+    ["z".repeat(0), "path/to/file", true, pathSeedError],
+    ["z".repeat(0), "path/to/file", false, pathSeedError],
   ];
 
   it.each(invalidTestCases)(
