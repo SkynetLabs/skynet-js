@@ -1,6 +1,6 @@
 # This workflow will run integrations tests daily at midnight.
 
-name: Daily CI
+name: Daily Dev CI
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   get_servers_json:
-    name: Get Servers
+    name: Get Dev Servers
     runs-on: ubuntu-latest
 
     steps:
@@ -20,16 +20,16 @@ jobs:
       - name: Install Dependencies
         run: yarn
 
-      # Get JSON for prod servers.
+      # Get JSON for dev servers.
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(yarn --silent ts-node scripts/get_servers.ts)"
+        run: echo "::set-output name=matrix::$(yarn --silent ts-node scripts/get_servers.ts --dev)"
 
     # Save the result of this 1st phase to the "outputs".
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
-  test:
-    name: Daily Production Server Test
+  test-dev:
+    name: Daily Dev Server Test
     # Wait for the "get_servers_json" phase to finish.
     needs: get_servers_json
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: yarn
 
-      - name: Integration test on server
+      - name: Integration test on dev server
         run: yarn run jest integration
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "${{ matrix.server }}"
