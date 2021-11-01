@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
@@ -301,7 +303,7 @@ describe("getFileContent", () => {
     expect(mock.history.get.length).toBe(1);
     const request = mock.history.get[0];
 
-    expect(request.headers["range"]).toEqual(range);
+    expect(request.headers!["range"]).toEqual(range);
   });
 
   it("should register onDownloadProgress callback if defined", async () => {

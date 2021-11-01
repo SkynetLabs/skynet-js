@@ -15,9 +15,10 @@
     "@typescript-eslint/no-floating-promises": 1,
 
     "jsdoc/require-description": 1,
+    "jsdoc/require-throws": 1,
+
     "jsdoc/require-param-type": 0,
     "jsdoc/require-property-type": 0,
-    "jsdoc/require-returns-type": 0,
-    "jsdoc/require-throws": 1
+    "jsdoc/require-returns-type": 0
   }
 }

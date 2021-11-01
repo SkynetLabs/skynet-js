@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
@@ -92,10 +94,10 @@ describe("uploadFile", () => {
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
 
-    expect(request.headers["User-Agent"]).toEqual("Sia-Agent");
-    expect(request.headers["Cookie"]).toEqual("foo");
+    expect(request.headers!["User-Agent"]).toEqual("Sia-Agent");
+    expect(request.headers!["Cookie"]).toEqual("foo");
     // Check that other headers weren't altered.
-    expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
+    expect(request.headers!["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);
 
     expect(data.skylink).toEqual(sialink);
@@ -109,9 +111,9 @@ describe("uploadFile", () => {
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
 
-    expect(request.headers["User-Agent"]).toEqual("Sia-Agent-2");
+    expect(request.headers!["User-Agent"]).toEqual("Sia-Agent-2");
     // Check that other headers weren't altered.
-    expect(request.headers["Content-Type"]).toEqual("application/x-www-form-urlencoded");
+    expect(request.headers!["Content-Type"]).toEqual("application/x-www-form-urlencoded");
     await compareFormData(request.data, [["file", "foo", filename]]);
 
     expect(data.skylink).toEqual(sialink);
