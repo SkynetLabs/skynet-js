@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
@@ -44,11 +46,8 @@ describe("downloadFile", () => {
 
     const path = extractNonSkylinkPath(fullSkylink, skylink);
 
-    let fullExpectedUrl = `${expectedUrl}${path}${attachment}`;
-    // Change ?attachment=true to &attachment=true if need be.
-    if ((fullExpectedUrl.match(/\?/g) || []).length > 1) {
-      fullExpectedUrl = fullExpectedUrl.replace(attachment, "&attachment=true");
-    }
+    // Query parameters in the input skylink are ignored.
+    const fullExpectedUrl = `${expectedUrl}${path}${attachment}`;
 
     expect(url).toEqual(fullExpectedUrl);
     expect(mockLocationAssign).toHaveBeenCalledWith(fullExpectedUrl);
@@ -304,7 +303,7 @@ describe("getFileContent", () => {
     expect(mock.history.get.length).toBe(1);
     const request = mock.history.get[0];
 
-    expect(request.headers["range"]).toEqual(range);
+    expect(request.headers!["range"]).toEqual(range);
   });
 
   it("should register onDownloadProgress callback if defined", async () => {

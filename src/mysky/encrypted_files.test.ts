@@ -77,7 +77,7 @@ describe("deriveEncryptedPathSeed", () => {
   });
 
   /**
-   * REGRESSION TEST
+   * Regression test:
    *
    * The issue was that `deriveEncryptedPathSeed` calculated path seeds of 64
    * bytes internally for each directory and then truncated to 32 bytes at the
@@ -100,9 +100,7 @@ describe("deriveEncryptedPathSeed", () => {
   });
 
   const filePathSeed = "a".repeat(64);
-  const filePathSeedError = "Expected parameter 'pathSeed' to be a directory path seed of length '128'";
-  const fullFilePathSeedError =
-    "Expected parameter 'pathSeed' to be a directory path seed of length '128', was type 'string', value 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'";
+  const pathSeedError = "Expected parameter 'pathSeed' to be a directory path seed of length '128'";
 
   // [pathSeed, subPath, isDirectory]
   const validTestCases: Array<[string, string, boolean]> = [
@@ -127,19 +125,17 @@ describe("deriveEncryptedPathSeed", () => {
     [rootPathSeed, "", true, "Input subPath '' not a valid path"],
     [rootPathSeed, "", false, "Input subPath '' not a valid path"],
     // should not accept file path seeds
-    [filePathSeed, "path/to/file", true, fullFilePathSeedError],
-    [filePathSeed, "path/to/file", false, fullFilePathSeedError],
-    [filePathSeed, "", true, fullFilePathSeedError],
-    [filePathSeed, "", false, fullFilePathSeedError],
+    [filePathSeed, "path/to/file", true, pathSeedError],
+    [filePathSeed, "path/to/file", false, pathSeedError],
     // should not accept other non-directory path seeds
-    ["b".repeat(63), "path/to/file", true, filePathSeedError],
-    ["b".repeat(65), "path/to/file", false, filePathSeedError],
-    ["c".repeat(127), "", true, filePathSeedError],
-    ["c".repeat(129), "", false, filePathSeedError],
-    ["c".repeat(127), "path", true, filePathSeedError],
-    ["c".repeat(129), "path", false, filePathSeedError],
-    ["z".repeat(0), "path/to/file", true, filePathSeedError],
-    ["z".repeat(0), "path/to/file", false, filePathSeedError],
+    ["b".repeat(63), "path/to/file", true, pathSeedError],
+    ["b".repeat(65), "path/to/file", false, pathSeedError],
+    ["c".repeat(127), "", true, pathSeedError],
+    ["c".repeat(129), "", false, pathSeedError],
+    ["c".repeat(127), "path", true, pathSeedError],
+    ["c".repeat(129), "path", false, pathSeedError],
+    ["z".repeat(0), "path/to/file", true, pathSeedError],
+    ["z".repeat(0), "path/to/file", false, pathSeedError],
   ];
 
   it.each(invalidTestCases)(

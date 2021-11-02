@@ -20,7 +20,7 @@ jobs:
       - name: Install Dependencies
         run: yarn
 
-      # Create the json.
+      # Get JSON for prod servers.
       - id: set-matrix
         run: echo "::set-output name=matrix::$(yarn --silent ts-node scripts/get_servers.ts)"
 
@@ -51,25 +51,3 @@ jobs:
         run: yarn run jest integration
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "${{ matrix.server }}"
-
-  test-dev:
-    name: Daily Dev Server Test
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        dev-server: [dev1.siasky.dev, dev2.siasky.dev, dev3.siasky.dev, siasky.xyz]
-
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-
-      - name: Install dependencies
-        run: yarn
-
-      - name: Integration test on dev server
-        run: yarn run jest integration
-        env:
-          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.dev-server }}"

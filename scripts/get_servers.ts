@@ -1,33 +1,17 @@
 import process from "process";
 
 import axios from "axios";
+import minimist from "minimist";
 
 const portal = "siasky.net";
-const servers = [
-  "as-hk-1",
-  "eu-fin-1",
-  "eu-fin-2",
-  "eu-fin-3",
-  "eu-fin-4",
-  "eu-ger-1",
-  "eu-ger-2",
-  "eu-ger-3",
-  "eu-ger-4",
-  "eu-ger-5",
-  "eu-ger-6",
-  "eu-ger-7",
-  "eu-ger-8",
-  "eu-pol-1",
-  "eu-pol-2",
-  "eu-pol-3",
-  "us-or-1",
-  "us-or-2",
-  "us-pa-1",
-  "us-pa-2",
-  "us-va-1",
-  "us-va-2",
-  "us-va-3",
-].map((server) => `https://${server}.${portal}`);
+const server_list_endpoint = `https://server-list.hns.${portal}/`;
+const timeout = 60_000;
+
+type Server = {
+  name: string;
+  ip: string;
+  last_announce: string;
+};
 
 /**
  * Filter array asynchronously.
@@ -45,15 +29,38 @@ async function filter<T>(arr: Array<T>, fn: (input: T) => Promise<boolean>): Pro
 
 let healthy_servers: Array<string> = [];
 (async () => {
+  // Get command line arguments.
+  const argv = minimist(process.argv.slice(2));
+
+  // Are we getting dev servers?
+  const devFlag = argv["dev"];
+
+  const resp = await axios.get(server_list_endpoint);
+  const servers: Server[] = resp.data;
+  const serverNames = servers
+    .filter((server) => {
+      const isDevServer = server.name.includes("dev");
+      const isXYZServer = server.name.includes("xyz");
+      const isCrapServer = server.name.includes("crap");
+
+      // Only include dev servers if dev flag was passed in.
+      if (isDevServer || isXYZServer || isCrapServer) {
+        return devFlag;
+      } else {
+        return !devFlag;
+      }
+    })
+    .map((server) => `https://${server.name}`);
+
   // Server is healthy if the server is operational, which means:
   // 1. it's up
   // 2. it's not disabled
   // 3. it's healthy (all of its checks show "up: true")
-  healthy_servers = await filter(servers, async (server: string) => {
+  healthy_servers = await filter(serverNames, async (server: string) => {
     const url = `${server}/health-check`;
 
     try {
-      const response = await axios.get(url);
+      const response = await axios.get(url, { timeout });
       if (response.data.disabled) {
         // Server disabled.
         return false;
@@ -73,6 +80,11 @@ let healthy_servers: Array<string> = [];
     // Server healthy.
     return true;
   });
-})().finally(() => {
+
   process.stdout.write(JSON.stringify(healthy_servers));
+})().catch((e) => {
+  console.log(e);
+
+  // Couldn't get list of healthy servers. Write empty list of servers.
+  process.stdout.write("[]");
 });
