@@ -5,8 +5,8 @@ import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
 import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient } from "./index";
-import { getEntryUrlForPortal, REGEX_REVISION_NO_QUOTES } from "./registry";
-import { checkCachedDataLink, DELETION_ENTRY_DATA } from "./skydb";
+import { getEntryUrlForPortal } from "./registry";
+import { checkCachedDataLink, DELETION_ENTRY_DATA, getCacheKey } from "./skydb";
 import { MAX_ENTRY_LENGTH } from "./mysky";
 
 // Generated with genKeyPairFromSeed("insecure test seed")
@@ -160,9 +160,6 @@ describe("setJSON", () => {
   });
 
   it("should perform an upload, lookup and registry update", async () => {
-    // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
-
     // mock a successful registry update
     mock.onPost(registryUrl).replyOnce(204);
 
@@ -172,25 +169,23 @@ describe("setJSON", () => {
     expect(returnedSkylink).toEqual(sialink);
 
     // assert our request history contains the expected amount of requests
-    expect(mock.history.get.length).toBe(1);
+    expect(mock.history.get.length).toBe(0);
     expect(mock.history.post.length).toBe(2);
 
     const data = JSON.parse(mock.history.post[1].data);
     expect(data).toBeDefined();
-    expect(data.revision).toEqual(revision + 1);
+    expect(data.revision).toBeGreaterThanOrEqual(revision + 1);
   });
 
-  it("should use a revision number of 0 if the lookup failed", async () => {
-    mock.onGet(registryLookupUrl).reply(404);
-
+  it("should use a revision number of 0 if the entry is not cached", async () => {
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
 
     // call `setJSON` on the client
-    await client.db.setJSON(privateKey, dataKey, jsonData);
+    await client.db.setJSON(privateKey, "inexistent entry", jsonData);
 
     // assert our request history contains the expected amount of requests
-    expect(mock.history.get.length).toBe(1);
+    expect(mock.history.get.length).toBe(0);
     expect(mock.history.post.length).toBe(2);
 
     const data = JSON.parse(mock.history.post[1].data);
@@ -199,17 +194,9 @@ describe("setJSON", () => {
   });
 
   it("should fail if the entry has the maximum allowed revision", async () => {
-    // mock a successful registry lookup
-    const entryData = {
-      data,
-      // String the bigint since JS doesn't support 64-bit numbers.
-      revision: MAX_REVISION.toString(),
-      signature:
-        "18c76e88141c7cc76d8a77abcd91b5d64d8fc3833eae407ab8a5339e5fcf7940e3fa5830a8ad9439a0c0cc72236ed7b096ae05772f81eee120cbd173bfd6600e",
-    };
-    // Replace the quotes around the stringed bigint.
-    const json = JSON.stringify(entryData).replace(REGEX_REVISION_NO_QUOTES, '"revision":"$1"');
-    mock.onGet(registryLookupUrl).reply(200, json);
+    const dataKey = "maximum revision";
+    const cacheKey = getCacheKey(publicKey, dataKey);
+    client.revisionNumberCache[cacheKey] = MAX_REVISION;
 
     // mock a successful registry update
     mock.onPost(registryUrl).reply(204);
