@@ -1,4 +1,5 @@
 import { AxiosError } from "axios";
+
 import { client, dataKey, portal } from ".";
 import { genKeyPairAndSeed, getEntryLink, URI_SKYNET_PREFIX } from "../src";
 import { hashDataKey } from "../src/crypto";
@@ -239,5 +240,43 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const { data } = await client.db.getJSON(publicKey, dataKey, { hashedDataKeyHex: false });
 
     expect(data).toEqual(json);
+  });
+
+  // REGRESSION TEST: By creating a gap between setJSON and getJSON, a user
+  // could call getJSON, get outdated data, then call setJSON, and overwrite
+  // more up to date data with outdated data, but still use a high enough
+  // revision number.
+  //
+  // The fix is that you cannot retrieve the revision number while calling
+  // setJSON. You have to use the same revision number that you had when you
+  // called getJSON
+  it("Should avoid data race bugs where getJSON is not called", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const json1 = { message: 1 };
+    const json2 = { message: 2 };
+
+    // Set the data.
+    await client.db.setJSON(privateKey, dataKey, json1);
+
+    // Try to invoke the data race.
+    let receivedJson;
+    try {
+      // Get the data while also calling setJSON.
+      [{ data: receivedJson }] = await Promise.all([
+        client.db.getJSON(publicKey, dataKey),
+        client.db.setJSON(privateKey, dataKey, json2),
+      ]);
+    } catch (e) {
+      if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
+        // The data race condition has been prevented and we received the expected error. Return from test early.
+        return;
+      }
+
+      // Unexpected error, throw.
+      throw e;
+    }
+
+    // Data race did not occur, getJSON should have latest JSON.
+    expect(receivedJson).toEqual(json2);
   });
 });

@@ -36,6 +36,8 @@ import {
   CustomSetEntryDataOptions,
   DEFAULT_SET_ENTRY_DATA_OPTIONS,
   DELETION_ENTRY_DATA,
+  incrementCachedRevision,
+  decrementCachedRevision,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
@@ -394,21 +396,31 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    // Call SkyDB helper to create the registry entry. We can't call SkyDB's
-    // setJSON here directly because we need MySky to sign the entry, instead of
-    // signing it ourselves with a given private key.
-    const [entry, dataLink] = await getOrCreateRegistryEntryFromCache(
-      this.connector.client,
-      publicKey,
-      dataKey,
-      json,
-      opts
-    );
+    // Get the cached revision number before doing anything else.
+    const newRevision = incrementCachedRevision(this.connector.client, publicKey, dataKey);
 
-    const signature = await this.signRegistryEntry(entry, path);
+    let entry, dataLink;
+    try {
+      // Call SkyDB helper to create the registry entry. We can't call SkyDB's
+      // setJSON here directly because we need MySky to sign the entry, instead of
+      // signing it ourselves with a given private key.
+      [entry, dataLink] = await getOrCreateRegistryEntryFromCache(
+        this.connector.client,
+        dataKey,
+        json,
+        newRevision,
+        opts
+      );
 
-    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+      const signature = await this.signRegistryEntry(entry, path);
+
+      const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+      await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+    } catch (e) {
+      // Something failed, revert the cached revision number increment.
+      decrementCachedRevision(this.connector.client, publicKey, dataKey);
+      throw e;
+    }
 
     return { data: json, dataLink };
   }
@@ -636,18 +648,29 @@ export class MySky {
     const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedPathSeed(path, false)]);
     const dataKey = deriveEncryptedFileTweak(pathSeed);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
-    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
-    // Pad and encrypt json file.
-    const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);
+    // Get the cached revision number before doing anything else.
+    const newRevision = incrementCachedRevision(this.connector.client, publicKey, dataKey);
 
-    const [entry] = await getOrCreateRegistryEntryFromCache(this.connector.client, publicKey, dataKey, data, opts);
+    try {
+      // Derive the key.
+      const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
-    // Call MySky which checks for write permissions on the path.
-    const signature = await this.signEncryptedRegistryEntry(entry, path);
+      // Pad and encrypt json file.
+      const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);
 
-    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+      const [entry] = await getOrCreateRegistryEntryFromCache(this.connector.client, dataKey, data, newRevision, opts);
+
+      // Call MySky which checks for write permissions on the path.
+      const signature = await this.signEncryptedRegistryEntry(entry, path);
+
+      const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+      await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+    } catch (e) {
+      // Something failed, revert the cached revision number increment.
+      decrementCachedRevision(this.connector.client, publicKey, dataKey);
+      throw e;
+    }
 
     return { data: json };
   }
