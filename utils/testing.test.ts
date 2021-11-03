@@ -16,7 +16,7 @@ describe("combineStrings", () => {
 
 describe("randomUnicodeString", () => {
   it("should generate random unicode strings of the given length", () => {
-    for (let i = 0; i < 1024; i++) {
+    for (let i = 0; i < 32; i++) {
       const s = randomUnicodeString(i);
       expect(s.length).toEqual(i);
     }
