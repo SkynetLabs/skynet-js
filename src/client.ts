@@ -104,7 +104,7 @@ export class SkynetClient {
   // The custom portal URL, if one was passed in to `new SkynetClient()`.
   protected customPortalUrl?: string;
 
-  // Holds the cached revision numbers
+  // Holds the cached revision numbers.
   revisionNumberCache: { [key: string]: bigint } = {};
 
   // Set methods (defined in other files).

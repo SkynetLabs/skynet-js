@@ -3,6 +3,7 @@ import { AxiosError } from "axios";
 import { client, dataKey, portal } from ".";
 import { genKeyPairAndSeed, getEntryLink, URI_SKYNET_PREFIX } from "../src";
 import { hashDataKey } from "../src/crypto";
+import { getCacheKey } from "../src/skydb";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
 
@@ -240,6 +241,27 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const { data } = await client.db.getJSON(publicKey, dataKey, { hashedDataKeyHex: false });
 
     expect(data).toEqual(json);
+  });
+
+  it("Should update the revision number cache", async () => {
+    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const json = { message: 1 };
+    const cacheKey = getCacheKey(publicKey, dataKey);
+
+    await client.db.setJSON(privateKey, dataKey, json);
+
+    let revisionNumber = client.revisionNumberCache[cacheKey];
+    expect(revisionNumber.toString()).toEqual("0");
+
+    await client.db.setJSON(privateKey, dataKey, json);
+
+    revisionNumber = client.revisionNumberCache[cacheKey];
+    expect(revisionNumber.toString()).toEqual("1");
+
+    await client.db.getJSON(publicKey, dataKey);
+
+    revisionNumber = client.revisionNumberCache[cacheKey];
+    expect(revisionNumber.toString()).toEqual("1");
   });
 
   // REGRESSION TEST: By creating a gap between setJSON and getJSON, a user

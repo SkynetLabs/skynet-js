@@ -548,6 +548,7 @@ export async function getOrCreateRegistryEntryFromCache(
     const jsonFullData: JsonFullData = { _data: data, _v: JSON_RESPONSE_VERSION };
     fullData = JSON.stringify(jsonFullData);
   } else {
+    /* istanbul ignore next - This case is only called by setJSONEncrypted which is not tested in this repo */
     fullData = data;
   }
 
@@ -583,21 +584,6 @@ export async function getOrCreateRegistryEntryFromCache(
  */
 export function getCacheKey(publicKey: string, dataKey: string): string {
   return `${publicKey}/${dataKey}`;
-}
-
-/**
- * Gets the next revision from a returned entry (or 0 if the entry was not
- * found).
- *
- * @param entry - The returned registry entry.
- * @returns - The revision.
- * @throws - Will throw if the next revision would be beyond the maximum allowed value.
- */
-export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
-  if (entry === null) {
-    return BigInt(0);
-  }
-  return incrementRevision(entry.revision);
 }
 
 /**

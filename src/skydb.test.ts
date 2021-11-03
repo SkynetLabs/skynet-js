@@ -110,7 +110,7 @@ describe("getJSON", () => {
   });
 
   it("should return null if no entry is found", async () => {
-    mock.onGet(registryLookupUrl).reply(404);
+    mock.onGet(registryLookupUrl).replyOnce(404);
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toBeNull();
@@ -119,8 +119,8 @@ describe("getJSON", () => {
 
   it("should throw if the returned file data is not JSON", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).reply(200, "thisistext", { ...headers, "content-type": "text/plain" });
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).replyOnce(200, "thisistext", { ...headers, "content-type": "text/plain" });
 
     await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
       `File data for the entry at data key '${dataKey}' is not JSON.`
@@ -129,8 +129,8 @@ describe("getJSON", () => {
 
   it("should throw if the returned _data field in the file data is not JSON", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).reply(200, JSON.stringify(entryData));
-    mock.onGet(skylinkUrl).reply(200, { _data: "thisistext", _v: 1 }, headers);
+    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(skylinkUrl).replyOnce(200, { _data: "thisistext", _v: 1 }, headers);
 
     await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
       "File data '_data' for the entry at data key 'app' is not JSON."
@@ -179,7 +179,7 @@ describe("setJSON", () => {
 
   it("should use a revision number of 0 if the entry is not cached", async () => {
     // mock a successful registry update
-    mock.onPost(registryUrl).reply(204);
+    mock.onPost(registryUrl).replyOnce(204);
 
     // call `setJSON` on the client
     await client.db.setJSON(privateKey, "inexistent entry", jsonData);
@@ -199,7 +199,7 @@ describe("setJSON", () => {
     client.revisionNumberCache[cacheKey] = MAX_REVISION;
 
     // mock a successful registry update
-    mock.onPost(registryUrl).reply(204);
+    mock.onPost(registryUrl).replyOnce(204);
 
     // Try to set data, should fail.
     await expect(client.db.setJSON(privateKey, dataKey, entryData)).rejects.toThrowError(
@@ -225,6 +225,30 @@ describe("setJSON", () => {
     await expect(client.db.setJSON(privateKey, dataKey)).rejects.toThrowError(
       "Expected parameter 'json' to be type 'object', was type 'undefined'"
     );
+  });
+
+  it("Should not update the cached revision if the registry update fails.", async () => {
+    const dataKey = "registry failure";
+    const cacheKey = getCacheKey(publicKey, dataKey);
+    const json = { foo: "bar" };
+
+    // mock a successful registry update
+    mock.onPost(registryUrl).replyOnce(204);
+
+    await client.db.setJSON(privateKey, dataKey, json);
+
+    const revision1 = client.revisionNumberCache[cacheKey];
+
+    // mock a failed registry update
+    mock.onPost(registryUrl).replyOnce(404);
+
+    await expect(client.db.setJSON(privateKey, dataKey, json)).rejects.toThrowError(
+      "Request failed with status code 404"
+    );
+
+    const revision2 = client.revisionNumberCache[cacheKey];
+
+    expect(revision1.toString()).toEqual(revision2.toString());
   });
 });
 
