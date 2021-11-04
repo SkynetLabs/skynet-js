@@ -161,7 +161,7 @@ export async function downloadFile(
 export async function downloadFileHns(
   this: SkynetClient,
   domain: string,
-  customOptions?: CustomDownloadOptions
+  customOptions?: CustomHnsDownloadOptions
 ): Promise<string> {
   // Validation is done in `getHnsUrl`.
 
