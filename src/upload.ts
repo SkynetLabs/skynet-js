@@ -16,7 +16,7 @@ const TUS_CHUNK_SIZE = (1 << 22) * 10;
 /**
  * A number indicating how many parts should be uploaded in parallel.
  */
-const TUS_PARALLEL_UPLOADS = 2;
+const TUS_PARALLEL_UPLOADS = 1;
 
 /**
  * The retry delays, in ms. Data is stored in skyd for up to 20 minutes, so the
