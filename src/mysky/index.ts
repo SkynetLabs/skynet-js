@@ -29,7 +29,7 @@ import {
   DEFAULT_SET_JSON_OPTIONS,
   CustomGetJSONOptions,
   CustomSetJSONOptions,
-  getOrCreateRegistryEntry,
+  getOrCreateSkyDBRegistryEntry,
   JSONResponse,
   validateEntryData,
   CustomSetEntryDataOptions,
@@ -403,7 +403,7 @@ export class MySky {
       // Call SkyDB helper to create the registry entry. We can't call SkyDB's
       // setJSON here directly because we need MySky to sign the entry, instead of
       // signing it ourselves with a given private key.
-      [entry, dataLink] = await getOrCreateRegistryEntry(this.connector.client, dataKey, json, newRevision, opts);
+      [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(this.connector.client, dataKey, json, newRevision, opts);
 
       const signature = await this.signRegistryEntry(entry, path);
 
@@ -661,7 +661,7 @@ export class MySky {
       // Pad and encrypt json file.
       const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);
 
-      const [entry] = await getOrCreateRegistryEntry(this.connector.client, dataKey, data, newRevision, opts);
+      const [entry] = await getOrCreateSkyDBRegistryEntry(this.connector.client, dataKey, data, newRevision, opts);
 
       // Call MySky which checks for write permissions on the path.
       const signature = await this.signEncryptedRegistryEntry(entry, path);

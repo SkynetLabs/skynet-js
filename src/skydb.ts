@@ -39,7 +39,7 @@ import {
 import { ResponseType } from "axios";
 import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
-export type JsonFullData = {
+type SkynetJson = {
   _data: JsonData;
   _v: number;
 };
@@ -179,8 +179,9 @@ export async function getJSON(
 
   // Download the data in the returned data link.
   const downloadOpts = extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS);
-  const { data } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
+  const { data }: { data: JsonData | SkynetJson } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
 
+  // Validate that the returned data is JSON.
   if (typeof data !== "object" || data === null) {
     throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
   }
@@ -190,6 +191,7 @@ export async function getJSON(
     return { data, dataLink };
   }
 
+  // Extract the JSON from the returned SkynetJson.
   const actualData = data["_data"];
   if (typeof actualData !== "object" || data === null) {
     throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
@@ -238,7 +240,7 @@ export async function setJSON(
 
   let entry, dataLink;
   try {
-    [entry, dataLink] = await getOrCreateRegistryEntry(this, dataKey, json, newRevision, opts);
+    [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(this, dataKey, json, newRevision, opts);
 
     // Update the registry.
     const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
@@ -504,7 +506,7 @@ export async function getRawBytes(
  * @returns - The registry entry and corresponding data link.
  * @throws - Will throw if the revision is already the maximum value.
  */
-export async function getOrCreateRegistryEntry(
+export async function getOrCreateSkyDBRegistryEntry(
   client: SkynetClient,
   dataKey: string,
   data: JsonData | Uint8Array,
@@ -522,8 +524,8 @@ export async function getOrCreateRegistryEntry(
   let fullData: string | Uint8Array;
   if (!(data instanceof Uint8Array)) {
     // Set the hidden _data and _v fields.
-    const jsonFullData: JsonFullData = { _data: data, _v: JSON_RESPONSE_VERSION };
-    fullData = JSON.stringify(jsonFullData);
+    const skynetJson = buildSkynetJsonObject(data);
+    fullData = JSON.stringify(skynetJson);
   } else {
     /* istanbul ignore next - This case is only called by setJSONEncrypted which is not tested in this repo */
     fullData = data;
@@ -711,13 +713,13 @@ async function getSkyDBRegistryEntryAndUpdateCache(
 }
 
 /**
- * Returns whether the given registry entry indicates a past deletion.
+ * Sets the hidden _data and _v fields on the given raw JSON data.
  *
- * @param entry - The registry entry.
- * @returns - Whether the registry entry data indicated a past deletion.
+ * @param data - The given JSON data.
+ * @returns - The Skynet JSON data.
  */
-function wasRegistryEntryDeleted(entry: RegistryEntry): boolean {
-  return areEqualUint8Arrays(entry.data, EMPTY_SKYLINK);
+function buildSkynetJsonObject(data: JsonData): SkynetJson {
+  return { _data: data, _v: JSON_RESPONSE_VERSION };
 }
 
 /**
@@ -740,4 +742,14 @@ function parseDataLink(data: Uint8Array, legacy: boolean): { rawDataLink: string
     throwValidationError("entry.data", data, "returned entry data", `length ${RAW_SKYLINK_SIZE} bytes`);
   }
   return { rawDataLink, dataLink: formatSkylink(rawDataLink) };
+}
+
+/**
+ * Returns whether the given registry entry indicates a past deletion.
+ *
+ * @param entry - The registry entry.
+ * @returns - Whether the registry entry data indicated a past deletion.
+ */
+function wasRegistryEntryDeleted(entry: RegistryEntry): boolean {
+  return areEqualUint8Arrays(entry.data, EMPTY_SKYLINK);
 }
