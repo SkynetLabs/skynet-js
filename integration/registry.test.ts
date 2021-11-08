@@ -78,7 +78,7 @@ describe(`Registry end to end integration tests for portal '${portal}'`, () => {
     await client.registry.setEntry(privateKey, entry);
     entry.revision--;
     await expect(client.registry.setEntry(privateKey, entry)).rejects.toThrowError(
-      "Request failed with status code 500"
+      "Unable to update the registry: provided revision number is invalid"
     );
   });
 });

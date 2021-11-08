@@ -482,20 +482,24 @@ export async function postSignedEntry(
     signature: Array.from(signature),
   };
 
-  await this.executeRequest({
-    ...opts,
-    endpointPath: opts.endpointSetEntry,
-    method: "post",
-    data,
-    // Transform the request to remove quotes, since the revision needs to be
-    // parsed as a uint64 on the Go side.
-    transformRequest: function (data: unknown) {
-      // Convert the object data to JSON.
-      const json = JSON.stringify(data);
-      // Change the revision value from a string to a JSON integer.
-      return json.replace(REGEX_REVISION_WITH_QUOTES, '"revision":$1');
-    },
-  });
+  try {
+    await this.executeRequest({
+      ...opts,
+      endpointPath: opts.endpointSetEntry,
+      method: "post",
+      data,
+      // Transform the request to remove quotes, since the revision needs to be
+      // parsed as a uint64 on the Go side.
+      transformRequest: function (data: unknown) {
+        // Convert the object data to JSON.
+        const json = JSON.stringify(data);
+        // Change the revision value from a string to a JSON integer.
+        return json.replace(REGEX_REVISION_WITH_QUOTES, '"revision":$1');
+      },
+    });
+  } catch (err) {
+    handleSetEntryErrResponse(err as AxiosError);
+  }
 }
 
 /**
@@ -575,17 +579,18 @@ export function validateRegistryProof(
 }
 
 /**
- * Handles error responses returned in getEntry.
+ * Handles error responses returned from getEntry endpoint.
  *
  * @param err - The Axios error.
  * @returns - An empty signed registry entry if the status code is 404.
- * @throws - Will throw if the status code is not 404.
+ * @throws - Will throw if the error response is malformed, or the error message otherwise if the error status code is not 404.
  */
 function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
   /* istanbul ignore next */
   if (!err.response) {
     throw new Error(`Error response field not found, incomplete Axios error. Full error: ${err}`);
   }
+
   /* istanbul ignore next */
   if (!err.response.status) {
     throw new Error(`Error response did not contain expected field 'status'. Full error: ${err}`);
@@ -595,7 +600,43 @@ function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
     return { entry: null, signature: null };
   }
 
-  throw err;
+  // If we don't get an error message from skyd, just return the Axios error.
+  /* istanbul ignore next */
+  if (!err.response.data) {
+    throw err;
+  }
+  if (!err.response.data.message) {
+    throw err;
+  }
+
+  // Return the error message from skyd.
+  throw new Error(err.response.data.message);
+}
+
+/**
+ * Handles error responses returned from setEntry endpoint.
+ *
+ * @param err - The Axios error.
+ * @throws - Will throw if the error response is malformed, or the error message otherwise.
+ */
+function handleSetEntryErrResponse(err: AxiosError) {
+  /* istanbul ignore next */
+  if (!err.response) {
+    throw new Error(`Error response field not found, incomplete Axios error. Full error: ${err}`);
+  }
+
+  // If we don't get an error message from skyd, just return the Axios error.
+  /* istanbul ignore next */
+  if (!err.response.data) {
+    throw err;
+  }
+  /* istanbul ignore next */
+  if (!err.response.data.message) {
+    throw err;
+  }
+
+  // Return the error message from skyd.
+  throw new Error(err.response.data.message);
 }
 
 /**

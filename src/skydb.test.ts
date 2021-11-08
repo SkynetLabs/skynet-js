@@ -240,11 +240,9 @@ describe("setJSON", () => {
     const revision1 = client.revisionNumberCache[cacheKey];
 
     // mock a failed registry update
-    mock.onPost(registryUrl).replyOnce(404);
+    mock.onPost(registryUrl).replyOnce(400, JSON.stringify({ message: "foo" }));
 
-    await expect(client.db.setJSON(privateKey, dataKey, json)).rejects.toThrowError(
-      "Request failed with status code 404"
-    );
+    await expect(client.db.setJSON(privateKey, dataKey, json)).rejects.toEqual(new Error("foo"));
 
     const revision2 = client.revisionNumberCache[cacheKey];
 
