@@ -238,7 +238,7 @@ export async function setJSON(
 
   let entry, dataLink;
   try {
-    [entry, dataLink] = await getOrCreateRegistryEntryFromCache(this, dataKey, json, newRevision, opts);
+    [entry, dataLink] = await getOrCreateRegistryEntry(this, dataKey, json, newRevision, opts);
 
     // Update the registry.
     const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
@@ -381,11 +381,21 @@ export async function setEntryData(
   validateEntryData(data, opts.allowDeletionEntryData);
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+  const publicKey = toHexString(publicKeyArray);
 
-  const entry = await getNextRegistryEntryFromCache(this, toHexString(publicKeyArray), dataKey, data);
+  // Get the cached revision number before doing anything else.
+  const newRevision = incrementCachedRevision(this, publicKey, dataKey);
 
-  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-  await this.registry.setEntry(privateKey, entry, setEntryOpts);
+  const entry = { dataKey, data, revision: newRevision };
+
+  try {
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+    await this.registry.setEntry(privateKey, entry, setEntryOpts);
+  } catch (e) {
+    // Something failed, revert the cached revision number increment.
+    decrementCachedRevision(this, publicKey, dataKey);
+    throw e;
+  }
 
   return { data: entry.data };
 }
@@ -482,39 +492,6 @@ export async function getRawBytes(
 // =======
 
 /**
- * Gets the next entry for the given public key and data key, setting the data to be the given data and the revision number accordingly.
- *
- * @param client - The Skynet client.
- * @param publicKey - The user public key.
- * @param dataKey - The data key.
- * @param data - The data to set.
- * @returns - The registry entry and corresponding data link.
- * @throws - Will throw if the revision is already the maximum value.
- */
-export async function getNextRegistryEntryFromCache(
-  client: SkynetClient,
-  publicKey: string,
-  dataKey: string,
-  data: Uint8Array
-): Promise<RegistryEntry> {
-  // Not publicly available, don't validate input.
-
-  // Get the new revision by incrementing the one in the cache, or use 0 if not cached.
-  const cacheKey = getCacheKey(publicKey, dataKey);
-  let revision: bigint = client.revisionNumberCache[cacheKey] ?? UNCACHED_REVISION_NUMBER;
-  revision = incrementRevision(revision);
-
-  // Build the registry entry.
-  const entry: RegistryEntry = {
-    dataKey,
-    data,
-    revision,
-  };
-
-  return entry;
-}
-
-/**
  * Gets the registry entry and data link or creates the entry if it doesn't
  * exist. Uses the cached revision number for the entry, or 0 if the entry has
  * not been cached.
@@ -527,7 +504,7 @@ export async function getNextRegistryEntryFromCache(
  * @returns - The registry entry and corresponding data link.
  * @throws - Will throw if the revision is already the maximum value.
  */
-export async function getOrCreateRegistryEntryFromCache(
+export async function getOrCreateRegistryEntry(
   client: SkynetClient,
   dataKey: string,
   data: JsonData | Uint8Array,
