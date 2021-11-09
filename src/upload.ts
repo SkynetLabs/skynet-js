@@ -42,6 +42,7 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  * @property [customFilename] - The custom filename to use when uploading files.
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
  * @property [errorPages] - Defines a mapping of error codes and subfiles which are to be served in case we are serving the respective error code. All subfiles referred like this must be defined with absolute paths and must exist.
+ * @property [numParallelUploads=2] - Used to override the default number of parallel uploads. Disable parallel uploads by setting to 1. Note that each parallel upload must be chunk-aligned so the number of parallel uploads may be limited if some parts would end up empty.
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
  * @property [tryFiles] - Allows us to set a list of potential subfiles to return in case the requested one does not exist or is a directory. Those subfiles might be listed with relative or absolute paths. If the path is absolute the file must exist.
  */
@@ -52,6 +53,7 @@ export type CustomUploadOptions = BaseCustomOptions & {
   customFilename?: string;
   errorPages?: JsonData;
   largeFileSize?: number;
+  numParallelUploads?: number;
   retryDelays?: number[];
   tryFiles?: string[];
 };
@@ -74,6 +76,7 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   customFilename: "",
   errorPages: undefined,
   largeFileSize: TUS_CHUNK_SIZE,
+  numParallelUploads: TUS_PARALLEL_UPLOADS,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
   tryFiles: undefined,
 };
@@ -254,8 +257,8 @@ export async function uploadLargeFileRequest(
     | ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>)
     | undefined = undefined;
   if (resp.headers["tus-extension"]?.includes("concatenation")) {
-    // TODO: Use a user-provided value, if given.
-    parallelUploads = TUS_PARALLEL_UPLOADS;
+    // Use a user-provided value, if given.
+    parallelUploads = opts.numParallelUploads;
     // Limit the number of parallel uploads if some parts would end up empty,
     // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
     // and one empty part.
