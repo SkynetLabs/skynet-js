@@ -3,7 +3,9 @@ import base32Encode from "base32-encode";
 import { fromByteArray, toByteArray } from "base64-js";
 
 import { assertUint64 } from "./number";
+import { BASE32_ENCODED_SKYLINK_SIZE, BASE64_ENCODED_SKYLINK_SIZE } from "../skylink/sia";
 import { stringToUint8ArrayUtf8 } from "./string";
+import { validateStringLen } from "./validation";
 
 const BASE32_ENCODING_VARIANT = "RFC4648-HEX";
 
@@ -14,6 +16,7 @@ const BASE32_ENCODING_VARIANT = "RFC4648-HEX";
  * @returns - The decoded bytes.
  */
 export function decodeSkylinkBase32(skylink: string): Uint8Array {
+  validateStringLen("skylink", skylink, "parameter", BASE32_ENCODED_SKYLINK_SIZE);
   skylink = skylink.toUpperCase();
   const bytes = base32Decode(skylink, BASE32_ENCODING_VARIANT);
   return new Uint8Array(bytes);
@@ -36,6 +39,7 @@ export function encodeSkylinkBase32(bytes: Uint8Array): string {
  * @returns - The decoded bytes.
  */
 export function decodeSkylinkBase64(skylink: string): Uint8Array {
+  validateStringLen("skylink", skylink, "parameter", BASE64_ENCODED_SKYLINK_SIZE);
   // Add padding.
   skylink = `${skylink}==`;
   // Convert from URL encoding.

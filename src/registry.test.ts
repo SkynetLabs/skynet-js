@@ -5,14 +5,15 @@ import { genKeyPairAndSeed } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
 import { uriSkynetPrefix } from "./utils/url";
-import { stringToUint8ArrayUtf8 } from "./utils/string";
+import { hexToUint8Array, stringToUint8ArrayUtf8 } from "./utils/string";
 
 const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = defaultSkynetPortalUrl;
 const client = new SkynetClient(portalUrl);
 const dataKey = "app";
 
-const registryLookupUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
+const registryPostUrl = `${portalUrl}/skynet/registry`;
+const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
 
 describe("getEntry", () => {
   let mock: MockAdapter;
@@ -23,7 +24,7 @@ describe("getEntry", () => {
   });
 
   it("should throw if the response status is not in the 200s and not 404 and JSON is returned", async () => {
-    mock.onGet(registryLookupUrl).replyOnce(400, JSON.stringify({ message: "foo error" }));
+    mock.onGet(registryGetUrl).replyOnce(400, JSON.stringify({ message: "foo error" }));
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toEqual(new Error("foo error"));
   });
@@ -38,7 +39,7 @@ describe("getEntry", () => {
 </body>
 </html>`;
 
-    mock.onGet(registryLookupUrl).replyOnce(429, responseHTML);
+    mock.onGet(registryGetUrl).replyOnce(429, responseHTML);
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toEqual(
       new Error("Request failed with status code 429")
@@ -54,7 +55,7 @@ describe("getEntry", () => {
         "33d14d2889cb292142614da0e0ff13a205c4867961276001471d13b779fc9032568ddd292d9e0dff69d7b1f28be07972cc9d86da3cecf3adecb6f9b7311af808",
     };
 
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrow();
   });
@@ -66,7 +67,7 @@ describe("getEntry", () => {
   });
 
   it("Should throw on incomplete response from registry GET", async () => {
-    mock.onGet(registryLookupUrl).replyOnce(200, "{}");
+    mock.onGet(registryGetUrl).replyOnce(200, "{}");
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError(
       "Did not get a complete entry response"
@@ -124,6 +125,31 @@ describe("getEntryUrl", () => {
 });
 
 describe("setEntry", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+    mock.resetHistory();
+  });
+
+  it("Should sign and set a valid registry entry", async () => {
+    // mock a successful registry update
+    mock.onPost(registryPostUrl).replyOnce(204);
+
+    // Hex-encoded skylink.
+    const data = hexToUint8Array(
+      "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367"
+    );
+
+    const entry = {
+      data,
+      dataKey,
+      revision: BigInt(11),
+    };
+
+    await client.registry.setEntry(privateKey, entry);
+  });
+
   it("Should throw an error if the private key is not hex-encoded", async () => {
     // @ts-expect-error We pass an invalid private key on purpose.
     await expect(client.registry.setEntry("foo", {})).rejects.toThrowError(

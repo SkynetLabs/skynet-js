@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 
 import { client, dataKey, portal } from ".";
-import { genKeyPairAndSeed, getEntryLink, URI_SKYNET_PREFIX } from "../src";
+import { genKeyPairAndSeed, getEntryLink, SkynetClient, URI_SKYNET_PREFIX } from "../src";
 import { hashDataKey } from "../src/crypto";
 import { getCacheKey } from "../src/skydb";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
@@ -264,41 +264,91 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     expect(revisionNumber.toString()).toEqual("1");
   });
 
-  // REGRESSION TEST: By creating a gap between setJSON and getJSON, a user
+  // REGRESSION TESTS: By creating a gap between setJSON and getJSON, a user
   // could call getJSON, get outdated data, then call setJSON, and overwrite
   // more up to date data with outdated data, but still use a high enough
   // revision number.
   //
   // The fix is that you cannot retrieve the revision number while calling
   // setJSON. You have to use the same revision number that you had when you
-  // called getJSON
-  it("Should avoid data race bugs where getJSON is not called", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
-    const json1 = { message: 1 };
-    const json2 = { message: 2 };
+  // called getJSON.
+  describe("getJSON/setJSON data race regression integration tests", () => {
+    const jsonOld = { message: 1 };
+    const jsonNew = { message: 2 };
 
-    // Set the data.
-    await client.db.setJSON(privateKey, dataKey, json1);
+    const delays = [0, 100, 200, 300, 500, 1000];
 
-    // Try to invoke the data race.
-    let receivedJson;
-    try {
-      // Get the data while also calling setJSON.
-      [{ data: receivedJson }] = await Promise.all([
-        client.db.getJSON(publicKey, dataKey),
-        client.db.setJSON(privateKey, dataKey, json2),
-      ]);
-    } catch (e) {
-      if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
-        // The data race condition has been prevented and we received the expected error. Return from test early.
-        return;
+    it.each(delays)(
+      "should not get old data when getJSON is called after setJSON on a single client with a '%s' ms delay and getJSON doesn't fail",
+      async (delay) => {
+        const { publicKey, privateKey } = genKeyPairAndSeed();
+
+        // Set the data.
+        await client.db.setJSON(privateKey, dataKey, jsonOld);
+
+        // Try to invoke the data race.
+        let receivedJson;
+        try {
+          // Get the data while also calling setJSON.
+          const getJSONFn = async function () {
+            // Sleep.
+            await new Promise((r) => setTimeout(r, delay));
+            return await client.db.getJSON(publicKey, dataKey);
+          };
+          [{ data: receivedJson }] = await Promise.all([getJSONFn(), client.db.setJSON(privateKey, dataKey, jsonNew)]);
+        } catch (e) {
+          if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
+            // The data race condition has been prevented and we received the expected error. Return from test early.
+            return;
+          }
+
+          // Unexpected error, throw.
+          throw e;
+        }
+
+        // Data race did not occur, getJSON should have latest JSON.
+        expect(receivedJson).toEqual(jsonNew);
       }
+    );
 
-      // Unexpected error, throw.
-      throw e;
-    }
+    it.each(delays)(
+      "should not get old data when getJSON is called after setJSON on two different clients with a '%s' ms delay and getJSON doesn't fail",
+      async (delay) => {
+        // Create two new clients with a fresh revision cache.
+        const client1 = new SkynetClient(portal);
+        const client2 = new SkynetClient(portal);
+        const { publicKey, privateKey } = genKeyPairAndSeed();
 
-    // Data race did not occur, getJSON should have latest JSON.
-    expect(receivedJson).toEqual(json2);
+        // Use a random client to set the initial data.
+        if (Math.random() < 0.5) {
+          await client1.db.setJSON(privateKey, dataKey, jsonOld);
+        } else {
+          await client2.db.setJSON(privateKey, dataKey, jsonOld);
+        }
+
+        // Try to invoke the data race.
+        let receivedJson;
+        try {
+          // Get the data while also calling setJSON.
+          const getJSONFn = async function () {
+            // Sleep.
+            await new Promise((r) => setTimeout(r, delay));
+            return await client2.db.getJSON(publicKey, dataKey);
+          };
+          [{ data: receivedJson }] = await Promise.all([getJSONFn(), client1.db.setJSON(privateKey, dataKey, jsonNew)]);
+        } catch (e) {
+          if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
+            // The data race condition has been prevented and we received the expected error. Return from test early.
+            return;
+          }
+
+          // Unexpected error, throw.
+          throw e;
+        }
+
+        // Data race did not occur, getJSON should have latest JSON.
+        expect(receivedJson).toEqual(jsonNew);
+      }
+    );
   });
 });

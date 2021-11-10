@@ -3,6 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { getSkylinkUrlForPortal } from "./download";
 import { MAX_REVISION } from "./utils/number";
+import { stringToUint8ArrayUtf8, toHexString } from "./utils/string";
 import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient } from "./index";
 import { getEntryUrlForPortal } from "./registry";
@@ -25,19 +26,26 @@ const bitfield = 2048;
 
 const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
-const registryUrl = `${portalUrl}/skynet/registry`;
-const registryLookupUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
+const registryPostUrl = `${portalUrl}/skynet/registry`;
+const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
 const uploadUrl = `${portalUrl}/skynet/skyfile`;
 const skylinkUrl = getSkylinkUrlForPortal(portalUrl, skylink);
 
 // Hex-encoded skylink.
 const data = "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367";
 const revision = 11;
+// Entry data for the data and revision.
 const entryData = {
   data,
   revision,
   signature:
     "33d14d2889cb292142614da0e0ff13a205c4867961276001471d13b779fc9032568ddd292d9e0dff69d7b1f28be07972cc9d86da3cecf3adecb6f9b7311af809",
+};
+
+const headers = {
+  "skynet-portal-api": portalUrl,
+  "skynet-skylink": skylink,
+  "content-type": "application/json",
 };
 
 describe("getJSON", () => {
@@ -49,15 +57,10 @@ describe("getJSON", () => {
     mock.resetHistory();
   });
 
-  const headers = {
-    "skynet-portal-api": portalUrl,
-    "skynet-skylink": skylink,
-    "content-type": "application/json",
-  };
-
   it("should perform a lookup and skylink GET", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
+    // mock a successful data download
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
@@ -68,7 +71,7 @@ describe("getJSON", () => {
 
   it("should perform a lookup but not a skylink GET if the cachedDataLink is a hit", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: skylink });
     expect(data).toBeNull();
@@ -80,7 +83,7 @@ describe("getJSON", () => {
     const skylinkNoHit = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey, { cachedDataLink: skylinkNoHit });
@@ -91,7 +94,7 @@ describe("getJSON", () => {
 
   it("should throw if the cachedDataLink is not a valid skylink", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
 
     await expect(client.db.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" })).rejects.toThrowError(
@@ -101,7 +104,7 @@ describe("getJSON", () => {
 
   it("should perform a lookup and skylink GET on legacy pre-v4 data", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, legacyJsonData, headers);
 
     const jsonReturned = await client.db.getJSON(publicKey, dataKey);
@@ -110,7 +113,7 @@ describe("getJSON", () => {
   });
 
   it("should return null if no entry is found", async () => {
-    mock.onGet(registryLookupUrl).replyOnce(404);
+    mock.onGet(registryGetUrl).replyOnce(404);
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toBeNull();
@@ -119,7 +122,7 @@ describe("getJSON", () => {
 
   it("should throw if the returned file data is not JSON", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, "thisistext", { ...headers, "content-type": "text/plain" });
 
     await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
@@ -129,7 +132,7 @@ describe("getJSON", () => {
 
   it("should throw if the returned _data field in the file data is not JSON", async () => {
     // mock a successful registry lookup
-    mock.onGet(registryLookupUrl).replyOnce(200, JSON.stringify(entryData));
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, { _data: "thisistext", _v: 1 }, headers);
 
     await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
@@ -161,7 +164,7 @@ describe("setJSON", () => {
 
   it("should perform an upload, lookup and registry update", async () => {
     // mock a successful registry update
-    mock.onPost(registryUrl).replyOnce(204);
+    mock.onPost(registryPostUrl).replyOnce(204);
 
     // set data
     const { data: returnedData, dataLink: returnedSkylink } = await client.db.setJSON(privateKey, dataKey, jsonData);
@@ -179,7 +182,7 @@ describe("setJSON", () => {
 
   it("should use a revision number of 0 if the entry is not cached", async () => {
     // mock a successful registry update
-    mock.onPost(registryUrl).replyOnce(204);
+    mock.onPost(registryPostUrl).replyOnce(204);
 
     // call `setJSON` on the client
     await client.db.setJSON(privateKey, "inexistent entry", jsonData);
@@ -199,7 +202,7 @@ describe("setJSON", () => {
     client.revisionNumberCache[cacheKey] = MAX_REVISION;
 
     // mock a successful registry update
-    mock.onPost(registryUrl).replyOnce(204);
+    mock.onPost(registryPostUrl).replyOnce(204);
 
     // Try to set data, should fail.
     await expect(client.db.setJSON(privateKey, dataKey, entryData)).rejects.toThrowError(
@@ -233,14 +236,14 @@ describe("setJSON", () => {
     const json = { foo: "bar" };
 
     // mock a successful registry update
-    mock.onPost(registryUrl).replyOnce(204);
+    mock.onPost(registryPostUrl).replyOnce(204);
 
     await client.db.setJSON(privateKey, dataKey, json);
 
     const revision1 = client.revisionNumberCache[cacheKey];
 
     // mock a failed registry update
-    mock.onPost(registryUrl).replyOnce(400, JSON.stringify({ message: "foo" }));
+    mock.onPost(registryPostUrl).replyOnce(400, JSON.stringify({ message: "foo" }));
 
     await expect(client.db.setJSON(privateKey, dataKey, json)).rejects.toEqual(new Error("foo"));
 
@@ -283,5 +286,188 @@ describe("checkCachedDataLink", () => {
     expect(() => checkCachedDataLink(skylink, "asdf")).toThrowError(
       "Expected optional parameter 'cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
     );
+  });
+});
+
+// REGRESSION TESTS: By creating a gap between setJSON and getJSON, a user
+// could call getJSON, get outdated data, then call setJSON, and overwrite
+// more up to date data with outdated data, but still use a high enough
+// revision number.
+//
+// The fix is that you cannot retrieve the revision number while calling
+// setJSON. You have to use the same revision number that you had when you
+// called getJSON.
+describe("getJSON/setJSON data race regression unit tests", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
+    mock.resetHistory();
+  });
+
+  const skylinkOld = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+  const skylinkOldUrl = getSkylinkUrlForPortal(portalUrl, skylinkOld);
+  const dataOld = toHexString(stringToUint8ArrayUtf8(skylinkOld)); // hex-encoded skylink
+  const revisionOld = 0;
+  const entryDataOld = {
+    data: dataOld,
+    revision: revisionOld,
+    signature:
+      "921d30e860d51f13d1065ea221b29fc8d11cfe7fa0e32b5d5b8e13bee6f91cfa86fe6b12ca4cef7a90ba52d2c50efb62b241f383e9d7bb264558280e564faa0f",
+  };
+  const headersOld = { ...headers, "skynet-skylink": skylinkOld };
+
+  const skylinkNew = skylink;
+  const skylinkNewUrl = skylinkUrl;
+  const dataNew = data; // hex-encoded skylink
+  const revisionNew = 1;
+  const entryDataNew = {
+    data: dataNew,
+    revision: revisionNew,
+    signature:
+      "2a9889915f06d414e8cde51eb17db565410d20b2b50214e8297f7f4a0cb5c77e0edc62a319607dfaa042e0cc16ed0d7e549cca2abd11c2f86a335009936f150d",
+  };
+  const headersNew = { ...headers, "skynet-skylink": skylinkNew };
+
+  const jsonOld = { message: 1 };
+  const jsonNew = { message: 2 };
+  const skynetJsonOld = { _data: jsonOld, _v: 2 };
+  const skynetJsonNew = { _data: jsonNew, _v: 2 };
+
+  it("should not get old data when getJSON and setJSON are called simultaneously on the same client and getJSON doesn't fail", async () => {
+    // Create a new client with a fresh revision cache.
+    const client = new SkynetClient(portalUrl);
+
+    // Mock setJSON with the old skylink.
+    mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkOld, merkleroot, bitfield });
+    mock.onPost(registryPostUrl).replyOnce(204);
+
+    // Set the data.
+    await client.db.setJSON(privateKey, dataKey, jsonOld);
+
+    // Mock getJSON with the new entry data and the new skylink.
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
+    mock.onGet(skylinkNewUrl).replyOnce(200, skynetJsonNew, headers);
+
+    // Mock setJSON with the new skylink.
+    mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkNew, merkleroot, bitfield });
+    mock.onPost(registryPostUrl).replyOnce(204);
+
+    // Try to invoke the data race.
+    let receivedJson;
+    try {
+      // Get the data while also calling setJSON.
+      [{ data: receivedJson }] = await Promise.all([
+        client.db.getJSON(publicKey, dataKey),
+        client.db.setJSON(privateKey, dataKey, jsonNew),
+      ]);
+    } catch (e) {
+      if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
+        // The data race condition has been prevented and we received the expected error. Return from test early.
+        return;
+      }
+
+      // Unexpected error, throw.
+      throw e;
+    }
+
+    // Data race did not occur, getJSON should have latest JSON.
+    expect(receivedJson).toEqual(jsonNew);
+
+    // assert our request history contains the expected amount of requests
+    expect(mock.history.get.length).toBe(2);
+    expect(mock.history.post.length).toBe(4);
+  });
+
+  it("should not get old data when getJSON and setJSON are called simultaneously on different clients and getJSON doesn't fail", async () => {
+    // Create two new clients with a fresh revision cache.
+    const client1 = new SkynetClient(portalUrl);
+    const client2 = new SkynetClient(portalUrl);
+
+    // Mock setJSON with the old skylink.
+    mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkOld, merkleroot, bitfield });
+    mock.onPost(registryPostUrl).replyOnce(204);
+
+    // Set the data.
+    await client1.db.setJSON(privateKey, dataKey, jsonOld);
+
+    // Mock getJSON with the new entry data and the new skylink.
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
+    mock.onGet(skylinkNewUrl).replyOnce(200, skynetJsonNew, headersNew);
+
+    // Mock setJSON with the new skylink.
+    mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkNew, merkleroot, bitfield });
+    mock.onPost(registryPostUrl).replyOnce(204);
+
+    // Try to invoke the data race.
+    let receivedJson;
+    try {
+      // Get the data while also calling setJSON.
+      [{ data: receivedJson }] = await Promise.all([
+        client2.db.getJSON(publicKey, dataKey),
+        client1.db.setJSON(privateKey, dataKey, jsonNew),
+      ]);
+    } catch (e) {
+      if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
+        // The data race condition has been prevented and we received the expected error. Return from test early.
+        return;
+      }
+
+      // Unexpected error, throw.
+      throw e;
+    }
+
+    // Data race did not occur, getJSON should have latest JSON.
+    expect(receivedJson).toEqual(jsonNew);
+
+    // assert our request history contains the expected amount of requests.
+    expect(mock.history.get.length).toBe(2);
+    expect(mock.history.post.length).toBe(4);
+  });
+
+  it("should not mess up cache when two setJSON calls are made simultaneously and one fails", async () => {
+    // Create a new client with a fresh revision cache.
+    const client = new SkynetClient(portalUrl);
+
+    // Mock a successful setJSON.
+    mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkOld, merkleroot, bitfield });
+    mock.onPost(registryPostUrl).replyOnce(204);
+
+    // Mock setJSON that fails to upload.
+    mock.onPost(uploadUrl).replyOnce(400);
+
+    await Promise.allSettled([
+      client.db.setJSON(privateKey, dataKey, jsonOld),
+      client.db.setJSON(privateKey, dataKey, jsonOld),
+    ]);
+
+    const cacheKey1 = getCacheKey(publicKey, dataKey);
+    expect(client.revisionNumberCache[cacheKey1].toString()).toEqual("0");
+
+    // Make a getJSON call.
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataOld));
+    mock.onGet(skylinkOldUrl).replyOnce(200, skynetJsonOld, headersOld);
+    const { data: receivedJson1 } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(receivedJson1).toEqual(jsonOld);
+
+    // Make another setJSON call - it should still work.
+    mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkNew, merkleroot, bitfield });
+    mock.onPost(registryPostUrl).replyOnce(204);
+    await client.db.setJSON(privateKey, dataKey, jsonNew);
+
+    const cacheKey2 = getCacheKey(publicKey, dataKey);
+    expect(client.revisionNumberCache[cacheKey2].toString()).toEqual("1");
+
+    // Make a getJSON call.
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
+    mock.onGet(skylinkNewUrl).replyOnce(200, skynetJsonNew, headersNew);
+    const { data: receivedJson2 } = await client.db.getJSON(publicKey, dataKey);
+
+    expect(receivedJson2).toEqual(jsonNew);
+
+    expect(mock.history.get.length).toBe(4);
+    expect(mock.history.post.length).toBe(5);
   });
 });
