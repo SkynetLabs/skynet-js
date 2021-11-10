@@ -1,6 +1,7 @@
+import { tryAcquire } from "async-mutex";
 import { sign } from "tweetnacl";
 
-import { SkynetClient } from "./client";
+import { CachedRevisionEntry, SkynetClient } from "./client";
 import { DEFAULT_DOWNLOAD_OPTIONS, CustomDownloadOptions } from "./download";
 import {
   DEFAULT_GET_ENTRY_OPTIONS,
@@ -161,42 +162,54 @@ export async function getJSON(
     ...customOptions,
   };
 
-  // Lookup the registry entry.
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entry: RegistryEntry | null = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, getEntryOpts);
-  if (entry === null) {
-    return { data: null, dataLink: null };
-  }
+  // Safely get or create mutex for the requested entry.
+  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
 
-  // Determine the data link.
-  // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  const { rawDataLink, dataLink } = parseDataLink(entry.data, true);
+  // Immediately fail if the mutex is not available
+  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+    // Lookup the registry entry.
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+    const entry: RegistryEntry | null = await getSkyDBRegistryEntryAndUpdateCache(
+      this,
+      publicKey,
+      dataKey,
+      cachedRevisionEntry,
+      getEntryOpts
+    );
+    if (entry === null) {
+      return { data: null, dataLink: null };
+    }
 
-  // If a cached data link is provided and the data link hasn't changed, return.
-  if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
-    return { data: null, dataLink };
-  }
+    // Determine the data link.
+    // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
+    const { rawDataLink, dataLink } = parseDataLink(entry.data, true);
 
-  // Download the data in the returned data link.
-  const downloadOpts = extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS);
-  const { data }: { data: JsonData | SkynetJson } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
+    // If a cached data link is provided and the data link hasn't changed, return.
+    if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
+      return { data: null, dataLink };
+    }
 
-  // Validate that the returned data is JSON.
-  if (typeof data !== "object" || data === null) {
-    throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
-  }
+    // Download the data in the returned data link.
+    const downloadOpts = extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS);
+    const { data }: { data: JsonData | SkynetJson } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
 
-  if (!(data["_data"] && data["_v"])) {
-    // Legacy data prior to skynet-js v4, return as-is.
-    return { data, dataLink };
-  }
+    // Validate that the returned data is JSON.
+    if (typeof data !== "object" || data === null) {
+      throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
+    }
 
-  // Extract the JSON from the returned SkynetJson.
-  const actualData = data["_data"];
-  if (typeof actualData !== "object" || data === null) {
-    throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
-  }
-  return { data: actualData as JsonData, dataLink };
+    if (!(data["_data"] && data["_v"])) {
+      // Legacy data prior to skynet-js v4, return as-is.
+      return { data, dataLink };
+    }
+
+    // Extract the JSON from the returned SkynetJson.
+    const actualData = data["_data"];
+    if (typeof actualData !== "object" || data === null) {
+      throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
+    }
+    return { data: actualData as JsonData, dataLink };
+  });
 }
 
 /**
@@ -235,23 +248,25 @@ export async function setJSON(
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
   const publicKey = toHexString(publicKeyArray);
 
-  // Get the cached revision number before doing anything else.
-  const newRevision = incrementCachedRevision(this, publicKey, dataKey);
+  // Safely get or create mutex for the requested entry.
+  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
 
-  let entry, dataLink;
-  try {
-    [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(this, dataKey, json, newRevision, opts);
+  // Immediately fail if the mutex is not available
+  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+    // Get the cached revision number before doing anything else.
+    const newRevision = incrementRevision(cachedRevisionEntry.revision);
+
+    const [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(this, dataKey, json, newRevision, opts);
 
     // Update the registry.
     const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.registry.setEntry(privateKey, entry, setEntryOpts);
-  } catch (e) {
-    // Something failed, revert the cached revision number increment.
-    decrementCachedRevision(this, publicKey, dataKey);
-    throw e;
-  }
 
-  return { data: json, dataLink: formatSkylink(dataLink) };
+    // Update the cached revision number.
+    cachedRevisionEntry.revision = newRevision;
+
+    return { data: json, dataLink: formatSkylink(dataLink) };
+  });
 }
 
 /**
@@ -341,11 +356,17 @@ export async function getEntryData(
     ...customOptions,
   };
 
-  const entry = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, opts);
-  if (entry === null) {
-    return { data: null };
-  }
-  return { data: entry.data };
+  // Safely get or create mutex for the requested entry.
+  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+
+  // Immediately fail if the mutex is not available
+  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+    const entry = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, cachedRevisionEntry, opts);
+    if (entry === null) {
+      return { data: null };
+    }
+    return { data: entry.data };
+  });
 }
 
 /**
@@ -385,21 +406,24 @@ export async function setEntryData(
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
   const publicKey = toHexString(publicKeyArray);
 
-  // Get the cached revision number before doing anything else.
-  const newRevision = incrementCachedRevision(this, publicKey, dataKey);
+  // Safely get or create mutex for the requested entry.
+  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
 
-  const entry = { dataKey, data, revision: newRevision };
+  // Immediately fail if the mutex is not available
+  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+    // Get the cached revision number.
+    const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
-  try {
+    const entry = { dataKey, data, revision: newRevision };
+
     const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
     await this.registry.setEntry(privateKey, entry, setEntryOpts);
-  } catch (e) {
-    // Something failed, revert the cached revision number increment.
-    decrementCachedRevision(this, publicKey, dataKey);
-    throw e;
-  }
 
-  return { data: entry.data };
+    // Update the cached revision number.
+    cachedRevisionEntry.revision = newRevision;
+
+    return { data: entry.data };
+  });
 }
 
 /**
@@ -463,30 +487,42 @@ export async function getRawBytes(
     ...customOptions,
   };
 
-  // Lookup the registry entry.
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entry = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, getEntryOpts);
-  if (entry === null) {
-    return { data: null, dataLink: null };
-  }
+  // Safely get or create mutex for the requested entry.
+  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
 
-  // Determine the data link.
-  // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  const { rawDataLink, dataLink } = parseDataLink(entry.data, false);
+  // Immediately fail if the mutex is not available
+  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+    // Lookup the registry entry.
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+    const entry = await getSkyDBRegistryEntryAndUpdateCache(
+      this,
+      publicKey,
+      dataKey,
+      cachedRevisionEntry,
+      getEntryOpts
+    );
+    if (entry === null) {
+      return { data: null, dataLink: null };
+    }
 
-  // If a cached data link is provided and the data link hasn't changed, return.
-  if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
-    return { data: null, dataLink };
-  }
+    // Determine the data link.
+    // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
+    const { rawDataLink, dataLink } = parseDataLink(entry.data, false);
 
-  // Download the data in the returned data link.
-  const downloadOpts = {
-    ...extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS),
-    responseType: "arraybuffer" as ResponseType,
-  };
-  const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
+    // If a cached data link is provided and the data link hasn't changed, return.
+    if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
+      return { data: null, dataLink };
+    }
 
-  return { data: new Uint8Array(buffer), dataLink };
+    // Download the data in the returned data link.
+    const downloadOpts = {
+      ...extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS),
+      responseType: "arraybuffer" as ResponseType,
+    };
+    const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
+
+    return { data: new Uint8Array(buffer), dataLink };
+  });
 }
 
 // =======
@@ -555,53 +591,6 @@ export async function getOrCreateSkyDBRegistryEntry(
 }
 
 /**
- * Gets the revision cache key for the given public key and data key.
- *
- * @param publicKey - The given public key.
- * @param dataKey - The given data key.
- * @returns - The revision cache key.
- */
-export function getCacheKey(publicKey: string, dataKey: string): string {
-  return `${publicKey}/${dataKey}`;
-}
-
-/**
- * Decrements the revision number in the cache for the given entry.
- *
- * @param client - The Skynet client.
- * @param publicKey - The user public key.
- * @param dataKey - The data key.
- */
-export function decrementCachedRevision(client: SkynetClient, publicKey: string, dataKey: string): void {
-  const cacheKey = getCacheKey(publicKey, dataKey);
-  client.revisionNumberCache[cacheKey] -= BigInt(1);
-}
-
-/**
- * Increments the revision number in the cache for the given entry and returns
- * the new revision number.
- *
- * @param client - The Skynet client.
- * @param publicKey - The user public key.
- * @param dataKey - The data key.
- * @returns - The new revision number.
- * @throws - Will throw if the revision is already the maximum value.
- */
-export function incrementCachedRevision(client: SkynetClient, publicKey: string, dataKey: string): bigint {
-  const cacheKey = getCacheKey(publicKey, dataKey);
-  const cachedRevision = client.revisionNumberCache[cacheKey];
-
-  // Get the new revision by incrementing the one in the cache, or use 0 if not cached.
-  const revision: bigint = cachedRevision ?? UNCACHED_REVISION_NUMBER;
-  const newRevision = incrementRevision(revision);
-
-  // Update the cached revision number.
-  client.revisionNumberCache[cacheKey] = newRevision;
-
-  return newRevision;
-}
-
-/**
  * Increments the given revision number and checks to make sure it is not
  * greater than the maximum revision.
  *
@@ -609,7 +598,7 @@ export function incrementCachedRevision(client: SkynetClient, publicKey: string,
  * @returns - The incremented revision number.
  * @throws - Will throw if the incremented revision number is greater than the maximum revision.
  */
-function incrementRevision(revision: bigint): bigint {
+export function incrementRevision(revision: bigint): bigint {
   revision = revision + BigInt(1);
 
   // Throw if the revision is already the maximum value.
@@ -672,6 +661,7 @@ export function validateEntryData(data: Uint8Array, allowDeletionEntryData: bool
  * @param client - The Skynet Client
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
+ * @param cachedRevisionEntry - The cached revision entry object containing the revision number and the mutex.
  * @param opts - Additional settings.
  * @returns - The registry entry, or null if not found or deleted.
  */
@@ -679,6 +669,7 @@ async function getSkyDBRegistryEntryAndUpdateCache(
   client: SkynetClient,
   publicKey: string,
   dataKey: string,
+  cachedRevisionEntry: CachedRevisionEntry,
   opts: CustomGetEntryOptions
 ): Promise<RegistryEntry | null> {
   // If this throws due to a parse error or network error, exit early and do not
@@ -690,18 +681,17 @@ async function getSkyDBRegistryEntryAndUpdateCache(
     return null;
   }
 
-  // Calculate the new revision and get the cached revision.
-  const cacheKey = getCacheKey(publicKey, dataKey);
-  const cachedRevision = client.revisionNumberCache[cacheKey];
+  // Calculate the new revision.
   const newRevision = entry?.revision ?? UNCACHED_REVISION_NUMBER + BigInt(1);
 
   // Don't update the cached revision number if the received version is too low. Throw error.
+  const cachedRevision = cachedRevisionEntry.revision;
   if (cachedRevision && cachedRevision > newRevision) {
     throw new Error("A higher revision number for this userID and path is already cached");
   }
 
   // Update the cached revision.
-  client.revisionNumberCache[cacheKey] = newRevision;
+  cachedRevisionEntry.revision = newRevision;
 
   // Return null if the entry contained a sentinel value indicating deletion.
   // We do this after updating the revision number cache.

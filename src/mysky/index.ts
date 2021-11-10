@@ -3,6 +3,7 @@
 export type { CustomConnectorOptions } from "./connector";
 export { DacLibrary } from "./dac";
 
+import { tryAcquire } from "async-mutex";
 import { Connection, ParentHandshake, WindowMessenger } from "post-me";
 import {
   CheckPermissionsResponse,
@@ -35,8 +36,7 @@ import {
   CustomSetEntryDataOptions,
   DEFAULT_SET_ENTRY_DATA_OPTIONS,
   DELETION_ENTRY_DATA,
-  incrementCachedRevision,
-  decrementCachedRevision,
+  incrementRevision,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
@@ -326,6 +326,10 @@ export class MySky {
     return await this.connector.connection.remoteHandle().call("userID");
   }
 
+  // =============
+  // SkyDB methods
+  // =============
+
   /**
    * Gets Discoverable JSON at the given path through MySky, if the user has
    * given Discoverable Read permissions to do so.
@@ -395,27 +399,35 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    // Get the cached revision number before doing anything else.
-    const newRevision = incrementCachedRevision(this.connector.client, publicKey, dataKey);
+    // Safely get or create mutex for the requested entry.
+    const cachedRevisionEntry = await this.connector.client.revisionNumberCache.getRevisionAndMutexForEntry(
+      publicKey,
+      dataKey
+    );
 
-    let entry, dataLink;
-    try {
+    // Immediately fail if the mutex is not available
+    return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+      // Get the cached revision number before doing anything else.
+      const newRevision = incrementRevision(cachedRevisionEntry.revision);
+
       // Call SkyDB helper to create the registry entry. We can't call SkyDB's
       // setJSON here directly because we need MySky to sign the entry, instead of
       // signing it ourselves with a given private key.
-      [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(this.connector.client, dataKey, json, newRevision, opts);
+      const [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(
+        this.connector.client,
+        dataKey,
+        json,
+        newRevision,
+        opts
+      );
 
       const signature = await this.signRegistryEntry(entry, path);
 
       const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
       await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
-    } catch (e) {
-      // Something failed, revert the cached revision number increment.
-      decrementCachedRevision(this.connector.client, publicKey, dataKey);
-      throw e;
-    }
 
-    return { data: json, dataLink };
+      return { data: json, dataLink };
+    });
   }
 
   /**
@@ -441,6 +453,10 @@ export class MySky {
     // MySky can do the signing.
     await this.setEntryData(path, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
   }
+
+  // ==================
+  // Entry Data Methods
+  // ==================
 
   /**
    * Sets entry at the given path to point to the data link. Like setJSON, but it doesn't upload a file.
@@ -517,23 +533,26 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    // Get the cached revision number before doing anything else.
-    const newRevision = incrementCachedRevision(this.connector.client, publicKey, dataKey);
+    // Safely get or create mutex for the requested entry.
+    const cachedRevisionEntry = await this.connector.client.revisionNumberCache.getRevisionAndMutexForEntry(
+      publicKey,
+      dataKey
+    );
 
-    const entry = { dataKey, data, revision: newRevision };
+    // Immediately fail if the mutex is not available
+    return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+      // Get the cached revision number before doing anything else.
+      const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
-    try {
+      const entry = { dataKey, data, revision: newRevision };
+
       const signature = await this.signRegistryEntry(entry, path);
 
       const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
       await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
-    } catch (e) {
-      // Something failed, revert the cached revision number increment.
-      decrementCachedRevision(this.connector.client, publicKey, dataKey);
-      throw e;
-    }
 
-    return { data: entry.data };
+      return { data: entry.data };
+    });
   }
 
   /**
@@ -651,10 +670,17 @@ export class MySky {
     const dataKey = deriveEncryptedFileTweak(pathSeed);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    // Get the cached revision number before doing anything else.
-    const newRevision = incrementCachedRevision(this.connector.client, publicKey, dataKey);
+    // Safely get or create mutex for the requested entry.
+    const cachedRevisionEntry = await this.connector.client.revisionNumberCache.getRevisionAndMutexForEntry(
+      publicKey,
+      dataKey
+    );
 
-    try {
+    // Immediately fail if the mutex is not available
+    return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+      // Get the cached revision number before doing anything else.
+      const newRevision = incrementRevision(cachedRevisionEntry.revision);
+
       // Derive the key.
       const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
@@ -668,13 +694,9 @@ export class MySky {
 
       const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
       await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
-    } catch (e) {
-      // Something failed, revert the cached revision number increment.
-      decrementCachedRevision(this.connector.client, publicKey, dataKey);
-      throw e;
-    }
 
-    return { data: json };
+      return { data: json };
+    });
   }
 
   // ================

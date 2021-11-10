@@ -1,3 +1,4 @@
+import { Mutex } from "async-mutex";
 import axios from "axios";
 import type { AxiosResponse, ResponseType, Method } from "axios";
 
@@ -104,8 +105,9 @@ export class SkynetClient {
   // The custom portal URL, if one was passed in to `new SkynetClient()`.
   protected customPortalUrl?: string;
 
-  // Holds the cached revision numbers.
-  revisionNumberCache: { [key: string]: bigint } = {};
+  // Holds the cached revision numbers, protected by mutexes to prevent
+  // concurrent access.
+  revisionNumberCache = new RevisionNumberCache();
 
   // Set methods (defined in other files).
 
@@ -310,6 +312,50 @@ export class SkynetClient {
     }
     return trimSuffix(portalUrl, "/");
   }
+}
+
+// =====================
+// Revision Number Cache
+// =====================
+
+class RevisionNumberCache {
+  mutex = new Mutex();
+  cache: { [key: string]: CachedRevisionEntry } = {};
+
+  async getRevisionAndMutexForEntry(publicKey: string, dataKey: string): Promise<CachedRevisionEntry> {
+    const cacheKey = getCacheKey(publicKey, dataKey);
+
+    // Block until the mutex is available for the cache.
+    return await this.mutex.runExclusive(async () => {
+      const cachedValue = this.cache[cacheKey];
+
+      if (!cachedValue) {
+        // Initialize a new cached entry and return that.
+        const newValue = new CachedRevisionEntry();
+        this.cache[cacheKey] = newValue;
+        return newValue;
+      } else {
+        // Return the cached entry.
+        return cachedValue;
+      }
+    });
+  }
+}
+
+export class CachedRevisionEntry {
+  mutex = new Mutex();
+  revision = BigInt(-1);
+}
+
+/**
+ * Gets the revision cache key for the given public key and data key.
+ *
+ * @param publicKey - The given public key.
+ * @param dataKey - The given data key.
+ * @returns - The revision cache key.
+ */
+function getCacheKey(publicKey: string, dataKey: string): string {
+  return `${publicKey}/${dataKey}`;
 }
 
 // =======
