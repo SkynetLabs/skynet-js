@@ -275,6 +275,8 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     // const delays = [0, 100, 200, 300, 500, 1000];
     const delays = [100];
 
+    const concurrentAccessError = "Concurrent access prevented in SkyDB";
+
     it.each(delays)(
       "should not get old data when getJSON is called after setJSON on a single client with a '%s' ms delay and getJSON doesn't fail",
       async (delay) => {
@@ -294,7 +296,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
           };
           [{ data: receivedJson }] = await Promise.all([getJSONFn(), client.db.setJSON(privateKey, dataKey, jsonNew)]);
         } catch (e) {
-          if ((e as Error).message.includes("mutex already locked")) {
+          if ((e as Error).message.includes(concurrentAccessError)) {
             // The data race condition has been prevented and we received the expected error. Return from test early.
             return;
           }

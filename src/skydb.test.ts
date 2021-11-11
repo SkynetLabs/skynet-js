@@ -336,8 +336,7 @@ describe("getJSON/setJSON data race regression unit tests", () => {
   const skynetJsonOld = { _data: jsonOld, _v: 2 };
   const skynetJsonNew = { _data: jsonNew, _v: 2 };
 
-  // TODO: Improve this error message.
-  const concurrentAccessError = "mutex already locked";
+  const concurrentAccessError = "Concurrent access prevented in SkyDB";
   const higherRevisionError = "A higher revision number for this userID and path is already cached";
 
   it("should not get old data when getJSON and setJSON are called simultaneously on the same client and getJSON doesn't fail", async () => {

@@ -1,4 +1,3 @@
-import { tryAcquire } from "async-mutex";
 import { sign } from "tweetnacl";
 
 import { CachedRevisionEntry, SkynetClient } from "./client";
@@ -162,11 +161,8 @@ export async function getJSON(
     ...customOptions,
   };
 
-  // Safely get or create mutex for the requested entry.
-  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
-
-  // Immediately fail if the mutex is not available
-  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+  // Immediately fail if the mutex is not available.
+  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Lookup the registry entry.
     const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry: RegistryEntry | null = await getSkyDBRegistryEntryAndUpdateCache(
@@ -248,11 +244,8 @@ export async function setJSON(
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
   const publicKey = toHexString(publicKeyArray);
 
-  // Safely get or create mutex for the requested entry.
-  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
-
-  // Immediately fail if the mutex is not available
-  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+  // Immediately fail if the mutex is not available.
+  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Get the cached revision number before doing anything else.
     const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
@@ -356,11 +349,8 @@ export async function getEntryData(
     ...customOptions,
   };
 
-  // Safely get or create mutex for the requested entry.
-  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
-
-  // Immediately fail if the mutex is not available
-  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+  // Immediately fail if the mutex is not available.
+  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     const entry = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, cachedRevisionEntry, opts);
     if (entry === null) {
       return { data: null };
@@ -406,11 +396,8 @@ export async function setEntryData(
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
   const publicKey = toHexString(publicKeyArray);
 
-  // Safely get or create mutex for the requested entry.
-  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
-
-  // Immediately fail if the mutex is not available
-  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+  // Immediately fail if the mutex is not available.
+  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Get the cached revision number.
     const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
@@ -487,11 +474,8 @@ export async function getRawBytes(
     ...customOptions,
   };
 
-  // Safely get or create mutex for the requested entry.
-  const cachedRevisionEntry = await this.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
-
-  // Immediately fail if the mutex is not available
-  return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => {
+  // Immediately fail if the mutex is not available.
+  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Lookup the registry entry.
     const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry = await getSkyDBRegistryEntryAndUpdateCache(
@@ -687,6 +671,7 @@ async function getSkyDBRegistryEntryAndUpdateCache(
   // Don't update the cached revision number if the received version is too low. Throw error.
   const cachedRevision = cachedRevisionEntry.revision;
   if (cachedRevision && cachedRevision > newRevision) {
+    /* istanbul ignore next - this shouldn't come up in practice */
     throw new Error("A higher revision number for this userID and path is already cached");
   }
 
