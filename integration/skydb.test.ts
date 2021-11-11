@@ -272,10 +272,10 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const jsonOld = { message: 1 };
     const jsonNew = { message: 2 };
 
-    // const delays = [0, 100, 200, 300, 500, 1000];
-    const delays = [100];
+    const delays = [0, 10, 100, 500, 1000];
 
     const concurrentAccessError = "Concurrent access prevented in SkyDB";
+    const registryUpdateError = "Unable to update the registry";
 
     it.each(delays)(
       "should not get old data when getJSON is called after setJSON on a single client with a '%s' ms delay and getJSON doesn't fail",
@@ -348,9 +348,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         updatedJson.message--;
         // Catches both "doesn't have enough pow" and "provided revision number
         // is already registered" errors.
-        await expect(client2.db.setJSON(privateKey, dataKey, updatedJson)).rejects.toThrowError(
-          "Unable to update the registry"
-        );
+        await expect(client2.db.setJSON(privateKey, dataKey, updatedJson)).rejects.toThrowError(registryUpdateError);
 
         // Should work on that client again after calling getJSON.
 
@@ -359,6 +357,73 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         const updatedJson2 = receivedJson2 as { message: number };
         updatedJson2.message++;
         await client2.db.setJSON(privateKey, dataKey, updatedJson2);
+      }
+    );
+
+    it.each(delays)(
+      "should make sure that two concurrent setJSON calls on a single client with a '%s' ms delay either fail with the right error or succeed ",
+      async (delay) => {
+        const { publicKey, privateKey } = genKeyPairAndSeed();
+
+        // Try to invoke two concurrent setJSON calls.
+        try {
+          const setJSONFn = async function () {
+            // Sleep.
+            await new Promise((r) => setTimeout(r, delay));
+            await client.db.setJSON(privateKey, dataKey, jsonNew);
+          };
+          await Promise.all([setJSONFn(), client.db.setJSON(privateKey, dataKey, jsonOld)]);
+        } catch (e) {
+          if ((e as Error).message.includes(concurrentAccessError)) {
+            // The data race condition has been prevented and we received the expected error. Return from test early.
+            return;
+          }
+
+          // Unexpected error, throw.
+          throw e;
+        }
+
+        // Data race did not occur, getJSON should get latest JSON.
+        const { data: receivedJson } = await client.db.getJSON(publicKey, dataKey);
+        expect(receivedJson).toEqual(jsonNew);
+      }
+    );
+
+    it.each(delays)(
+      "should make sure that two concurrent setJSON calls on different clients with a '%s' ms delay fail with the right error or succeed",
+      async (delay) => {
+        // Create two new clients with a fresh revision cache.
+        const client1 = new SkynetClient(portal);
+        const client2 = new SkynetClient(portal);
+        const { publicKey, privateKey } = genKeyPairAndSeed();
+
+        // Try to invoke two concurrent setJSON calls.
+        try {
+          const setJSONFn = async function () {
+            // Sleep.
+            await new Promise((r) => setTimeout(r, delay));
+            await client2.db.setJSON(privateKey, dataKey, jsonNew);
+          };
+          await Promise.all([setJSONFn(), client1.db.setJSON(privateKey, dataKey, jsonOld)]);
+        } catch (e) {
+          if ((e as Error).message.includes(registryUpdateError)) {
+            // The data race condition has been prevented and we received the expected error. Return from test early.
+            return;
+          }
+
+          // Unexpected error, throw.
+          throw e;
+        }
+
+        // Data race did not occur, getJSON should get one of the JSON values.
+        let client3;
+        if (Math.random() < 0.5) {
+          client3 = client1;
+        } else {
+          client3 = client2;
+        }
+        const { data: receivedJson } = await client3.db.getJSON(publicKey, dataKey);
+        expect([jsonOld, jsonNew]).toContainEqual(receivedJson);
       }
     );
   });
