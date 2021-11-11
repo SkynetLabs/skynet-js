@@ -3,7 +3,6 @@ import { AxiosError } from "axios";
 import { client, dataKey, portal } from ".";
 import { genKeyPairAndSeed, getEntryLink, SkynetClient, URI_SKYNET_PREFIX } from "../src";
 import { hashDataKey } from "../src/crypto";
-import { getCacheKey } from "../src/skydb";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
 
@@ -246,22 +245,19 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
   it("Should update the revision number cache", async () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { message: 1 };
-    const cacheKey = getCacheKey(publicKey, dataKey);
 
     await client.db.setJSON(privateKey, dataKey, json);
 
-    let revisionNumber = client.revisionNumberCache[cacheKey];
-    expect(revisionNumber.toString()).toEqual("0");
+    const cachedRevisionEntry = await client.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    expect(cachedRevisionEntry.revision.toString()).toEqual("0");
 
     await client.db.setJSON(privateKey, dataKey, json);
 
-    revisionNumber = client.revisionNumberCache[cacheKey];
-    expect(revisionNumber.toString()).toEqual("1");
+    expect(cachedRevisionEntry.revision.toString()).toEqual("1");
 
     await client.db.getJSON(publicKey, dataKey);
 
-    revisionNumber = client.revisionNumberCache[cacheKey];
-    expect(revisionNumber.toString()).toEqual("1");
+    expect(cachedRevisionEntry.revision.toString()).toEqual("1");
   });
 
   // REGRESSION TESTS: By creating a gap between setJSON and getJSON, a user
@@ -276,7 +272,8 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const jsonOld = { message: 1 };
     const jsonNew = { message: 2 };
 
-    const delays = [0, 100, 200, 300, 500, 1000];
+    // const delays = [0, 100, 200, 300, 500, 1000];
+    const delays = [100];
 
     it.each(delays)(
       "should not get old data when getJSON is called after setJSON on a single client with a '%s' ms delay and getJSON doesn't fail",
@@ -297,7 +294,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
           };
           [{ data: receivedJson }] = await Promise.all([getJSONFn(), client.db.setJSON(privateKey, dataKey, jsonNew)]);
         } catch (e) {
-          if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
+          if ((e as Error).message.includes("mutex already locked")) {
             // The data race condition has been prevented and we received the expected error. Return from test early.
             return;
           }
@@ -312,42 +309,54 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     );
 
     it.each(delays)(
-      "should not get old data when getJSON is called after setJSON on two different clients with a '%s' ms delay and getJSON doesn't fail",
+      "should not be able to use old data when getJSON is called after setJSON on two different clients with a '%s' ms delay",
       async (delay) => {
         // Create two new clients with a fresh revision cache.
         const client1 = new SkynetClient(portal);
         const client2 = new SkynetClient(portal);
         const { publicKey, privateKey } = genKeyPairAndSeed();
 
-        // Use a random client to set the initial data.
-        if (Math.random() < 0.5) {
-          await client1.db.setJSON(privateKey, dataKey, jsonOld);
-        } else {
-          await client2.db.setJSON(privateKey, dataKey, jsonOld);
+        // Set the initial data.
+        await client1.db.setJSON(privateKey, dataKey, jsonOld);
+
+        // Call getJSON and setJSON concurrently on different clients -- both
+        // should succeeed.
+
+        // Get the data while also calling setJSON.
+        const getJSONFn = async function () {
+          // Sleep.
+          await new Promise((r) => setTimeout(r, delay));
+          return await client2.db.getJSON(publicKey, dataKey);
+        };
+        const [{ data: receivedJson }] = await Promise.all([
+          getJSONFn(),
+          client1.db.setJSON(privateKey, dataKey, jsonNew),
+        ]);
+
+        // If we got old data from getJSON, make sure that that client is not
+        // able to update that JSON.
+
+        expect(receivedJson).not.toBeNull();
+        if (receivedJson === jsonNew) {
+          return;
         }
+        expect(receivedJson).toEqual(jsonOld);
 
-        // Try to invoke the data race.
-        let receivedJson;
-        try {
-          // Get the data while also calling setJSON.
-          const getJSONFn = async function () {
-            // Sleep.
-            await new Promise((r) => setTimeout(r, delay));
-            return await client2.db.getJSON(publicKey, dataKey);
-          };
-          [{ data: receivedJson }] = await Promise.all([getJSONFn(), client1.db.setJSON(privateKey, dataKey, jsonNew)]);
-        } catch (e) {
-          if ((e as Error).message.includes("A higher revision number for this userID and path is already cached")) {
-            // The data race condition has been prevented and we received the expected error. Return from test early.
-            return;
-          }
+        const updatedJson = receivedJson as { message: number };
+        updatedJson.message--;
+        // Catches both "doesn't have enough pow" and "provided revision number
+        // is already registered" errors.
+        await expect(client2.db.setJSON(privateKey, dataKey, updatedJson)).rejects.toThrowError(
+          "Unable to update the registry"
+        );
 
-          // Unexpected error, throw.
-          throw e;
-        }
+        // Should work on that client again after calling getJSON.
 
-        // Data race did not occur, getJSON should have latest JSON.
-        expect(receivedJson).toEqual(jsonNew);
+        const { data: receivedJson2 } = await client2.db.getJSON(publicKey, dataKey);
+        expect(receivedJson2).toEqual(jsonNew);
+        const updatedJson2 = receivedJson2 as { message: number };
+        updatedJson2.message++;
+        await client2.db.setJSON(privateKey, dataKey, updatedJson2);
       }
     );
   });
