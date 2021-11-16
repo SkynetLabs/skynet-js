@@ -42,10 +42,10 @@ import {
   setEntryData,
   deleteEntryData,
 } from "./skydb";
-import { addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
+import { addSubdomain, addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
-import { trimSuffix } from "./utils/string";
+import { ensurePrefix, trimSuffix } from "./utils/string";
 
 /**
  * Custom client options.
@@ -71,19 +71,21 @@ export type CustomClientOptions = {
  * @property [data] - The data for a POST request.
  * @property [url] - The full url to contact. Will be computed from the portalUrl and endpointPath if not provided.
  * @property [method] - The request method.
+ * @property [headers] - Any request headers to set.
+ * @property [subdomain] - An optional subdomain to add to the URL.
  * @property [query] - Query parameters.
  * @property [extraPath] - An additional path to append to the URL, e.g. a 46-character skylink.
- * @property [headers] - Any request headers to set.
  * @property [responseType] - The response type.
  * @property [transformRequest] - A function that allows manually transforming the request.
  * @property [transformResponse] - A function that allows manually transforming the response.
  */
 export type RequestConfig = CustomClientOptions & {
-  endpointPath: string;
+  endpointPath?: string;
   data?: FormData | Record<string, unknown>;
   url?: string;
   method?: Method;
   headers?: Headers;
+  subdomain?: string;
   query?: { [key: string]: string | undefined };
   extraPath?: string;
   responseType?: ResponseType;
@@ -240,7 +242,14 @@ export class SkynetClient {
    * @returns - The response from axios.
    */
   protected async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
-    const url = await buildRequestUrl(this, config.endpointPath, config.url, config.extraPath, config.query);
+    const url = await buildRequestUrl(
+      this,
+      config.endpointPath,
+      config.url,
+      config.subdomain,
+      config.extraPath,
+      config.query
+    );
 
     // Build headers.
     const headers = buildRequestHeaders(config.headers, config.customUserAgent, config.customCookie);
@@ -318,22 +327,38 @@ export class SkynetClient {
  *
  * @param client - The Skynet client.
  * @param endpointPath - The endpoint to contact.
- * @param [url] - The base URL to use, instead of the portal URL.
+ * @param [baseUrl] - The base URL to use, instead of the portal URL.
+ * @param [subdomain] - An optional subdomain to add to the URL.
  * @param [extraPath] - An optional path to append to the URL.
  * @param [query] - Optional query parameters to append to the URL.
  * @returns - The built URL.
  */
 export async function buildRequestUrl(
   client: SkynetClient,
-  endpointPath: string,
-  url?: string,
+  endpointPath?: string,
+  baseUrl?: string,
+  subdomain?: string,
   extraPath?: string,
   query?: { [key: string]: string | undefined }
 ): Promise<string> {
-  // Build the URL.
-  if (!url) {
-    const portalUrl = await client.portalUrl();
-    url = makeUrl(portalUrl, endpointPath, extraPath ?? "");
+  let url;
+
+  // Get the base URL, if not passed in.
+  if (!baseUrl) {
+    url = await client.portalUrl();
+  } else {
+    url = baseUrl;
+  }
+  url = ensurePrefix(url, "https://");
+
+  if (endpointPath) {
+    url = makeUrl(url, endpointPath);
+  }
+  if (extraPath) {
+    url = makeUrl(url, extraPath);
+  }
+  if (subdomain) {
+    url = addSubdomain(url, subdomain);
   }
   if (query) {
     url = addUrlQuery(url, query);

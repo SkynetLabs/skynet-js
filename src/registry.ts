@@ -165,7 +165,6 @@ export async function getEntry(
   try {
     response = await this.executeRequest({
       ...opts,
-      endpointPath: opts.endpointGetEntry,
       url,
       method: "get",
       // Transform the response to add quotes, since uint64 cannot be accurately

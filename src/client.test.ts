@@ -23,13 +23,23 @@ describe("new SkynetClient", () => {
 });
 
 describe("buildRequestUrl", () => {
-  it("should build a URL from the given components", async () => {
-    const endpointPath = "/skynet/foo";
-    const extraPath = "bar";
-    const query = { foo: "bar" };
-    const expectedUrl = `${portalUrl}/skynet/foo/bar?foo=bar`;
+  const endpointPath = "/skynet/foo";
+  const subdomain = "account";
+  const extraPath = "bar";
+  const query = { foo: "bar" };
 
-    const url = await buildRequestUrl(client, endpointPath, undefined, extraPath, query);
+  it("should build a URL from the given components, using the override URL", async () => {
+    const overrideUrl = "siasky.dev";
+    const expectedUrl = `https://account.${overrideUrl}/skynet/foo/bar?foo=bar`;
+
+    const url = await buildRequestUrl(client, endpointPath, overrideUrl, subdomain, extraPath, query);
+    expect(url).toEqual(expectedUrl);
+  });
+
+  it("should build a URL from the given components, using the portal URL", async () => {
+    const expectedUrl = `https://account.siasky.net/skynet/foo/bar?foo=bar`;
+
+    const url = await buildRequestUrl(client, endpointPath, undefined, subdomain, extraPath, query);
     expect(url).toEqual(expectedUrl);
   });
 });
