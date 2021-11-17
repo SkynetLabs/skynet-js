@@ -231,17 +231,13 @@ export class SkynetClient {
     return await SkynetClient.resolvedPortalUrl!; // eslint-disable-line
   }
 
-  // ===============
-  // Private Methods
-  // ===============
-
   /**
    * Creates and executes a request.
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
    */
-  protected async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
+  async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     const url = await buildRequestUrl(
       this,
       config.endpointPath,
@@ -296,8 +292,12 @@ export class SkynetClient {
     });
   }
 
+  // ===============
+  // Private Methods
+  // ===============
+
   /* istanbul ignore next */
-  async resolvePortalUrl(): Promise<string> {
+  protected async resolvePortalUrl(): Promise<string> {
     const response = await this.executeRequest({
       ...this.customOptions,
       method: "head",
