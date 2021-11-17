@@ -42,10 +42,9 @@ import {
   setEntryData,
   deleteEntryData,
 } from "./skydb";
-import { addSubdomain, addUrlQuery, defaultPortalUrl, makeUrl } from "./utils/url";
+import { addSubdomain, addUrlQuery, defaultPortalUrl, ensureUrl, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
-import { ensurePrefix, trimSuffix } from "./utils/string";
 
 /**
  * Custom client options.
@@ -206,10 +205,19 @@ export class SkynetClient {
       return;
     }
 
+    // Try to resolve the portal URL again if it's never been called or if it
+    // previously failed.
     if (!SkynetClient.resolvedPortalUrl) {
       SkynetClient.resolvedPortalUrl = this.resolvePortalUrl();
+    } else {
+      try {
+        await SkynetClient.resolvedPortalUrl;
+      } catch (e) {
+        SkynetClient.resolvedPortalUrl = this.resolvePortalUrl();
+      }
     }
 
+    // Wait on the promise and throw if it fails.
     await SkynetClient.resolvedPortalUrl;
     return;
   }
@@ -296,7 +304,6 @@ export class SkynetClient {
   // Private Methods
   // ===============
 
-  /* istanbul ignore next */
   protected async resolvePortalUrl(): Promise<string> {
     const response = await this.executeRequest({
       ...this.customOptions,
@@ -305,7 +312,7 @@ export class SkynetClient {
       endpointPath: "/",
     });
 
-    if (typeof response.headers === "undefined") {
+    if (!response.headers) {
       throw new Error(
         "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
       );
@@ -314,7 +321,7 @@ export class SkynetClient {
     if (!portalUrl) {
       throw new Error("Could not get portal URL for the given portal");
     }
-    return trimSuffix(portalUrl, "/");
+    return portalUrl;
   }
 }
 
@@ -349,7 +356,9 @@ export async function buildRequestUrl(
   } else {
     url = baseUrl;
   }
-  url = ensurePrefix(url, "https://");
+
+  // Make sure the URL has a protocol.
+  url = ensureUrl(url);
 
   if (endpointPath) {
     url = makeUrl(url, endpointPath);

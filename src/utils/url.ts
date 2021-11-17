@@ -94,6 +94,23 @@ export function addUrlQuery(url: string, query: { [key: string]: string | undefi
 }
 
 /**
+ * Ensures that the given string is a URL with a protocol prefix.
+ *
+ * @param url - The given string.
+ * @returns - The URL.
+ */
+export function ensureUrl(url: string): string {
+  if (url.startsWith("http:") || url.startsWith("https:")) {
+    return url;
+  }
+
+  if (url === "localhost") {
+    return "http://localhost/";
+  }
+  return `https://${url}`;
+}
+
+/**
  * Properly joins paths together to create a URL. Takes a variable number of
  * arguments.
  *
