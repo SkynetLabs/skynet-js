@@ -1,7 +1,7 @@
 import urljoin from "url-join";
 import parse from "url-parse";
 
-import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
+import { trimForwardSlash, trimPrefix, trimSuffix, trimUriPrefix } from "./string";
 import { throwValidationError, validateString } from "./validation";
 
 export const DEFAULT_SKYNET_PORTAL_URL = "https://siasky.net";
@@ -99,9 +99,15 @@ export function addUrlQuery(url: string, query: { [key: string]: string | undefi
  * @param url - The given string.
  * @returns - The URL.
  */
-export function ensureUrl(url: string): string {
-  if (url.startsWith("http:") || url.startsWith("https:")) {
+export function ensureUrlPrefix(url: string): string {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
+  }
+  if (url.startsWith("http:")) {
+    return `http://${trimPrefix(url, "http:")}`;
+  }
+  if (url.startsWith("https:")) {
+    return `https://${trimPrefix(url, "https:")}`;
   }
 
   if (url === "localhost") {

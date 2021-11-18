@@ -42,7 +42,7 @@ import {
   setEntryData,
   deleteEntryData,
 } from "./skydb";
-import { addSubdomain, addUrlQuery, defaultPortalUrl, ensureUrl, makeUrl } from "./utils/url";
+import { addSubdomain, addUrlQuery, defaultPortalUrl, ensureUrlPrefix, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
 
@@ -246,14 +246,13 @@ export class SkynetClient {
    * @returns - The response from axios.
    */
   async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
-    const url = await buildRequestUrl(
-      this,
-      config.endpointPath,
-      config.url,
-      config.subdomain,
-      config.extraPath,
-      config.query
-    );
+    const url = await buildRequestUrl(this, {
+      baseUrl: config.url,
+      endpointPath: config.endpointPath,
+      subdomain: config.subdomain,
+      extraPath: config.extraPath,
+      query: config.query,
+    });
 
     // Build headers.
     const headers = buildRequestHeaders(config.headers, config.customUserAgent, config.customCookie);
@@ -330,47 +329,51 @@ export class SkynetClient {
 // =======
 
 /**
- * Helper function that builds the request URL.
+ * Helper function that builds the request URL. Ensures that the final URL
+ * always has a protocol prefix for consistency.
  *
  * @param client - The Skynet client.
- * @param endpointPath - The endpoint to contact.
- * @param [baseUrl] - The base URL to use, instead of the portal URL.
- * @param [subdomain] - An optional subdomain to add to the URL.
- * @param [extraPath] - An optional path to append to the URL.
- * @param [query] - Optional query parameters to append to the URL.
+ * @param parts - The URL parts to use when constructing the URL.
+ * @param [parts.baseUrl] - The base URL to use, instead of the portal URL.
+ * @param [parts.endpointPath] - The endpoint to contact.
+ * @param [parts.subdomain] - An optional subdomain to add to the URL.
+ * @param [parts.extraPath] - An optional path to append to the URL.
+ * @param [parts.query] - Optional query parameters to append to the URL.
  * @returns - The built URL.
  */
 export async function buildRequestUrl(
   client: SkynetClient,
-  endpointPath?: string,
-  baseUrl?: string,
-  subdomain?: string,
-  extraPath?: string,
-  query?: { [key: string]: string | undefined }
+  parts: {
+    baseUrl?: string;
+    endpointPath?: string;
+    subdomain?: string;
+    extraPath?: string;
+    query?: { [key: string]: string | undefined };
+  }
 ): Promise<string> {
   let url;
 
   // Get the base URL, if not passed in.
-  if (!baseUrl) {
+  if (!parts.baseUrl) {
     url = await client.portalUrl();
   } else {
-    url = baseUrl;
+    url = parts.baseUrl;
   }
 
   // Make sure the URL has a protocol.
-  url = ensureUrl(url);
+  url = ensureUrlPrefix(url);
 
-  if (endpointPath) {
-    url = makeUrl(url, endpointPath);
+  if (parts.endpointPath) {
+    url = makeUrl(url, parts.endpointPath);
   }
-  if (extraPath) {
-    url = makeUrl(url, extraPath);
+  if (parts.extraPath) {
+    url = makeUrl(url, parts.extraPath);
   }
-  if (subdomain) {
-    url = addSubdomain(url, subdomain);
+  if (parts.subdomain) {
+    url = addSubdomain(url, parts.subdomain);
   }
-  if (query) {
-    url = addUrlQuery(url, query);
+  if (parts.query) {
+    url = addUrlQuery(url, parts.query);
   }
 
   return url;

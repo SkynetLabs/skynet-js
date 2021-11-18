@@ -87,27 +87,25 @@ describe("buildRequestUrl", () => {
     const overrideUrl = "siasky.dev";
     const expectedUrl = `https://account.${overrideUrl}/skynet/foo/bar?foo=bar`;
 
-    const url = await buildRequestUrl(client, endpointPath, overrideUrl, subdomain, extraPath, query);
+    const url = await buildRequestUrl(client, { baseUrl: overrideUrl, endpointPath, subdomain, extraPath, query });
     expect(url).toEqual(expectedUrl);
   });
 
   it("should build a URL from the given components, using the portal URL", async () => {
     const expectedUrl = `https://account.siasky.net/skynet/foo/bar?foo=bar`;
 
-    const url = await buildRequestUrl(client, endpointPath, undefined, subdomain, extraPath, query);
+    const url = await buildRequestUrl(client, { endpointPath, subdomain, extraPath, query });
     expect(url).toEqual(expectedUrl);
   });
 
   describe("localhost inputs", () => {
-    const validExpectedLocalhosts = combineStrings(
-      ["https://", "https:", "http://", "http:"],
-      ["localhost"],
-      ["", "/"]
-    );
+    // `localhost` without a protocol prefix is not in this list because
+    // `buildRequestUrl` always ensures a prefix protocol for consistency.
+    const validExpectedLocalhosts = combineStrings(["https://", "http://"], ["localhost"], ["", "/"]);
     const localhostUrls = combineStrings(["", "https://", "https:", "http://", "http:"], ["localhost"], ["", "/"]);
 
     it.each(localhostUrls)("should correctly handle input '%s'", async (localhostUrl) => {
-      const url = await buildRequestUrl(client, undefined, localhostUrl);
+      const url = await buildRequestUrl(client, { baseUrl: localhostUrl });
       expect(validExpectedLocalhosts).toContainEqual(url);
     });
   });
