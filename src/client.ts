@@ -42,7 +42,7 @@ import {
   setEntryData,
   deleteEntryData,
 } from "./skydb";
-import { addSubdomain, addUrlQuery, defaultPortalUrl, ensureUrlPrefix, makeUrl } from "./utils/url";
+import { addUrlSubdomain, addUrlQuery, defaultPortalUrl, ensureUrlPrefix, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
 
@@ -370,7 +370,7 @@ export async function buildRequestUrl(
     url = makeUrl(url, parts.extraPath);
   }
   if (parts.subdomain) {
-    url = addSubdomain(url, parts.subdomain);
+    url = addUrlSubdomain(url, parts.subdomain);
   }
   if (parts.query) {
     url = addUrlQuery(url, parts.query);

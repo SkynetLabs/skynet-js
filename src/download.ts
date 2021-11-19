@@ -1,13 +1,13 @@
 import { AxiosResponse, ResponseType } from "axios";
 
-import { Headers, SkynetClient } from "./client";
+import { buildRequestUrl, Headers, SkynetClient } from "./client";
 import { getEntryLink, validateRegistryProof } from "./registry";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { isSkylinkV1 } from "./skylink/sia";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { trimUriPrefix } from "./utils/string";
-import { addSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
+import { addUrlSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
 import {
   throwValidationError,
   validateObject,
@@ -253,7 +253,7 @@ export function getSkylinkUrlForPortal(
     }
     // Convert the skylink (without the path) to base32.
     skylink = convertSkylinkToBase32(skylink);
-    url = addSubdomain(portalUrl, skylink);
+    url = addUrlSubdomain(portalUrl, skylink);
     url = makeUrl(url, skylinkPath, path);
   } else {
     // Get the skylink including the path.
@@ -292,12 +292,15 @@ export async function getHnsUrl(
   const query = buildQuery(opts.download);
 
   domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);
-  const portalUrl = await this.portalUrl();
-  const url = opts.subdomain
-    ? addSubdomain(addSubdomain(portalUrl, opts.hnsSubdomain), domain)
-    : makeUrl(portalUrl, opts.endpointDownloadHns, domain);
+  let subdomain, endpointPath, extraPath;
+  if (opts.subdomain) {
+    subdomain = `${domain}.${opts.hnsSubdomain}`;
+  } else {
+    endpointPath = opts.endpointDownloadHns;
+    extraPath = domain;
+  }
 
-  return addUrlQuery(url, query);
+  return buildRequestUrl(this, { endpointPath, extraPath, subdomain, query });
 }
 
 /**
@@ -321,9 +324,8 @@ export async function getHnsresUrl(
   const opts = { ...DEFAULT_RESOLVE_HNS_OPTIONS, ...this.customOptions, ...customOptions };
 
   domain = trimUriPrefix(domain, URI_HANDSHAKE_PREFIX);
-  const portalUrl = await this.portalUrl();
 
-  return makeUrl(portalUrl, opts.endpointResolveHns, domain);
+  return buildRequestUrl(this, { endpointPath: opts.endpointResolveHns, extraPath: domain });
 }
 
 /**
