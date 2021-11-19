@@ -219,7 +219,7 @@ export async function uploadLargeFileRequest(
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   // TODO: Add back upload options once they are implemented in skyd.
-  const url = await buildRequestUrl(this, opts.endpointLargeUpload);
+  const url = await buildRequestUrl(this, { endpointPath: opts.endpointLargeUpload });
   const headers = buildRequestHeaders(undefined, opts.customUserAgent, opts.customCookie);
 
   file = ensureFileObjectConsistency(file);

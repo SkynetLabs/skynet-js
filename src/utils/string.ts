@@ -74,7 +74,7 @@ export function trimSuffix(str: string, suffix: string, limit?: number): string 
  * Removes a URI prefix from the beginning of the string.
  *
  * @param str - The string to process.
- * @param prefix - The prefix to remove.
+ * @param prefix - The prefix to remove. Should contain double slashes, e.g. sia://.
  * @returns - The processed string.
  */
 export function trimUriPrefix(str: string, prefix: string): string {
