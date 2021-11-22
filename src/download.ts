@@ -1,7 +1,8 @@
 import { AxiosResponse, ResponseType } from "axios";
 
-import { buildRequestUrl, Headers, SkynetClient } from "./client";
+import { SkynetClient } from "./client";
 import { getEntryLink, validateRegistryProof } from "./registry";
+import { buildRequestUrl, Headers } from "./request";
 import { convertSkylinkToBase32, formatSkylink } from "./skylink/format";
 import { parseSkylink } from "./skylink/parse";
 import { isSkylinkV1 } from "./skylink/sia";
