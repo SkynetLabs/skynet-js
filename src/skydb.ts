@@ -478,10 +478,7 @@ export async function getOrCreateRawBytesRegistryEntry(
   const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
 
   // Block until both getEntry and uploadFile are finished.
-  const [signedEntry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
-    entryPromise,
-    skyfilePromise,
-  ]);
+  const [signedEntry, skyfile] = await Promise.all([entryPromise, skyfilePromise]);
 
   const revision = getNextRevisionFromEntry(signedEntry.entry);
 
@@ -589,10 +586,7 @@ export async function getOrCreateRegistryEntry(
   const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
 
   // Block until both getEntry and uploadFile are finished.
-  const [signedEntry, skyfile] = await Promise.all<SignedRegistryEntry, UploadRequestResponse>([
-    entryPromise,
-    skyfilePromise,
-  ]);
+  const [signedEntry, skyfile] = await Promise.all([entryPromise, skyfilePromise]);
 
   const revision = getNextRevisionFromEntry(signedEntry.entry);
 
