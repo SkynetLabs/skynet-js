@@ -640,6 +640,30 @@ export class MySky {
     return { data: json };
   }
 
+  /**
+   * signMessage will sign the given data using the MySky user's private key,
+   * this method can be used for MySky user verification as the signature may be
+   * verified against the user's public key, which is the MySky user id.
+   *
+   * @param message - message to sign
+   * @returns signed message
+   */
+  async signMessage(message: Uint8Array): Promise<Uint8Array> {
+    return await this.connector.connection.remoteHandle().call("signMessage", message);
+  }
+
+  /**
+   * verifySignedMessage verifies the given message and returns the original
+   * message without signature if verification succeeded
+   *
+   * @param signedMsg - the signed message that needs to be verified
+   * @param publicKey - the public key to verify against
+   * @returns original message, or null in case verification failed
+   */
+  async verifySignedMessage(signedMsg: Uint8Array, publicKey: Uint8Array | string): Promise<Uint8Array | null> {
+    return await this.connector.connection.remoteHandle().call("verifySignedMessage", signedMsg, publicKey);
+  }
+
   // ================
   // Internal Methods
   // ================
