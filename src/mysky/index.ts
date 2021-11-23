@@ -653,15 +653,18 @@ export class MySky {
   }
 
   /**
-   * verifySignedMessage verifies the given message and returns the original
-   * message without signature if verification succeeded
+   * verifySignedMessage verifies the given message with signature against the
+   * original message and returns a boolean indicating whether it is valid.
    *
+   * @param originalMsg - the original message
    * @param signedMsg - the signed message that needs to be verified
    * @param publicKey - the public key to verify against
-   * @returns original message, or null in case verification failed
+   * @returns boolean that indicates whether the given message is valid
    */
-  async verifySignedMessage(signedMsg: Uint8Array, publicKey: Uint8Array | string): Promise<Uint8Array | null> {
-    return await this.connector.connection.remoteHandle().call("verifySignedMessage", signedMsg, publicKey);
+  async verifySignedMessage(originalMsg: Uint8Array, signedMsg: Uint8Array, publicKey: string): Promise<boolean> {
+    return await this.connector.connection
+      .remoteHandle()
+      .call("verifySignedMessage", originalMsg, signedMsg, publicKey);
   }
 
   // ================
