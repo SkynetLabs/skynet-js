@@ -4,6 +4,21 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.19-beta]
+
+### Changed
+
+- Revert tus parallel uploads due to bug with chunking.
+- Fixed `downloadFileHns` to take `CustomHnsDownloadOptions`.
+
+## [4.0.18-beta]
+
+### Added
+
+- Add missing entry data methods
+  - mySky.deleteEntryData
+  - db.getEntryData, db.setEntryData, db.deleteEntryData
+
 ## [4.0.17-beta]
 
 ### Changed

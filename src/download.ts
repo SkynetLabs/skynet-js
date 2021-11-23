@@ -161,7 +161,7 @@ export async function downloadFile(
 export async function downloadFileHns(
   this: SkynetClient,
   domain: string,
-  customOptions?: CustomDownloadOptions
+  customOptions?: CustomHnsDownloadOptions
 ): Promise<string> {
   // Validation is done in `getHnsUrl`.
 
@@ -356,7 +356,6 @@ export async function getMetadata(
 
   const response = await this.executeRequest({
     ...opts,
-    endpointPath: opts.endpointGetMetadata,
     method: "GET",
     url,
   });
@@ -426,9 +425,10 @@ export async function getFileContentRequest(
   // GET request the data at the skylink.
   return await this.executeRequest({
     ...opts,
-    endpointPath: opts.endpointDownload,
     method: "get",
     url,
+    // Override the 'subdomain' option in the download options.
+    subdomain: undefined,
     headers,
   });
 }
@@ -460,10 +460,11 @@ export async function getFileContentHns<T = unknown>(
   const [response, { skylink: inputSkylink }] = await Promise.all([
     this.executeRequest({
       ...opts,
-      endpointPath: opts.endpointDownload,
       method: "get",
       url,
       headers,
+      // Override the 'subdomain' option in the download options.
+      subdomain: undefined,
     }),
     this.resolveHns(domain),
   ]);
@@ -550,7 +551,6 @@ export async function resolveHns(
   // Get the txt record from the hnsres domain on the portal.
   const response = await this.executeRequest({
     ...opts,
-    endpointPath: opts.endpointResolveHns,
     method: "get",
     url,
   });

@@ -225,6 +225,10 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     // Set the data link for the first file at a random data key.
     await client.db.setDataLink(privateKey, dataKey, skylink1);
 
+    // Sleep for a bit to account for the portal's load balancer switching
+    // servers. This helps ensure that the uploaded files are available.
+    await new Promise((r) => setTimeout(r, 3000));
+
     // Get the entry link's etag.
     const url = await client.getSkylinkUrl(entryLink);
     // @ts-expect-error Calling a private method.
@@ -254,7 +258,8 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
   // The skylinks should differ.
   expect(skylink1).not.toEqual(skylink2);
 
-  // Sleep for a bit to account for the portal's load balancer switching servers. This helps ensure that the uploaded files are available.
+  // Sleep for a bit to account for the portal's load balancer switching
+  // servers. This helps ensure that the uploaded files are available.
   await new Promise((r) => setTimeout(r, 3000));
 
   // Download the files.

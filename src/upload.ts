@@ -16,7 +16,7 @@ const TUS_CHUNK_SIZE = (1 << 22) * 10;
 /**
  * A number indicating how many parts should be uploaded in parallel.
  */
-const TUS_PARALLEL_UPLOADS = 2;
+const TUS_PARALLEL_UPLOADS = 1;
 
 /**
  * The retry delays, in ms. Data is stored in skyd for up to 20 minutes, so the
@@ -219,7 +219,7 @@ export async function uploadLargeFileRequest(
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   // TODO: Add back upload options once they are implemented in skyd.
-  const url = await buildRequestUrl(this, opts.endpointLargeUpload);
+  const url = await buildRequestUrl(this, { endpointPath: opts.endpointLargeUpload });
   const headers = buildRequestHeaders(undefined, opts.customUserAgent, opts.customCookie);
 
   file = ensureFileObjectConsistency(file);
