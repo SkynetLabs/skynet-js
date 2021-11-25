@@ -663,7 +663,7 @@ export class MySky {
    * @returns boolean that indicates whether the verification succeeded
    */
   async verifyMessageSignature(message: Uint8Array, signature: Uint8Array, publicKey: string): Promise<boolean> {
-    return await this.connector.connection.remoteHandle().call("verifySignedMessage", message, signature, publicKey);
+    return await this.connector.connection.remoteHandle().call("verifyMessageSignature", message, signature, publicKey);
   }
 
   // ================
