@@ -430,7 +430,7 @@ export async function signEntry(
 
   // Sign the entry.
   // TODO: signature type should be Signature?
-  return sign(hashRegistryEntry(entry, hashedDataKeyHex), privateKeyArray);
+  return sign.detached(hashRegistryEntry(entry, hashedDataKeyHex), privateKeyArray);
 }
 
 /**

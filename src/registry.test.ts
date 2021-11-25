@@ -1,7 +1,7 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { genKeyPairAndSeed } from "./crypto";
+import { genKeyPairAndSeed, SIGNATURE_LENGTH } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
 import { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
 import { uriSkynetPrefix } from "./utils/url";
@@ -141,7 +141,26 @@ describe("setEntry", () => {
 });
 
 describe("signEntry", () => {
-  it("Should throw if we try to sign an entry with a prehashed data key that is not in hex format", async () => {
+  it("should derive the correct signature", async () => {
+    // Hard-code expected value to catch breaking changes.
+    const expectedSignature = [
+      133, 154, 188, 25, 22, 198, 83, 227, 64, 89, 92, 137, 232, 240, 27, 215, 31, 207, 179, 160, 142, 4, 136, 12, 137,
+      119, 163, 150, 210, 114, 50, 94, 157, 128, 80, 18, 54, 125, 230, 233, 44, 109, 167, 40, 132, 33, 134, 13, 75, 48,
+      130, 200, 120, 173, 141, 196, 238, 235, 178, 186, 48, 208, 241, 13,
+    ];
+    const entry = {
+      data: new Uint8Array([1, 2, 3]),
+      dataKey: "foo",
+      revision: BigInt(11),
+    };
+
+    const signature = await signEntry(privateKey, entry, false);
+
+    expect(signature.length).toEqual(SIGNATURE_LENGTH);
+    expect(signature).toEqual(new Uint8Array(expectedSignature));
+  });
+
+  it("should throw if we try to sign an entry with a prehashed data key that is not in hex format", async () => {
     const entry = { data: stringToUint8ArrayUtf8("test"), dataKey: "test", revision: BigInt(0) };
     await expect(signEntry(privateKey, entry, true)).rejects.toThrowError(
       "Expected parameter 'str' to be a hex-encoded string, was type 'string', value 'test'"
