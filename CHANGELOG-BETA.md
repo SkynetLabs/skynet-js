@@ -9,6 +9,8 @@ For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 ### Changed
 
 - Add MySky ID verification.
+- Try resolving the portal URL again if the previous attempt failed
+- Expose `executeRequest`
 
 ## [4.0.19-beta]
 
