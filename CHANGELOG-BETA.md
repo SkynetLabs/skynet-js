@@ -4,6 +4,19 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.20-beta]
+
+### Added
+
+- Add MySky ID verification
+  - `mySky.signMessage`
+  - `mySky.verifyMessageSignature`
+- Expose `executeRequest`
+
+### Changed
+
+- Try resolving the portal URL again if the previous attempt failed
+
 ## [4.0.19-beta]
 
 ### Changed
