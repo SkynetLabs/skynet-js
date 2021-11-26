@@ -9,6 +9,7 @@ import { SkynetClient } from "./index";
 import { getEntryUrlForPortal } from "./registry";
 import { checkCachedDataLink, DELETION_ENTRY_DATA, JSONResponse } from "./skydb";
 import { MAX_ENTRY_LENGTH } from "./mysky";
+import { decodeSkylink } from "./skylink/sia";
 
 // Generated with genKeyPairFromSeed("insecure test seed")
 const [publicKey, privateKey] = [
@@ -58,15 +59,62 @@ describe("getJSON", () => {
   });
 
   it("should perform a lookup and skylink GET", async () => {
-    // mock a successful registry lookup
+    // Mock a successful registry lookup.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
-    // mock a successful data download
+    // Mock a successful data download.
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
     const { data, dataLink } = await client.db.getJSON(publicKey, dataKey);
     expect(data).toEqual(jsonData);
     expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(2);
+  });
+
+  it("should fail properly with a too low error", async () => {
+    // Use a custom data key for this test to get a fresh cache.
+    const dataKey = "testTooLowError";
+    const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
+    const skylinkData = toHexString(decodeSkylink(skylink));
+    const entryData = {
+      data: skylinkData,
+      revision: 1,
+      signature:
+        "18d2b5f64042db39c4c591c21bd93015f7839eefab487ef8e27086cdb95b190732211b9a23d38c33f4f9a4e5219de55a80f75ff7e437713732ecdb4ccddb0804",
+    };
+    const entryDataTooLow = {
+      data: skylinkData,
+      revision: 0,
+      signature:
+        "4d7b26923f4211794eaf5c13230e62618ea3bebcb3fa6511ec8772b1f1e1a675b5244e7c33f89daf31999aeabe46c3a1e324a04d2f35c6ba902c75d35ceba00d",
+    };
+
+    // Cache the revision.
+
+    // Mock a successful registry lookup.
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
+    // Mock a successful data download.
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
+
+    const { data } = await client.db.getJSON(publicKey, dataKey);
+    expect(data).toEqual(jsonData);
+
+    // The cache should contain revision 1.
+    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    expect(cachedRevisionEntry.revision.toString()).toEqual("1");
+
+    // Return a revision that's too low.
+
+    // Mock a successful registry lookup.
+    mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataTooLow));
+    // Mock a successful data download.
+    mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
+
+    await expect(client.db.getJSON(publicKey, dataKey)).rejects.toThrowError(
+      "Returned revision number too low. A higher revision number for this userID and path is already cached"
+    );
+
+    // The cache should still contain revision 1.
+    expect(cachedRevisionEntry.revision.toString()).toEqual("1");
   });
 
   it("should perform a lookup but not a skylink GET if the cachedDataLink is a hit", async () => {
