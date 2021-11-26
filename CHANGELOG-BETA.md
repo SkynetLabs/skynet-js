@@ -4,6 +4,12 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.20-beta]
+
+### Changed
+
+- Add MySky ID verification.
+
 ## [4.0.19-beta]
 
 ### Changed
