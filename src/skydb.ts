@@ -1,6 +1,6 @@
 import { sign } from "tweetnacl";
 
-import { CachedRevisionEntry, SkynetClient } from "./client";
+import { SkynetClient } from "./client";
 import { DEFAULT_DOWNLOAD_OPTIONS, CustomDownloadOptions } from "./download";
 import {
   DEFAULT_GET_ENTRY_OPTIONS,
@@ -10,6 +10,7 @@ import {
   CustomSetEntryOptions,
   validatePublicKey,
 } from "./registry";
+import { CachedRevisionNumber } from "./revision_cache";
 import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { MAX_REVISION } from "./utils/number";
 import { URI_SKYNET_PREFIX } from "./utils/url";
@@ -134,7 +135,7 @@ export type RawBytesResponse = {
  *   - Data found: update cached revision
  *   - Parse error: don't update cached revision
  *   - Network error: don't update cached revision
- *   - Too high version error: don't update the cached revision
+ *   - Too low version error: don't update the cached revision
  *   - 404 (data not found): don't update the cached revision
  *   - Data deleted: update cached revision
  *
@@ -162,7 +163,7 @@ export async function getJSON(
   };
 
   // Immediately fail if the mutex is not available.
-  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Lookup the registry entry.
     const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry: RegistryEntry | null = await getSkyDBRegistryEntryAndUpdateCache(
@@ -245,7 +246,7 @@ export async function setJSON(
   const publicKey = toHexString(publicKeyArray);
 
   // Immediately fail if the mutex is not available.
-  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Get the cached revision number before doing anything else.
     const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
@@ -350,7 +351,7 @@ export async function getEntryData(
   };
 
   // Immediately fail if the mutex is not available.
-  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     const entry = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, cachedRevisionEntry, opts);
     if (entry === null) {
       return { data: null };
@@ -397,7 +398,7 @@ export async function setEntryData(
   const publicKey = toHexString(publicKeyArray);
 
   // Immediately fail if the mutex is not available.
-  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Get the cached revision number.
     const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
@@ -475,7 +476,7 @@ export async function getRawBytes(
   };
 
   // Immediately fail if the mutex is not available.
-  return await this.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Lookup the registry entry.
     const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry = await getSkyDBRegistryEntryAndUpdateCache(
@@ -653,7 +654,7 @@ async function getSkyDBRegistryEntryAndUpdateCache(
   client: SkynetClient,
   publicKey: string,
   dataKey: string,
-  cachedRevisionEntry: CachedRevisionEntry,
+  cachedRevisionEntry: CachedRevisionNumber,
   opts: CustomGetEntryOptions
 ): Promise<RegistryEntry | null> {
   // If this throws due to a parse error or network error, exit early and do not
@@ -668,11 +669,13 @@ async function getSkyDBRegistryEntryAndUpdateCache(
   // Calculate the new revision.
   const newRevision = entry?.revision ?? UNCACHED_REVISION_NUMBER + BigInt(1);
 
-  // Don't update the cached revision number if the received version is too low. Throw error.
+  // Don't update the cached revision number if the received version is too low.
+  // Throw error.
   const cachedRevision = cachedRevisionEntry.revision;
   if (cachedRevision && cachedRevision > newRevision) {
-    /* istanbul ignore next - this shouldn't come up in practice */
-    throw new Error("A higher revision number for this userID and path is already cached");
+    throw new Error(
+      "Returned revision number too low. A higher revision number for this userID and path is already cached"
+    );
   }
 
   // Update the cached revision.
@@ -680,7 +683,7 @@ async function getSkyDBRegistryEntryAndUpdateCache(
 
   // Return null if the entry contained a sentinel value indicating deletion.
   // We do this after updating the revision number cache.
-  if (entry !== null && wasRegistryEntryDeleted(entry)) {
+  if (wasRegistryEntryDeleted(entry)) {
     return null;
   }
 

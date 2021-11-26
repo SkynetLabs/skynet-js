@@ -253,7 +253,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
 
     await client.db.setJSON(privateKey, dataKey, json);
 
-    const cachedRevisionEntry = await client.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     expect(cachedRevisionEntry.revision.toString()).toEqual("0");
 
     await client.db.setJSON(privateKey, dataKey, json);

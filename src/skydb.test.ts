@@ -198,7 +198,7 @@ describe("setJSON", () => {
 
   it("should fail if the entry has the maximum allowed revision", async () => {
     const dataKey = "maximum revision";
-    const cachedRevisionEntry = await client.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     cachedRevisionEntry.revision = MAX_REVISION;
 
     // mock a successful registry update
@@ -239,7 +239,7 @@ describe("setJSON", () => {
 
     await client.db.setJSON(privateKey, dataKey, json);
 
-    const cachedRevisionEntry = await client.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     const revision1 = cachedRevisionEntry.revision;
 
     // mock a failed registry update
@@ -441,7 +441,7 @@ describe("getJSON/setJSON data race regression unit tests", () => {
 
     checkSettledValuesForErrorOrValue<JSONResponse>(values, concurrentAccessError);
 
-    const cachedRevisionEntry = await client.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     expect(cachedRevisionEntry.revision.toString()).toEqual("0");
 
     // Make a getJSON call.
@@ -501,7 +501,7 @@ describe("getJSON/setJSON data race regression unit tests", () => {
 
     // Test that the client that succeeded has a consistent cache.
 
-    const cachedRevisionEntrySuccess = await successClient.revisionNumberCache.getRevisionAndMutexForEntry(
+    const cachedRevisionEntrySuccess = await successClient.db.revisionNumberCache.getRevisionAndMutexForEntry(
       publicKey,
       dataKey
     );
@@ -530,7 +530,7 @@ describe("getJSON/setJSON data race regression unit tests", () => {
 
     // Test that the client that failed has a consistent cache.
 
-    const cachedRevisionEntryFail = await failClient.revisionNumberCache.getRevisionAndMutexForEntry(
+    const cachedRevisionEntryFail = await failClient.db.revisionNumberCache.getRevisionAndMutexForEntry(
       publicKey,
       dataKey
     );

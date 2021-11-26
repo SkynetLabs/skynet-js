@@ -1,4 +1,3 @@
-import { Mutex, tryAcquire } from "async-mutex";
 import axios from "axios";
 import type { AxiosResponse, ResponseType, Method } from "axios";
 
@@ -33,6 +32,7 @@ import {
 } from "./file";
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
+import { RevisionNumberCache } from "./revision_cache";
 import {
   deleteJSON,
   getJSON,
@@ -106,10 +106,6 @@ export class SkynetClient {
   // The custom portal URL, if one was passed in to `new SkynetClient()`.
   protected customPortalUrl?: string;
 
-  // Holds the cached revision numbers, protected by mutexes to prevent
-  // concurrent access.
-  revisionNumberCache = new RevisionNumberCache();
-
   // Set methods (defined in other files).
 
   // Upload
@@ -167,6 +163,10 @@ export class SkynetClient {
     getEntryData: getEntryData.bind(this),
     setEntryData: setEntryData.bind(this),
     deleteEntryData: deleteEntryData.bind(this),
+
+    // Holds the cached revision numbers, protected by mutexes to prevent
+    // concurrent access.
+    revisionNumberCache: new RevisionNumberCache(),
   };
 
   // Registry
@@ -327,99 +327,6 @@ export class SkynetClient {
     }
     return portalUrl;
   }
-}
-
-// =====================
-// Revision Number Cache
-// =====================
-
-/**
- * An abstraction over the client's revision number cache. Provides a cache,
- * keyed by public key and data key and protected by a mutex to guard against
- * concurrent access to the cache. Each cache entry also has its own mutex, to
- * protect against concurrent access to that entry.
- */
-class RevisionNumberCache {
-  mutex = new Mutex();
-  cache: { [key: string]: CachedRevisionEntry } = {};
-
-  /**
-   * Gets an object containing the cached revision and the mutex for the entry.
-   * The revision and mutex will be initialized if the entry is not yet cached.
-   *
-   * @param publicKey - The given public key.
-   * @param dataKey - The given data key.
-   * @returns - The cached revision entry object.
-   */
-  async getRevisionAndMutexForEntry(publicKey: string, dataKey: string): Promise<CachedRevisionEntry> {
-    const cacheKey = getCacheKey(publicKey, dataKey);
-
-    // Block until the mutex is available for the cache.
-    return await this.mutex.runExclusive(async () => {
-      const cachedValue = this.cache[cacheKey];
-
-      if (!cachedValue) {
-        // Initialize a new cached entry and return that.
-        const newValue = new CachedRevisionEntry();
-        this.cache[cacheKey] = newValue;
-        return newValue;
-      } else {
-        // Return the cached entry.
-        return cachedValue;
-      }
-    });
-  }
-
-  /**
-   * Calls `exclusiveFn` with exclusive access to the given cached entry. The
-   * revision number of the entry can be safely updated in `exclusiveFn`.
-   *
-   * @param publicKey - The given public key.
-   * @param dataKey - The given data key.
-   * @param exclusiveFn - A function to call with exclusive access to the given cached entry.
-   * @returns - A promise containing the result of calling `exclusiveFn`.
-   */
-  async withCachedEntryLock<T>(
-    publicKey: string,
-    dataKey: string,
-    exclusiveFn: (cachedRevisionEntry: CachedRevisionEntry) => Promise<T>
-  ): Promise<T> {
-    // Safely get or create mutex for the requested entry.
-    const cachedRevisionEntry = await this.getRevisionAndMutexForEntry(publicKey, dataKey);
-
-    try {
-      return await tryAcquire(cachedRevisionEntry.mutex).runExclusive(async () => exclusiveFn(cachedRevisionEntry));
-    } catch (e) {
-      // Change mutex error to be more descriptive and user-friendly.
-      if ((e as Error).message.includes("mutex already locked")) {
-        throw new Error(
-          `Concurrent access prevented in SkyDB for entry { publicKey: ${publicKey}, dataKey: ${dataKey} }`
-        );
-      } else {
-        throw e;
-      }
-    }
-  }
-}
-
-/**
- * An object containing a cached revision and a corresponding mutex. The
- * revision can be internally updated and it will reflect in the client's cache.
- */
-export class CachedRevisionEntry {
-  mutex = new Mutex();
-  revision = BigInt(-1);
-}
-
-/**
- * Gets the revision cache key for the given public key and data key.
- *
- * @param publicKey - The given public key.
- * @param dataKey - The given data key.
- * @returns - The revision cache key.
- */
-function getCacheKey(publicKey: string, dataKey: string): string {
-  return `${publicKey}/${dataKey}`;
 }
 
 // =======

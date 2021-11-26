@@ -399,7 +399,7 @@ export class MySky {
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     // Immediately fail if the mutex is not available.
-    return await this.connector.client.revisionNumberCache.withCachedEntryLock(
+    return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
       publicKey,
       dataKey,
       async (cachedRevisionEntry) => {
@@ -531,7 +531,7 @@ export class MySky {
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     // Immediately fail if the mutex is not available.
-    return await this.connector.client.revisionNumberCache.withCachedEntryLock(
+    return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
       publicKey,
       dataKey,
       async (cachedRevisionEntry) => {
@@ -666,7 +666,7 @@ export class MySky {
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
     // Immediately fail if the mutex is not available.
-    return await this.connector.client.revisionNumberCache.withCachedEntryLock(
+    return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
       publicKey,
       dataKey,
       async (cachedRevisionEntry) => {
