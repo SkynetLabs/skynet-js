@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 
 import { client, dataKey, portal } from ".";
-import { genKeyPairAndSeed, getEntryLink, SkynetClient, URI_SKYNET_PREFIX } from "../src";
+import { genKeyPairAndSeed, getEntryLink, JsonData, JSONResponse, SkynetClient, URI_SKYNET_PREFIX } from "../src";
 import { hashDataKey } from "../src/crypto";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
@@ -282,6 +282,26 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const concurrentAccessError = "Concurrent access prevented in SkyDB";
     const registryUpdateError = "Unable to update the registry";
 
+    const getJSONWithDelay = async function (
+      client: SkynetClient,
+      delay: number,
+      publicKey: string,
+      dataKey: string
+    ): Promise<JSONResponse> {
+      await new Promise((r) => setTimeout(r, delay));
+      return await client.db.getJSON(publicKey, dataKey);
+    };
+    const setJSONWithDelay = async function (
+      client: SkynetClient,
+      delay: number,
+      privateKey: string,
+      dataKey: string,
+      data: JsonData
+    ) {
+      await new Promise((r) => setTimeout(r, delay));
+      return await client.db.setJSON(privateKey, dataKey, data);
+    };
+
     it.each(delays)(
       "should not get old data when getJSON is called after setJSON on a single client with a '%s' ms delay and getJSON doesn't fail",
       async (delay) => {
@@ -294,12 +314,10 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         let receivedJson;
         try {
           // Get the data while also calling setJSON.
-          const getJSONFn = async function () {
-            // Sleep.
-            await new Promise((r) => setTimeout(r, delay));
-            return await client.db.getJSON(publicKey, dataKey);
-          };
-          [{ data: receivedJson }] = await Promise.all([getJSONFn(), client.db.setJSON(privateKey, dataKey, jsonNew)]);
+          [{ data: receivedJson }] = await Promise.all([
+            getJSONWithDelay(client, delay, publicKey, dataKey),
+            setJSONWithDelay(client, 0, privateKey, dataKey, jsonNew),
+          ]);
         } catch (e) {
           if ((e as Error).message.includes(concurrentAccessError)) {
             // The data race condition has been prevented and we received the expected error. Return from test early.
@@ -330,14 +348,9 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         // should succeeed.
 
         // Get the data while also calling setJSON.
-        const getJSONFn = async function () {
-          // Sleep.
-          await new Promise((r) => setTimeout(r, delay));
-          return await client2.db.getJSON(publicKey, dataKey);
-        };
         const [{ data: receivedJson }] = await Promise.all([
-          getJSONFn(),
-          client1.db.setJSON(privateKey, dataKey, jsonNew),
+          getJSONWithDelay(client2, delay, publicKey, dataKey),
+          setJSONWithDelay(client1, 0, privateKey, dataKey, jsonNew),
         ]);
 
         // If we got old data from getJSON, make sure that that client is not
@@ -372,12 +385,10 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
 
         // Try to invoke two concurrent setJSON calls.
         try {
-          const setJSONFn = async function () {
-            // Sleep.
-            await new Promise((r) => setTimeout(r, delay));
-            await client.db.setJSON(privateKey, dataKey, jsonNew);
-          };
-          await Promise.all([setJSONFn(), client.db.setJSON(privateKey, dataKey, jsonOld)]);
+          await Promise.all([
+            setJSONWithDelay(client, delay, privateKey, dataKey, jsonNew),
+            setJSONWithDelay(client, 0, privateKey, dataKey, jsonOld),
+          ]);
         } catch (e) {
           if ((e as Error).message.includes(concurrentAccessError)) {
             // The data race condition has been prevented and we received the expected error. Return from test early.
@@ -404,12 +415,10 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
 
         // Try to invoke two concurrent setJSON calls.
         try {
-          const setJSONFn = async function () {
-            // Sleep.
-            await new Promise((r) => setTimeout(r, delay));
-            await client2.db.setJSON(privateKey, dataKey, jsonNew);
-          };
-          await Promise.all([setJSONFn(), client1.db.setJSON(privateKey, dataKey, jsonOld)]);
+          await Promise.all([
+            setJSONWithDelay(client2, delay, privateKey, dataKey, jsonNew),
+            setJSONWithDelay(client1, 0, privateKey, dataKey, jsonOld),
+          ]);
         } catch (e) {
           if ((e as Error).message.includes(registryUpdateError)) {
             // The data race condition has been prevented and we received the expected error. Return from test early.
