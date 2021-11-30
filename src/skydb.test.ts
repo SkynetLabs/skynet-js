@@ -10,6 +10,8 @@ import { getEntryUrlForPortal } from "./registry";
 import { checkCachedDataLink, DELETION_ENTRY_DATA, JSONResponse } from "./skydb";
 import { MAX_ENTRY_LENGTH } from "./mysky";
 import { decodeSkylink } from "./skylink/sia";
+import { getSettledValues } from "../utils/testing";
+import { JsonData } from "./utils/types";
 
 // Generated with genKeyPairFromSeed("insecure test seed")
 const [publicKey, privateKey] = [
@@ -408,22 +410,31 @@ describe("getJSON/setJSON data race regression unit tests", () => {
 
     // Try to invoke the data race.
     // Get the data while also calling setJSON.
-    // Use Promise.allSettled to wait for all promises to finish, or some mocked requests will hang around and interfere with the later tests.
-    const values = await Promise.allSettled([
+    //
+    // Use Promise.allSettled to wait for all promises to finish, or some mocked
+    // requests will hang around and interfere with the later tests.
+    const settledResults = await Promise.allSettled([
       client.db.getJSON(publicKey, dataKey),
       client.db.setJSON(privateKey, dataKey, jsonNew),
     ]);
 
-    // If any promises were rejected, check the error message.
-    const data = checkSettledValuesForErrorOrValue<JSONResponse>(values, concurrentAccessError);
-    if (!data) {
-      // The data race condition was avoided and we received the expected
-      // error. Return from test early.
-      return;
+    let data: JsonData | null;
+    try {
+      const values = getSettledValues<JSONResponse>(settledResults);
+      data = values[0].data;
+    } catch (e) {
+      // If any promises were rejected, check the error message.
+      if ((e as Error).message.includes(concurrentAccessError)) {
+        // The data race condition was avoided and we received the expected
+        // error. Return from test early.
+        return;
+      }
+
+      throw e;
     }
 
     // Data race did not occur, getJSON should have latest JSON.
-    expect(data.data).toEqual(jsonNew);
+    expect(data).toEqual(jsonNew);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(2);
@@ -452,22 +463,30 @@ describe("getJSON/setJSON data race regression unit tests", () => {
 
     // Try to invoke the data race.
     // Get the data while also calling setJSON.
+    //
     // Use Promise.allSettled to wait for all promises to finish, or some mocked requests will hang around and interfere with the later tests.
-    const values = await Promise.allSettled([
+    const settledResults = await Promise.allSettled([
       client1.db.getJSON(publicKey, dataKey),
       client2.db.setJSON(privateKey, dataKey, jsonNew),
     ]);
 
-    // If any promises were rejected, check the error message.
-    const data = checkSettledValuesForErrorOrValue<JSONResponse>(values, higherRevisionError);
-    if (!data) {
-      // The data race condition was avoided and we received the expected
-      // error. Return from test early.
-      return;
+    let data: JsonData | null;
+    try {
+      const values = getSettledValues<JSONResponse>(settledResults);
+      data = values[0].data;
+    } catch (e) {
+      // If any promises were rejected, check the error message.
+      if ((e as Error).message.includes(higherRevisionError)) {
+        // The data race condition was avoided and we received the expected
+        // error. Return from test early.
+        return;
+      }
+
+      throw e;
     }
 
     // Data race did not occur, getJSON should have latest JSON.
-    expect(data.data).toEqual(jsonNew);
+    expect(data).toEqual(jsonNew);
 
     // assert our request history contains the expected amount of requests.
     expect(mock.history.get.length).toBe(2);
@@ -482,12 +501,24 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkOld, merkleroot, bitfield });
     mock.onPost(registryPostUrl).replyOnce(204);
 
+    // Use Promise.allSettled to wait for all promises to finish, or some mocked
+    // requests will hang around and interfere with the later tests.
     const values = await Promise.allSettled([
       client.db.setJSON(privateKey, dataKey, jsonOld),
       client.db.setJSON(privateKey, dataKey, jsonOld),
     ]);
 
-    checkSettledValuesForErrorOrValue<JSONResponse>(values, concurrentAccessError);
+    try {
+      getSettledValues<JSONResponse>(values);
+    } catch (e) {
+      if ((e as Error).message.includes(concurrentAccessError)) {
+        // The data race condition was avoided and we received the expected
+        // error. Return from test early.
+        return;
+      }
+
+      throw e;
+    }
 
     const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     expect(cachedRevisionEntry.revision.toString()).toEqual("0");
@@ -532,6 +563,8 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkOld, merkleroot, bitfield });
     mock.onPost(registryPostUrl).replyOnce(400);
 
+    // Use Promise.allSettled to wait for all promises to finish, or some mocked
+    // requests will hang around and interfere with the later tests.
     const values = await Promise.allSettled([
       client1.db.setJSON(privateKey, dataKey, jsonOld),
       client2.db.setJSON(privateKey, dataKey, jsonOld),
@@ -610,41 +643,4 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     expect(mock.history.get.length).toBe(8);
     expect(mock.history.post.length).toBe(8);
   });
-
-  /**
-   * Checks the settled values from Promise.allSettled for the given error.
-   * Throws if an unexpected error is found. Returns settled value if no errors
-   * were found.
-   *
-   * @param values - The settled values.
-   * @param err - The err to check for.
-   * @returns - The settled value if no errors were found, or null if the expected error was found.
-   * @throws - Will throw if an unexpected error occurred.
-   */
-  function checkSettledValuesForErrorOrValue<T>(values: PromiseSettledResult<T>[], err: string): T | null {
-    let rejected = false;
-    let reason;
-    let receivedValue: T | null = null;
-    for (const value of values) {
-      if (value.status === "rejected") {
-        rejected = true;
-        reason = value.reason;
-      } else if (value.value) {
-        receivedValue = value.value;
-      }
-    }
-    if (rejected) {
-      // TODO: Don't return early.
-      if ((reason as Error).message.includes(err)) {
-        // The data race condition was avoided and we received the expected
-        // error. Return from test early.
-        return null;
-      } else {
-        // Unexpected error, throw.
-        throw reason as Error;
-      }
-    }
-
-    return receivedValue;
-  }
 });
