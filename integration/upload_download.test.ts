@@ -128,7 +128,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     expect(contentType).toEqual("application/json");
   });
 
-  it("Should get file contents when content type is not specified", async () => {
+  it("should get file contents when content type is not specified", async () => {
     // Upload the data to acquire its skylink. Don't specify a content type.
 
     const file = new File([JSON.stringify(json)], dataKey);
@@ -139,8 +139,21 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
     const { data, contentType } = await client.getFileContent(skylink);
 
-    expect(data).toEqual(expect.any(Object));
+    expect(typeof data).toEqual("object");
     expect(data).toEqual(json);
+    expect(contentType).toEqual("application/octet-stream");
+  });
+
+  it('should get binary data with responseType: "arraybuffer"', async () => {
+    // Hard-code skylink for a sqlite3 database.
+    const skylink = "DABchy1Q3tBUggIP9IF_7ha9vAfBZ1d2aYRxUnHSQg9QNA";
+
+    // Get file content and check returned values.
+
+    const { data, contentType } = await client.getFileContent(skylink, { responseType: "arraybuffer" });
+
+    expect(typeof data).toEqual("object");
+    expect(data instanceof ArrayBuffer).toBeTruthy();
     expect(contentType).toEqual("application/octet-stream");
   });
 
