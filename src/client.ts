@@ -245,7 +245,7 @@ export class SkynetClient {
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
-   * @throws - Will throw if the request fails.
+   * @throws - Will throw `ExecuteRequestError` if the request fails. This error contains the original Axios error.
    */
   async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     const url = await buildRequestUrl(this, {
