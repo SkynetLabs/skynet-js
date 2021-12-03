@@ -82,6 +82,7 @@ export type {
   RegistryEntry,
   RegistryProofEntry,
 } from "./registry";
+export type { ExecuteRequestError } from "./request";
 export type {
   CustomGetJSONOptions,
   CustomSetJSONOptions,

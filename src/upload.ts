@@ -280,14 +280,18 @@ export async function uploadLargeFileRequest(
         }
 
         // Call HEAD to get the metadata, including the skylink.
-        const resp = await this.executeRequest({
-          ...opts,
-          url: upload.url,
-          endpointPath: opts.endpointLargeUpload,
-          method: "head",
-          headers: { ...headers, "Tus-Resumable": "1.0.0" },
-        });
-        resolve(resp);
+        try {
+          const resp = await this.executeRequest({
+            ...opts,
+            url: upload.url,
+            endpointPath: opts.endpointLargeUpload,
+            method: "head",
+            headers: { ...headers, "Tus-Resumable": "1.0.0" },
+          });
+          resolve(resp);
+        } catch (err) {
+          reject(err);
+        }
       },
     };
 

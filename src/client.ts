@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import type { AxiosResponse, ResponseType, Method } from "axios";
 
 import {
@@ -45,6 +45,7 @@ import {
 import { addSubdomain, addUrlQuery, defaultPortalUrl, ensureUrlPrefix, makeUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
+import { getPortalErrResponse } from "./request";
 
 /**
  * Custom client options.
@@ -244,6 +245,7 @@ export class SkynetClient {
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
+   * @throws - Will throw if the request fails.
    */
   async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     const url = await buildRequestUrl(this, {
@@ -280,23 +282,27 @@ export class SkynetClient {
       };
     }
 
-    return axios({
-      url,
-      method: config.method,
-      data: config.data,
-      headers,
-      auth,
-      onDownloadProgress,
-      onUploadProgress,
-      responseType: config.responseType,
-      transformRequest: config.transformRequest,
-      transformResponse: config.transformResponse,
+    try {
+      return await axios({
+        url,
+        method: config.method,
+        data: config.data,
+        headers,
+        auth,
+        onDownloadProgress,
+        onUploadProgress,
+        responseType: config.responseType,
+        transformRequest: config.transformRequest,
+        transformResponse: config.transformResponse,
 
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      // Allow cross-site cookies.
-      withCredentials: true,
-    });
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        // Allow cross-site cookies.
+        withCredentials: true,
+      });
+    } catch (e) {
+      throw getPortalErrResponse(e as AxiosError);
+    }
   }
 
   // ===============
