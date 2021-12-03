@@ -1,7 +1,5 @@
-import { AxiosError } from "axios";
-
 import { client, dataKey, portal } from ".";
-import { genKeyPairAndSeed, getEntryLink, JsonData, JSONResponse, SkynetClient, URI_SKYNET_PREFIX } from "../src";
+import { ExecuteRequestError, genKeyPairAndSeed, getEntryLink, JsonData, JSONResponse, SkynetClient, URI_SKYNET_PREFIX } from "../src";
 import { hashDataKey } from "../src/crypto";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
@@ -143,9 +141,9 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     // TODO: Should getFileContent return `null` on 404?
     try {
       await client.getFileContent(entryLink);
-      throw new Error("getFileContent should not have succeeded");
+      throw new Error("'getFileContent' should not have succeeded");
     } catch (err) {
-      expect((err as AxiosError).response?.status).toEqual(404);
+      expect((err as ExecuteRequestError).responseStatus).toEqual(404);
     }
 
     // The SkyDB entry should be null.
