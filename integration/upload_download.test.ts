@@ -280,6 +280,13 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     expect(etag2).toBeTruthy();
     expect(etag2).not.toEqual(etag1);
   });
+
+  it("should fail to download a non-existent skylink", async () => {
+    // Use a resolver skylink as it will time out faster.
+    const skylink = "AQDwh1jnoZas9LaLHC_D4-2yO9XYDdZzNtz62H4Dww1jDB";
+
+    await expect(client.getFileContent(skylink)).rejects.toThrowError("Failed to resolve skylink");
+  });
 });
 
 /**
