@@ -147,7 +147,7 @@ export class MySky {
 
     let domain = MYSKY_DOMAIN;
     if (opts.alpha && opts.dev) {
-      throw new Error(`Cannot redirect to both Alpha MySky Domain and Dev MySky Domain.`);
+      throw new Error(`Cannot redirect to both Alpha MySky Domain and Dev MySky Domain. Please pass either the 'dev' or the 'alpha' option, not both.`);
     } else if (opts.alpha) {
       domain = MYSKY_ALPHA_DOMAIN;
     } else if (opts.dev) {
