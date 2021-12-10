@@ -341,29 +341,41 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         const client2 = new SkynetClient(portal);
         const { publicKey, privateKey } = genKeyPairAndSeed();
 
+        const cachedRevisionEntry1 = await client1.db.revisionNumberCache.getRevisionAndMutexForEntry(
+          publicKey,
+          dataKey
+        );
+        const cachedRevisionEntry2 = await client2.db.revisionNumberCache.getRevisionAndMutexForEntry(
+          publicKey,
+          dataKey
+        );
+
         // Set the initial data.
         await client1.db.setJSON(privateKey, dataKey, jsonOld);
+        expect(cachedRevisionEntry1.revision.toString()).toEqual("0");
 
         // Call getJSON and setJSON concurrently on different clients -- both
         // should succeeed.
 
         // Get the data while also calling setJSON.
-        const [{ data: receivedJson }] = await Promise.all([
-          getJSONWithDelay(client2, delay, publicKey, dataKey),
+        const [_, { data: receivedJson }] = await Promise.all([
           setJSONWithDelay(client1, 0, privateKey, dataKey, jsonNew),
+          getJSONWithDelay(client2, delay, publicKey, dataKey),
         ]);
 
         // If we got old data from getJSON, make sure that that client is not
         // able to update that JSON.
 
         expect(receivedJson).not.toBeNull();
-        if (receivedJson === jsonNew) {
+        expect(cachedRevisionEntry1.revision.toString()).toEqual("1");
+        if (receivedJson?.message === jsonNew.message) {
+          expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
           return;
         }
         expect(receivedJson).toEqual(jsonOld);
+        expect(cachedRevisionEntry2.revision.toString()).toEqual("0");
 
-        const updatedJson = receivedJson as { message: number };
-        updatedJson.message--;
+        const updatedJson = { message: 3 };
         // Catches both "doesn't have enough pow" and "provided revision number
         // is already registered" errors.
         await expect(client2.db.setJSON(privateKey, dataKey, updatedJson)).rejects.toThrowError(registryUpdateError);
@@ -371,10 +383,13 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         // Should work on that client again after calling getJSON.
 
         const { data: receivedJson2 } = await client2.db.getJSON(publicKey, dataKey);
+        expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
         expect(receivedJson2).toEqual(jsonNew);
+
         const updatedJson2 = receivedJson2 as { message: number };
         updatedJson2.message++;
         await client2.db.setJSON(privateKey, dataKey, updatedJson2);
+        expect(cachedRevisionEntry2.revision.toString()).toEqual("2");
       }
     );
 
