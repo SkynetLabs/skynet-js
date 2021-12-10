@@ -138,6 +138,8 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
       await client.getFileContent(entryLink);
       throw new Error("'getFileContent' should not have succeeded");
     } catch (err) {
+      // Assert the type and that instanceof behaves as expected.
+      expect(err).toBeInstanceOf(ExecuteRequestError);
       expect((err as ExecuteRequestError).responseStatus).toEqual(404);
     }
 
