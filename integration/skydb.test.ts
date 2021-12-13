@@ -1,5 +1,13 @@
 import { client, dataKey, portal } from ".";
-import { ExecuteRequestError, genKeyPairAndSeed, getEntryLink, JsonData, JSONResponse, SkynetClient, URI_SKYNET_PREFIX } from "../src";
+import {
+  ExecuteRequestError,
+  genKeyPairAndSeed,
+  getEntryLink,
+  JsonData,
+  JSONResponse,
+  SkynetClient,
+  URI_SKYNET_PREFIX,
+} from "../src";
 import { hashDataKey } from "../src/crypto";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
