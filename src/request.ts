@@ -24,7 +24,7 @@ export class ExecuteRequestError extends Error {
   static From(err: AxiosError): ExecuteRequestError {
     /* istanbul ignore next */
     if (!err.response) {
-      return new ExecuteRequestError(`Error repsonse did not contain expected field 'response'.`, err, null, null);
+      return new ExecuteRequestError(`Error response did not contain expected field 'response'.`, err, null, null);
     }
     /* istanbul ignore next */
     if (!err.response.status) {
