@@ -1,7 +1,5 @@
-import { ensureUrl } from "skynet-mysky-utils";
-
 import { SkynetClient } from "../client";
-import { getFullDomainUrlForPortal, extractDomainForPortal } from "../utils/url";
+import { getFullDomainUrlForPortal, extractDomainForPortal, ensureUrlPrefix } from "../utils/url";
 
 /**
  * Constructs the full URL for the given component domain,
@@ -47,7 +45,7 @@ export function popupCenter(url: string, winName: string, w: number, h: number):
     throw new Error("Current window is not valid");
   }
 
-  url = ensureUrl(url);
+  url = ensureUrlPrefix(url);
 
   const y = window.top.outerHeight / 2 + window.top.screenY - h / 2;
   const x = window.top.outerWidth / 2 + window.top.screenX - w / 2;
