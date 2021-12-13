@@ -1,8 +1,9 @@
-import type { AxiosError, AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { Buffer } from "buffer";
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
+import { ExecuteRequestError } from "./request";
 import { assertUint64 } from "./utils/number";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { ensurePrefix, hexToUint8Array, isHexString, toHexString, trimPrefix, trimUriPrefix } from "./utils/string";
@@ -185,7 +186,8 @@ export async function getEntry(
       },
     });
   } catch (err) {
-    return handleGetEntryErrResponse(err as AxiosError);
+    // Check the executeRequest error to see if a 404 status was returned.
+    return handleGetEntryErrResponse(err as ExecuteRequestError);
   }
 
   // Sanity check.
@@ -430,7 +432,7 @@ export async function signEntry(
 
   // Sign the entry.
   // TODO: signature type should be Signature?
-  return sign(hashRegistryEntry(entry, hashedDataKeyHex), privateKeyArray);
+  return sign.detached(hashRegistryEntry(entry, hashedDataKeyHex), privateKeyArray);
 }
 
 /**
@@ -576,21 +578,13 @@ export function validateRegistryProof(
 /**
  * Handles error responses returned in getEntry.
  *
- * @param err - The Axios error.
+ * @param err - The error.
  * @returns - An empty signed registry entry if the status code is 404.
  * @throws - Will throw if the status code is not 404.
  */
-function handleGetEntryErrResponse(err: AxiosError): SignedRegistryEntry {
-  /* istanbul ignore next */
-  if (!err.response) {
-    throw new Error(`Error response field not found, incomplete Axios error. Full error: ${err}`);
-  }
-  /* istanbul ignore next */
-  if (!err.response.status) {
-    throw new Error(`Error response did not contain expected field 'status'. Full error: ${err}`);
-  }
+function handleGetEntryErrResponse(err: ExecuteRequestError): SignedRegistryEntry {
   // Check if status was 404 "not found" and return null if so.
-  if (err.response.status === 404) {
+  if (err.responseStatus === 404) {
     return { entry: null, signature: null };
   }
 

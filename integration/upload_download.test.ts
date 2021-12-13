@@ -34,9 +34,10 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
   it("Should upload and download directories", async () => {
     const directory = {
-      "i-am-not/file1.jpeg": new File(["foo1"], "i-am-not/file1.jpeg"),
-      "i-am-not/file2.jpeg": new File(["foo2"], "i-am-not/file2.jpeg"),
-      "i-am-not/me-neither/file3.jpeg": new File(["foo3"], "i-am-not/me-neither/file3.jpeg"),
+      "file1.jpeg": new File(["foo1"], "file1.jpeg"),
+      // Test a space in the subfile name.
+      "file 2.jpeg": new File(["foo2"], "file 2.jpeg"),
+      "subdir/file3.jpeg": new File(["foo3"], "subdir/file3.jpeg"),
     };
     const dirname = "dirname";
     const dirType = "application/zip";
@@ -44,14 +45,33 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     const { skylink } = await client.uploadDirectory(directory, dirname);
     expect(skylink).not.toEqual("");
 
-    // Get file content and check returned values.
+    // Get content for the skylink and check returned values.
 
-    const resp = await client.getFileContent(skylink);
-    const { data, contentType, portalUrl, skylink: returnedSkylink } = resp;
-    expect(data).toEqual(expect.any(String));
-    expect(contentType).toEqual(dirType);
-    expect(portalUrl).toEqualPortalUrl(portal);
-    expect(skylink).toEqual(returnedSkylink);
+    {
+      const resp = await client.getFileContent(skylink);
+      const { data, contentType, portalUrl, skylink: returnedSkylink } = resp;
+      expect(data).toEqual(expect.any(String));
+      expect(contentType).toEqual(dirType);
+      expect(portalUrl).toEqualPortalUrl(portal);
+      expect(skylink).toEqual(returnedSkylink);
+    }
+
+    // Get file content for each subfile.
+
+    {
+      const { data } = await client.getFileContent(`${skylink}/file1.jpeg`);
+      expect(data).toEqual("foo1");
+    }
+
+    {
+      const { data } = await client.getFileContent(`${skylink}/file 2.jpeg`);
+      expect(data).toEqual("foo2");
+    }
+
+    {
+      const { data } = await client.getFileContent(`${skylink}/subdir:file3.jpeg`);
+      expect(data).toEqual("foo3");
+    }
   });
 
   it("Custom filenames should take effect", async () => {
@@ -157,6 +177,20 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     expect(contentType).toEqual("application/octet-stream");
   });
 
+  it("Should upload and download a file with spaces in the filename", async () => {
+    const filename = " foo bar ";
+
+    const file = new File(["asdf"], filename);
+    expect(file.size).toEqual(4);
+    const { skylink } = await client.uploadFile(file);
+    expect(skylink).not.toEqual("");
+
+    // Get file content and check returned values.
+    const { data } = await client.getFileContent(skylink);
+
+    expect(data).toEqual("asdf");
+  });
+
   it("Should upload and download a 0-byte file", async () => {
     const onProgress = (progress: number) => {
       expect(progress).toEqual(1);
@@ -258,6 +292,13 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     const etag2 = response2.headers["etag"];
     expect(etag2).toBeTruthy();
     expect(etag2).not.toEqual(etag1);
+  });
+
+  it("should fail to download a non-existent skylink", async () => {
+    // Use a resolver skylink as it will time out faster.
+    const skylink = "AQDwh1jnoZas9LaLHC_D4-2yO9XYDdZzNtz62H4Dww1jDB";
+
+    await expect(client.getFileContent(skylink)).rejects.toThrowError("Failed to resolve skylink");
   });
 });
 

@@ -34,6 +34,7 @@ export {
   deriveEncryptedFileSeed,
 } from "./mysky/encrypted_files";
 export { deriveDiscoverableFileTweak } from "./mysky/tweak";
+export { ExecuteRequestError } from "./request";
 export { DELETION_ENTRY_DATA } from "./skydb";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
