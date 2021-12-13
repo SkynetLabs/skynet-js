@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import type { AxiosResponse, ResponseType, Method } from "axios";
 
 import {
@@ -45,7 +45,7 @@ import {
 import { defaultPortalUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
-import { buildRequestHeaders, buildRequestUrl, Headers } from "./request";
+import { buildRequestHeaders, buildRequestUrl, ExecuteRequestError, Headers } from "./request";
 
 /**
  * Custom client options.
@@ -92,6 +92,21 @@ export type RequestConfig = CustomClientOptions & {
   transformRequest?: (data: unknown) => string;
   transformResponse?: (data: string) => Record<string, unknown>;
 };
+
+// Add a response interceptor so that we always return an error of type
+// `ExecuteResponseError`.
+axios.interceptors.response.use(
+  function (response) {
+    // Any status code that lie within the range of 2xx cause this function to trigger.
+    // Do something with response data.
+    return response;
+  },
+  function (error) {
+    // Any status codes that falls outside the range of 2xx cause this function to trigger
+    // Do something with response error.
+    return Promise.reject(ExecuteRequestError.From(error as AxiosError));
+  }
+);
 
 /**
  * The Skynet Client which can be used to access Skynet.
@@ -249,6 +264,7 @@ export class SkynetClient {
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
+   * @throws - Will throw `ExecuteRequestError` if the request fails. This error contains the original Axios error.
    */
   async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     const url = await buildRequestUrl(this, {
@@ -285,7 +301,9 @@ export class SkynetClient {
       };
     }
 
-    return axios({
+    // NOTE: The error type will be ExecuteRequestError as we set up a response
+    // interceptor above.
+    return await axios({
       url,
       method: config.method,
       data: config.data,
