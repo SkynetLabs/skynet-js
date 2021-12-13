@@ -320,7 +320,11 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
           ]);
         } catch (e) {
           if ((e as Error).message.includes(concurrentAccessError)) {
-            // The data race condition has been prevented and we received the expected error. Return from test early.
+            // The data race condition has been prevented and we received the
+            // expected error. Return from test early.
+            //
+            // NOTE: I've manually confirmed that both code paths (no error, and
+            // return on expected error) are hit.
             return;
           }
 
@@ -370,6 +374,8 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         expect(cachedRevisionEntry1.revision.toString()).toEqual("1");
         if (receivedJson?.message === jsonNew.message) {
           expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
+          // NOTE: I've manually confirmed that both code paths (no error, and
+          // return on expected error) are hit.
           return;
         }
         expect(receivedJson).toEqual(jsonOld);
@@ -406,7 +412,11 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
           ]);
         } catch (e) {
           if ((e as Error).message.includes(concurrentAccessError)) {
-            // The data race condition has been prevented and we received the expected error. Return from test early.
+            // The data race condition has been prevented and we received the
+            // expected error. Return from test early.
+            //
+            // NOTE: I've manually confirmed that both code paths (no error, and
+            // return on expected error) are hit.
             return;
           }
 
@@ -436,7 +446,11 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
           ]);
         } catch (e) {
           if ((e as Error).message.includes(registryUpdateError)) {
-            // The data race condition has been prevented and we received the expected error. Return from test early.
+            // The data race condition has been prevented and we received the
+            // expected error. Return from test early.
+            //
+            // NOTE: I've manually confirmed that both code paths (no error, and
+            // return on expected error) are hit.
             return;
           }
 

@@ -26,10 +26,12 @@ describe("getEntry", () => {
   it("should throw if the response status is not in the 200s and not 404 and JSON is returned", async () => {
     mock.onGet(registryGetUrl).replyOnce(400, JSON.stringify({ message: "foo error" }));
 
-    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toEqual(new Error("foo error"));
+    await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toEqual(
+      new Error("Request failed with status code 400: foo error")
+    );
   });
 
-  // In the case of a 429 error due to rate limiting all we get is HTML.
+  // In the case of a 429 error due to rate limiting, all we get is HTML.
   it("should throw if the response status is not in the 200s and not 404 and HTML is returned", async () => {
     const responseHTML = `
 <head><title>429 Too Many Requests</title></head>

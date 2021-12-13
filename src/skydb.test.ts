@@ -295,7 +295,9 @@ describe("setJSON", () => {
     // mock a failed registry update
     mock.onPost(registryPostUrl).replyOnce(400, JSON.stringify({ message: "foo" }));
 
-    await expect(client.db.setJSON(privateKey, dataKey, json)).rejects.toEqual(new Error("foo"));
+    await expect(client.db.setJSON(privateKey, dataKey, json)).rejects.toEqual(
+      new Error("Request failed with status code 400: foo")
+    );
 
     const revision2 = cachedRevisionEntry.revision;
 
