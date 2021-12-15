@@ -1,7 +1,7 @@
 import urljoin from "url-join";
 import parse from "url-parse";
 
-import { trimForwardSlash, trimPrefix, trimSuffix, trimUriPrefix } from "./string";
+import { trimForwardSlash, trimSuffix, trimUriPrefix } from "./string";
 import { throwValidationError, validateString } from "./validation";
 
 export const DEFAULT_SKYNET_PORTAL_URL = "https://siasky.net";
@@ -100,20 +100,14 @@ export function addUrlQuery(url: string, query: { [key: string]: string | undefi
  * @returns - The URL.
  */
 export function ensureUrlPrefix(url: string): string {
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-  if (url.startsWith("http:")) {
-    return `http://${trimPrefix(url, "http:")}`;
-  }
-  if (url.startsWith("https:")) {
-    return `https://${trimPrefix(url, "https:")}`;
-  }
-
   if (url === "localhost") {
     return "http://localhost/";
   }
-  return `https://${url}`;
+
+  if (!/^https?:(\/\/)?/i.test(url)) {
+    return `https://${url}`;
+  }
+  return url;
 }
 
 /**
@@ -142,7 +136,11 @@ export function getFullDomainUrlForPortal(portalUrl: string, domain: string): st
   validateString("portalUrl", portalUrl, "parameter");
   validateString("domain", domain, "parameter");
 
-  domain = trimUriPrefix(domain, uriSkynetPrefix);
+  // Normalize the portalURL.
+  portalUrl = ensureUrlPrefix(trimUriPrefix(portalUrl, "http://"));
+
+  // Normalize the domain.
+  domain = trimUriPrefix(domain, URI_SKYNET_PREFIX);
   domain = trimForwardSlash(domain);
 
   // Split on first / to get the path.
@@ -195,7 +193,7 @@ export function extractDomainForPortal(portalUrl: string, fullDomain: string): s
   }
 
   // Get the portal domain.
-  const portalUrlObj = new URL(portalUrl);
+  const portalUrlObj = new URL(ensureUrlPrefix(portalUrl));
   const portalDomain = trimForwardSlash(portalUrlObj.hostname);
 
   // Remove the portal domain from the domain.

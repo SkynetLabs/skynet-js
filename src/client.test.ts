@@ -4,9 +4,9 @@ import MockAdapter from "axios-mock-adapter";
 import { combineStrings } from "../utils/testing";
 import { buildRequestUrl } from "./client";
 import { SkynetClient } from "./index";
-import { defaultSkynetPortalUrl } from "./utils/url";
+import { DEFAULT_SKYNET_PORTAL_URL } from "./utils/url";
 
-const portalUrl = defaultSkynetPortalUrl;
+const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
 let mock: MockAdapter;
 
@@ -101,7 +101,7 @@ describe("buildRequestUrl", () => {
   describe("localhost inputs", () => {
     // `localhost` without a protocol prefix is not in this list because
     // `buildRequestUrl` always ensures a prefix protocol for consistency.
-    const validExpectedLocalhosts = combineStrings(["https://", "http://"], ["localhost"], ["", "/"]);
+    const validExpectedLocalhosts = combineStrings(["https:", "http:"], ["", "//"], ["localhost"], ["", "/"]);
     const localhostUrls = combineStrings(["", "https://", "https:", "http://", "http:"], ["localhost"], ["", "/"]);
 
     it.each(localhostUrls)("should correctly handle input '%s'", async (localhostUrl) => {

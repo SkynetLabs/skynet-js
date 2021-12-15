@@ -1,4 +1,5 @@
 import { SkynetClient } from "../client";
+import { trimSuffix } from "../utils/string";
 import { getFullDomainUrlForPortal, extractDomainForPortal, ensureUrlPrefix } from "../utils/url";
 
 /**
@@ -13,6 +14,26 @@ export async function getFullDomainUrl(this: SkynetClient, domain: string): Prom
   const portalUrl = await this.portalUrl();
 
   return getFullDomainUrlForPortal(portalUrl, domain);
+}
+
+// TODO: unit test
+/**
+ * Gets the URL for the current skapp on the preferred portal, if we're not on
+ * the preferred portal already.
+ *
+ * @param currentPortalUrl - The current portal URL.
+ * @param currentUrl - The current page URL.
+ * @param preferredPortalUrl - The preferred portal URL.
+ * @returns - The URL for the current skapp on the preferred portal.
+ */
+export function getRedirectUrlOnPreferredPortal(
+  currentPortalUrl: string,
+  currentUrl: string,
+  preferredPortalUrl: string
+): string {
+  // Get the current skapp on the preferred portal.
+  const skappDomain = extractDomainForPortal(currentPortalUrl, currentUrl);
+  return getFullDomainUrlForPortal(preferredPortalUrl, skappDomain);
 }
 
 /**
@@ -63,4 +84,21 @@ export function popupCenter(url: string, winName: string, w: number, h: number):
     newWindow.focus();
   }
   return newWindow;
+}
+
+// TODO: Handle edge cases with specific servers as preferred portal?
+/**
+ * Returns whether we should redirect from the current portal to the preferred
+ * portal. The protocol prefixes are allowed to be different and there can be
+ * other differences like a trailing slash.
+ *
+ * @param currentPortalUrl - The current portal URL.
+ * @param preferredPortalUrl - The preferred portal URL.
+ * @returns - Whether the two URLs are equal for the purposes of redirecting.
+ */
+export function shouldRedirectToPreferredPortalUrl(currentPortalUrl: string, preferredPortalUrl: string): boolean {
+  currentPortalUrl = currentPortalUrl.split("//", 2)[1] || currentPortalUrl;
+  preferredPortalUrl = preferredPortalUrl.split("//", 2)[1] || preferredPortalUrl;
+
+  return trimSuffix(currentPortalUrl, "/") === trimSuffix(preferredPortalUrl, "/");
 }

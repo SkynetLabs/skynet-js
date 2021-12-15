@@ -40,7 +40,7 @@ import {
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
-import { popupCenter } from "./utils";
+import { getRedirectUrlOnPreferredPortal, popupCenter, shouldRedirectToPreferredPortalUrl } from "./utils";
 import { extractOptions } from "../utils/options";
 import { JsonData } from "../utils/types";
 import {
@@ -133,7 +133,12 @@ export class MySky {
   // Constructors
   // ============
 
-  constructor(protected connector: Connector, permissions: Permission[], protected hostDomain: string) {
+  constructor(
+    protected connector: Connector,
+    permissions: Permission[],
+    protected hostDomain: string,
+    protected currentPortalUrl: string
+  ) {
     this.pendingPermissions = permissions;
   }
 
@@ -153,7 +158,14 @@ export class MySky {
     }
     const connector = await Connector.init(client, domain, customOptions);
 
-    const hostDomain = await client.extractDomain(window.location.hostname);
+    // Create a new client on the current URL, in case the client the developer
+    // instantiated does not correspond to the portal of the current URL.
+    const currentUrlClient = new SkynetClient(window.location.hostname);
+    // @ts-expect-error - Using protected fields.
+    currentUrlClient.customPortalUrl = await currentUrlClient.resolvePortalUrl();
+
+    // Extract the skapp domain.
+    const hostDomain = await currentUrlClient.extractDomain(window.location.hostname);
     const permissions = [];
     if (skappDomain) {
       const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Discoverable, PermType.Write);
@@ -162,7 +174,8 @@ export class MySky {
       permissions.push(perm1, perm2, perm3);
     }
 
-    MySky.instance = new MySky(connector, permissions, hostDomain);
+    const currentPortalUrl = await currentUrlClient.portalUrl();
+    MySky.instance = new MySky(connector, permissions, hostDomain, currentPortalUrl);
     return MySky.instance;
   }
 
@@ -204,6 +217,13 @@ export class MySky {
     this.pendingPermissions.push(...permissions);
   }
 
+  /**
+   * Checks whether main MySky, living in an invisible iframe, is already logged
+   * in and all requested permissions are granted.
+   *
+   * @returns - A boolean indicating whether the user is logged in and all
+   * permissions are granted.
+   */
   async checkLogin(): Promise<boolean> {
     const [seedFound, permissionsResponse]: [boolean, CheckPermissionsResponse] = await this.connector.connection
       .remoteHandle()
@@ -249,10 +269,17 @@ export class MySky {
     }
   }
 
+  // TODO: Document what this does exactly.
   async logout(): Promise<void> {
     return await this.connector.connection.remoteHandle().call("logout");
   }
 
+  /**
+   * Requests login access by opening the MySky UI window.
+   *
+   * @returns - A boolean indicating whether we successfully logged in and all
+   * requested permissions were granted.
+   */
   async requestLoginAccess(): Promise<boolean> {
     let uiWindow: Window;
     let uiConnection: Connection;
@@ -275,13 +302,12 @@ export class MySky {
       });
 
       try {
-        // Launch the UI.
-
+        // Launch and connect the UI.
         uiWindow = this.launchUI();
         uiConnection = await this.connectUi(uiWindow);
 
         // Send the UI the list of required permissions.
-
+        //
         // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
         const [seedFoundResponse, permissionsResponse]: [boolean, CheckPermissionsResponse] = await uiConnection
           .remoteHandle()
@@ -289,7 +315,6 @@ export class MySky {
         seedFound = seedFoundResponse;
 
         // Save failed permissions.
-
         const { grantedPermissions, failedPermissions } = permissionsResponse;
         this.grantedPermissions = grantedPermissions;
         this.pendingPermissions = failedPermissions;
@@ -713,6 +738,10 @@ export class MySky {
     return connection;
   }
 
+  protected async getPreferredPortal(): Promise<string | null> {
+    return await this.connector.connection.remoteHandle().call("getPreferredPortal");
+  }
+
   protected async loadDac(dac: DacLibrary): Promise<void> {
     // Initialize DAC.
     await dac.init(this.connector.client, this.connector.options);
@@ -722,18 +751,40 @@ export class MySky {
     await this.addPermissions(...perms);
   }
 
+  /**
+   * Handles the after-login logic.
+   *
+   * @param loggedIn - Whether the login was successful.
+   */
   protected async handleLogin(loggedIn: boolean): Promise<void> {
-    if (loggedIn) {
-      await Promise.all(
-        this.dacs.map(async (dac) => {
-          try {
-            await dac.onUserLogin();
-          } catch (error) {
-            // Don't throw on error, just print a console warning.
-            console.warn(error);
-          }
-        })
+    if (!loggedIn) {
+      return;
+    }
+
+    // Call the `onUserLogin` hook for all DACs.
+    await Promise.all(
+      this.dacs.map(async (dac) => {
+        try {
+          await dac.onUserLogin();
+        } catch (error) {
+          // Don't throw on error, just print a console warning.
+          console.warn(error);
+        }
+      })
+    );
+
+    // Get the preferred portal and redirect the page if it is different than
+    // the current portal.
+    const currentUrl = window.location.hostname;
+    const preferredPortalUrl = await this.getPreferredPortal();
+    if (preferredPortalUrl !== null && shouldRedirectToPreferredPortalUrl(currentUrl, preferredPortalUrl)) {
+      // Redirect.
+      const newUrl = await getRedirectUrlOnPreferredPortal(
+        this.currentPortalUrl,
+        window.location.hostname,
+        preferredPortalUrl
       );
+      redirectPage(newUrl);
     }
   }
 
@@ -744,4 +795,13 @@ export class MySky {
   protected async signEncryptedRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
     return await this.connector.connection.remoteHandle().call("signEncryptedRegistryEntry", entry, path);
   }
+}
+
+/**
+ * Redirects the page to the given URL.
+ *
+ * @param url - The URL.
+ */
+function redirectPage(url: string): void {
+  window.location.replace(url);
 }
