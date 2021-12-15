@@ -25,9 +25,12 @@ export {
   mySkyDomain,
 } from "./mysky";
 export {
+  decryptJSONFile,
   deriveEncryptedFileKeyEntropy,
   deriveEncryptedFileTweak,
   deriveEncryptedPathSeed,
+  encryptJSONFile,
+  ENCRYPTED_JSON_RESPONSE_VERSION,
   ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH,
   ENCRYPTION_PATH_SEED_FILE_LENGTH,
   // Deprecated.
@@ -74,6 +77,7 @@ export type { CustomClientOptions, RequestConfig } from "./client";
 export type { KeyPair, KeyPairAndSeed, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomConnectorOptions, EntryData } from "./mysky";
+export type { EncryptedJSONResponse } from "./mysky/encrypted_files";
 export type { CustomPinOptions, PinResponse } from "./pin";
 export type {
   CustomGetEntryOptions,
