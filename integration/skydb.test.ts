@@ -365,6 +365,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         // Set the initial data.
         await client1.db.setJSON(privateKey, dataKey, jsonOld);
         expect(cachedRevisionEntry1.revision.toString()).toEqual("0");
+        expect(cachedRevisionEntry2.revision.toString()).toEqual("-1");
 
         // Call getJSON and setJSON concurrently on different clients -- both
         // should succeeed.
@@ -386,9 +387,11 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
           // return on expected error) are hit.
           return;
         }
+        // client2 should have old data and cached revision at this point.
         expect(receivedJson).toEqual(jsonOld);
         expect(cachedRevisionEntry2.revision.toString()).toEqual("0");
 
+        // Try to update the entry with client2 which has the old revision.
         const updatedJson = { message: 3 };
         // Catches both "doesn't have enough pow" and "provided revision number
         // is already registered" errors.

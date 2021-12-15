@@ -247,7 +247,7 @@ export async function setJSON(
 
   // Immediately fail if the mutex is not available.
   return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
-    // Get the cached revision number before doing anything else.
+    // Get the cached revision number before doing anything else. Increment it.
     const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
     const [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(this, dataKey, json, newRevision, opts);
