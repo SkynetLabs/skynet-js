@@ -223,7 +223,7 @@ export async function uploadLargeFileRequest(
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   // TODO: Add back upload options once they are implemented in skyd.
-  const url = await buildRequestUrl(this, opts.endpointLargeUpload);
+  const url = await buildRequestUrl(this, { endpointPath: opts.endpointLargeUpload });
   const headers = buildRequestHeaders(undefined, opts.customUserAgent, opts.customCookie);
 
   file = ensureFileObjectConsistency(file);
@@ -299,14 +299,18 @@ export async function uploadLargeFileRequest(
         }
 
         // Call HEAD to get the metadata, including the skylink.
-        const resp = await this.executeRequest({
-          ...opts,
-          url: upload.url,
-          endpointPath: opts.endpointLargeUpload,
-          method: "head",
-          headers: { ...headers, "tus-resumable": "1.0.0" },
-        });
-        resolve(resp);
+        try {
+          const resp = await this.executeRequest({
+            ...opts,
+            url: upload.url,
+            endpointPath: opts.endpointLargeUpload,
+            method: "head",
+            headers: { ...headers, "tus-resumable": "1.0.0" },
+          });
+          resolve(resp);
+        } catch (err) {
+          reject(err);
+        }
       },
     };
 

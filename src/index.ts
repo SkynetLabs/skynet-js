@@ -25,15 +25,19 @@ export {
   mySkyDomain,
 } from "./mysky";
 export {
+  decryptJSONFile,
   deriveEncryptedFileKeyEntropy,
   deriveEncryptedFileTweak,
   deriveEncryptedPathSeed,
+  encryptJSONFile,
+  ENCRYPTED_JSON_RESPONSE_VERSION,
   ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH,
   ENCRYPTION_PATH_SEED_FILE_LENGTH,
   // Deprecated.
   deriveEncryptedFileSeed,
 } from "./mysky/encrypted_files";
 export { deriveDiscoverableFileTweak } from "./mysky/tweak";
+export { ExecuteRequestError } from "./request";
 export { DELETION_ENTRY_DATA } from "./skydb";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
@@ -73,6 +77,7 @@ export type { CustomClientOptions, RequestConfig } from "./client";
 export type { KeyPair, KeyPairAndSeed, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomConnectorOptions, EntryData } from "./mysky";
+export type { EncryptedJSONResponse } from "./mysky/encrypted_files";
 export type { CustomPinOptions, PinResponse } from "./pin";
 export type {
   CustomGetEntryOptions,
