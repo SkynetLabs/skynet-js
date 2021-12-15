@@ -345,14 +345,21 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
       }
     );
 
+    // NOTE: We can't guarantee that data won't be lost if two (or more) actors
+    // write to the registry at the same time, but we can guarantee that the
+    // final state will be the desired final state by at least one of the
+    // actors. One of the two clients will lose, but the other will win and be
+    // consistent, so the data won't be corrupt, it'll just be missing one
+    // update.
     it.each(delays)(
-      "should not be able to use old data when getJSON is called after setJSON on two different clients with a '%s' ms delay",
+      "should get either old or new data when getJSON is called after setJSON on two different clients with a '%s' ms delay",
       async (delay) => {
         // Create two new clients with a fresh revision cache.
         const client1 = new SkynetClient(portal);
         const client2 = new SkynetClient(portal);
         const { publicKey, privateKey } = genKeyPairAndSeed();
 
+        // Get revision entry cache handles.
         const cachedRevisionEntry1 = await client1.db.revisionNumberCache.getRevisionAndMutexForEntry(
           publicKey,
           dataKey
@@ -363,50 +370,72 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         );
 
         // Set the initial data.
-        await client1.db.setJSON(privateKey, dataKey, jsonOld);
-        expect(cachedRevisionEntry1.revision.toString()).toEqual("0");
-        expect(cachedRevisionEntry2.revision.toString()).toEqual("-1");
+        {
+          await client1.db.setJSON(privateKey, dataKey, jsonOld);
+          expect(cachedRevisionEntry1.revision.toString()).toEqual("0");
+          expect(cachedRevisionEntry2.revision.toString()).toEqual("-1");
+        }
 
         // Call getJSON and setJSON concurrently on different clients -- both
         // should succeeed.
+        {
+          // Get the data while also calling setJSON.
+          const [_, { data: receivedJson }] = await Promise.all([
+            setJSONWithDelay(client1, 0, privateKey, dataKey, jsonNew),
+            getJSONWithDelay(client2, delay, publicKey, dataKey),
+          ]);
 
-        // Get the data while also calling setJSON.
-        const [_, { data: receivedJson }] = await Promise.all([
-          setJSONWithDelay(client1, 0, privateKey, dataKey, jsonNew),
-          getJSONWithDelay(client2, delay, publicKey, dataKey),
-        ]);
-
-        // If we got old data from getJSON, make sure that that client is not
-        // able to update that JSON.
-
-        expect(receivedJson).not.toBeNull();
-        expect(cachedRevisionEntry1.revision.toString()).toEqual("1");
-        if (receivedJson?.message === jsonNew.message) {
-          expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
-          // NOTE: I've manually confirmed that both code paths (no error, and
-          // return on expected error) are hit.
-          return;
+          // See if we got the new or old data.
+          expect(receivedJson).not.toBeNull();
+          expect(cachedRevisionEntry1.revision.toString()).toEqual("1");
+          if (receivedJson?.message === jsonNew.message) {
+            expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
+            // Return if we got the new data -- both clients are in sync.
+            //
+            // NOTE: I've manually confirmed that both code paths (old data and
+            // new data) are hit.
+            return;
+          }
+          // client2 should have old data and cached revision at this point.
+          expect(receivedJson).toEqual(jsonOld);
+          expect(cachedRevisionEntry2.revision.toString()).toEqual("0");
         }
-        // client2 should have old data and cached revision at this point.
-        expect(receivedJson).toEqual(jsonOld);
-        expect(cachedRevisionEntry2.revision.toString()).toEqual("0");
 
+        // If we got old data and an old revision from getJSON, the client may
+        // still be able to write to that entry, overwriting the new data.
+        //
         // Try to update the entry with client2 which has the old revision.
         const updatedJson = { message: 3 };
-        // Catches both "doesn't have enough pow" and "provided revision number
-        // is already registered" errors.
-        await expect(client2.db.setJSON(privateKey, dataKey, updatedJson)).rejects.toThrowError(registryUpdateError);
+        let expectedJson: JsonData;
+        try {
+          await client2.db.setJSON(privateKey, dataKey, updatedJson);
+          expectedJson = updatedJson;
+        } catch (e) {
+          // Catches both "doesn't have enough pow" and "provided revision number
+          // is already registered" errors.
+          if ((e as Error).message.includes(registryUpdateError)) {
+            // NOTE: I've manually confirmed that both code paths (no error, and
+            // return on expected error) are hit.
+            expectedJson = jsonNew;
+          } else {
+            // Unexpected error, throw.
+            throw e;
+          }
+        }
 
-        // Should work on that client again after calling getJSON.
-
-        const { data: receivedJson2 } = await client2.db.getJSON(publicKey, dataKey);
-        expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
-        expect(receivedJson2).toEqual(jsonNew);
-
-        const updatedJson2 = receivedJson2 as { message: number };
-        updatedJson2.message++;
-        await client2.db.setJSON(privateKey, dataKey, updatedJson2);
-        expect(cachedRevisionEntry2.revision.toString()).toEqual("2");
+        // The entry should have the overriden, updated data at this point.
+        await Promise.all([
+          async () => {
+            const { data: receivedJson } = await client1.db.getJSON(publicKey, dataKey);
+            expect(cachedRevisionEntry1.revision.toString()).toEqual("1");
+            expect(receivedJson).toEqual(expectedJson);
+          },
+          async () => {
+            const { data: receivedJson } = await client2.db.getJSON(publicKey, dataKey);
+            expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
+            expect(receivedJson).toEqual(expectedJson);
+          },
+        ]);
       }
     );
 
