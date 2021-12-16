@@ -2,8 +2,8 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
 import { combineStrings } from "../utils/testing";
-import { buildRequestUrl } from "./client";
 import { SkynetClient } from "./index";
+import { buildRequestUrl } from "./request";
 import { defaultSkynetPortalUrl } from "./utils/url";
 
 const portalUrl = defaultSkynetPortalUrl;
