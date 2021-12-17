@@ -1,5 +1,6 @@
 import mime from "mime/lite";
 import path from "path-browserify";
+
 import { trimPrefix } from "./string";
 
 /**
