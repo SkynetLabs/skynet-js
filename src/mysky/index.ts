@@ -161,6 +161,8 @@ export class MySky {
     // Create a new client on the current URL, in case the client the developer
     // instantiated does not correspond to the portal of the current URL.
     const currentUrlClient = new SkynetClient(window.location.hostname);
+    // Set the portal URL manually.
+    //
     // @ts-expect-error - Using protected fields.
     currentUrlClient.customPortalUrl = await currentUrlClient.resolvePortalUrl();
 
@@ -176,6 +178,11 @@ export class MySky {
 
     const currentPortalUrl = await currentUrlClient.portalUrl();
     MySky.instance = new MySky(connector, permissions, hostDomain, currentPortalUrl);
+
+    // Redirect if we're not on the preferred portal. See
+    // `redirectIfNotOnPreferredPortal` for full load flow.
+    await MySky.instance.redirectIfNotOnPreferredPortal();
+
     return MySky.instance;
   }
 
@@ -773,8 +780,44 @@ export class MySky {
       })
     );
 
-    // Get the preferred portal and redirect the page if it is different than
-    // the current portal.
+    // Redirect if we're not on the preferred portal. See
+    // `redirectIfNotOnPreferredPortal` for full login flow.
+    await this.redirectIfNotOnPreferredPortal();
+  }
+
+  /**
+   * Get the preferred portal and redirect the page if it is different than
+   * the current portal.
+   *
+   *  Load MySky redirect flow:
+   *
+   *  1. SDK opens MySky on the same portal as the skapp.
+   *  2. MySky always connects to siasky.net first.
+   *  3. MySky tries to get the saved portal preference.
+   *     1. If the portal is set, MySky switches to using the preferred portal.
+   *     2. If it is not set or we don't have the seed, MySky switches to using
+   *        the current portal as opposed to siasky.net.
+   *  4. After MySky finishes loading, SDK queries `mySky.getPortalPreference`.
+   *  5. If the preferred portal is set and different than the current portal,
+   *     SDK triggers refresh.
+   *  6. We go back to step 1 and repeat, but since we're on the right portal
+   *     now we won't refresh in step 5.
+   *
+   * Login redirect flow:
+   *
+   * 1. SDK logs in either silently or through the UI.
+   * 2. If it was through the UI, MySky switches to siasky.net and tries to
+   *    get the saved portal preference.
+   *    1. If the portal is set, MySky switches to using the preferred portal.
+   *    2. If it is not set or we don't have the seed, MySky switches to using
+   *       the current portal as opposed to siasky.net.
+   * 3. SDK queries `mySky.getPortalPreference`.
+   * 4. If the preferred portal is set and different than the current portal,
+   *    SDK triggers refresh.
+   * 5. We go to "Load MySky" step 1 and go through that flow, but we don't
+   *    refresh in step 5.
+   */
+  protected async redirectIfNotOnPreferredPortal(): Promise<void> {
     const currentUrl = window.location.hostname;
     const preferredPortalUrl = await this.getPreferredPortal();
     if (preferredPortalUrl !== null && shouldRedirectToPreferredPortalUrl(currentUrl, preferredPortalUrl)) {
