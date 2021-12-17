@@ -4,9 +4,10 @@ import { DetailedError, HttpRequest, Upload } from "@skynetlabs/tus-js-client";
 import { getFileMimeType } from "./utils/file";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
-import { buildRequestHeaders, buildRequestUrl, SkynetClient } from "./client";
+import { SkynetClient } from "./client";
 import { JsonData } from "./utils/types";
 import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
+import { buildRequestHeaders, buildRequestUrl } from "./request";
 
 /**
  * The tus chunk size is (4MiB - encryptionOverhead) * dataPieces, set in skyd.
