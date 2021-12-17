@@ -576,11 +576,11 @@ export function validateRegistryProof(
 }
 
 /**
- * Handles error responses returned in getEntry.
+ * Handles error responses returned from getEntry endpoint.
  *
  * @param err - The error.
  * @returns - An empty signed registry entry if the status code is 404.
- * @throws - Will throw if the status code is not 404.
+ * @throws - Will throw if the error response is malformed, or the error message otherwise if the error status code is not 404.
  */
 function handleGetEntryErrResponse(err: ExecuteRequestError): SignedRegistryEntry {
   // Check if status was 404 "not found" and return null if so.
@@ -588,6 +588,7 @@ function handleGetEntryErrResponse(err: ExecuteRequestError): SignedRegistryEntr
     return { entry: null, signature: null };
   }
 
+  // Return the error message from skyd.
   throw err;
 }
 

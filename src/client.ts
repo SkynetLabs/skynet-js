@@ -32,6 +32,7 @@ import {
 } from "./file";
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
+import { RevisionNumberCache } from "./revision_cache";
 import {
   deleteJSON,
   getJSON,
@@ -182,6 +183,10 @@ export class SkynetClient {
     getEntryData: getEntryData.bind(this),
     setEntryData: setEntryData.bind(this),
     deleteEntryData: deleteEntryData.bind(this),
+
+    // Holds the cached revision numbers, protected by mutexes to prevent
+    // concurrent access.
+    revisionNumberCache: new RevisionNumberCache(),
   };
 
   // Registry

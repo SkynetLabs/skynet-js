@@ -7,10 +7,10 @@ import {
   DEFAULT_SET_ENTRY_OPTIONS,
   CustomGetEntryOptions,
   RegistryEntry,
-  SignedRegistryEntry,
   CustomSetEntryOptions,
   validatePublicKey,
 } from "./registry";
+import { CachedRevisionNumber } from "./revision_cache";
 import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
 import { MAX_REVISION } from "./utils/number";
 import { URI_SKYNET_PREFIX } from "./utils/url";
@@ -22,7 +22,7 @@ import {
   uint8ArrayToStringUtf8,
 } from "./utils/string";
 import { formatSkylink } from "./skylink/format";
-import { DEFAULT_UPLOAD_OPTIONS, CustomUploadOptions, UploadRequestResponse } from "./upload";
+import { DEFAULT_UPLOAD_OPTIONS, CustomUploadOptions } from "./upload";
 import { areEqualUint8Arrays } from "./utils/array";
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { DEFAULT_BASE_OPTIONS, extractOptions } from "./utils/options";
@@ -40,7 +40,7 @@ import {
 import { ResponseType } from "axios";
 import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
-export type JsonFullData = {
+type SkynetJson = {
   _data: JsonData;
   _v: number;
 };
@@ -48,6 +48,8 @@ export type JsonFullData = {
 export const DELETION_ENTRY_DATA = new Uint8Array(RAW_SKYLINK_SIZE);
 
 const JSON_RESPONSE_VERSION = 2;
+
+const UNCACHED_REVISION_NUMBER = BigInt(-1);
 
 /**
  * Custom get JSON options. Includes the options for get entry, to get the
@@ -121,7 +123,21 @@ export type RawBytesResponse = {
 // ====
 
 /**
- * Gets the JSON object corresponding to the publicKey and dataKey.
+ * Gets the JSON object corresponding to the publicKey and dataKey. If the data
+ * was found, we update the cached revision number for the entry.
+ *
+ * NOTE: The cached revision number will be updated only if the data is found
+ * (including deleted data). If there is a 404 or the entry contains deleted
+ * data, null will be returned. If there is an error, the error is returned
+ * without updating the cached revision number.
+ *
+ * Summary:
+ *   - Data found: update cached revision
+ *   - Parse error: don't update cached revision
+ *   - Network error: don't update cached revision
+ *   - Too low version error: don't update the cached revision
+ *   - 404 (data not found): don't update the cached revision
+ *   - Data deleted: update cached revision
  *
  * @param this - SkynetClient
  * @param publicKey - The user public key.
@@ -146,44 +162,59 @@ export async function getJSON(
     ...customOptions,
   };
 
-  // Lookup the registry entry.
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, getEntryOpts);
-  if (entry === null) {
-    return { data: null, dataLink: null };
-  }
+  // Immediately fail if the mutex is not available.
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+    // Lookup the registry entry.
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+    const entry: RegistryEntry | null = await getSkyDBRegistryEntryAndUpdateCache(
+      this,
+      publicKey,
+      dataKey,
+      cachedRevisionEntry,
+      getEntryOpts
+    );
+    if (entry === null) {
+      return { data: null, dataLink: null };
+    }
 
-  // Determine the data link.
-  // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  const { rawDataLink, dataLink } = parseDataLink(entry.data, true);
+    // Determine the data link.
+    // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
+    const { rawDataLink, dataLink } = parseDataLink(entry.data, true);
 
-  // If a cached data link is provided and the data link hasn't changed, return.
-  if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
-    return { data: null, dataLink };
-  }
+    // If a cached data link is provided and the data link hasn't changed, return.
+    if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
+      return { data: null, dataLink };
+    }
 
-  // Download the data in the returned data link.
-  const downloadOpts = extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS);
-  const { data } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
+    // Download the data in the returned data link.
+    const downloadOpts = extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS);
+    const { data }: { data: JsonData | SkynetJson } = await this.getFileContent<JsonData>(dataLink, downloadOpts);
 
-  if (typeof data !== "object" || data === null) {
-    throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
-  }
+    // Validate that the returned data is JSON.
+    if (typeof data !== "object" || data === null) {
+      throw new Error(`File data for the entry at data key '${dataKey}' is not JSON.`);
+    }
 
-  if (!(data["_data"] && data["_v"])) {
-    // Legacy data prior to skynet-js v4, return as-is.
-    return { data, dataLink };
-  }
+    if (!(data["_data"] && data["_v"])) {
+      // Legacy data prior to skynet-js v4, return as-is.
+      return { data, dataLink };
+    }
 
-  const actualData = data["_data"];
-  if (typeof actualData !== "object" || data === null) {
-    throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
-  }
-  return { data: actualData as JsonData, dataLink };
+    // Extract the JSON from the returned SkynetJson.
+    const actualData = data["_data"];
+    if (typeof actualData !== "object" || data === null) {
+      throw new Error(`File data '_data' for the entry at data key '${dataKey}' is not JSON.`);
+    }
+    return { data: actualData as JsonData, dataLink };
+  });
 }
 
 /**
- * Sets a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ * Sets a JSON object at the registry entry corresponding to the publicKey and
+ * dataKey.
+ *
+ * This will use the entry revision number from the cache, so getJSON must
+ * always be called first for existing entries.
  *
  * @param this - SkynetClient
  * @param privateKey - The user private key.
@@ -212,18 +243,32 @@ export async function setJSON(
   };
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+  const publicKey = toHexString(publicKeyArray);
 
-  const [entry, dataLink] = await getOrCreateRegistryEntry(this, toHexString(publicKeyArray), dataKey, json, opts);
+  // Immediately fail if the mutex is not available.
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+    // Get the cached revision number before doing anything else. Increment it.
+    const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
-  // Update the registry.
-  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-  await this.registry.setEntry(privateKey, entry, setEntryOpts);
+    const [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(this, dataKey, json, newRevision, opts);
 
-  return { data: json, dataLink: formatSkylink(dataLink) };
+    // Update the registry.
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+    await this.registry.setEntry(privateKey, entry, setEntryOpts);
+
+    // Update the cached revision number.
+    cachedRevisionEntry.revision = newRevision;
+
+    return { data: json, dataLink: formatSkylink(dataLink) };
+  });
 }
 
 /**
- * Deletes a JSON object at the registry entry corresponding to the publicKey and dataKey.
+ * Deletes a JSON object at the registry entry corresponding to the publicKey
+ * and dataKey.
+ *
+ * This will use the entry revision number from the cache, so getJSON must
+ * always be called first.
  *
  * @param this - SkynetClient
  * @param privateKey - The user private key.
@@ -280,6 +325,9 @@ export async function setDataLink(
 /**
  * Gets the raw registry entry data at the given public key and data key.
  *
+ * If the data was found, we update the cached revision number for the entry.
+ * See getJSON for behavior in other cases.
+ *
  * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The data key.
@@ -302,15 +350,21 @@ export async function getEntryData(
     ...customOptions,
   };
 
-  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, opts);
-  if (entry === null) {
-    return { data: null };
-  }
-  return { data: entry.data };
+  // Immediately fail if the mutex is not available.
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+    const entry = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, cachedRevisionEntry, opts);
+    if (entry === null) {
+      return { data: null };
+    }
+    return { data: entry.data };
+  });
 }
 
 /**
  * Sets the raw entry data at the given private key and data key.
+ *
+ * This will use the entry revision number from the cache, so getEntryData must
+ * always be called first for existing entries.
  *
  * @param this - SkynetClient
  * @param privateKey - The user private key.
@@ -341,19 +395,31 @@ export async function setEntryData(
   validateEntryData(data, opts.allowDeletionEntryData);
 
   const { publicKey: publicKeyArray } = sign.keyPair.fromSecretKey(hexToUint8Array(privateKey));
+  const publicKey = toHexString(publicKeyArray);
 
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entry = await getNextRegistryEntry(this, toHexString(publicKeyArray), dataKey, data, getEntryOpts);
+  // Immediately fail if the mutex is not available.
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+    // Get the cached revision number.
+    const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
-  const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-  await this.registry.setEntry(privateKey, entry, setEntryOpts);
+    const entry = { dataKey, data, revision: newRevision };
 
-  return { data: entry.data };
+    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+    await this.registry.setEntry(privateKey, entry, setEntryOpts);
+
+    // Update the cached revision number.
+    cachedRevisionEntry.revision = newRevision;
+
+    return { data: entry.data };
+  });
 }
 
 /**
  * Deletes the entry data at the given private key and data key. Trying to
  * access the data again with e.g. getEntryData will result in null.
+ *
+ * This will use the entry revision number from the cache, so getEntryData must
+ * always be called first.
  *
  * @param this - SkynetClient
  * @param privateKey - The user private key.
@@ -382,6 +448,9 @@ export async function deleteEntryData(
 /**
  * Gets the raw bytes corresponding to the publicKey and dataKey. The caller is responsible for setting any metadata in the bytes.
  *
+ * If the data was found, we update the cached revision number for the entry.
+ * See getJSON for behavior in other cases.
+ *
  * @param this - SkynetClient
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
@@ -406,92 +475,39 @@ export async function getRawBytes(
     ...customOptions,
   };
 
-  // Lookup the registry entry.
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entry = await getSkyDBRegistryEntry(this, publicKey, dataKey, getEntryOpts);
-  if (entry === null) {
-    return { data: null, dataLink: null };
-  }
+  // Immediately fail if the mutex is not available.
+  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+    // Lookup the registry entry.
+    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
+    const entry = await getSkyDBRegistryEntryAndUpdateCache(
+      this,
+      publicKey,
+      dataKey,
+      cachedRevisionEntry,
+      getEntryOpts
+    );
+    if (entry === null) {
+      return { data: null, dataLink: null };
+    }
 
-  // Determine the data link.
-  // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
-  const { rawDataLink, dataLink } = parseDataLink(entry.data, false);
+    // Determine the data link.
+    // TODO: Can this still be an entry link which hasn't yet resolved to a data link?
+    const { rawDataLink, dataLink } = parseDataLink(entry.data, false);
 
-  // If a cached data link is provided and the data link hasn't changed, return.
-  if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
-    return { data: null, dataLink };
-  }
+    // If a cached data link is provided and the data link hasn't changed, return.
+    if (checkCachedDataLink(rawDataLink, opts.cachedDataLink)) {
+      return { data: null, dataLink };
+    }
 
-  // Download the data in the returned data link.
-  const downloadOpts = {
-    ...extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS),
-    responseType: "arraybuffer" as ResponseType,
-  };
-  const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
+    // Download the data in the returned data link.
+    const downloadOpts = {
+      ...extractOptions(opts, DEFAULT_DOWNLOAD_OPTIONS),
+      responseType: "arraybuffer" as ResponseType,
+    };
+    const { data: buffer } = await this.getFileContent<ArrayBuffer>(dataLink, downloadOpts);
 
-  return { data: new Uint8Array(buffer), dataLink };
-}
-
-/* istanbul ignore next */
-/**
- * Gets the registry entry for the given raw bytes or creates the entry if it doesn't exist.
- *
- * @param client - The Skynet client.
- * @param publicKey - The user public key.
- * @param dataKey - The dat akey.
- * @param data - The raw byte data to set.
- * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The registry entry and corresponding data link.
- * @throws - Will throw if the revision is already the maximum value.
- */
-// TODO: Rename & refactor after the SkyDB caching refactor.
-export async function getOrCreateRawBytesRegistryEntry(
-  client: SkynetClient,
-  publicKey: string,
-  dataKey: string,
-  data: Uint8Array,
-  customOptions?: CustomSetJSONOptions
-): Promise<RegistryEntry> {
-  // Not publicly available, don't validate input.
-
-  const opts = {
-    ...DEFAULT_SET_JSON_OPTIONS,
-    ...client.customOptions,
-    ...customOptions,
-  };
-
-  // Create the data to upload to acquire its skylink.
-  let dataKeyHex = dataKey;
-  if (!opts.hashedDataKeyHex) {
-    dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
-  }
-  const file = new File([data], `dk:${dataKeyHex}`, { type: "application/octet-stream" });
-
-  // Start file upload, do not block.
-  const uploadOpts = extractOptions(opts, DEFAULT_UPLOAD_OPTIONS);
-  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
-
-  // Fetch the current value to find out the revision.
-  //
-  // Start getEntry, do not block.
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-
-  // Block until both getEntry and uploadFile are finished.
-  const [signedEntry, skyfile] = await Promise.all([entryPromise, skyfilePromise]);
-
-  const revision = getNextRevisionFromEntry(signedEntry.entry);
-
-  // Build the registry entry.
-  const dataLink = trimUriPrefix(skyfile.skylink, URI_SKYNET_PREFIX);
-  const rawDataLink = decodeSkylinkBase64(dataLink);
-  validateUint8ArrayLen("rawDataLink", rawDataLink, "skylink byte array", RAW_SKYLINK_SIZE);
-  const entry: RegistryEntry = {
-    dataKey,
-    data: rawDataLink,
-    revision,
-  };
-  return entry;
+    return { data: new Uint8Array(buffer), dataLink };
+  });
 }
 
 // =======
@@ -499,62 +515,23 @@ export async function getOrCreateRawBytesRegistryEntry(
 // =======
 
 /**
- * Gets the next entry for the given public key and data key, setting the data to be the given data and the revision number accordingly.
+ * Gets the registry entry and data link or creates the entry if it doesn't
+ * exist. Uses the cached revision number for the entry, or 0 if the entry has
+ * not been cached.
  *
  * @param client - The Skynet client.
- * @param publicKey - The user public key.
- * @param dataKey - The dat akey.
- * @param data - The data to set.
+ * @param dataKey - The data key.
+ * @param data - The JSON or raw byte data to set.
+ * @param revision - The revision number to set.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The registry entry and corresponding data link.
  * @throws - Will throw if the revision is already the maximum value.
  */
-export async function getNextRegistryEntry(
+export async function getOrCreateSkyDBRegistryEntry(
   client: SkynetClient,
-  publicKey: string,
   dataKey: string,
-  data: Uint8Array,
-  customOptions?: CustomGetEntryOptions
-): Promise<RegistryEntry> {
-  // Not publicly available, don't validate input.
-
-  const opts = {
-    ...DEFAULT_GET_ENTRY_OPTIONS,
-    ...client.customOptions,
-    ...customOptions,
-  };
-
-  // Get the latest entry.
-  // TODO: Can remove this once we start caching the latest revision.
-  const signedEntry = await client.registry.getEntry(publicKey, dataKey, opts);
-  const revision = getNextRevisionFromEntry(signedEntry.entry);
-
-  // Build the registry entry.
-  const entry: RegistryEntry = {
-    dataKey,
-    data,
-    revision,
-  };
-
-  return entry;
-}
-
-/**
- * Gets the registry entry and data link or creates the entry if it doesn't exist.
- *
- * @param client - The Skynet client.
- * @param publicKey - The user public key.
- * @param dataKey - The dat akey.
- * @param json - The JSON to set.
- * @param [customOptions] - Additional settings that can optionally be set.
- * @returns - The registry entry and corresponding data link.
- * @throws - Will throw if the revision is already the maximum value.
- */
-export async function getOrCreateRegistryEntry(
-  client: SkynetClient,
-  publicKey: string,
-  dataKey: string,
-  json: JsonData,
+  data: JsonData | Uint8Array,
+  revision: bigint,
   customOptions?: CustomSetJSONOptions
 ): Promise<[RegistryEntry, string]> {
   // Not publicly available, don't validate input.
@@ -565,57 +542,49 @@ export async function getOrCreateRegistryEntry(
     ...customOptions,
   };
 
-  // Set the hidden _data and _v fields.
-  const fullData: JsonFullData = { _data: json, _v: JSON_RESPONSE_VERSION };
+  let fullData: string | Uint8Array;
+  if (!(data instanceof Uint8Array)) {
+    // Set the hidden _data and _v fields.
+    const skynetJson = buildSkynetJsonObject(data);
+    fullData = JSON.stringify(skynetJson);
+  } else {
+    /* istanbul ignore next - This case is only called by setJSONEncrypted which is not tested in this repo */
+    fullData = data;
+  }
 
   // Create the data to upload to acquire its skylink.
   let dataKeyHex = dataKey;
   if (!opts.hashedDataKeyHex) {
     dataKeyHex = toHexString(stringToUint8ArrayUtf8(dataKey));
   }
-  const file = new File([JSON.stringify(fullData)], `dk:${dataKeyHex}`, { type: "application/json" });
+  const file = new File([fullData], `dk:${dataKeyHex}`, { type: "application/json" });
 
-  // Start file upload, do not block.
+  // Do file upload.
   const uploadOpts = extractOptions(opts, DEFAULT_UPLOAD_OPTIONS);
-  const skyfilePromise: Promise<UploadRequestResponse> = client.uploadFile(file, uploadOpts);
-
-  // Fetch the current value to find out the revision.
-  //
-  // Start getEntry, do not block.
-  const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-  const entryPromise: Promise<SignedRegistryEntry> = client.registry.getEntry(publicKey, dataKey, getEntryOpts);
-
-  // Block until both getEntry and uploadFile are finished.
-  const [signedEntry, skyfile] = await Promise.all([entryPromise, skyfilePromise]);
-
-  const revision = getNextRevisionFromEntry(signedEntry.entry);
+  const skyfile = await client.uploadFile(file, uploadOpts);
 
   // Build the registry entry.
   const dataLink = trimUriPrefix(skyfile.skylink, URI_SKYNET_PREFIX);
-  const data = decodeSkylinkBase64(dataLink);
-  validateUint8ArrayLen("data", data, "skylink byte array", RAW_SKYLINK_SIZE);
+  const rawDataLink = decodeSkylinkBase64(dataLink);
+  validateUint8ArrayLen("rawDataLink", rawDataLink, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
     dataKey,
-    data,
+    data: rawDataLink,
     revision,
   };
   return [entry, formatSkylink(dataLink)];
 }
 
 /**
- * Gets the next revision from a returned entry (or 0 if the entry was not found).
+ * Increments the given revision number and checks to make sure it is not
+ * greater than the maximum revision.
  *
- * @param entry - The returned registry entry.
- * @returns - The revision.
- * @throws - Will throw if the next revision would be beyond the maximum allowed value.
+ * @param revision - The given revision number.
+ * @returns - The incremented revision number.
+ * @throws - Will throw if the incremented revision number is greater than the maximum revision.
  */
-export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
-  let revision: bigint;
-  if (entry === null) {
-    revision = BigInt(0);
-  } else {
-    revision = entry.revision + BigInt(1);
-  }
+export function incrementRevision(revision: bigint): bigint {
+  revision = revision + BigInt(1);
 
   // Throw if the revision is already the maximum value.
   if (revision > MAX_REVISION) {
@@ -668,25 +637,67 @@ export function validateEntryData(data: Uint8Array, allowDeletionEntryData: bool
 }
 
 /**
- * Gets the registry entry, returning null if the entry contains an empty skylink (the deletion sentinel).
+ * Gets the registry entry, returning null if the entry was not found or if it
+ * contained a sentinel value indicating deletion.
+ *
+ * If the data was found, we update the cached revision number for the entry.
+ * See getJSON for behavior in other cases.
  *
  * @param client - The Skynet Client
  * @param publicKey - The user public key.
  * @param dataKey - The key of the data to fetch for the given user.
+ * @param cachedRevisionEntry - The cached revision entry object containing the revision number and the mutex.
  * @param opts - Additional settings.
  * @returns - The registry entry, or null if not found or deleted.
  */
-async function getSkyDBRegistryEntry(
+async function getSkyDBRegistryEntryAndUpdateCache(
   client: SkynetClient,
   publicKey: string,
   dataKey: string,
+  cachedRevisionEntry: CachedRevisionNumber,
   opts: CustomGetEntryOptions
 ): Promise<RegistryEntry | null> {
+  // If this throws due to a parse error or network error, exit early and do not
+  // update the cached revision number.
   const { entry } = await client.registry.getEntry(publicKey, dataKey, opts);
-  if (entry === null || areEqualUint8Arrays(entry.data, EMPTY_SKYLINK)) {
+
+  // Don't update the cached revision number if the data was not found (404). Return null.
+  if (entry === null) {
     return null;
   }
+
+  // Calculate the new revision.
+  const newRevision = entry?.revision ?? UNCACHED_REVISION_NUMBER + BigInt(1);
+
+  // Don't update the cached revision number if the received version is too low.
+  // Throw error.
+  const cachedRevision = cachedRevisionEntry.revision;
+  if (cachedRevision && cachedRevision > newRevision) {
+    throw new Error(
+      "Returned revision number too low. A higher revision number for this userID and path is already cached"
+    );
+  }
+
+  // Update the cached revision.
+  cachedRevisionEntry.revision = newRevision;
+
+  // Return null if the entry contained a sentinel value indicating deletion.
+  // We do this after updating the revision number cache.
+  if (wasRegistryEntryDeleted(entry)) {
+    return null;
+  }
+
   return entry;
+}
+
+/**
+ * Sets the hidden _data and _v fields on the given raw JSON data.
+ *
+ * @param data - The given JSON data.
+ * @returns - The Skynet JSON data.
+ */
+function buildSkynetJsonObject(data: JsonData): SkynetJson {
+  return { _data: data, _v: JSON_RESPONSE_VERSION };
 }
 
 /**
@@ -709,4 +720,14 @@ function parseDataLink(data: Uint8Array, legacy: boolean): { rawDataLink: string
     throwValidationError("entry.data", data, "returned entry data", `length ${RAW_SKYLINK_SIZE} bytes`);
   }
   return { rawDataLink, dataLink: formatSkylink(rawDataLink) };
+}
+
+/**
+ * Returns whether the given registry entry indicates a past deletion.
+ *
+ * @param entry - The registry entry.
+ * @returns - Whether the registry entry data indicated a past deletion.
+ */
+function wasRegistryEntryDeleted(entry: RegistryEntry): boolean {
+  return areEqualUint8Arrays(entry.data, EMPTY_SKYLINK);
 }

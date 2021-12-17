@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "downlevelIteration": true,
+    "lib": ["dom", "es2020"],
     "noEmit": true,
     "esModuleInterop": true,
     "strict": true,
