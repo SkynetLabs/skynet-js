@@ -4,6 +4,27 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.21-beta]
+
+### Changed
+
+- **[Breaking change]** - SkyDB methods now use a revision number cache
+  internally, improving performance and correctness. `setJSON` no longer makes a
+  network request to get the latest revision number, so you must always call
+  `getJSON` first.
+- **[Breaking change]** - Errors from `skyd` requests are now type
+  `ExecuteRequestError` as opposed to `AxiosError`. The axios error can be
+  retrieved with `.originalError`.
+- Error messages from `skyd` requests now contain the full, descriptive error
+  response returned from `skyd`.
+- Parallel uploads for large files have been fixed and re-enabled. This should
+  improve performance.
+
+### Added
+
+- Added exports for encryption utilities `decryptJSONFile`, `encryptJSONFile`,
+  `ENCRYPTED_JSON_RESPONSE_VERSION`, and `EncryptedJSONResponse`.
+
 ## [4.0.20-beta]
 
 ### Added
