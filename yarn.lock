@@ -586,6 +586,19 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@skynetlabs/tus-js-client@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@skynetlabs/tus-js-client/-/tus-js-client-2.3.0.tgz#a14fd4197e2bc4ce8be724967a0e4c17d937cb64"
+  integrity sha512-piGvPlJh+Bu3Qf08bDlc/TnFLXE81KnFoPgvnsddNwTSLyyspxPFxJmHO5ki6SYyOl3HmUtGPoix+r2M2UpFEA==
+  dependencies:
+    buffer-from "^0.1.1"
+    combine-errors "^3.0.3"
+    is-stream "^2.0.0"
+    js-base64 "^2.6.1"
+    lodash.throttle "^4.1.1"
+    proper-lockfile "^2.0.1"
+    url-parse "^1.4.3"
+
 "@tsconfig/node10@^1.0.7":
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/@tsconfig/node10/-/node10-1.0.7.tgz#1eb1de36c73478a2479cc661ef5af1c16d86d606"
@@ -4621,19 +4634,6 @@ tunnel-agent@^0.6.0:
   integrity sha1-J6XeoGs2sEoKmWZ3SykIaPD8QP0=
   dependencies:
     safe-buffer "^5.0.1"
-
-tus-js-client@^2.2.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/tus-js-client/-/tus-js-client-2.3.0.tgz#5d76145476cea46a4e7c045a0054637cddf8dc39"
-  integrity sha512-I4cSwm6N5qxqCmBqenvutwSHe9ntf81lLrtf6BmLpG2v4wTl89atCQKqGgqvkodE6Lx+iKIjMbaXmfvStTg01g==
-  dependencies:
-    buffer-from "^0.1.1"
-    combine-errors "^3.0.3"
-    is-stream "^2.0.0"
-    js-base64 "^2.6.1"
-    lodash.throttle "^4.1.1"
-    proper-lockfile "^2.0.1"
-    url-parse "^1.4.3"
 
 tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   version "0.14.5"
