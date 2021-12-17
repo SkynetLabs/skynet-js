@@ -71,7 +71,7 @@ export function addPath(url: string, path: string): string {
  * @param subdomain - The subdomain to add.
  * @returns - The final URL.
  */
-export function addSubdomain(url: string, subdomain: string): string {
+export function addUrlSubdomain(url: string, subdomain: string): string {
   const urlObj = new URL(url);
   urlObj.hostname = `${subdomain}.${urlObj.hostname}`;
   const str = urlObj.toString();
@@ -153,7 +153,7 @@ export function getFullDomainUrlForPortal(portalUrl: string, domain: string): st
     // Special handling for localhost.
     url = "localhost";
   } else {
-    url = addSubdomain(portalUrl, domain);
+    url = addUrlSubdomain(portalUrl, domain);
   }
   // Add back the path if there was one.
   if (path) {

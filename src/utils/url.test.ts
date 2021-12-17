@@ -1,6 +1,7 @@
 import { composeTestCases, combineStrings } from "../../utils/testing";
 import { trimPrefix, trimSuffix } from "./string";
 import {
+  addUrlSubdomain,
   addUrlQuery,
   DEFAULT_SKYNET_PORTAL_URL,
   getFullDomainUrlForPortal,
@@ -12,14 +13,34 @@ const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
 
+describe("addUrlSubdomain", () => {
+  const parts: Array<[string, string, string]> = [
+    [portalUrl, "test", `https://test.siasky.net`],
+    [`${portalUrl}/`, "test", `https://test.siasky.net`],
+    [portalUrl, "foo.bar", `https://foo.bar.siasky.net`],
+    [`${portalUrl}/path`, "test", `https://test.siasky.net/path`],
+    [`${portalUrl}/path/`, "test", `https://test.siasky.net/path`],
+    [`${portalUrl}?foo=bar`, "test", `https://test.siasky.net/?foo=bar`],
+    [`${portalUrl}#foobar`, "test", `https://test.siasky.net/#foobar`],
+  ];
+
+  it.each(parts)(
+    "Should call addUrlSubdomain with URL %s and parameters %s and form URL %s",
+    (inputUrl, subdomain, expectedUrl) => {
+      const url = addUrlSubdomain(inputUrl, subdomain);
+      expect(url).toEqual(expectedUrl);
+    }
+  );
+});
+
 describe("addUrlQuery", () => {
   const parts: Array<[string, { [key: string]: string | undefined }, string]> = [
     [portalUrl, { filename: "test" }, `${portalUrl}/?filename=test`],
+    [`${portalUrl}/`, { attachment: "true" }, `${portalUrl}/?attachment=true`],
     [portalUrl, { attachment: "true" }, `${portalUrl}/?attachment=true`],
     [`${portalUrl}/path`, { download: "true" }, `${portalUrl}/path?download=true`],
     [`${portalUrl}/path/`, { download: "true" }, `${portalUrl}/path/?download=true`],
     [`${portalUrl}/skynet/`, { foo: "1", bar: "2" }, `${portalUrl}/skynet/?foo=1&bar=2`],
-    [`${portalUrl}/`, { attachment: "true" }, `${portalUrl}/?attachment=true`],
     [`${portalUrl}?foo=bar`, { attachment: "true" }, `${portalUrl}/?foo=bar&attachment=true`],
     [`${portalUrl}/?attachment=true`, { foo: "bar" }, `${portalUrl}/?attachment=true&foo=bar`],
     [`${portalUrl}#foobar`, { foo: "bar" }, `${portalUrl}/?foo=bar#foobar`],

@@ -5,6 +5,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { SkynetClient, DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./index";
 import { compareFormData } from "../utils/testing";
+import { splitSizeIntoChunkAlignedParts } from "./upload";
 
 const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
@@ -254,5 +255,86 @@ describe("uploadDirectory", () => {
     await expect(client.uploadDirectory(directory, filename)).rejects.toThrowError(
       "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists."
     );
+  });
+});
+
+describe("splitSizeIntoChunkAlignedParts", () => {
+  const mib = 1 << 20;
+  const sizesAndChunks: Array<[number, number, { start: number; end: number }[]]> = [
+    [
+      40 * mib,
+      2,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 40 * mib },
+      ],
+    ],
+    [
+      41 * mib,
+      2,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 41 * mib },
+      ],
+    ],
+    [
+      80 * mib,
+      2,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 80 * mib },
+      ],
+    ],
+    [
+      50 * mib,
+      2,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 50 * mib },
+      ],
+    ],
+    [
+      100 * mib,
+      2,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 100 * mib },
+      ],
+    ],
+    [
+      50 * mib,
+      3,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 50 * mib },
+        { start: 50 * mib, end: 50 * mib },
+      ],
+    ],
+    [
+      100 * mib,
+      3,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 80 * mib },
+        { start: 80 * mib, end: 100 * mib },
+      ],
+    ],
+    [
+      500 * mib,
+      6,
+      [
+        { start: 0 * mib, end: 80 * mib },
+        { start: 80 * mib, end: 160 * mib },
+        { start: 160 * mib, end: 240 * mib },
+        { start: 240 * mib, end: 320 * mib },
+        { start: 320 * mib, end: 400 * mib },
+        { start: 400 * mib, end: 500 * mib },
+      ],
+    ],
+  ];
+
+  it.each(sizesAndChunks)("Should align size '%s' with '%s' parts", (totalSize, partCount, expectedParts) => {
+    const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount);
+    expect(parts).toEqual(expectedParts);
   });
 });

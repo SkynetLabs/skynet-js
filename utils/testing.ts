@@ -98,6 +98,28 @@ export function extractNonSkylinkPath(url: string, skylink: string): string {
 }
 
 /**
+ * Gets the settled values from `Promise.allSettled`. Throws if an error is
+ * found. Returns all settled values if no errors were found.
+ *
+ * @param values - The settled values.
+ * @returns - The settled value if no errors were found.
+ * @throws - Will throw if an unexpected error occurred.
+ */
+export function getSettledValues<T>(values: PromiseSettledResult<T>[]): T[] {
+  const receivedValues = [];
+
+  for (const value of values) {
+    if (value.status === "rejected") {
+      throw value.reason;
+    } else if (value.value) {
+      receivedValues.push(value.value);
+    }
+  }
+
+  return receivedValues;
+}
+
+/**
  * Generates a random Unicode string using the code points between 0 and 65536.
  *
  * @param length - The length of the string.

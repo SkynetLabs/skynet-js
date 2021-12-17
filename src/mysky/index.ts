@@ -29,14 +29,13 @@ import {
   DEFAULT_SET_JSON_OPTIONS,
   CustomGetJSONOptions,
   CustomSetJSONOptions,
-  getOrCreateRegistryEntry,
+  getOrCreateSkyDBRegistryEntry,
   JSONResponse,
-  getNextRegistryEntry,
-  getOrCreateRawBytesRegistryEntry,
   validateEntryData,
   CustomSetEntryDataOptions,
   DEFAULT_SET_ENTRY_DATA_OPTIONS,
   DELETION_ENTRY_DATA,
+  incrementRevision,
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
@@ -358,6 +357,10 @@ export class MySky {
     return await this.connector.connection.remoteHandle().call("userID");
   }
 
+  // =============
+  // SkyDB methods
+  // =============
+
   /**
    * Gets Discoverable JSON at the given path through MySky, if the user has
    * given Discoverable Read permissions to do so.
@@ -427,14 +430,33 @@ export class MySky {
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const [entry, dataLink] = await getOrCreateRegistryEntry(this.connector.client, publicKey, dataKey, json, opts);
+    // Immediately fail if the mutex is not available.
+    return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
+      publicKey,
+      dataKey,
+      async (cachedRevisionEntry) => {
+        // Get the cached revision number before doing anything else.
+        const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
-    const signature = await this.signRegistryEntry(entry, path);
+        // Call SkyDB helper to create the registry entry. We can't call SkyDB's
+        // setJSON here directly because we need MySky to sign the entry, instead of
+        // signing it ourselves with a given private key.
+        const [entry, dataLink] = await getOrCreateSkyDBRegistryEntry(
+          this.connector.client,
+          dataKey,
+          json,
+          newRevision,
+          opts
+        );
 
-    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+        const signature = await this.signRegistryEntry(entry, path);
 
-    return { data: json, dataLink };
+        const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+        await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+
+        return { data: json, dataLink };
+      }
+    );
   }
 
   /**
@@ -456,8 +478,14 @@ export class MySky {
       ...customOptions,
     };
 
+    // We re-implement deleteJSON instead of calling SkyDB's deleteJSON so that
+    // MySky can do the signing.
     await this.setEntryData(path, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
   }
+
+  // ==================
+  // Entry Data Methods
+  // ==================
 
   /**
    * Sets entry at the given path to point to the data link. Like setJSON, but it doesn't upload a file.
@@ -525,21 +553,33 @@ export class MySky {
       ...customOptions,
     };
 
+    // We re-implement setEntryData instead of calling SkyDB's setEntryData so
+    // that MySky can do the signing.
+
     validateEntryData(data, opts.allowDeletionEntryData);
 
     const publicKey = await this.userID();
     const dataKey = deriveDiscoverableFileTweak(path);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-    const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
-    const entry = await getNextRegistryEntry(this.connector.client, publicKey, dataKey, data, getEntryOpts);
+    // Immediately fail if the mutex is not available.
+    return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
+      publicKey,
+      dataKey,
+      async (cachedRevisionEntry) => {
+        // Get the cached revision number before doing anything else.
+        const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
-    const signature = await this.signRegistryEntry(entry, path);
+        const entry = { dataKey, data, revision: newRevision };
 
-    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+        const signature = await this.signRegistryEntry(entry, path);
 
-    return { data: entry.data };
+        const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+        await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+
+        return { data: entry.data };
+      }
+    );
   }
 
   /**
@@ -656,20 +696,32 @@ export class MySky {
     const [publicKey, pathSeed] = await Promise.all([this.userID(), this.getEncryptedPathSeed(path, false)]);
     const dataKey = deriveEncryptedFileTweak(pathSeed);
     opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
-    const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
-    // Pad and encrypt json file.
-    const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);
+    // Immediately fail if the mutex is not available.
+    return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
+      publicKey,
+      dataKey,
+      async (cachedRevisionEntry) => {
+        // Get the cached revision number before doing anything else.
+        const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
-    const entry = await getOrCreateRawBytesRegistryEntry(this.connector.client, publicKey, dataKey, data, opts);
+        // Derive the key.
+        const encryptionKey = deriveEncryptedFileKeyEntropy(pathSeed);
 
-    // Call MySky which checks for write permissions on the path.
-    const signature = await this.signEncryptedRegistryEntry(entry, path);
+        // Pad and encrypt json file.
+        const data = encryptJSONFile(json, { version: ENCRYPTED_JSON_RESPONSE_VERSION }, encryptionKey);
 
-    const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
-    await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+        const [entry] = await getOrCreateSkyDBRegistryEntry(this.connector.client, dataKey, data, newRevision, opts);
 
-    return { data: json };
+        // Call MySky which checks for write permissions on the path.
+        const signature = await this.signEncryptedRegistryEntry(entry, path);
+
+        const setEntryOpts = extractOptions(opts, DEFAULT_SET_ENTRY_OPTIONS);
+        await this.connector.client.registry.postSignedEntry(publicKey, entry, signature, setEntryOpts);
+
+        return { data: json };
+      }
+    );
   }
 
   /**
