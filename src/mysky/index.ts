@@ -116,6 +116,10 @@ export async function loadMySky(
   return mySky;
 }
 
+/**
+ * The singleton object that allows skapp developers to initialize and
+ * communicate with MySky.
+ */
 export class MySky {
   static instance: MySky | null = null;
 
@@ -132,6 +136,14 @@ export class MySky {
   // Constructors
   // ============
 
+  /**
+   * Creates a `MySky` instance.
+   *
+   * @param connector - The `Connector` object.
+   * @param permissions - The initial requested permissions.
+   * @param hostDomain - The domain of the host skapp.
+   * @param currentPortalUrl - The URL of the current portal. This is the portal that the skapp is running on, not the portal that may have been requested by the developer when creating a `SkynetClient`.
+   */
   constructor(
     protected connector: Connector,
     permissions: Permission[],
@@ -141,6 +153,14 @@ export class MySky {
     this.pendingPermissions = permissions;
   }
 
+  /**
+   * Initializes MySky and returns a `MySky` instance.
+   *
+   * @param client - The Skynet Client.
+   * @param [skappDomain] - The domain of the host skapp.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - A `MySky` instance.
+   */
   static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
     const opts = { ...DEFAULT_CONNECTOR_OPTIONS, ...customOptions };
 
@@ -219,6 +239,11 @@ export class MySky {
     await Promise.all(promises);
   }
 
+  /**
+   * Adds the given permissions to the list of pending permissions.
+   *
+   * @param permissions - The list of permissions to add.
+   */
   async addPermissions(...permissions: Permission[]): Promise<void> {
     this.pendingPermissions.push(...permissions);
   }
@@ -276,6 +301,11 @@ export class MySky {
   }
 
   // TODO: Document what this does exactly.
+  /**
+   * Log out the user.
+   *
+   * @returns - An empty promise.
+   */
   async logout(): Promise<void> {
     return await this.connector.connection.remoteHandle().call("logout");
   }
@@ -353,6 +383,11 @@ export class MySky {
     return loggedIn;
   }
 
+  /**
+   * Returns the user ID (i.e. same as the user's public key).
+   *
+   * @returns - The hex-encoded user ID.
+   */
   async userID(): Promise<string> {
     return await this.connector.connection.remoteHandle().call("userID");
   }
@@ -754,11 +789,24 @@ export class MySky {
   // Internal Methods
   // ================
 
+  /**
+   * Catches any errors returned from the UI and dispatches them in the current
+   * window. This is how we bubble up errors from the MySky UI window to the
+   * skapp.
+   *
+   * @param errorMsg - The error message.
+   */
   protected async catchError(errorMsg: string): Promise<void> {
     const event = new CustomEvent(dispatchedErrorEvent, { detail: errorMsg });
     window.dispatchEvent(event);
   }
 
+  /**
+   * Launches the MySky UI popup window.
+   *
+   * @returns - The window handle.
+   * @throws - Will throw if the window could not be opened.
+   */
   protected launchUI(): Window {
     const mySkyUrl = new URL(this.connector.url);
     mySkyUrl.pathname = mySkyUiRelativeUrl;
@@ -774,6 +822,12 @@ export class MySky {
     return childWindow;
   }
 
+  /**
+   * Connects to the MySky UI window by establishing a postmessage handshake.
+   *
+   * @param childWindow - The MySky UI window.
+   * @returns - The `Connection` with the other window.
+   */
   protected async connectUi(childWindow: Window): Promise<Connection> {
     const options = this.connector.options;
 
@@ -797,10 +851,20 @@ export class MySky {
     return connection;
   }
 
+  /**
+   * Gets the preferred portal from MySky, or `null` if not set.
+   *
+   * @returns - The preferred portal if set.
+   */
   protected async getPreferredPortal(): Promise<string | null> {
     return await this.connector.connection.remoteHandle().call("getPreferredPortal");
   }
 
+  /**
+   * Loads the given DAC.
+   *
+   * @param dac - The dac to load.
+   */
   protected async loadDac(dac: DacLibrary): Promise<void> {
     // Initialize DAC.
     await dac.init(this.connector.client, this.connector.options);
@@ -874,7 +938,7 @@ export class MySky {
     const preferredPortalUrl = await this.getPreferredPortal();
     if (preferredPortalUrl !== null && shouldRedirectToPreferredPortalUrl(currentUrl, preferredPortalUrl)) {
       // Redirect.
-      const newUrl = await getRedirectUrlOnPreferredPortal(
+      const newUrl = getRedirectUrlOnPreferredPortal(
         this.currentPortalUrl,
         window.location.hostname,
         preferredPortalUrl
@@ -883,10 +947,24 @@ export class MySky {
     }
   }
 
+  /**
+   * Asks MySky to sign the non-encrypted registry entry.
+   *
+   * @param entry - The non-encrypted registry entry.
+   * @param path - The MySky path.
+   * @returns - The signature.
+   */
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
     return await this.connector.connection.remoteHandle().call("signRegistryEntry", entry, path);
   }
 
+  /**
+   * Asks MySky to sign the encrypted registry entry.
+   *
+   * @param entry - The encrypted registry entry.
+   * @param path - The MySky path.
+   * @returns - The signature.
+   */
   protected async signEncryptedRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
     return await this.connector.connection.remoteHandle().call("signEncryptedRegistryEntry", entry, path);
   }

@@ -16,6 +16,18 @@
     "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
 
     "jsdoc/require-description": 1,
+    "jsdoc/require-jsdoc": [
+      "error",
+      {
+        "require": {
+          "FunctionDeclaration": true,
+          "MethodDefinition": true,
+          "ClassDeclaration": true,
+          "ArrowFunctionExpression": false,
+          "FunctionExpression": false
+        }
+      }
+    ],
     "jsdoc/require-throws": 1,
 
     "jsdoc/require-param-type": 0,

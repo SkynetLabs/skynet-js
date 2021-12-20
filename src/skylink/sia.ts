@@ -30,12 +30,27 @@ export const RAW_SKYLINK_SIZE = 34;
  */
 export const EMPTY_SKYLINK = new Uint8Array(RAW_SKYLINK_SIZE);
 
+/**
+ * An object containing the skylink bitfield and merkleroot. Corresponds to the
+ * `Skylink` struct found in `skyd`.
+ */
 export class SiaSkylink {
+  /**
+   * Creates a `SiaSkylink`.
+   *
+   * @param bitfield - The bitfield.
+   * @param merkleRoot - The merkle root.
+   */
   constructor(public bitfield: number, public merkleRoot: Uint8Array) {
     validateNumber("bitfield", bitfield, "constructor parameter");
     validateUint8ArrayLen("merkleRoot", merkleRoot, "constructor parameter", 32);
   }
 
+  /**
+   * Returns the byte array encoding of the skylink.
+   *
+   * @returns - The byte array encoding.
+   */
   toBytes(): Uint8Array {
     const buf = new ArrayBuffer(RAW_SKYLINK_SIZE);
     const view = new DataView(buf);
@@ -47,6 +62,11 @@ export class SiaSkylink {
     return uint8Bytes;
   }
 
+  /**
+   * Converts the skylink to a string.
+   *
+   * @returns - The skylink as a string.
+   */
   toString(): string {
     return encodeSkylinkBase64(this.toBytes());
   }
@@ -162,9 +182,23 @@ export function newSpecifier(name: string): Uint8Array {
 
 const PUBLIC_KEY_SIZE = 32;
 
+/**
+ * The sia public key object. Corresponds to the struct in `skyd`.
+ */
 class SiaPublicKey {
+  /**
+   * Creates a `SiaPublicKey`.
+   *
+   * @param algorithm - The algorithm.
+   * @param key - The public key, as a byte array.
+   */
   constructor(public algorithm: Uint8Array, public key: Uint8Array) {}
 
+  /**
+   * Encodes the public key as a byte array.
+   *
+   * @returns - The encoded byte array.
+   */
   marshalSia(): Uint8Array {
     const bytes = new Uint8Array(SPECIFIER_LEN + 8 + PUBLIC_KEY_SIZE);
     bytes.set(this.algorithm);

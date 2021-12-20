@@ -76,11 +76,22 @@ export async function buildRequestUrl(
   return url;
 }
 
+/**
+ * The error type returned by `executeRequestError`.
+ */
 export class ExecuteRequestError extends Error {
   originalError: AxiosError;
   responseStatus: number | null;
   responseMessage: string | null;
 
+  /**
+   * Creates an `ExecuteRequestError`.
+   *
+   * @param message - The error message.
+   * @param axiosError - The original axios error.
+   * @param responseStatus - The response status, if found in the original error.
+   * @param responseMessage - The response message, if found in the original error.
+   */
   constructor(message: string, axiosError: AxiosError, responseStatus: number | null, responseMessage: string | null) {
     super(message);
     this.originalError = axiosError;

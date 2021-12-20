@@ -331,6 +331,11 @@ export class SkynetClient {
   // Private Methods
   // ===============
 
+  /**
+   * Make a request to resolve the provided `initialPortalUrl`.
+   *
+   * @returns - The portal URL.
+   */
   protected async resolvePortalUrl(): Promise<string> {
     const response = await this.executeRequest({
       ...this.customOptions,

@@ -10,6 +10,9 @@ export class RevisionNumberCache {
   private mutex: Mutex;
   private cache: { [key: string]: CachedRevisionNumber };
 
+  /**
+   * Creates the `RevisionNumberCache`.
+   */
   constructor() {
     this.mutex = new Mutex();
     this.cache = {};
@@ -86,6 +89,9 @@ export class CachedRevisionNumber {
   mutex: Mutex;
   revision: bigint;
 
+  /**
+   * Creates a `CachedRevisionNumber`.
+   */
   constructor() {
     this.mutex = new Mutex();
     this.revision = BigInt(-1);
