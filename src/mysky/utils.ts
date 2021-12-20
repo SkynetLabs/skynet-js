@@ -16,7 +16,6 @@ export async function getFullDomainUrl(this: SkynetClient, domain: string): Prom
   return getFullDomainUrlForPortal(portalUrl, domain);
 }
 
-// TODO: unit test
 /**
  * Gets the URL for the current skapp on the preferred portal, if we're not on
  * the preferred portal already.
@@ -97,8 +96,8 @@ export function popupCenter(url: string, winName: string, w: number, h: number):
  * @returns - Whether the two URLs are equal for the purposes of redirecting.
  */
 export function shouldRedirectToPreferredPortalUrl(currentPortalUrl: string, preferredPortalUrl: string): boolean {
-  currentPortalUrl = currentPortalUrl.split("//", 2)[1] || currentPortalUrl;
-  preferredPortalUrl = preferredPortalUrl.split("//", 2)[1] || preferredPortalUrl;
-
-  return trimSuffix(currentPortalUrl, "/") === trimSuffix(preferredPortalUrl, "/");
+  // Strip protocol and trailing slash (case-insensitive).
+  currentPortalUrl = trimSuffix(currentPortalUrl.replace(/https:\/\/|http:\/\//i, ""), "/");
+  preferredPortalUrl = trimSuffix(preferredPortalUrl.replace(/https:\/\/|http:\/\//i, ""), "/");
+  return currentPortalUrl === preferredPortalUrl;
 }

@@ -885,7 +885,7 @@ export class MySky {
     }
 
     // Call the `onUserLogin` hook for all DACs.
-    await Promise.all(
+    await Promise.allSettled(
       this.dacs.map(async (dac) => {
         try {
           await dac.onUserLogin();
