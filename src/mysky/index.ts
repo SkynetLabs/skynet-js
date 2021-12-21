@@ -150,6 +150,10 @@ export class MySky {
     protected hostDomain: string,
     protected currentPortalUrl: string
   ) {
+    if (MySky.instance) {
+      throw new Error("Trying to create a second MySky instance");
+    }
+
     this.pendingPermissions = permissions;
   }
 
