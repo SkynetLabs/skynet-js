@@ -181,10 +181,15 @@ export class MySky {
     }
     const connector = await Connector.init(client, domain, customOptions);
 
-    // Create a new client on the current URL, in case the client the developer
+    // MySky expects to be on the same portal as the skapp, so create a new
+    // client on the current skapp URL, in case the client the developer
     // instantiated does not correspond to the portal of the current URL.
     const currentUrlClient = new SkynetClient(window.location.hostname);
-    // Set the portal URL manually.
+    // Trigger a resolve of the portal URL manually. `new SkynetClient` assumes
+    // a portal URL is given to it, so it doesn't make the request for the
+    // actual portal URL.
+    //
+    // TODO: We should rework this so it is possible without protected methods.
     //
     // @ts-expect-error - Using protected fields.
     currentUrlClient.customPortalUrl = await currentUrlClient.resolvePortalUrl();
