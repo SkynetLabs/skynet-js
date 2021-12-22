@@ -933,7 +933,7 @@ export class MySky {
    * Login redirect flow:
    *
    * 1. SDK logs in through the UI.
-   * 2. MySky switches to siasky.net and tries to get the saved portal
+   * 2. MySky UI switches to siasky.net and tries to get the saved portal
    *    preference.
    *    1. If the portal is set, MySky switches to using the preferred portal.
    *    2. If it is not set or we don't have the seed, MySky switches to using

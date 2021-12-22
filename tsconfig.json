@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
     "downlevelIteration": true,
-    "lib": ["dom", "es2020"],
     "noEmit": true,
     "esModuleInterop": true,
     "strict": true,
     "noImplicitAny": true,
     "declaration": true,
     "isolatedModules": true,
-    "moduleResolution": "node",
+
+    "lib": ["dom", "es2020"],
     "target": "es2019",
+    "moduleResolution": "node",
     "types": ["node", "jest"],
     "typeRoots": ["./types", "./node_modules/@types"],
     "strictNullChecks": true
