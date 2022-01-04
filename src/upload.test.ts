@@ -270,6 +270,15 @@ describe("splitSizeIntoChunkAlignedParts", () => {
       ],
     ],
     [
+      40 * mib,
+      3,
+      [
+        { start: 0, end: 40 * mib },
+        { start: 40 * mib, end: 40 * mib },
+        { start: 40 * mib, end: 40 * mib },
+      ],
+    ],
+    [
       41 * mib,
       2,
       [
