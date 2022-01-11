@@ -25,7 +25,7 @@ import { validateOptionalObject, validateString } from "./utils/validation";
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the json data as well as the skylink for the data.
  */
-export async function getJSON(
+export async function getJSONV2(
   this: SkynetClient,
   userID: string,
   path: string,
@@ -61,7 +61,7 @@ export async function getJSON(
  * @param path - The data path.
  * @returns - The entry link.
  */
-export async function getEntryLink(this: SkynetClient, userID: string, path: string): Promise<string> {
+export async function getEntryLinkV2(this: SkynetClient, userID: string, path: string): Promise<string> {
   validateString("userID", userID, "parameter");
   validateString("path", path, "parameter");
 
@@ -82,7 +82,7 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  */
-export async function getEntryData(
+export async function getEntryDataV2(
   this: SkynetClient,
   userID: string,
   path: string,
@@ -118,7 +118,7 @@ export async function getEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the decrypted json data.
  */
-export async function getJSONEncrypted(
+export async function getJSONEncryptedV2(
   this: SkynetClient,
   userID: string,
   pathSeed: string,

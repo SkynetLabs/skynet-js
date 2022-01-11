@@ -146,7 +146,7 @@ export type RawBytesResponse = {
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
-export async function getJSON(
+export async function getJSONV2(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
@@ -224,7 +224,7 @@ export async function getJSON(
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the input keys are not valid strings.
  */
-export async function setJSON(
+export async function setJSONV2(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -276,7 +276,7 @@ export async function setJSON(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
  */
-export async function deleteJSON(
+export async function deleteJSONV2(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -307,7 +307,7 @@ export async function deleteJSON(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
  */
-export async function setDataLink(
+export async function setDataLinkV2(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -334,7 +334,7 @@ export async function setDataLink(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  */
-export async function getEntryData(
+export async function getEntryDataV2(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
@@ -374,7 +374,7 @@ export async function getEntryData(
  * @returns - The entry data.
  * @throws - Will throw if the length of the data is > 70 bytes.
  */
-export async function setEntryData(
+export async function setEntryDataV2(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -427,7 +427,7 @@ export async function setEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An empty promise.
  */
-export async function deleteEntryData(
+export async function deleteEntryDataV2(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -458,7 +458,7 @@ export async function deleteEntryData(
  * @returns - The returned bytes.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
-export async function getRawBytes(
+export async function getRawBytesV2(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
