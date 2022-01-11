@@ -1,3 +1,4 @@
+import { ResponseType } from "axios";
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
@@ -37,7 +38,6 @@ import {
   validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
-import { ResponseType } from "axios";
 import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
 type SkynetJson = {
