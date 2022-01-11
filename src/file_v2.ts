@@ -8,7 +8,7 @@ import {
 } from "./mysky/encrypted_files";
 import { deriveDiscoverableFileTweak } from "./mysky/tweak";
 import { CustomGetEntryOptions, DEFAULT_GET_ENTRY_OPTIONS, getEntryLink as registryGetEntryLink } from "./registry";
-import { CustomGetJSONOptions, DEFAULT_GET_JSON_OPTIONS, JSONResponse } from "./skydb";
+import { CustomGetJSONOptions, DEFAULT_GET_JSON_OPTIONS, JSONResponse } from "./skydb_v2";
 import { validateOptionalObject, validateString } from "./utils/validation";
 
 // ====

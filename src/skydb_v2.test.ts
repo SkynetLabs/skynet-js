@@ -7,7 +7,7 @@ import { stringToUint8ArrayUtf8, toHexString } from "./utils/string";
 import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient } from "./index";
 import { getEntryUrlForPortal } from "./registry";
-import { checkCachedDataLink, DELETION_ENTRY_DATA, JSONResponse } from "./skydb";
+import { checkCachedDataLink, DELETION_ENTRY_DATA, JSONResponse } from "./skydb_v2";
 import { MAX_ENTRY_LENGTH } from "./mysky";
 import { decodeSkylink } from "./skylink/sia";
 import { getSettledValues } from "../utils/testing";

@@ -25,24 +25,24 @@ import {
   resolveHns,
 } from "./download";
 import {
-  getJSONEncrypted,
-  getEntryData as fileGetEntryData,
-  getEntryLink as fileGetEntryLink,
-  getJSON as fileGetJSON,
-} from "./file";
+  getJSONEncryptedV2,
+  getEntryDataV2 as fileGetEntryDataV2,
+  getEntryLinkV2 as fileGetEntryLinkV2,
+  getJSONV2 as fileGetJSONV2,
+} from "./file_v2";
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
 import { RevisionNumberCache } from "./revision_cache";
 import {
-  deleteJSON,
-  getJSON,
-  setJSON,
-  setDataLink,
-  getRawBytes,
-  getEntryData,
-  setEntryData,
-  deleteEntryData,
-} from "./skydb";
+  deleteJSONV2,
+  getJSONV2,
+  setJSONV2,
+  setDataLinkV2,
+  getRawBytesV2,
+  getEntryDataV2,
+  setEntryDataV2,
+  deleteEntryDataV2,
+} from "./skydb_v2";
 import { defaultPortalUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -166,23 +166,23 @@ export class SkynetClient {
   // File API
 
   file = {
-    getJSON: fileGetJSON.bind(this),
-    getEntryData: fileGetEntryData.bind(this),
-    getEntryLink: fileGetEntryLink.bind(this),
-    getJSONEncrypted: getJSONEncrypted.bind(this),
+    getJSON: fileGetJSONV2.bind(this),
+    getEntryData: fileGetEntryDataV2.bind(this),
+    getEntryLink: fileGetEntryLinkV2.bind(this),
+    getJSONEncrypted: getJSONEncryptedV2.bind(this),
   };
 
   // SkyDB
 
   db = {
-    deleteJSON: deleteJSON.bind(this),
-    getJSON: getJSON.bind(this),
-    setJSON: setJSON.bind(this),
-    getRawBytes: getRawBytes.bind(this),
-    setDataLink: setDataLink.bind(this),
-    getEntryData: getEntryData.bind(this),
-    setEntryData: setEntryData.bind(this),
-    deleteEntryData: deleteEntryData.bind(this),
+    deleteJSON: deleteJSONV2.bind(this),
+    getJSON: getJSONV2.bind(this),
+    setJSON: setJSONV2.bind(this),
+    getRawBytes: getRawBytesV2.bind(this),
+    setDataLink: setDataLinkV2.bind(this),
+    getEntryData: getEntryDataV2.bind(this),
+    setEntryData: setEntryDataV2.bind(this),
+    deleteEntryData: deleteEntryDataV2.bind(this),
 
     // Holds the cached revision numbers, protected by mutexes to prevent
     // concurrent access.
