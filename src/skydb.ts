@@ -72,6 +72,7 @@ const JSON_RESPONSE_VERSION = 2;
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getJSONV2 is recommended.
  */
 export async function getJSON(
   this: SkynetClient,
@@ -135,6 +136,7 @@ export async function getJSON(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the input keys are not valid strings.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use setJSONV2 is recommended.
  */
 export async function setJSON(
   this: SkynetClient,
@@ -173,6 +175,7 @@ export async function setJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use deleteJSONV2 is recommended.
  */
 export async function deleteJSON(
   this: SkynetClient,
@@ -204,6 +207,7 @@ export async function deleteJSON(
  * @param dataLink - The data link to set at the entry.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use setDataLinkV2 is recommended.
  */
 export async function setDataLink(
   this: SkynetClient,
@@ -228,6 +232,7 @@ export async function setDataLink(
  * @param dataKey - The data key.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getEntryDataV2 is recommended.
  */
 export async function getEntryData(
   this: SkynetClient,
@@ -262,6 +267,7 @@ export async function getEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  * @throws - Will throw if the length of the data is > 70 bytes.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use setEntryDataV2 is recommended.
  */
 export async function setEntryData(
   this: SkynetClient,
@@ -303,6 +309,7 @@ export async function setEntryData(
  * @param dataKey - The data key.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An empty promise.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use deleteEntryDataV2 is recommended.
  */
 export async function deleteEntryData(
   this: SkynetClient,
@@ -331,6 +338,7 @@ export async function deleteEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned bytes.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getRawBytesV2 is recommended.
  */
 export async function getRawBytes(
   this: SkynetClient,

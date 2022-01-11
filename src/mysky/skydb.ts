@@ -50,6 +50,7 @@ import {
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the json data as well as the skylink for the data.
  * @throws - Will throw if the user does not have Discoverable Read permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getJSONV2 is recommended.
  */
 export async function getJSON(this: MySky, path: string, customOptions?: CustomGetJSONOptions): Promise<JSONResponse> {
   validateString("path", path, "parameter");
@@ -75,6 +76,7 @@ export async function getJSON(this: MySky, path: string, customOptions?: CustomG
  * @param this - MySky instance.
  * @param path - The data path.
  * @returns - The entry link.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getEntryLinkV2 is recommended.
  */
 export async function getEntryLink(this: MySky, path: string): Promise<string> {
   validateString("path", path, "parameter");
@@ -97,6 +99,7 @@ export async function getEntryLink(this: MySky, path: string): Promise<string> {
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the json data as well as the skylink for the data.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use setJSONV2 is recommended.
  */
 export async function setJSON(
   this: MySky,
@@ -138,6 +141,7 @@ export async function setJSON(
  * @returns - An empty promise.
  * @throws - Will throw if the revision is already the maximum value.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use deleteJSONV2 is recommended.
  */
 export async function deleteJSON(this: MySky, path: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
   // Validation is done below in `setEntryData`.
@@ -164,6 +168,7 @@ export async function deleteJSON(this: MySky, path: string, customOptions?: Cust
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An empty promise.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use setDataLinkV2 is recommended.
  */
 export async function setDataLink(
   this: MySky,
@@ -188,6 +193,7 @@ export async function setDataLink(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  * @throws - Will throw if the user does not have Discoverable Read permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getEntryDataV2 is recommended.
  */
 export async function getEntryData(
   this: MySky,
@@ -221,6 +227,7 @@ export async function getEntryData(
  * @returns - The entry data.
  * @throws - Will throw if the length of the data is > 70 bytes.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use setEntryDataV2 is recommended.
  */
 export async function setEntryData(
   this: MySky,
@@ -264,6 +271,7 @@ export async function setEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An empty promise.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use deleteEntryDataV2 is recommended.
  */
 export async function deleteEntryData(
   this: MySky,
@@ -288,6 +296,7 @@ export async function deleteEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the decrypted json data.
  * @throws - Will throw if the user does not have Hidden Read permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getJSONEncryptedV2 is recommended.
  */
 export async function getJSONEncrypted(
   this: MySky,
@@ -330,6 +339,7 @@ export async function getJSONEncrypted(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the original json data.
  * @throws - Will throw if the user does not have Hidden Write permission on the path.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use setJSONEncryptedV2 is recommended.
  */
 export async function setJSONEncrypted(
   this: MySky,
