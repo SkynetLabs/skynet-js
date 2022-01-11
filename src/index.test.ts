@@ -31,18 +31,31 @@ describe("SkynetClient", () => {
 
     // File
     expect(client).toHaveProperty("file");
+    // v1
     expect(client.file).toHaveProperty("getJSON");
     expect(client.file).toHaveProperty("getEntryData");
     expect(client.file).toHaveProperty("getEntryLink");
     expect(client.file).toHaveProperty("getJSONEncrypted");
+    // v2
+    expect(client.file).toHaveProperty("getJSONV2");
+    expect(client.file).toHaveProperty("getEntryDataV2");
+    expect(client.file).toHaveProperty("getEntryLinkV2");
+    expect(client.file).toHaveProperty("getJSONEncryptedV2");
 
     // SkyDB
     expect(client).toHaveProperty("db");
+    // v1
     expect(client.db).toHaveProperty("deleteJSON");
     expect(client.db).toHaveProperty("getJSON");
     expect(client.db).toHaveProperty("setJSON");
     expect(client.db).toHaveProperty("setDataLink");
     expect(client.db).toHaveProperty("getRawBytes");
+    // v2
+    expect(client.db).toHaveProperty("deleteJSONV2");
+    expect(client.db).toHaveProperty("getJSONV2");
+    expect(client.db).toHaveProperty("setJSONV2");
+    expect(client.db).toHaveProperty("setDataLinkV2");
+    expect(client.db).toHaveProperty("getRawBytesV2");
 
     // Registry
     expect(client).toHaveProperty("registry");

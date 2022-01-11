@@ -33,6 +33,18 @@ import {
   setJSONEncryptedV2,
   setJSONV2,
 } from "./skydb_v2";
+import {
+  deleteEntryData,
+  deleteJSON,
+  getEntryData,
+  getEntryLink,
+  getJSON,
+  getJSONEncrypted,
+  setDataLink,
+  setEntryData,
+  setJSON,
+  setJSONEncrypted,
+} from "./skydb";
 
 /**
  * The domain for MySky.
@@ -303,6 +315,12 @@ export class MySky {
   // SkyDB methods
   // =============
 
+  // v1
+  getJSON = getJSON;
+  getEntryLink = getEntryLink;
+  setJSON = setJSON;
+  deleteJSON = deleteJSON;
+  // v2
   getJSONV2 = getJSONV2;
   getEntryLinkV2 = getEntryLinkV2;
   setJSONV2 = setJSONV2;
@@ -312,6 +330,12 @@ export class MySky {
   // Entry Data Methods
   // ==================
 
+  // v1
+  setDataLink = setDataLink;
+  getEntryData = getEntryData;
+  setEntryData = setEntryData;
+  deleteEntryData = deleteEntryData;
+  // v2
   setDataLinkV2 = setDataLinkV2;
   getEntryDataV2 = getEntryDataV2;
   setEntryDataV2 = setEntryDataV2;
@@ -321,6 +345,10 @@ export class MySky {
   // Encrypted Files
   // ===============
 
+  // v1
+  getJSONEncrypted = getJSONEncrypted;
+  setJSONEncrypted = setJSONEncrypted;
+  // v2
   getJSONEncryptedV2 = getJSONEncryptedV2;
   setJSONEncryptedV2 = setJSONEncryptedV2;
 
