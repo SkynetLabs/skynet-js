@@ -371,7 +371,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
 
         // Set the initial data.
         {
-          await client1.db.setJSON(privateKey, dataKey, jsonOld);
+          await client1.db.setJSONV2(privateKey, dataKey, jsonOld);
           expect(cachedRevisionEntry1.revision.toString()).toEqual("0");
           expect(cachedRevisionEntry2.revision.toString()).toEqual("-1");
         }
@@ -408,7 +408,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         const updatedJson = { message: 3 };
         let expectedJson: JsonData;
         try {
-          await client2.db.setJSON(privateKey, dataKey, updatedJson);
+          await client2.db.setJSONV2(privateKey, dataKey, updatedJson);
           expectedJson = updatedJson;
         } catch (e) {
           // Catches both "doesn't have enough pow" and "provided revision number
@@ -426,12 +426,12 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         // The entry should have the overriden, updated data at this point.
         await Promise.all([
           async () => {
-            const { data: receivedJson } = await client1.db.getJSON(publicKey, dataKey);
+            const { data: receivedJson } = await client1.db.getJSONV2(publicKey, dataKey);
             expect(cachedRevisionEntry1.revision.toString()).toEqual("1");
             expect(receivedJson).toEqual(expectedJson);
           },
           async () => {
-            const { data: receivedJson } = await client2.db.getJSON(publicKey, dataKey);
+            const { data: receivedJson } = await client2.db.getJSONV2(publicKey, dataKey);
             expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
             expect(receivedJson).toEqual(expectedJson);
           },
@@ -505,7 +505,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         } else {
           client3 = client2;
         }
-        const { data: receivedJson } = await client3.db.getJSON(publicKey, dataKey);
+        const { data: receivedJson } = await client3.db.getJSONV2(publicKey, dataKey);
         expect([jsonOld, jsonNew]).toContainEqual(receivedJson);
       }
     );
