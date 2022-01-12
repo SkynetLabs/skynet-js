@@ -571,7 +571,8 @@ export class MySky {
 
   /**
    * Lets you get the share-able path seed, which can be passed to
-   * file.getJSONEncrypted. Requires Hidden Read permission on the path.
+   * `file.getJSONEncrypted` (in file.ts). Requires Hidden Read permission on
+   * the path.
    *
    * @param path - The given path.
    * @param isDirectory - Whether the path is a directory.
@@ -585,7 +586,8 @@ export class MySky {
 
   /**
    * Lets you get the share-able path seed, which can be passed to
-   * file.getJSONEncrypted. Requires Hidden Read permission on the path.
+   * `file.getJSONEncrypted` (in file.ts). Requires Hidden Read permission on
+   * the path.
    *
    * @param path - The given path.
    * @param isDirectory - Whether the path is a directory.
