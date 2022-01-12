@@ -1,3 +1,5 @@
+/* istanbul ignore file: Much of this functionality is only testable from a browser */
+
 import { EntryData, MySky } from ".";
 import {
   decryptJSONFile,

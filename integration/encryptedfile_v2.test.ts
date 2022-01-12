@@ -8,7 +8,7 @@ describe(`Encrypted File API integration tests for portal '${portal}'`, () => {
   it("Should get existing encrypted JSON", async () => {
     const expectedJson = { message: "foo" };
 
-    const { data } = await client.file.getJSONEncrypted(userID, pathSeed);
+    const { data } = await client.file.getJSONEncryptedV2(userID, pathSeed);
 
     expect(data).toEqual(expectedJson);
   });
@@ -16,7 +16,7 @@ describe(`Encrypted File API integration tests for portal '${portal}'`, () => {
   it("Should return null for inexistant encrypted JSON", async () => {
     const pathSeed = "a".repeat(64);
 
-    const { data } = await client.file.getJSONEncrypted(userID, pathSeed);
+    const { data } = await client.file.getJSONEncryptedV2(userID, pathSeed);
 
     expect(data).toBeNull();
   });

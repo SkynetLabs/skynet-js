@@ -1,3 +1,5 @@
+/* istanbul ignore file: Much of this functionality is only testable from a browser */
+
 import { EntryData, MySky } from ".";
 import { DELETION_ENTRY_DATA } from "..";
 import { CustomGetEntryOptions, DEFAULT_GET_ENTRY_OPTIONS, DEFAULT_SET_ENTRY_OPTIONS, getEntryLink } from "../registry";
