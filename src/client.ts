@@ -56,6 +56,7 @@ import { buildRequestHeaders, buildRequestUrl, ExecuteRequestError, Headers } fr
  * @property [customCookie] - Custom cookie header to set.
  * @property [onDownloadProgress] - Optional callback to track download progress.
  * @property [onUploadProgress] - Optional callback to track upload progress.
+ * @property [loginFn] - A function that, if set, is called when a 401 is returned from the request before re-trying the request.
  */
 export type CustomClientOptions = {
   APIKey?: string;
@@ -63,6 +64,7 @@ export type CustomClientOptions = {
   customCookie?: string;
   onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
+  loginFn?: () => Promise<void>;
 };
 
 /**
@@ -308,23 +310,33 @@ export class SkynetClient {
 
     // NOTE: The error type will be ExecuteRequestError as we set up a response
     // interceptor above.
-    return await axios({
-      url,
-      method: config.method,
-      data: config.data,
-      headers,
-      auth,
-      onDownloadProgress,
-      onUploadProgress,
-      responseType: config.responseType,
-      transformRequest: config.transformRequest,
-      transformResponse: config.transformResponse,
+    try {
+      return await axios({
+        url,
+        method: config.method,
+        data: config.data,
+        headers,
+        auth,
+        onDownloadProgress,
+        onUploadProgress,
+        responseType: config.responseType,
+        transformRequest: config.transformRequest,
+        transformResponse: config.transformResponse,
 
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      // Allow cross-site cookies.
-      withCredentials: true,
-    });
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        // Allow cross-site cookies.
+        withCredentials: true,
+      });
+    } catch (e) {
+      if (config.loginFn && (e as ExecuteRequestError).responseStatus === 401) {
+        // Try logging in again.
+        await config.loginFn();
+        return await this.executeRequest(config);
+      } else {
+        throw e;
+      }
+    }
   }
 
   // ===============
