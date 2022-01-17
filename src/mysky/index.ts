@@ -181,21 +181,31 @@ export class MySky {
     }
     const connector = await Connector.init(client, domain, customOptions);
 
-    // MySky expects to be on the same portal as the skapp, so create a new
-    // client on the current skapp URL, in case the client the developer
-    // instantiated does not correspond to the portal of the current URL.
-    const currentUrlClient = new SkynetClient(window.location.hostname);
-    // Trigger a resolve of the portal URL manually. `new SkynetClient` assumes
-    // a portal URL is given to it, so it doesn't make the request for the
-    // actual portal URL.
-    //
-    // TODO: We should rework this so it is possible without protected methods.
-    //
-    // @ts-expect-error - Using protected fields.
-    currentUrlClient.customPortalUrl = await currentUrlClient.resolvePortalUrl();
+    let currentPortalUrl;
+    let hostDomain;
+    if (window.location.hostname === "localhost") {
+      currentPortalUrl = window.location.href;
+      hostDomain = "localhost";
+    } else {
+      // MySky expects to be on the same portal as the skapp, so create a new
+      // client on the current skapp URL, in case the client the developer
+      // instantiated does not correspond to the portal of the current URL.
+      const currentUrlClient = new SkynetClient(window.location.hostname);
+      // Trigger a resolve of the portal URL manually. `new SkynetClient` assumes
+      // a portal URL is given to it, so it doesn't make the request for the
+      // actual portal URL.
+      //
+      // TODO: We should rework this so it is possible without protected methods.
+      //
+      // @ts-expect-error - Using protected fields.
+      currentUrlClient.customPortalUrl = await currentUrlClient.resolvePortalUrl();
+      currentPortalUrl = await currentUrlClient.portalUrl();
+
+      // Get the host domain.
+      hostDomain = await currentUrlClient.extractDomain(window.location.hostname);
+    }
 
     // Extract the skapp domain.
-    const hostDomain = await currentUrlClient.extractDomain(window.location.hostname);
     const permissions = [];
     if (skappDomain) {
       const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Discoverable, PermType.Write);
@@ -204,7 +214,6 @@ export class MySky {
       permissions.push(perm1, perm2, perm3);
     }
 
-    const currentPortalUrl = await currentUrlClient.portalUrl();
     MySky.instance = new MySky(connector, permissions, hostDomain, currentPortalUrl);
 
     // Redirect if we're not on the preferred portal. See
