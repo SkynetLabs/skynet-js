@@ -308,8 +308,8 @@ export class SkynetClient {
       };
     }
 
-    // NOTE: The error type will be ExecuteRequestError as we set up a response
-    // interceptor above.
+    // NOTE: The error type will be `ExecuteRequestError` as we set up a
+    // response interceptor above.
     try {
       return await axios({
         url,
