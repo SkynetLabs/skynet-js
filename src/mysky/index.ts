@@ -300,6 +300,8 @@ export class MySky {
    * @throws - Will throw if there is an unexpected DOM error.
    */
   async destroy(): Promise<void> {
+    // TODO: Make sure we are logged out first?
+
     // TODO: For all connected dacs, send a destroy call.
 
     // TODO: Delete all connected dacs.
@@ -325,7 +327,10 @@ export class MySky {
    * @returns - An empty promise.
    */
   async logout(): Promise<void> {
-    return await this.connector.connection.remoteHandle().call("logout");
+    await this.connector.connection.remoteHandle().call("logout");
+
+    // Remove auto-relogin if it's set.
+    this.connector.client.customOptions.loginFn = undefined;
   }
 
   /**
@@ -820,6 +825,15 @@ export class MySky {
   }
 
   /**
+   * Checks if the MySky user can be logged into a portal account.
+   *
+   * @returns - Whether the user can be logged into a portal account.
+   */
+  protected async checkPortalLogin(): Promise<boolean> {
+    return await this.connector.connection.remoteHandle().call("checkPortalLogin");
+  }
+
+  /**
    * Launches the MySky UI popup window.
    *
    * @returns - The window handle.
@@ -917,6 +931,20 @@ export class MySky {
     // Redirect if we're not on the preferred portal. See
     // `redirectIfNotOnPreferredPortal` for full login flow.
     await this.redirectIfNotOnPreferredPortal();
+
+    // If we can log in to the portal account, set up auto-relogin.
+    if (await this.checkPortalLogin()) {
+      this.connector.client.customOptions.loginFn = this.portalLogin;
+    }
+  }
+
+  /**
+   * Logs in to the user's portal account.
+   *
+   * @returns - An empty promise.
+   */
+  protected async portalLogin(): Promise<void> {
+    return await this.connector.connection.remoteHandle().call("portalLogin");
   }
 
   /**
