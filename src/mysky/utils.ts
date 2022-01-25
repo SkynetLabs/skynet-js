@@ -1,5 +1,5 @@
 import { SkynetClient } from "../client";
-import { trimSuffix } from "../utils/string";
+import { trimForwardSlash, trimSuffix } from "../utils/string";
 import { getFullDomainUrlForPortal, extractDomainForPortal, ensureUrlPrefix } from "../utils/url";
 
 /**
@@ -44,8 +44,17 @@ export function getRedirectUrlOnPreferredPortal(
  * @returns - The extracted domain.
  */
 export async function extractDomain(this: SkynetClient, fullDomain: string): Promise<string> {
-  const portalUrl = await this.portalUrl();
+  fullDomain = trimForwardSlash(fullDomain);
 
+  // Check if the full domain contains a specific portal server. In that case,
+  // the extracted subdomain should not include the server.
+  const portalServerUrl = trimForwardSlash(await this.resolvePortalServerUrl());
+  if (fullDomain.endsWith(portalServerUrl)) {
+    return extractDomainForPortal(portalServerUrl, fullDomain);
+  }
+
+  // Use the regular portal domain to extract out the subdomain.
+  const portalUrl = await this.portalUrl();
   return extractDomainForPortal(portalUrl, fullDomain);
 }
 

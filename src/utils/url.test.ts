@@ -165,9 +165,13 @@ describe("extractDomainForPortal", () => {
     fullDomain.replace("siasky.net", "siasky.xyz").replace("SIASKY.NET", "SIASKY.XYZ"),
     domain,
   ]);
+  const serverCases = cases.map(([fullDomain, domain]) => [
+    fullDomain.replace("siasky.net", "us-va-1.siasky.net").replace("SIASKY.NET", "US-VA-1.SIASKY.NET"),
+    domain,
+  ]);
 
   it.each(cases)(
-    `should extract from full url '%s' the domain '%s' using portal '${portalUrl}'`,
+    `should extract from full URL '%s' the app domain '%s' using portal '${portalUrl}'`,
     (fullDomain, domain) => {
       const receivedDomain = extractDomainForPortal(portalUrl, fullDomain);
       expect(receivedDomain).toEqual(domain);
@@ -175,9 +179,17 @@ describe("extractDomainForPortal", () => {
   );
 
   it.each(xyzCases)(
-    `should extract from full url '%s' the domain '%s' using portal 'siasky.xyz'`,
+    `should extract from full URL '%s' the app domain '%s' using portal 'siasky.xyz'`,
     (fullDomain, domain) => {
       const receivedDomain = extractDomainForPortal("siasky.xyz", fullDomain);
+      expect(receivedDomain).toEqual(domain);
+    }
+  );
+
+  it.each(serverCases)(
+    `should extract from full URL '%s' the app domain '%s' using portal 'us-va-1.siasky.net'`,
+    (fullDomain, domain) => {
+      const receivedDomain = extractDomainForPortal("us-va-1.siasky.net", fullDomain);
       expect(receivedDomain).toEqual(domain);
     }
   );
