@@ -304,7 +304,6 @@ export async function uploadLargeFileRequest(
           const resp = await this.executeRequest({
             ...opts,
             url: upload.url,
-            endpointPath: opts.endpointLargeUpload,
             method: "head",
             headers: { ...headers, "tus-resumable": "1.0.0" },
           });
