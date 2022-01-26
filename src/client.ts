@@ -51,7 +51,7 @@ import { extractDomain, getFullDomainUrl } from "./mysky/utils";
  *
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
- * @property [customCookie] - Custom cookie header to set.
+ * @property [customCookie] - Custom cookie header to set. WARNING: the Cookie header cannot be set in browsers. This is meant for usage in server contexts.
  * @property [onDownloadProgress] - Optional callback to track download progress.
  * @property [onUploadProgress] - Optional callback to track upload progress.
  */
