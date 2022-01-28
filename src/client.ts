@@ -364,7 +364,7 @@ export class SkynetClient {
     }
     const portalUrl = response.headers["skynet-server-api"];
     if (!portalUrl) {
-      throw new Error("Could not get portal URL for the given portal");
+      throw new Error("Could not get server portal URL for the given portal");
     }
     return portalUrl;
   }

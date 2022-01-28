@@ -11,9 +11,10 @@ const client = new SkynetClient(portalUrl);
 describe("extractDomain", () => {
   let mock: MockAdapter;
 
-  const serverPortalDomain = "us-va-1.siasky.net";
+  const portalDomain = "siasky.net";
+  const serverPortalDomain = `us-va-1.${portalDomain}`;
   const serverPortalUrl = `https://${serverPortalDomain}`;
-  const serverClient = new SkynetClient(serverPortalDomain);
+  const serverClient = new SkynetClient(serverPortalUrl);
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -47,7 +48,7 @@ describe("extractDomain", () => {
   );
 
   it.each(serverCases)(
-    `should extract from full URL '%s' the app domain '%s' using portal '${serverPortalDomain}' and client on the same portal`,
+    `should extract from full URL '%s' the app domain '%s' using portal '${serverPortalUrl}' and client on the same portal`,
     async (fullUrl, expectedDomain) => {
       // Responses for portal on server URL.
       mock
@@ -63,7 +64,23 @@ describe("extractDomain", () => {
   );
 
   it.each(serverCases)(
-    `should extract from full URL '%s' the app domain '%s' using portal '${serverPortalDomain}' and client on the portal '${portalUrl}'`,
+    `should extract from full URL '%s' the app domain '%s' using portal '${serverPortalUrl}' and client on the same portal if portal returns domains instead of URLs`,
+    async (fullUrl, expectedDomain) => {
+      // Responses for portal on server URL.
+      mock
+        .onHead(serverPortalUrl)
+        .replyOnce(200, {}, { "skynet-server-api": serverPortalDomain })
+        .onHead(serverPortalUrl)
+        .replyOnce(200, {}, { "skynet-portal-api": portalDomain });
+
+      const domain = await serverClient.extractDomain(fullUrl);
+
+      expect(domain).toEqual(expectedDomain);
+    }
+  );
+
+  it.each(serverCases)(
+    `should extract from full URL '%s' the app domain '%s' using portal '${serverPortalUrl}' and client on the portal '${portalUrl}'`,
     async (fullUrl, expectedDomain) => {
       const domain = await client.extractDomain(fullUrl);
 

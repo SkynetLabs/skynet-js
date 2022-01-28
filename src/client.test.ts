@@ -153,3 +153,27 @@ describe("client options", () => {
     });
   });
 });
+
+describe("resolvePortalServerUrl", () => {
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
+  it("should throw if portal does not send skynet-portal-api header", async () => {
+    mock.onHead(portalUrl).replyOnce(200, {}, {});
+
+    // @ts-expect-error - Using protected method.
+    await expect(client.resolvePortalServerUrl()).rejects.toThrowError(
+      "Could not get server portal URL for the given portal"
+    );
+  });
+
+  it("should throw if portal does not send headers", async () => {
+    mock.onHead(portalUrl).replyOnce(200, {});
+
+    // @ts-expect-error - Using protected method.
+    await expect(client.resolvePortalServerUrl()).rejects.toThrowError(
+      "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+    );
+  });
+});
