@@ -11,12 +11,18 @@ const client = new SkynetClient(portalUrl);
 describe("extractDomain", () => {
   let mock: MockAdapter;
 
-  const serverPortalUrl = "us-va-1.siasky.net";
-  const serverClient = new SkynetClient(serverPortalUrl);
+  const serverPortalDomain = "us-va-1.siasky.net";
+  const serverPortalUrl = `https://${serverPortalDomain}`;
+  const serverClient = new SkynetClient(serverPortalDomain);
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
-    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
+    // Responses for regular portal.
+    mock
+      .onHead(portalUrl)
+      .replyOnce(200, {}, { "skynet-server-api": serverPortalUrl })
+      .onHead(portalUrl)
+      .replyOnce(200, {}, { "skynet-portal-api": portalUrl });
   });
 
   const cases = [
@@ -26,10 +32,13 @@ describe("extractDomain", () => {
     ["crqa.hns.siasky.net/", "crqa.hns"],
     ["localhost", "localhost"],
   ];
-  const serverCases = cases.map(([fullDomain, domain]) => [fullDomain.replace("siasky.net", serverPortalUrl), domain]);
+  const serverCases = cases.map(([fullDomain, domain]) => [
+    fullDomain.replace("siasky.net", serverPortalDomain),
+    domain,
+  ]);
 
   it.each(cases)(
-    "should extract from full URL '%s' the app domain '%s' using portal '${portalUrl}'",
+    `should extract from full URL '%s' the app domain '%s' using portal '${portalUrl}'`,
     async (fullUrl, expectedDomain) => {
       const domain = await client.extractDomain(fullUrl);
 
@@ -38,16 +47,36 @@ describe("extractDomain", () => {
   );
 
   it.each(serverCases)(
-    "should extract from full URL '%s' the app domain '%s' using portal '${serverPortalUrl}'",
+    `should extract from full URL '%s' the app domain '%s' using portal '${serverPortalDomain}' and client on the same portal`,
     async (fullUrl, expectedDomain) => {
+      // Responses for portal on server URL.
+      mock
+        .onHead(serverPortalUrl)
+        .replyOnce(200, {}, { "skynet-server-api": serverPortalUrl })
+        .onHead(serverPortalUrl)
+        .replyOnce(200, {}, { "skynet-portal-api": portalUrl });
+
       const domain = await serverClient.extractDomain(fullUrl);
 
       expect(domain).toEqual(expectedDomain);
     }
   );
 
-  it("should throw if the full domain does not contain the portal domain", async () => {
-    await expect(client.extractDomain("crqa.hns.asdf.net")).rejects.toThrowError("asdf");
+  it.each(serverCases)(
+    `should extract from full URL '%s' the app domain '%s' using portal '${serverPortalDomain}' and client on the portal '${portalUrl}'`,
+    async (fullUrl, expectedDomain) => {
+      const domain = await client.extractDomain(fullUrl);
+
+      expect(domain).toEqual(expectedDomain);
+    }
+  );
+
+  it("should just return the full domain if the full domain does not contain the portal domain", async () => {
+    const inputDomain = "crqa.hns.asdf.net";
+
+    const domain = await client.extractDomain(inputDomain);
+
+    expect(domain).toEqual(inputDomain);
   });
 });
 

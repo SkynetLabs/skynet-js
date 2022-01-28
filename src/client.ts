@@ -355,7 +355,6 @@ export class SkynetClient {
       ...this.customOptions,
       method: "head",
       url: this.initialPortalUrl,
-      endpointPath: "/",
     });
 
     if (!response.headers) {
@@ -380,7 +379,6 @@ export class SkynetClient {
       ...this.customOptions,
       method: "head",
       url: this.initialPortalUrl,
-      endpointPath: "/",
     });
 
     if (!response.headers) {

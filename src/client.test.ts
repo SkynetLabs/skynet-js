@@ -32,8 +32,8 @@ describe("new SkynetClient", () => {
       mock.reset();
     });
 
-    // Is localhost in Node tests.
-    const expectedPortalUrl = "http://localhost/";
+    // The default portal URL is localhost in Node tests.
+    const expectedPortalUrl = "http://localhost";
 
     // Failure cases.
     //
