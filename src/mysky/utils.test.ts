@@ -149,7 +149,11 @@ describe("getRedirectUrlOnPreferredPortal", () => {
     async (portalDomain, currentUrl, preferredPortalUrl, expectedResult) => {
       const portalUrl = `https://${portalDomain}`;
       // Responses for regular portal.
-      mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-server-api": `us-va-1.${portalDomain}` });
+      mock
+        .onHead(portalUrl)
+        .replyOnce(200, {}, { "skynet-server-api": `us-va-1.${portalDomain}` })
+        .onHead(portalUrl)
+        .replyOnce(200, {}, { "skynet-portal-api": portalDomain });
 
       const client = new SkynetClient(portalUrl);
       const result = await getRedirectUrlOnPreferredPortal(client, currentUrl, preferredPortalUrl);
@@ -164,10 +168,10 @@ describe("getRedirectUrlOnPreferredPortal", () => {
 describe("shouldRedirectToPreferredPortalUrl", () => {
   const cases: Array<[string, string, boolean]> = [
     // Add cases where the portal URLs are the same.
-    ...composeTestCases(combineArrays(portal1Urls, portal1Urls), true),
+    ...composeTestCases(combineArrays(portal1Urls, portal1Urls), false),
     // Test cases where the portals are different.
-    ...composeTestCases(combineArrays(portal1Urls, portal2Urls), false),
-    ...composeTestCases(combineArrays(portal2Urls, portal1Urls), false),
+    ...composeTestCases(combineArrays(portal1Urls, portal2Urls), true),
+    ...composeTestCases(combineArrays(portal2Urls, portal1Urls), true),
   ].map(([[a, b], c]) => [a, b, c]);
 
   it.each(cases)("('%s', '%s') should return '%s'", (currentPortalUrl, preferredPortalUrl, expectedResult) => {

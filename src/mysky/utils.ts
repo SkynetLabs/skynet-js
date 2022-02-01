@@ -56,6 +56,7 @@ export async function extractDomain(this: SkynetClient, fullDomain: string): Pro
 
   // Check if the full domain contains a specific portal server. In that case,
   // the extracted subdomain should not include the server.
+  // TODO: Could consolidate this and `resolvePortalUrl` into one network request.
   const portalServerUrl = trimForwardSlash(await this.resolvePortalServerUrl());
   // Get the portal server domain.
   let portalServerDomain;
@@ -72,7 +73,7 @@ export async function extractDomain(this: SkynetClient, fullDomain: string): Pro
   }
 
   // Use the regular portal domain to extract out the subdomain.
-  const portalUrl = await this.portalUrl();
+  const portalUrl = await this.resolvePortalUrl();
   return extractDomainForPortal(portalUrl, fullDomain);
 }
 
