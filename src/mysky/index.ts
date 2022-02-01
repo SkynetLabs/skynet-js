@@ -982,16 +982,33 @@ export class MySky {
    *    refresh in step 6.
    */
   protected async redirectIfNotOnPreferredPortal(): Promise<void> {
-    const currentUrl = window.location.hostname;
+    const currentDomain = window.location.hostname;
+    if (currentDomain === "localhost") {
+      // Don't redirect on localhost as there is no subdomain to redirect to.
+      return;
+    }
+
+    // Get the preferred portal.
     const preferredPortalUrl = await this.getPreferredPortal();
-    if (preferredPortalUrl !== null && shouldRedirectToPreferredPortalUrl(currentUrl, preferredPortalUrl)) {
+
+    // Is the preferred portal set and different from the current portal?
+    if (preferredPortalUrl === null) {
+      return;
+    } else if (shouldRedirectToPreferredPortalUrl(currentDomain, preferredPortalUrl)) {
       // Redirect.
-      const newUrl = getRedirectUrlOnPreferredPortal(
-        this.currentPortalUrl,
+      const newUrl = await getRedirectUrlOnPreferredPortal(
+        this.connector.client,
         window.location.hostname,
         preferredPortalUrl
       );
       redirectPage(newUrl);
+    } else {
+      // If we are on the preferred portal already, we still need to set the
+      // client as the developer may have chosen a specific client. We always
+      // want to use the user's preference for a portal, if it is set.
+
+      // Set the skapp client to use the user's preferred portal.
+      this.connector.client = new SkynetClient(preferredPortalUrl);
     }
   }
 

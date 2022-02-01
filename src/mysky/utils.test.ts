@@ -125,6 +125,12 @@ const portal2Urls = combineStrings(["", "http://", "https://", "HTTPS://"], ["si
 
 // TODO: Test cases with portal servers.
 describe("getRedirectUrlOnPreferredPortal", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
   const portal1SkappUrls = combineStrings(["", "https://"], ["skapp.hns.siasky.net"], ["", "/"]);
   const portal2SkappUrls = combineStrings(["", "https://"], ["skapp.hns.siasky.xyz"], ["", "/"]);
 
@@ -140,8 +146,13 @@ describe("getRedirectUrlOnPreferredPortal", () => {
 
   it.each(cases)(
     "('%s', '%s', '%s') should return '%s'",
-    (portalUrl, currentUrl, preferredPortalUrl, expectedResult) => {
-      const result = getRedirectUrlOnPreferredPortal(portalUrl, currentUrl, preferredPortalUrl);
+    async (portalDomain, currentUrl, preferredPortalUrl, expectedResult) => {
+      const portalUrl = `https://${portalDomain}`;
+      // Responses for regular portal.
+      mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-server-api": `us-va-1.${portalDomain}` });
+
+      const client = new SkynetClient(portalUrl);
+      const result = await getRedirectUrlOnPreferredPortal(client, currentUrl, preferredPortalUrl);
       expect(result).toEqual(expectedResult);
     }
   );
