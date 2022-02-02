@@ -59,7 +59,7 @@ export function encodeSkylinkBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Converts the given number into a uint8 array
+ * Converts the given number into a uint8 array. Uses little-endian encoding.
  *
  * @param num - Number to encode.
  * @returns - Number encoded as a byte array.
@@ -75,7 +75,7 @@ export function encodeNumber(num: number): Uint8Array {
 }
 
 /**
- * Encodes the given bigint into a uint8 array.
+ * Encodes the given bigint into a uint8 array. Uses little-endian encoding.
  *
  * @param int - Bigint to encode.
  * @returns - Bigint encoded as a byte array.
