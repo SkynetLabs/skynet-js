@@ -34,7 +34,7 @@ describe("addUrlSubdomain", () => {
 });
 
 describe("addUrlQuery", () => {
-  const parts: Array<[string, { [key: string]: string | undefined }, string]> = [
+  const cases: Array<[string, { [key: string]: string | undefined }, string]> = [
     [portalUrl, { filename: "test" }, `${portalUrl}/?filename=test`],
     [`${portalUrl}/`, { attachment: "true" }, `${portalUrl}/?attachment=true`],
     [portalUrl, { attachment: "true" }, `${portalUrl}/?attachment=true`],
@@ -46,7 +46,7 @@ describe("addUrlQuery", () => {
     [`${portalUrl}#foobar`, { foo: "bar" }, `${portalUrl}/?foo=bar#foobar`],
   ];
 
-  it.each(parts)(
+  it.each(cases)(
     "Should call addUrlQuery with URL %s and parameters %s and form URL %s",
     (inputUrl, params, expectedUrl) => {
       const url = addUrlQuery(inputUrl, params);
@@ -196,17 +196,24 @@ describe("extractDomainForPortal", () => {
 });
 
 describe("makeUrl", () => {
-  it("should return correctly formed URLs", () => {
-    expect(makeUrl(portalUrl, "/")).toEqual(`${portalUrl}/`);
-    expect(makeUrl(portalUrl, "/skynet")).toEqual(`${portalUrl}/skynet`);
-    expect(makeUrl(portalUrl, "/skynet/")).toEqual(`${portalUrl}/skynet/`);
+  const cases = [
+    // Some basic cases.
+    [[portalUrl, "/"], `${portalUrl}/`],
+    [[portalUrl, "/skynet"], `${portalUrl}/skynet`],
+    [[portalUrl, "/skynet/"], `${portalUrl}/skynet/`],
+    // Test passing in a URL without the protocol prefix.
+    [["siasky.net", "/"], `${portalUrl}/`],
+    // Some more advanced cases.
+    [[portalUrl, "/", skylink], `${portalUrl}/${skylink}`],
+    [[portalUrl, "/skynet", skylink], `${portalUrl}/skynet/${skylink}`],
+    [[portalUrl, "//skynet/", skylink], `${portalUrl}/skynet/${skylink}`],
+    [[portalUrl, "/skynet/", `${skylink}?foo=bar`], `${portalUrl}/skynet/${skylink}?foo=bar`],
+    [[portalUrl, `${skylink}/?foo=bar`], `${portalUrl}/${skylink}?foo=bar`],
+    [[portalUrl, `${skylink}#foobar`], `${portalUrl}/${skylink}#foobar`],
+  ];
 
-    expect(makeUrl(portalUrl, "/", skylink)).toEqual(`${portalUrl}/${skylink}`);
-    expect(makeUrl(portalUrl, "/skynet", skylink)).toEqual(`${portalUrl}/skynet/${skylink}`);
-    expect(makeUrl(portalUrl, "//skynet/", skylink)).toEqual(`${portalUrl}/skynet/${skylink}`);
-    expect(makeUrl(portalUrl, "/skynet/", `${skylink}?foo=bar`)).toEqual(`${portalUrl}/skynet/${skylink}?foo=bar`);
-    expect(makeUrl(portalUrl, `${skylink}/?foo=bar`)).toEqual(`${portalUrl}/${skylink}?foo=bar`);
-    expect(makeUrl(portalUrl, `${skylink}#foobar`)).toEqual(`${portalUrl}/${skylink}#foobar`);
+  it.each(cases)("makeUrl with inputs %s should equal '%s'", (inputs, expectedOutput) => {
+    expect(makeUrl(...inputs)).toEqual(expectedOutput);
   });
 
   it("Should throw if no args provided", () => {

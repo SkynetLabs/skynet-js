@@ -1,3 +1,4 @@
+import { ensureUrl } from "skynet-mysky-utils";
 import urljoin from "url-join";
 import parse from "url-parse";
 
@@ -121,7 +122,7 @@ export function makeUrl(...args: string[]): string {
   if (args.length === 0) {
     throwValidationError("args", args, "parameter", "non-empty");
   }
-  return args.reduce((acc, cur) => urljoin(acc, cur));
+  return ensureUrl(args.reduce((acc, cur) => urljoin(acc, cur)));
 }
 
 /**

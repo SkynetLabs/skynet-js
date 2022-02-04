@@ -995,13 +995,30 @@ export class MySky {
     if (preferredPortalUrl === null) {
       return;
     } else if (shouldRedirectToPreferredPortalUrl(currentDomain, preferredPortalUrl)) {
-      // Redirect.
+      // Redirect to the appropriate URL.
+      //
+      // Get the redirect URL based on the current URL. (Don't use current
+      // client as the developer may have set it to e.g. siasky.dev when we are
+      // really on siasky.net.)
+      const currentDomainClient = new SkynetClient(currentDomain);
       const newUrl = await getRedirectUrlOnPreferredPortal(
-        this.connector.client,
+        currentDomainClient,
         window.location.hostname,
         preferredPortalUrl
       );
-      redirectPage(newUrl);
+
+      // Check if the portal is valid and up before redirecting.
+      const newUrlClient = new SkynetClient(newUrl);
+      try {
+        const portalUrl = await newUrlClient.portalUrl();
+        if (portalUrl) {
+          // Redirect.
+          redirectPage(newUrl);
+        }
+      } catch (e) {
+        // Don't throw an error here for now as this is likely user error.
+        console.warn(e);
+      }
     } else {
       // If we are on the preferred portal already, we still need to set the
       // client as the developer may have chosen a specific client. We always

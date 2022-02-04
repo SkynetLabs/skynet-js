@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import type { AxiosResponse, ResponseType, Method } from "axios";
+import { ensureUrl } from "skynet-mysky-utils";
 
 import {
   uploadFile,
@@ -214,7 +215,7 @@ export class SkynetClient {
       initialPortalUrl = defaultPortalUrl();
     } else {
       // Portal was given, don't make the request for the resolved portal URL.
-      this.customPortalUrl = initialPortalUrl;
+      this.customPortalUrl = ensureUrl(initialPortalUrl);
     }
     this.initialPortalUrl = initialPortalUrl;
     this.customOptions = customOptions;
