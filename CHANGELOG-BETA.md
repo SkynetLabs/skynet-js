@@ -4,6 +4,12 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.24-beta]
+
+### Added
+
+- Added ability to set custom cookie in integration tests with the `SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE` env var.
+
 ## [4.0.23-beta]
 
 ### Changed
