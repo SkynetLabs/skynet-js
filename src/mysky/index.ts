@@ -284,7 +284,9 @@ export class MySky {
     this.pendingPermissions = failedPermissions;
 
     const loggedIn = seedFound && failedPermissions.length === 0;
-    await this.handleLogin(loggedIn);
+    if (loggedIn) {
+      await this.handleLogin();
+    }
     return loggedIn;
   }
 
@@ -402,7 +404,9 @@ export class MySky {
       });
 
     const loggedIn = seedFound && this.pendingPermissions.length === 0;
-    await this.handleLogin(loggedIn);
+    if (loggedIn) {
+      await this.handleLogin();
+    }
     return loggedIn;
   }
 
@@ -908,14 +912,8 @@ export class MySky {
 
   /**
    * Handles the after-login logic.
-   *
-   * @param loggedIn - Whether the login was successful.
    */
-  protected async handleLogin(loggedIn: boolean): Promise<void> {
-    if (!loggedIn) {
-      return;
-    }
-
+  protected async handleLogin(): Promise<void> {
     // Call the `onUserLogin` hook for all DACs.
     await Promise.allSettled(
       this.dacs.map(async (dac) => {
@@ -1007,7 +1005,7 @@ export class MySky {
         preferredPortalUrl
       );
 
-      // Check if the portal is valid and up before redirecting.
+      // Check if the portal is valid and working before redirecting.
       const newUrlClient = new SkynetClient(newUrl);
       try {
         const portalUrl = await newUrlClient.portalUrl();
