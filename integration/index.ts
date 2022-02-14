@@ -9,14 +9,20 @@ import { trimPrefix } from "../src/utils/string";
 //
 // SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest integration
 export const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || DEFAULT_SKYNET_PORTAL_URL;
-// Allow setting custom cookies for e.g. authentication for running tests on paid portals.
+// Allow setting a custom API key for e.g. authentication for running tests on paid portals.
+//
+// Example:
+//
+// SKYNET_JS_INTEGRATION_TEST_API_KEY_PORTAL=foo yarn run jest integration
+export const APIKeyPortal = process.env.SKYNET_JS_INTEGRATION_TEST_API_KEY_PORTAL;
+// Allow setting custom cookies.
 //
 // Example:
 //
 // SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE=skynet-jwt=foo yarn run jest integration
-export const customCookie = process.env.SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE || undefined;
+export const customCookie = process.env.SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE;
 
-export const client = new SkynetClient(portal, { customCookie });
+export const client = new SkynetClient(portal, { APIKeyPortal, customCookie });
 
 export const dataKey = "HelloWorld";
 
