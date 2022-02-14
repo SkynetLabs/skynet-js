@@ -1,9 +1,13 @@
 import { SkynetClient } from "../client";
+import { trimForwardSlash, trimSuffix } from "../utils/string";
 import { getFullDomainUrlForPortal, extractDomainForPortal, ensureUrlPrefix } from "../utils/url";
 
 /**
- * Constructs the full URL for the given component domain,
- * e.g. "dac.hns" => "https://dac.hns.siasky.net"
+ * Constructs the full URL for the given component domain.
+ *
+ * Examples:
+ *
+ * ("dac.hns") => "https://dac.hns.siasky.net"
  *
  * @param this - SkynetClient
  * @param domain - Component domain.
@@ -16,16 +20,60 @@ export async function getFullDomainUrl(this: SkynetClient, domain: string): Prom
 }
 
 /**
- * Extracts the domain from the current portal URL,
- * e.g. ("dac.hns.siasky.net") => "dac.hns"
+ * Gets the URL for the current skapp on the preferred portal, if we're not on
+ * the preferred portal already.
+ *
+ * @param client - The Skynet client.
+ * @param currentUrl - The current page URL.
+ * @param preferredPortalUrl - The preferred portal URL.
+ * @returns - The URL for the current skapp on the preferred portal.
+ */
+export async function getRedirectUrlOnPreferredPortal(
+  client: SkynetClient,
+  currentUrl: string,
+  preferredPortalUrl: string
+): Promise<string> {
+  // Get the current skapp on the preferred portal.
+  const skappDomain = await client.extractDomain(currentUrl);
+  return getFullDomainUrlForPortal(preferredPortalUrl, skappDomain);
+}
+
+/**
+ * Extracts the domain from the current portal URL. Will take into account the
+ * server domain if it is found in the current portal URL.
+ *
+ * Examples:
+ *
+ * ("dac.hns.siasky.net") => "dac.hns"
+ * ("dac.hns.us-va-1.siasky.net") => "dac.hns"
  *
  * @param this - SkynetClient
  * @param fullDomain - Full URL.
  * @returns - The extracted domain.
  */
 export async function extractDomain(this: SkynetClient, fullDomain: string): Promise<string> {
-  const portalUrl = await this.portalUrl();
+  fullDomain = trimForwardSlash(fullDomain);
 
+  // Check if the full domain contains a specific portal server. In that case,
+  // the extracted subdomain should not include the server.
+  // TODO: Could consolidate this and `resolvePortalUrl` into one network request.
+  const portalServerUrl = trimForwardSlash(await this.resolvePortalServerUrl());
+  // Get the portal server domain.
+  let portalServerDomain;
+  try {
+    // Try to get the domain from a full URL.
+    const portalServerUrlObj = new URL(portalServerUrl);
+    portalServerDomain = portalServerUrlObj.hostname;
+  } catch (_) {
+    // If not a full URL, assume it is already a domain.
+    portalServerDomain = portalServerUrl;
+  }
+  if (fullDomain.endsWith(portalServerDomain)) {
+    return extractDomainForPortal(portalServerUrl, fullDomain);
+  }
+
+  // Use the regular portal domain to extract out the subdomain.
+  const portalUrl = await this.resolvePortalUrl();
   return extractDomainForPortal(portalUrl, fullDomain);
 }
 
@@ -63,4 +111,21 @@ export function popupCenter(url: string, winName: string, w: number, h: number):
     newWindow.focus();
   }
   return newWindow;
+}
+
+// TODO: Handle edge cases with specific servers as preferred portal?
+/**
+ * Returns whether we should redirect from the current portal to the preferred
+ * portal. The protocol prefixes are allowed to be different and there can be
+ * other differences like a trailing slash.
+ *
+ * @param currentDomain - The current domain.
+ * @param preferredPortalUrl - The preferred portal URL.
+ * @returns - Whether the two URLs are equal for the purposes of redirecting.
+ */
+export function shouldRedirectToPreferredPortalUrl(currentDomain: string, preferredPortalUrl: string): boolean {
+  // Strip protocol and trailing slash (case-insensitive).
+  currentDomain = trimSuffix(currentDomain.replace(/https:\/\/|http:\/\//i, ""), "/");
+  preferredPortalUrl = trimSuffix(preferredPortalUrl.replace(/https:\/\/|http:\/\//i, ""), "/");
+  return !currentDomain.endsWith(preferredPortalUrl);
 }

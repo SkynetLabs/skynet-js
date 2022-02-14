@@ -4,15 +4,15 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { combineStrings, extractNonSkylinkPath } from "../utils/testing";
 
-import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
+import { SkynetClient, DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./index";
 import { trimForwardSlash } from "./utils/string";
 
-const portalUrl = defaultSkynetPortalUrl;
+const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const hnsLink = "foo";
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
 const skylinkBase32 = "bg06v2tidkir84hg0s1s4t97jaeoaa1jse1svrad657u070c9calq4g";
-const sialink = `${uriSkynetPrefix}${skylink}`;
+const sialink = `${URI_SKYNET_PREFIX}${skylink}`;
 const entryLink = "AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA";
 
 const validSkylinkVariations = combineStrings(

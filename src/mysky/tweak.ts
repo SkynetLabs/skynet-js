@@ -15,10 +15,18 @@ export function deriveDiscoverableFileTweak(path: string): string {
   return toHexString(bytes);
 }
 
+/**
+ * The tweak for the discoverable bucket for the given path.
+ */
 export class DiscoverableBucketTweak {
   version: number;
   path: Array<Uint8Array>;
 
+  /**
+   * Creates a new `DiscoverableBucketTweak`.
+   *
+   * @param path - The MySky data path.
+   */
   constructor(path: string) {
     const paths = splitPath(path);
     const pathHashes = paths.map(hashPathComponent);
@@ -26,6 +34,11 @@ export class DiscoverableBucketTweak {
     this.path = pathHashes;
   }
 
+  /**
+   * Encodes the tweak into a byte array.
+   *
+   * @returns - The encoded byte array.
+   */
   encode(): Uint8Array {
     const size = 1 + 32 * this.path.length;
     const buf = new Uint8Array(size);
@@ -39,6 +52,11 @@ export class DiscoverableBucketTweak {
     return buf;
   }
 
+  /**
+   * Gets the hash of the tweak.
+   *
+   * @returns - The hash.
+   */
   getHash(): Uint8Array {
     const encoding = this.encode();
     return hashAll(encoding);

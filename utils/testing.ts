@@ -4,6 +4,32 @@ import parse from "url-parse";
 import { trimForwardSlash } from "../src/utils/string";
 
 /**
+ * Returns a composed array with the given inputs and the expected output.
+ *
+ * @param inputs - The given inputs.
+ * @param expected - The expected output for all the inputs.
+ * @returns - The array of composed test cases.
+ */
+export function composeTestCases<T, U>(inputs: Array<T>, expected: U): Array<[T, U]> {
+  return inputs.map((input) => [input, expected]);
+}
+
+/**
+ * Returns an array of arrays of all possible permutations by picking one
+ * element out of each of the input arrays.
+ *
+ * @param arrays - Array of arrays.
+ * @returns - Array of arrays of all possible permutations.
+ * @see {@link https://gist.github.com/ssippe/1f92625532eef28be6974f898efb23ef#gistcomment-3530882}
+ */
+export function combineArrays<T>(...arrays: Array<Array<T>>): Array<Array<T>> {
+  return arrays.reduce<T[][]>(
+    (accArrays, array) => accArrays.flatMap((accArray) => array.map((value) => [...accArray, value])),
+    [[]]
+  );
+}
+
+/**
  * Returns an array of strings of all possible permutations by picking one
  * string out of each of the input string arrays.
  *
@@ -11,9 +37,7 @@ import { trimForwardSlash } from "../src/utils/string";
  * @returns - Array of strings of all possible permutations.
  */
 export function combineStrings(...arrays: Array<Array<string>>): Array<string> {
-  return arrays.reduce((acc, array) => {
-    return acc.map((first) => array.map((second) => first.concat(second))).reduce((acc, cases) => [...acc, ...cases]);
-  });
+  return arrays.reduce((acc, array) => acc.flatMap((first: string) => array.map((second) => first.concat(second))));
 }
 
 /**

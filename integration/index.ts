@@ -3,9 +3,20 @@
 import { DEFAULT_SKYNET_PORTAL_URL, SkynetClient } from "../src";
 import { trimPrefix } from "../src/utils/string";
 
-// To test a specific server, e.g. SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest src/integration.test.ts
+// To test a specific server.
+//
+// Example:
+//
+// SKYNET_JS_INTEGRATION_TEST_SERVER=https://eu-fin-1.siasky.net yarn run jest integration
 export const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || DEFAULT_SKYNET_PORTAL_URL;
-export const client = new SkynetClient(portal);
+// Allow setting custom cookies for e.g. authentication for running tests on paid portals.
+//
+// Example:
+//
+// SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE=skynet-jwt=foo yarn run jest integration
+export const customCookie = process.env.SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE;
+
+export const client = new SkynetClient(portal, { customCookie });
 
 export const dataKey = "HelloWorld";
 

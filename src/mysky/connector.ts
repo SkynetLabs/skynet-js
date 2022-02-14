@@ -31,7 +31,20 @@ export const DEFAULT_CONNECTOR_OPTIONS = {
   handshakeAttemptsInterval: defaultHandshakeAttemptsInterval,
 };
 
+/**
+ * The object that connects to a child iframe and keeps track of information
+ * about it.
+ */
 export class Connector {
+  /**
+   * Creates a `Connector`.
+   *
+   * @param url - The iframe URL.
+   * @param client - The Skynet Client.
+   * @param childFrame - The iframe handle.
+   * @param connection - The postmessage handshake connection.
+   * @param options - The custom options.
+   */
   constructor(
     public url: string,
     public client: SkynetClient,
@@ -42,6 +55,14 @@ export class Connector {
 
   // Static initializer
 
+  /**
+   * Initializes a `Connector` instance.
+   *
+   * @param client - The Skynet Client.
+   * @param domain - The MySky domain to open.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - The `Connector`.
+   */
   static async init(client: SkynetClient, domain: string, customOptions?: CustomConnectorOptions): Promise<Connector> {
     const opts = { ...DEFAULT_CONNECTOR_OPTIONS, ...customOptions };
 
@@ -80,6 +101,13 @@ export class Connector {
     return new Connector(domainUrl, client, childFrame, connection, opts);
   }
 
+  /**
+   * Calls the given method with the given arguments.
+   *
+   * @param method - The remote method to call over the connection.
+   * @param args - The list of optional arguments.
+   * @returns - The result of the call.
+   */
   async call(method: string, ...args: unknown[]): Promise<unknown> {
     return this.connection.remoteHandle().call(method, ...args);
   }

@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import type { AxiosResponse, ResponseType, Method } from "axios";
+import { ensureUrl } from "skynet-mysky-utils";
 
 import {
   uploadFile,
@@ -69,9 +70,10 @@ import { buildRequestHeaders, buildRequestUrl, ExecuteRequestError, Headers } fr
  *
  * @property [APIKey] - Authentication password to use.
  * @property [customUserAgent] - Custom user agent header to set.
- * @property [customCookie] - Custom cookie header to set.
+ * @property [customCookie] - Custom cookie header to set. WARNING: the Cookie header cannot be set in browsers. This is meant for usage in server contexts.
  * @property [onDownloadProgress] - Optional callback to track download progress.
  * @property [onUploadProgress] - Optional callback to track upload progress.
+ * @property [loginFn] - A function that, if set, is called when a 401 is returned from the request before re-trying the request.
  */
 export type CustomClientOptions = {
   APIKey?: string;
@@ -79,6 +81,7 @@ export type CustomClientOptions = {
   customCookie?: string;
   onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
+  loginFn?: () => Promise<void>;
 };
 
 /**
@@ -244,7 +247,7 @@ export class SkynetClient {
       initialPortalUrl = defaultPortalUrl();
     } else {
       // Portal was given, don't make the request for the resolved portal URL.
-      this.customPortalUrl = initialPortalUrl;
+      this.customPortalUrl = ensureUrl(initialPortalUrl);
     }
     this.initialPortalUrl = initialPortalUrl;
     this.customOptions = customOptions;
@@ -338,37 +341,77 @@ export class SkynetClient {
       };
     }
 
-    // NOTE: The error type will be ExecuteRequestError as we set up a response
-    // interceptor above.
-    return await axios({
-      url,
-      method: config.method,
-      data: config.data,
-      headers,
-      auth,
-      onDownloadProgress,
-      onUploadProgress,
-      responseType: config.responseType,
-      transformRequest: config.transformRequest,
-      transformResponse: config.transformResponse,
+    // NOTE: The error type will be `ExecuteRequestError` as we set up a
+    // response interceptor above.
+    try {
+      return await axios({
+        url,
+        method: config.method,
+        data: config.data,
+        headers,
+        auth,
+        onDownloadProgress,
+        onUploadProgress,
+        responseType: config.responseType,
+        transformRequest: config.transformRequest,
+        transformResponse: config.transformResponse,
 
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      // Allow cross-site cookies.
-      withCredentials: true,
-    });
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        // Allow cross-site cookies.
+        withCredentials: true,
+      });
+    } catch (e) {
+      if (config.loginFn && (e as ExecuteRequestError).responseStatus === 401) {
+        // Try logging in again.
+        await config.loginFn();
+        return await this.executeRequest(config);
+      } else {
+        throw e;
+      }
+    }
   }
 
   // ===============
   // Private Methods
   // ===============
 
+  /**
+   * Gets the current server URL for the portal. You should generally use
+   * `portalUrl` instead - this method can be used for detecting whether the
+   * current URL is a server URL.
+   *
+   * @returns - The portal server URL.
+   */
+  protected async resolvePortalServerUrl(): Promise<string> {
+    const response = await this.executeRequest({
+      ...this.customOptions,
+      method: "head",
+      url: this.initialPortalUrl,
+    });
+
+    if (!response.headers) {
+      throw new Error(
+        "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      );
+    }
+    const portalUrl = response.headers["skynet-server-api"];
+    if (!portalUrl) {
+      throw new Error("Could not get server portal URL for the given portal");
+    }
+    return portalUrl;
+  }
+
+  /**
+   * Make a request to resolve the provided `initialPortalUrl`.
+   *
+   * @returns - The portal URL.
+   */
   protected async resolvePortalUrl(): Promise<string> {
     const response = await this.executeRequest({
       ...this.customOptions,
       method: "head",
       url: this.initialPortalUrl,
-      endpointPath: "/",
     });
 
     if (!response.headers) {
