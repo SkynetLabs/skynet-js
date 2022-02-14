@@ -33,6 +33,8 @@ import {
   setJSONEncryptedV2,
   setJSONV2,
 } from "./skydb_v2";
+// These imports are deprecated but they are needed for the v1 MySky SkyDB
+// methods, which we are keeping so as not to break compatibility.
 import {
   deleteEntryData,
   deleteJSON,

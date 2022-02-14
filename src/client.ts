@@ -40,6 +40,8 @@ import {
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
 import { RevisionNumberCache } from "./revision_cache";
+// These imports are deprecated but they are needed to export the v1 SkyDB
+// methods, which we are keeping so as not to break compatibility.
 import {
   deleteJSON,
   getJSON,
@@ -200,7 +202,7 @@ export class SkynetClient {
   // SkyDB
 
   db = {
-    // v1
+    // v1 (deprecated)
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
     deleteJSON: deleteJSON.bind(this),
