@@ -39,7 +39,7 @@ import {
 } from "../skydb";
 import { Signature } from "../crypto";
 import { deriveDiscoverableFileTweak } from "./tweak";
-import { popupCenter } from "./utils";
+import { getRedirectUrlOnPreferredPortal, popupCenter, shouldRedirectToPreferredPortalUrl } from "./utils";
 import { extractOptions } from "../utils/options";
 import { JsonData } from "../utils/types";
 import {
@@ -116,6 +116,10 @@ export async function loadMySky(
   return mySky;
 }
 
+/**
+ * The singleton object that allows skapp developers to initialize and
+ * communicate with MySky.
+ */
 export class MySky {
   static instance: MySky | null = null;
 
@@ -132,10 +136,35 @@ export class MySky {
   // Constructors
   // ============
 
-  constructor(protected connector: Connector, permissions: Permission[], protected hostDomain: string) {
+  /**
+   * Creates a `MySky` instance.
+   *
+   * @param connector - The `Connector` object.
+   * @param permissions - The initial requested permissions.
+   * @param hostDomain - The domain of the host skapp.
+   * @param currentPortalUrl - The URL of the current portal. This is the portal that the skapp is running on, not the portal that may have been requested by the developer when creating a `SkynetClient`.
+   */
+  constructor(
+    protected connector: Connector,
+    permissions: Permission[],
+    protected hostDomain: string,
+    protected currentPortalUrl: string
+  ) {
+    if (MySky.instance) {
+      throw new Error("Trying to create a second MySky instance");
+    }
+
     this.pendingPermissions = permissions;
   }
 
+  /**
+   * Initializes MySky and returns a `MySky` instance.
+   *
+   * @param client - The Skynet Client.
+   * @param [skappDomain] - The domain of the host skapp.
+   * @param [customOptions] - Additional settings that can optionally be set.
+   * @returns - A `MySky` instance.
+   */
   static async New(client: SkynetClient, skappDomain?: string, customOptions?: CustomConnectorOptions): Promise<MySky> {
     const opts = { ...DEFAULT_CONNECTOR_OPTIONS, ...customOptions };
 
@@ -152,7 +181,31 @@ export class MySky {
     }
     const connector = await Connector.init(client, domain, customOptions);
 
-    const hostDomain = await client.extractDomain(window.location.hostname);
+    let currentPortalUrl;
+    let hostDomain;
+    if (window.location.hostname === "localhost") {
+      currentPortalUrl = window.location.href;
+      hostDomain = "localhost";
+    } else {
+      // MySky expects to be on the same portal as the skapp, so create a new
+      // client on the current skapp URL, in case the client the developer
+      // instantiated does not correspond to the portal of the current URL.
+      const currentUrlClient = new SkynetClient(window.location.hostname);
+      // Trigger a resolve of the portal URL manually. `new SkynetClient` assumes
+      // a portal URL is given to it, so it doesn't make the request for the
+      // actual portal URL.
+      //
+      // TODO: We should rework this so it is possible without protected methods.
+      //
+      // @ts-expect-error - Using protected fields.
+      currentUrlClient.customPortalUrl = await currentUrlClient.resolvePortalUrl();
+      currentPortalUrl = await currentUrlClient.portalUrl();
+
+      // Get the host domain.
+      hostDomain = await currentUrlClient.extractDomain(window.location.hostname);
+    }
+
+    // Extract the skapp domain.
     const permissions = [];
     if (skappDomain) {
       const perm1 = new Permission(hostDomain, skappDomain, PermCategory.Discoverable, PermType.Write);
@@ -161,7 +214,12 @@ export class MySky {
       permissions.push(perm1, perm2, perm3);
     }
 
-    MySky.instance = new MySky(connector, permissions, hostDomain);
+    MySky.instance = new MySky(connector, permissions, hostDomain, currentPortalUrl);
+
+    // Redirect if we're not on the preferred portal. See
+    // `redirectIfNotOnPreferredPortal` for full load flow.
+    await MySky.instance.redirectIfNotOnPreferredPortal();
+
     return MySky.instance;
   }
 
@@ -199,10 +257,22 @@ export class MySky {
     await Promise.all(promises);
   }
 
+  /**
+   * Adds the given permissions to the list of pending permissions.
+   *
+   * @param permissions - The list of permissions to add.
+   */
   async addPermissions(...permissions: Permission[]): Promise<void> {
     this.pendingPermissions.push(...permissions);
   }
 
+  /**
+   * Checks whether main MySky, living in an invisible iframe, is already logged
+   * in and all requested permissions are granted.
+   *
+   * @returns - A boolean indicating whether the user is logged in and all
+   * permissions are granted.
+   */
   async checkLogin(): Promise<boolean> {
     const [seedFound, permissionsResponse]: [boolean, CheckPermissionsResponse] = await this.connector.connection
       .remoteHandle()
@@ -214,7 +284,9 @@ export class MySky {
     this.pendingPermissions = failedPermissions;
 
     const loggedIn = seedFound && failedPermissions.length === 0;
-    await this.handleLogin(loggedIn);
+    if (loggedIn) {
+      await this.handleLogin();
+    }
     return loggedIn;
   }
 
@@ -230,6 +302,8 @@ export class MySky {
    * @throws - Will throw if there is an unexpected DOM error.
    */
   async destroy(): Promise<void> {
+    // TODO: Make sure we are logged out first?
+
     // TODO: For all connected dacs, send a destroy call.
 
     // TODO: Delete all connected dacs.
@@ -248,10 +322,25 @@ export class MySky {
     }
   }
 
+  // TODO: Document what this does exactly.
+  /**
+   * Log out the user.
+   *
+   * @returns - An empty promise.
+   */
   async logout(): Promise<void> {
-    return await this.connector.connection.remoteHandle().call("logout");
+    await this.connector.connection.remoteHandle().call("logout");
+
+    // Remove auto-relogin if it's set.
+    this.connector.client.customOptions.loginFn = undefined;
   }
 
+  /**
+   * Requests login access by opening the MySky UI window.
+   *
+   * @returns - A boolean indicating whether we successfully logged in and all
+   * requested permissions were granted.
+   */
   async requestLoginAccess(): Promise<boolean> {
     let uiWindow: Window;
     let uiConnection: Connection;
@@ -274,13 +363,12 @@ export class MySky {
       });
 
       try {
-        // Launch the UI.
-
+        // Launch and connect the UI.
         uiWindow = this.launchUI();
         uiConnection = await this.connectUi(uiWindow);
 
         // Send the UI the list of required permissions.
-
+        //
         // TODO: This should be a dual-promise that also calls ping() on an interval and rejects if no response was found in a given amount of time.
         const [seedFoundResponse, permissionsResponse]: [boolean, CheckPermissionsResponse] = await uiConnection
           .remoteHandle()
@@ -288,7 +376,6 @@ export class MySky {
         seedFound = seedFoundResponse;
 
         // Save failed permissions.
-
         const { grantedPermissions, failedPermissions } = permissionsResponse;
         this.grantedPermissions = grantedPermissions;
         this.pendingPermissions = failedPermissions;
@@ -317,10 +404,17 @@ export class MySky {
       });
 
     const loggedIn = seedFound && this.pendingPermissions.length === 0;
-    await this.handleLogin(loggedIn);
+    if (loggedIn) {
+      await this.handleLogin();
+    }
     return loggedIn;
   }
 
+  /**
+   * Returns the user ID (i.e. same as the user's public key).
+   *
+   * @returns - The hex-encoded user ID.
+   */
   async userID(): Promise<string> {
     return await this.connector.connection.remoteHandle().call("userID");
   }
@@ -724,11 +818,33 @@ export class MySky {
   // Internal Methods
   // ================
 
+  /**
+   * Catches any errors returned from the UI and dispatches them in the current
+   * window. This is how we bubble up errors from the MySky UI window to the
+   * skapp.
+   *
+   * @param errorMsg - The error message.
+   */
   protected async catchError(errorMsg: string): Promise<void> {
     const event = new CustomEvent(dispatchedErrorEvent, { detail: errorMsg });
     window.dispatchEvent(event);
   }
 
+  /**
+   * Checks if the MySky user can be logged into a portal account.
+   *
+   * @returns - Whether the user can be logged into a portal account.
+   */
+  protected async checkPortalLogin(): Promise<boolean> {
+    return await this.connector.connection.remoteHandle().call("checkPortalLogin");
+  }
+
+  /**
+   * Launches the MySky UI popup window.
+   *
+   * @returns - The window handle.
+   * @throws - Will throw if the window could not be opened.
+   */
   protected launchUI(): Window {
     const mySkyUrl = new URL(this.connector.url);
     mySkyUrl.pathname = mySkyUiRelativeUrl;
@@ -744,6 +860,12 @@ export class MySky {
     return childWindow;
   }
 
+  /**
+   * Connects to the MySky UI window by establishing a postmessage handshake.
+   *
+   * @param childWindow - The MySky UI window.
+   * @returns - The `Connection` with the other window.
+   */
   protected async connectUi(childWindow: Window): Promise<Connection> {
     const options = this.connector.options;
 
@@ -767,6 +889,20 @@ export class MySky {
     return connection;
   }
 
+  /**
+   * Gets the preferred portal from MySky, or `null` if not set.
+   *
+   * @returns - The preferred portal if set.
+   */
+  protected async getPreferredPortal(): Promise<string | null> {
+    return await this.connector.connection.remoteHandle().call("getPreferredPortal");
+  }
+
+  /**
+   * Loads the given DAC.
+   *
+   * @param dac - The dac to load.
+   */
   protected async loadDac(dac: DacLibrary): Promise<void> {
     // Initialize DAC.
     await dac.init(this.connector.client, this.connector.options);
@@ -776,26 +912,151 @@ export class MySky {
     await this.addPermissions(...perms);
   }
 
-  protected async handleLogin(loggedIn: boolean): Promise<void> {
-    if (loggedIn) {
-      await Promise.all(
-        this.dacs.map(async (dac) => {
-          try {
-            await dac.onUserLogin();
-          } catch (error) {
-            // Don't throw on error, just print a console warning.
-            console.warn(error);
-          }
-        })
-      );
+  /**
+   * Handles the after-login logic.
+   */
+  protected async handleLogin(): Promise<void> {
+    // Call the `onUserLogin` hook for all DACs.
+    await Promise.allSettled(
+      this.dacs.map(async (dac) => {
+        try {
+          await dac.onUserLogin();
+        } catch (error) {
+          // Don't throw on error, just print a console warning.
+          console.warn(error);
+        }
+      })
+    );
+
+    // Redirect if we're not on the preferred portal. See
+    // `redirectIfNotOnPreferredPortal` for full login flow.
+    await this.redirectIfNotOnPreferredPortal();
+
+    // If we can log in to the portal account, set up auto-relogin.
+    if (await this.checkPortalLogin()) {
+      this.connector.client.customOptions.loginFn = this.portalLogin;
     }
   }
 
+  /**
+   * Logs in to the user's portal account.
+   *
+   * @returns - An empty promise.
+   */
+  protected async portalLogin(): Promise<void> {
+    return await this.connector.connection.remoteHandle().call("portalLogin");
+  }
+
+  /**
+   * Get the preferred portal and redirect the page if it is different than
+   * the current portal.
+   *
+   *  Load MySky redirect flow:
+   *
+   *  1. SDK opens MySky on the same portal as the skapp.
+   *  2. If the preferred portal is found in localstorage, MySky connects to it
+   *     and we go to step 5.
+   *  3. Else, MySky connects to siasky.net.
+   *  4. MySky tries to get the saved portal preference.
+   *     1. If the portal is set, MySky switches to using the preferred portal.
+   *     2. If it is not set or we don't have the seed, MySky switches to using
+   *        the current portal as opposed to siasky.net.
+   *  5. After MySky finishes loading, SDK queries `mySky.getPortalPreference`.
+   *  6. If the preferred portal is set and different than the current portal,
+   *     SDK triggers refresh.
+   *  7. We go back to step 1 and repeat, but since we're on the right portal
+   *     now we won't refresh in step 6.
+   *
+   * Login redirect flow:
+   *
+   * 1. SDK logs in through the UI.
+   * 2. MySky UI switches to siasky.net and tries to get the saved portal
+   *    preference.
+   *    1. If the portal is set, MySky switches to using the preferred portal.
+   *    2. If it is not set or we don't have the seed, MySky switches to using
+   *       the current portal as opposed to siasky.net.
+   * 3. SDK queries `mySky.getPortalPreference`.
+   * 4. If the preferred portal is set and different than the current portal,
+   *    SDK triggers refresh.
+   * 5. We go to "Load MySky" step 1 and go through that flow, but we don't
+   *    refresh in step 6.
+   */
+  protected async redirectIfNotOnPreferredPortal(): Promise<void> {
+    const currentDomain = window.location.hostname;
+    if (currentDomain === "localhost") {
+      // Don't redirect on localhost as there is no subdomain to redirect to.
+      return;
+    }
+
+    // Get the preferred portal.
+    const preferredPortalUrl = await this.getPreferredPortal();
+
+    // Is the preferred portal set and different from the current portal?
+    if (preferredPortalUrl === null) {
+      return;
+    } else if (shouldRedirectToPreferredPortalUrl(currentDomain, preferredPortalUrl)) {
+      // Redirect to the appropriate URL.
+      //
+      // Get the redirect URL based on the current URL. (Don't use current
+      // client as the developer may have set it to e.g. siasky.dev when we are
+      // really on siasky.net.)
+      const currentDomainClient = new SkynetClient(currentDomain);
+      const newUrl = await getRedirectUrlOnPreferredPortal(
+        currentDomainClient,
+        window.location.hostname,
+        preferredPortalUrl
+      );
+
+      // Check if the portal is valid and working before redirecting.
+      const newUrlClient = new SkynetClient(newUrl);
+      try {
+        const portalUrl = await newUrlClient.portalUrl();
+        if (portalUrl) {
+          // Redirect.
+          redirectPage(newUrl);
+        }
+      } catch (e) {
+        // Don't throw an error here for now as this is likely user error.
+        console.warn(e);
+      }
+    } else {
+      // If we are on the preferred portal already, we still need to set the
+      // client as the developer may have chosen a specific client. We always
+      // want to use the user's preference for a portal, if it is set.
+
+      // Set the skapp client to use the user's preferred portal.
+      this.connector.client = new SkynetClient(preferredPortalUrl);
+    }
+  }
+
+  /**
+   * Asks MySky to sign the non-encrypted registry entry.
+   *
+   * @param entry - The non-encrypted registry entry.
+   * @param path - The MySky path.
+   * @returns - The signature.
+   */
   protected async signRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
     return await this.connector.connection.remoteHandle().call("signRegistryEntry", entry, path);
   }
 
+  /**
+   * Asks MySky to sign the encrypted registry entry.
+   *
+   * @param entry - The encrypted registry entry.
+   * @param path - The MySky path.
+   * @returns - The signature.
+   */
   protected async signEncryptedRegistryEntry(entry: RegistryEntry, path: string): Promise<Signature> {
     return await this.connector.connection.remoteHandle().call("signEncryptedRegistryEntry", entry, path);
   }
+}
+
+/**
+ * Redirects the page to the given URL.
+ *
+ * @param url - The URL.
+ */
+function redirectPage(url: string): void {
+  window.location.replace(url);
 }
