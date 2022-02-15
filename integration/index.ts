@@ -13,8 +13,8 @@ export const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || DEFAULT_S
 //
 // Example:
 //
-// SKYNET_JS_INTEGRATION_TEST_API_KEY_PORTAL=foo yarn run jest integration
-export const APIKeyPortal = process.env.SKYNET_JS_INTEGRATION_TEST_API_KEY_PORTAL;
+// SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY_PORTAL=foo yarn run jest integration
+export const skynetAPIKey = process.env.SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY;
 // Allow setting custom cookies.
 //
 // Example:
@@ -22,7 +22,7 @@ export const APIKeyPortal = process.env.SKYNET_JS_INTEGRATION_TEST_API_KEY_PORTA
 // SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE=skynet-jwt=foo yarn run jest integration
 export const customCookie = process.env.SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE;
 
-export const client = new SkynetClient(portal, { APIKeyPortal, customCookie });
+export const client = new SkynetClient(portal, { skynetAPIKey, customCookie });
 
 export const dataKey = "HelloWorld";
 
