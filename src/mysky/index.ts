@@ -22,16 +22,16 @@ import { Signature } from "../crypto";
 import { getRedirectUrlOnPreferredPortal, popupCenter, shouldRedirectToPreferredPortalUrl } from "./utils";
 import { validateBoolean, validateString } from "../utils/validation";
 import {
-  deleteEntryDataV2,
-  deleteJSONV2,
-  getEntryDataV2,
-  getEntryLinkV2,
-  getJSONEncryptedV2,
-  getJSONV2,
-  setDataLinkV2,
-  setEntryDataV2,
-  setJSONEncryptedV2,
-  setJSONV2,
+  deleteEntryData as deleteEntryDataV2,
+  deleteJSON as deleteJSONV2,
+  getEntryData as getEntryDataV2,
+  getEntryLink as getEntryLinkV2,
+  getJSONEncrypted as getJSONEncryptedV2,
+  getJSON as getJSONV2,
+  setDataLink as setDataLinkV2,
+  setEntryData as setEntryDataV2,
+  setJSONEncrypted as setJSONEncryptedV2,
+  setJSON as setJSONV2,
 } from "./skydb_v2";
 // These imports are deprecated but they are needed for the v1 MySky SkyDB
 // methods, which we are keeping so as not to break compatibility.
@@ -411,42 +411,31 @@ export class MySky {
   // SkyDB methods
   // =============
 
-  // v1
+  // v1 (deprecated)
   getJSON = getJSON;
   getEntryLink = getEntryLink;
   setJSON = setJSON;
   deleteJSON = deleteJSON;
-  // v2
-  getJSONV2 = getJSONV2;
-  getEntryLinkV2 = getEntryLinkV2;
-  setJSONV2 = setJSONV2;
-  deleteJSONV2 = deleteJSONV2;
-
-  // ==================
-  // Entry Data Methods
-  // ==================
-
-  // v1
   setDataLink = setDataLink;
   getEntryData = getEntryData;
   setEntryData = setEntryData;
   deleteEntryData = deleteEntryData;
-  // v2
-  setDataLinkV2 = setDataLinkV2;
-  getEntryDataV2 = getEntryDataV2;
-  setEntryDataV2 = setEntryDataV2;
-  deleteEntryDataV2 = deleteEntryDataV2;
-
-  // ===============
-  // Encrypted Files
-  // ===============
-
-  // v1
   getJSONEncrypted = getJSONEncrypted;
   setJSONEncrypted = setJSONEncrypted;
+
   // v2
-  getJSONEncryptedV2 = getJSONEncryptedV2;
-  setJSONEncryptedV2 = setJSONEncryptedV2;
+  dbV2 = {
+    getJSON: getJSONV2.bind(this),
+    getEntryLink: getEntryLinkV2.bind(this),
+    setJSON: setJSONV2.bind(this),
+    deleteJSON: deleteJSONV2.bind(this),
+    setDataLink: setDataLinkV2.bind(this),
+    getEntryData: getEntryDataV2.bind(this),
+    setEntryData: setEntryDataV2.bind(this),
+    deleteEntryData: deleteEntryDataV2.bind(this),
+    getJSONEncrypted: getJSONEncryptedV2.bind(this),
+    setJSONEncrypted: setJSONEncryptedV2.bind(this),
+  };
 
   /**
    * Lets you get the share-able path seed, which can be passed to

@@ -24,7 +24,7 @@ import { validateOptionalObject, validateString } from "./utils/validation";
  * @param path - The data path.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the json data as well as the skylink for the data.
- * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getJSONV2 is recommended.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.fileV2.getJSON` is recommended.
  */
 export async function getJSON(
   this: SkynetClient,
@@ -61,7 +61,7 @@ export async function getJSON(
  * @param userID - The MySky public user ID.
  * @param path - The data path.
  * @returns - The entry link.
- * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getEntryLinkV2 is recommended.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.fileV2.getEntryLink` is recommended.
  */
 export async function getEntryLink(this: SkynetClient, userID: string, path: string): Promise<string> {
   validateString("userID", userID, "parameter");
@@ -83,7 +83,7 @@ export async function getEntryLink(this: SkynetClient, userID: string, path: str
  * @param path - The data path.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
- * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getEntryDataV2 is recommended.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.fileV2.getEntryData` is recommended.
  */
 export async function getEntryData(
   this: SkynetClient,
@@ -120,7 +120,7 @@ export async function getEntryData(
  * @param pathSeed - The share-able secret file path seed.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the decrypted json data.
- * @deprecated - Use of this method may result in data race bugs. Reworking your application to use getJSONEncryptedV2 is recommended.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.fileV2.getJSONEncrypted` is recommended.
  */
 export async function getJSONEncrypted(
   this: SkynetClient,

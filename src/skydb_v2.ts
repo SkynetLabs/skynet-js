@@ -146,7 +146,7 @@ export type RawBytesResponse = {
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
-export async function getJSONV2(
+export async function getJSON(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
@@ -163,7 +163,7 @@ export async function getJSONV2(
   };
 
   // Immediately fail if the mutex is not available.
-  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.dbV2.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Lookup the registry entry.
     const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry: RegistryEntry | null = await getSkyDBRegistryEntryAndUpdateCache(
@@ -224,7 +224,7 @@ export async function getJSONV2(
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the input keys are not valid strings.
  */
-export async function setJSONV2(
+export async function setJSON(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -246,7 +246,7 @@ export async function setJSONV2(
   const publicKey = toHexString(publicKeyArray);
 
   // Immediately fail if the mutex is not available.
-  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.dbV2.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Get the cached revision number before doing anything else. Increment it.
     const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
@@ -276,13 +276,13 @@ export async function setJSONV2(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
  */
-export async function deleteJSONV2(
+export async function deleteJSON(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
   customOptions?: CustomSetEntryDataOptions
 ): Promise<void> {
-  // Validation is done below in `db.setEntryData`.
+  // Validation is done below in `dbV2.setEntryData`.
 
   const opts = {
     ...DEFAULT_SET_ENTRY_DATA_OPTIONS,
@@ -290,7 +290,7 @@ export async function deleteJSONV2(
     ...customOptions,
   };
 
-  await this.db.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
+  await this.dbV2.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
 }
 
 // ==========
@@ -307,7 +307,7 @@ export async function deleteJSONV2(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
  */
-export async function setDataLinkV2(
+export async function setDataLink(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -315,11 +315,11 @@ export async function setDataLinkV2(
   customOptions?: CustomSetEntryDataOptions
 ): Promise<void> {
   const parsedSkylink = validateSkylinkString("dataLink", dataLink, "parameter");
-  // Rest of validation is done below in `db.setEntryData`.
+  // Rest of validation is done below in `dbV2.setEntryData`.
 
   const data = decodeSkylink(parsedSkylink);
 
-  await this.db.setEntryData(privateKey, dataKey, data, customOptions);
+  await this.dbV2.setEntryData(privateKey, dataKey, data, customOptions);
 }
 
 /**
@@ -334,7 +334,7 @@ export async function setDataLinkV2(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  */
-export async function getEntryDataV2(
+export async function getEntryData(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
@@ -351,7 +351,7 @@ export async function getEntryDataV2(
   };
 
   // Immediately fail if the mutex is not available.
-  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.dbV2.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     const entry = await getSkyDBRegistryEntryAndUpdateCache(this, publicKey, dataKey, cachedRevisionEntry, opts);
     if (entry === null) {
       return { data: null };
@@ -374,7 +374,7 @@ export async function getEntryDataV2(
  * @returns - The entry data.
  * @throws - Will throw if the length of the data is > 70 bytes.
  */
-export async function setEntryDataV2(
+export async function setEntryData(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
@@ -398,7 +398,7 @@ export async function setEntryDataV2(
   const publicKey = toHexString(publicKeyArray);
 
   // Immediately fail if the mutex is not available.
-  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.dbV2.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Get the cached revision number.
     const newRevision = incrementRevision(cachedRevisionEntry.revision);
 
@@ -427,15 +427,15 @@ export async function setEntryDataV2(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An empty promise.
  */
-export async function deleteEntryDataV2(
+export async function deleteEntryData(
   this: SkynetClient,
   privateKey: string,
   dataKey: string,
   customOptions?: CustomSetEntryDataOptions
 ): Promise<void> {
-  // Validation is done below in `db.setEntryData`.
+  // Validation is done below in `dbV2.setEntryData`.
 
-  await this.db.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA, {
+  await this.dbV2.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA, {
     ...customOptions,
     allowDeletionEntryData: true,
   });
@@ -458,7 +458,7 @@ export async function deleteEntryDataV2(
  * @returns - The returned bytes.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
  */
-export async function getRawBytesV2(
+export async function getRawBytes(
   this: SkynetClient,
   publicKey: string,
   dataKey: string,
@@ -476,7 +476,7 @@ export async function getRawBytesV2(
   };
 
   // Immediately fail if the mutex is not available.
-  return await this.db.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
+  return await this.dbV2.revisionNumberCache.withCachedEntryLock(publicKey, dataKey, async (cachedRevisionEntry) => {
     // Lookup the registry entry.
     const getEntryOpts = extractOptions(opts, DEFAULT_GET_ENTRY_OPTIONS);
     const entry = await getSkyDBRegistryEntryAndUpdateCache(

@@ -2,7 +2,12 @@
 
 import { EntryData, MySky } from ".";
 import { DELETION_ENTRY_DATA } from "..";
-import { CustomGetEntryOptions, DEFAULT_GET_ENTRY_OPTIONS, DEFAULT_SET_ENTRY_OPTIONS, getEntryLink } from "../registry";
+import {
+  CustomGetEntryOptions,
+  DEFAULT_GET_ENTRY_OPTIONS,
+  DEFAULT_SET_ENTRY_OPTIONS,
+  getEntryLink as registryGetEntryLink,
+} from "../registry";
 import {
   CustomGetJSONOptions,
   CustomSetEntryDataOptions,
@@ -49,11 +54,7 @@ import { deriveDiscoverableFileTweak } from "./tweak";
  * @returns - An object containing the json data as well as the skylink for the data.
  * @throws - Will throw if the user does not have Discoverable Read permission on the path.
  */
-export async function getJSONV2(
-  this: MySky,
-  path: string,
-  customOptions?: CustomGetJSONOptions
-): Promise<JSONResponse> {
+export async function getJSON(this: MySky, path: string, customOptions?: CustomGetJSONOptions): Promise<JSONResponse> {
   validateString("path", path, "parameter");
   validateOptionalObject("customOptions", customOptions, "parameter", DEFAULT_GET_JSON_OPTIONS);
 
@@ -67,7 +68,7 @@ export async function getJSONV2(
   const dataKey = deriveDiscoverableFileTweak(path);
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-  return await this.connector.client.db.getJSON(publicKey, dataKey, opts);
+  return await this.connector.client.dbV2.getJSON(publicKey, dataKey, opts);
 }
 
 /**
@@ -78,7 +79,7 @@ export async function getJSONV2(
  * @param path - The data path.
  * @returns - The entry link.
  */
-export async function getEntryLinkV2(this: MySky, path: string): Promise<string> {
+export async function getEntryLink(this: MySky, path: string): Promise<string> {
   validateString("path", path, "parameter");
 
   const publicKey = await this.userID();
@@ -86,7 +87,7 @@ export async function getEntryLinkV2(this: MySky, path: string): Promise<string>
   // Do not hash the tweak anymore.
   const opts = { ...DEFAULT_GET_ENTRY_OPTIONS, hashedDataKeyHex: true };
 
-  return getEntryLink(publicKey, dataKey, opts);
+  return registryGetEntryLink(publicKey, dataKey, opts);
 }
 
 /**
@@ -100,7 +101,7 @@ export async function getEntryLinkV2(this: MySky, path: string): Promise<string>
  * @returns - An object containing the json data as well as the skylink for the data.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
  */
-export async function setJSONV2(
+export async function setJSON(
   this: MySky,
   path: string,
   json: JsonData,
@@ -121,7 +122,7 @@ export async function setJSONV2(
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
   // Immediately fail if the mutex is not available.
-  return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
+  return await this.connector.client.dbV2.revisionNumberCache.withCachedEntryLock(
     publicKey,
     dataKey,
     async (cachedRevisionEntry) => {
@@ -160,11 +161,7 @@ export async function setJSONV2(
  * @throws - Will throw if the revision is already the maximum value.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
  */
-export async function deleteJSONV2(
-  this: MySky,
-  path: string,
-  customOptions?: CustomSetEntryDataOptions
-): Promise<void> {
+export async function deleteJSON(this: MySky, path: string, customOptions?: CustomSetEntryDataOptions): Promise<void> {
   // Validation is done below in `setEntryData`.
 
   const opts = {
@@ -175,7 +172,7 @@ export async function deleteJSONV2(
 
   // We re-implement deleteJSON instead of calling SkyDB's deleteJSON so that
   // MySky can do the signing.
-  await this.setEntryDataV2(path, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
+  await this.dbV2.setEntryData(path, DELETION_ENTRY_DATA, { ...opts, allowDeletionEntryData: true });
 }
 
 // ==================
@@ -192,7 +189,7 @@ export async function deleteJSONV2(
  * @returns - An empty promise.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
  */
-export async function setDataLinkV2(
+export async function setDataLink(
   this: MySky,
   path: string,
   dataLink: string,
@@ -203,7 +200,7 @@ export async function setDataLinkV2(
 
   const data = decodeSkylink(parsedSkylink);
 
-  await this.setEntryDataV2(path, data, customOptions);
+  await this.dbV2.setEntryData(path, data, customOptions);
 }
 
 /**
@@ -216,7 +213,7 @@ export async function setDataLinkV2(
  * @returns - The entry data.
  * @throws - Will throw if the user does not have Discoverable Read permission on the path.
  */
-export async function getEntryDataV2(
+export async function getEntryData(
   this: MySky,
   path: string,
   customOptions?: CustomGetEntryOptions
@@ -234,7 +231,7 @@ export async function getEntryDataV2(
   const dataKey = deriveDiscoverableFileTweak(path);
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-  return await this.connector.client.db.getEntryData(publicKey, dataKey, opts);
+  return await this.connector.client.dbV2.getEntryData(publicKey, dataKey, opts);
 }
 
 /**
@@ -249,7 +246,7 @@ export async function getEntryDataV2(
  * @throws - Will throw if the length of the data is > 70 bytes.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
  */
-export async function setEntryDataV2(
+export async function setEntryData(
   this: MySky,
   path: string,
   data: Uint8Array,
@@ -275,7 +272,7 @@ export async function setEntryDataV2(
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
   // Immediately fail if the mutex is not available.
-  return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
+  return await this.connector.client.dbV2.revisionNumberCache.withCachedEntryLock(
     publicKey,
     dataKey,
     async (cachedRevisionEntry) => {
@@ -304,14 +301,14 @@ export async function setEntryDataV2(
  * @returns - An empty promise.
  * @throws - Will throw if the user does not have Discoverable Write permission on the path.
  */
-export async function deleteEntryDataV2(
+export async function deleteEntryData(
   this: MySky,
   path: string,
   customOptions?: CustomSetEntryDataOptions
 ): Promise<void> {
   // Validation is done in `setEntryData`.
 
-  await this.setEntryDataV2(path, DELETION_ENTRY_DATA, { ...customOptions, allowDeletionEntryData: true });
+  await this.dbV2.setEntryData(path, DELETION_ENTRY_DATA, { ...customOptions, allowDeletionEntryData: true });
 }
 
 // ===============
@@ -328,7 +325,7 @@ export async function deleteEntryDataV2(
  * @returns - An object containing the decrypted json data.
  * @throws - Will throw if the user does not have Hidden Read permission on the path.
  */
-export async function getJSONEncryptedV2(
+export async function getJSONEncrypted(
   this: MySky,
   path: string,
   customOptions?: CustomGetJSONOptions
@@ -348,7 +345,7 @@ export async function getJSONEncryptedV2(
 
   // Fetch the raw encrypted JSON data.
   const dataKey = deriveEncryptedFileTweak(pathSeed);
-  const { data } = await this.connector.client.db.getRawBytes(publicKey, dataKey, opts);
+  const { data } = await this.connector.client.dbV2.getRawBytes(publicKey, dataKey, opts);
   if (data === null) {
     return { data: null };
   }
@@ -370,7 +367,7 @@ export async function getJSONEncryptedV2(
  * @returns - An object containing the original json data.
  * @throws - Will throw if the user does not have Hidden Write permission on the path.
  */
-export async function setJSONEncryptedV2(
+export async function setJSONEncrypted(
   this: MySky,
   path: string,
   json: JsonData,
@@ -392,7 +389,7 @@ export async function setJSONEncryptedV2(
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
   // Immediately fail if the mutex is not available.
-  return await this.connector.client.db.revisionNumberCache.withCachedEntryLock(
+  return await this.connector.client.dbV2.revisionNumberCache.withCachedEntryLock(
     publicKey,
     dataKey,
     async (cachedRevisionEntry) => {

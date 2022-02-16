@@ -12,7 +12,7 @@ import { hashDataKey } from "../src/crypto";
 import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
 
-describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
+describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   // Sleep for a second before each test to try to avoid rate limiter.
   beforeEach(async () => {
     await new Promise((r) => setTimeout(r, 1000));
@@ -24,7 +24,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const expectedDataLink = `${URI_SKYNET_PREFIX}AACDPHoC2DCV_kLGUdpdRJr3CcxCmKadLGPi6OAMl7d48w`;
     const expectedData = { message: "hi there" };
 
-    const { data: received, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: received, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(expectedData).toEqual(received);
     expect(dataLink).toEqual(expectedDataLink);
@@ -45,7 +45,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
 
     expect(data).toEqual(expect.objectContaining(expectedData));
 
-    const { data: json, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: json, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
     expect(dataLink).toEqual(expectedDataLink);
     expect(json).toEqual(expectedJson);
   });
@@ -55,7 +55,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const dataKey = "dataKey3";
     const expectedDataLink = `${URI_SKYNET_PREFIX}AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw`;
 
-    const { data: returnedData, dataLink } = await client.db.getRawBytesV2(publicKey, dataKey, {
+    const { data: returnedData, dataLink } = await client.dbV2.getRawBytes(publicKey, dataKey, {
       cachedDataLink: expectedDataLink,
     });
     expect(returnedData).toBeNull();
@@ -67,7 +67,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const dataKey = "dataKeyż";
     const expected = { message: "Hello" };
 
-    const { data: received } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: received } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(expected).toEqual(received);
   });
@@ -76,7 +76,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const { publicKey } = genKeyPairAndSeed();
 
     // Try getting an inexistent entry.
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, "foo");
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, "foo");
     expect(data).toBeNull();
     expect(dataLink).toBeNull();
   });
@@ -86,19 +86,19 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const json = { data: "thisistext" };
     const json2 = { data: "foo2" };
 
-    // Set the file in SkyDB.
-    await client.db.setJSONV2(privateKey, dataKey, json);
+    // Set the file in SkyDBV2.
+    await client.dbV2.setJSON(privateKey, dataKey, json);
 
-    // Get the file in SkyDB.
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    // Get the file in SkyDBV2.
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
     expect(data).toEqual(json);
     expect(dataLink).toBeTruthy();
 
     // Set the file again.
-    await client.db.setJSONV2(privateKey, dataKey, json2);
+    await client.dbV2.setJSON(privateKey, dataKey, json2);
 
     // Get the file again, should have been updated.
-    const { data: data2, dataLink: dataLink2 } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: data2, dataLink: dataLink2 } = await client.dbV2.getJSON(publicKey, dataKey);
     expect(data2).toEqual(json2);
     expect(dataLink2).toBeTruthy();
   });
@@ -110,9 +110,9 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { data: "thisistext" };
 
-    await client.db.setJSONV2(privateKey, dataKey, json);
+    await client.dbV2.setJSON(privateKey, dataKey, json);
 
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(data).toEqual(json);
     expect(dataLink).toBeTruthy();
@@ -122,16 +122,16 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { data: "thisistext" };
 
-    await client.db.setJSONV2(privateKey, dataKey, json);
+    await client.dbV2.setJSON(privateKey, dataKey, json);
 
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(data).toEqual(json);
     expect(dataLink).toBeTruthy();
 
-    await client.db.deleteJSONV2(privateKey, dataKey);
+    await client.dbV2.deleteJSON(privateKey, dataKey);
 
-    const { data: data2, dataLink: dataLink2 } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: data2, dataLink: dataLink2 } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(data2).toBeNull();
     expect(dataLink2).toBeNull();
@@ -140,7 +140,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
   it("Should be able to set a new entry as deleted and then write over it", async () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
 
-    await client.db.deleteJSONV2(privateKey, dataKey);
+    await client.dbV2.deleteJSON(privateKey, dataKey);
 
     // Get the entry link.
     const entryLink = getEntryLink(publicKey, dataKey);
@@ -157,18 +157,18 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     }
 
     // The SkyDB entry should be null.
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(data).toBeNull();
     expect(dataLink).toBeNull();
 
     // Write to the entry.
     const json = { data: "thisistext" };
-    await client.db.setJSONV2(privateKey, dataKey, json);
+    await client.dbV2.setJSON(privateKey, dataKey, json);
 
     // The entry should be readable.
 
-    const { data: data2, dataLink: dataLink2 } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: data2, dataLink: dataLink2 } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(data2).toEqual(json);
     expect(dataLink2).toBeTruthy();
@@ -179,7 +179,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const dataLink = "AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw";
     const dataLinkBytes = decodeSkylinkBase64(dataLink);
 
-    await client.db.setDataLinkV2(privateKey, dataKey, dataLink);
+    await client.dbV2.setDataLink(privateKey, dataKey, dataLink);
 
     const { entry: returnedEntry } = await client.registry.getEntry(publicKey, dataKey);
     expect(returnedEntry).not.toBeNull();
@@ -194,10 +194,10 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const data = new Uint8Array([1, 2, 3]);
 
     // Set the entry data.
-    await client.db.setEntryDataV2(privateKey, dataKey, data);
+    await client.dbV2.setEntryData(privateKey, dataKey, data);
 
     // Get the entry data.
-    const { data: returnedData } = await client.db.getEntryDataV2(publicKey, dataKey);
+    const { data: returnedData } = await client.dbV2.getEntryData(publicKey, dataKey);
 
     // Assert the returned data equals the original data.
     expect(returnedData).toEqualUint8Array(data);
@@ -208,13 +208,13 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const data = new Uint8Array([1, 2, 3]);
 
     // Set the entry data.
-    await client.db.setEntryDataV2(privateKey, dataKey, data);
+    await client.dbV2.setEntryData(privateKey, dataKey, data);
 
     // Delete the entry data.
-    await client.db.deleteEntryDataV2(privateKey, dataKey);
+    await client.dbV2.deleteEntryData(privateKey, dataKey);
 
     // Trying to get the deleted data should result in null.
-    const { data: returnedData } = await client.db.getEntryDataV2(publicKey, dataKey);
+    const { data: returnedData } = await client.dbV2.getEntryData(publicKey, dataKey);
     expect(returnedData).toBeNull();
   });
 
@@ -224,18 +224,18 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
 
     // Delete the entry data.
-    await client.db.deleteEntryDataV2(privateKey, dataKey);
+    await client.dbV2.deleteEntryData(privateKey, dataKey);
 
     // Trying to fetch the entry should result in null.
-    const { data: returnedData } = await client.db.getEntryDataV2(publicKey, dataKey);
+    const { data: returnedData } = await client.dbV2.getEntryData(publicKey, dataKey);
     expect(returnedData).toBeNull();
 
     // Write to the entry.
-    await client.db.setEntryDataV2(privateKey, dataKey, data);
+    await client.dbV2.setEntryData(privateKey, dataKey, data);
 
     // The entry should be readable.
 
-    const { data: returnedData2 } = await client.db.getEntryDataV2(publicKey, dataKey);
+    const { data: returnedData2 } = await client.dbV2.getEntryData(publicKey, dataKey);
 
     expect(returnedData2).toEqual(data);
   });
@@ -247,10 +247,10 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const json = { message: "foo" };
 
     // Set JSON using the hashed data key hex.
-    await client.db.setJSONV2(privateKey, hashedDataKeyHex, json, { hashedDataKeyHex: true });
+    await client.dbV2.setJSON(privateKey, hashedDataKeyHex, json, { hashedDataKeyHex: true });
 
     // Get JSON using the original data key.
-    const { data } = await client.db.getJSONV2(publicKey, dataKey, { hashedDataKeyHex: false });
+    const { data } = await client.dbV2.getJSON(publicKey, dataKey, { hashedDataKeyHex: false });
 
     expect(data).toEqual(json);
   });
@@ -259,16 +259,16 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
     const { publicKey, privateKey } = genKeyPairAndSeed();
     const json = { message: 1 };
 
-    await client.db.setJSONV2(privateKey, dataKey, json);
+    await client.dbV2.setJSON(privateKey, dataKey, json);
 
-    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     expect(cachedRevisionEntry.revision.toString()).toEqual("0");
 
-    await client.db.setJSONV2(privateKey, dataKey, json);
+    await client.dbV2.setJSON(privateKey, dataKey, json);
 
     expect(cachedRevisionEntry.revision.toString()).toEqual("1");
 
-    await client.db.getJSONV2(publicKey, dataKey);
+    await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(cachedRevisionEntry.revision.toString()).toEqual("1");
   });
@@ -297,7 +297,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
       dataKey: string
     ): Promise<JSONResponse> {
       await new Promise((r) => setTimeout(r, delay));
-      return await client.db.getJSONV2(publicKey, dataKey);
+      return await client.dbV2.getJSON(publicKey, dataKey);
     };
     const setJSONWithDelay = async function (
       client: SkynetClient,
@@ -307,7 +307,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
       data: JsonData
     ) {
       await new Promise((r) => setTimeout(r, delay));
-      return await client.db.setJSONV2(privateKey, dataKey, data);
+      return await client.dbV2.setJSON(privateKey, dataKey, data);
     };
 
     it.each(delays)(
@@ -316,7 +316,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         const { publicKey, privateKey } = genKeyPairAndSeed();
 
         // Set the data.
-        await client.db.setJSONV2(privateKey, dataKey, jsonOld);
+        await client.dbV2.setJSON(privateKey, dataKey, jsonOld);
 
         // Try to invoke the data race.
         let receivedJson;
@@ -360,18 +360,18 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         const { publicKey, privateKey } = genKeyPairAndSeed();
 
         // Get revision entry cache handles.
-        const cachedRevisionEntry1 = await client1.db.revisionNumberCache.getRevisionAndMutexForEntry(
+        const cachedRevisionEntry1 = await client1.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(
           publicKey,
           dataKey
         );
-        const cachedRevisionEntry2 = await client2.db.revisionNumberCache.getRevisionAndMutexForEntry(
+        const cachedRevisionEntry2 = await client2.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(
           publicKey,
           dataKey
         );
 
         // Set the initial data.
         {
-          await client1.db.setJSONV2(privateKey, dataKey, jsonOld);
+          await client1.dbV2.setJSON(privateKey, dataKey, jsonOld);
           expect(cachedRevisionEntry1.revision.toString()).toEqual("0");
           expect(cachedRevisionEntry2.revision.toString()).toEqual("-1");
         }
@@ -408,7 +408,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         const updatedJson = { message: 3 };
         let expectedJson: JsonData;
         try {
-          await client2.db.setJSONV2(privateKey, dataKey, updatedJson);
+          await client2.dbV2.setJSON(privateKey, dataKey, updatedJson);
           expectedJson = updatedJson;
         } catch (e) {
           // Catches both "doesn't have enough pow" and "provided revision number
@@ -426,12 +426,12 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         // The entry should have the overriden, updated data at this point.
         await Promise.all([
           async () => {
-            const { data: receivedJson } = await client1.db.getJSONV2(publicKey, dataKey);
+            const { data: receivedJson } = await client1.dbV2.getJSON(publicKey, dataKey);
             expect(cachedRevisionEntry1.revision.toString()).toEqual("1");
             expect(receivedJson).toEqual(expectedJson);
           },
           async () => {
-            const { data: receivedJson } = await client2.db.getJSONV2(publicKey, dataKey);
+            const { data: receivedJson } = await client2.dbV2.getJSON(publicKey, dataKey);
             expect(cachedRevisionEntry2.revision.toString()).toEqual("1");
             expect(receivedJson).toEqual(expectedJson);
           },
@@ -465,7 +465,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         }
 
         // Data race did not occur, getJSON should get latest JSON.
-        const { data: receivedJson } = await client.db.getJSONV2(publicKey, dataKey);
+        const { data: receivedJson } = await client.dbV2.getJSON(publicKey, dataKey);
         expect(receivedJson).toEqual(jsonNew);
       }
     );
@@ -505,7 +505,7 @@ describe(`SkyDB end to end integration tests for portal '${portal}'`, () => {
         } else {
           client3 = client2;
         }
-        const { data: receivedJson } = await client3.db.getJSONV2(publicKey, dataKey);
+        const { data: receivedJson } = await client3.dbV2.getJSON(publicKey, dataKey);
         expect([jsonOld, jsonNew]).toContainEqual(receivedJson);
       }
     );

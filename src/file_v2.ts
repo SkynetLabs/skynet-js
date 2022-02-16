@@ -25,7 +25,7 @@ import { validateOptionalObject, validateString } from "./utils/validation";
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the json data as well as the skylink for the data.
  */
-export async function getJSONV2(
+export async function getJSON(
   this: SkynetClient,
   userID: string,
   path: string,
@@ -44,7 +44,7 @@ export async function getJSONV2(
   const dataKey = deriveDiscoverableFileTweak(path);
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-  return await this.db.getJSON(userID, dataKey, opts);
+  return await this.dbV2.getJSON(userID, dataKey, opts);
 }
 
 // =====
@@ -61,7 +61,7 @@ export async function getJSONV2(
  * @param path - The data path.
  * @returns - The entry link.
  */
-export async function getEntryLinkV2(this: SkynetClient, userID: string, path: string): Promise<string> {
+export async function getEntryLink(this: SkynetClient, userID: string, path: string): Promise<string> {
   validateString("userID", userID, "parameter");
   validateString("path", path, "parameter");
 
@@ -82,7 +82,7 @@ export async function getEntryLinkV2(this: SkynetClient, userID: string, path: s
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  */
-export async function getEntryDataV2(
+export async function getEntryData(
   this: SkynetClient,
   userID: string,
   path: string,
@@ -101,7 +101,7 @@ export async function getEntryDataV2(
   const dataKey = deriveDiscoverableFileTweak(path);
   opts.hashedDataKeyHex = true; // Do not hash the tweak anymore.
 
-  return await this.db.getEntryData(userID, dataKey, opts);
+  return await this.dbV2.getEntryData(userID, dataKey, opts);
 }
 
 // ===============
@@ -118,7 +118,7 @@ export async function getEntryDataV2(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An object containing the decrypted json data.
  */
-export async function getJSONEncryptedV2(
+export async function getJSONEncrypted(
   this: SkynetClient,
   userID: string,
   pathSeed: string,
@@ -142,7 +142,7 @@ export async function getJSONEncryptedV2(
 
   // Fetch the raw encrypted JSON data.
   const dataKey = deriveEncryptedFileTweak(pathSeed);
-  const { data } = await this.db.getRawBytes(userID, dataKey, opts);
+  const { data } = await this.dbV2.getRawBytes(userID, dataKey, opts);
   if (data === null) {
     return { data: null };
   }

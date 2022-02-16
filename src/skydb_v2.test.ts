@@ -66,7 +66,7 @@ describe("getJSON", () => {
     // Mock a successful data download.
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
     expect(data).toEqual(jsonData);
     expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(2);
@@ -97,11 +97,11 @@ describe("getJSON", () => {
     // Mock a successful data download.
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
-    const { data } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data } = await client.dbV2.getJSON(publicKey, dataKey);
     expect(data).toEqual(jsonData);
 
     // The cache should contain revision 1.
-    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     expect(cachedRevisionEntry.revision.toString()).toEqual("1");
 
     // Return a revision that's too low.
@@ -111,7 +111,7 @@ describe("getJSON", () => {
     // Mock a successful data download.
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
-    await expect(client.db.getJSONV2(publicKey, dataKey)).rejects.toThrowError(
+    await expect(client.dbV2.getJSON(publicKey, dataKey)).rejects.toThrowError(
       "Returned revision number too low. A higher revision number for this userID and path is already cached"
     );
 
@@ -123,7 +123,7 @@ describe("getJSON", () => {
     // mock a successful registry lookup
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
 
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey, { cachedDataLink: skylink });
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey, { cachedDataLink: skylink });
     expect(data).toBeNull();
     expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(1);
@@ -136,7 +136,7 @@ describe("getJSON", () => {
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, headers);
 
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey, { cachedDataLink: skylinkNoHit });
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey, { cachedDataLink: skylinkNoHit });
     expect(data).toEqual(jsonData);
     expect(dataLink).toEqual(sialink);
     expect(mock.history.get.length).toBe(2);
@@ -147,7 +147,7 @@ describe("getJSON", () => {
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, fullJsonData, {});
 
-    await expect(client.db.getJSONV2(publicKey, dataKey, { cachedDataLink: "asdf" })).rejects.toThrowError(
+    await expect(client.dbV2.getJSON(publicKey, dataKey, { cachedDataLink: "asdf" })).rejects.toThrowError(
       "Expected optional parameter 'cachedDataLink' to be valid skylink of type 'string', was type 'string', value 'asdf'"
     );
   });
@@ -157,7 +157,7 @@ describe("getJSON", () => {
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, legacyJsonData, headers);
 
-    const jsonReturned = await client.db.getJSONV2(publicKey, dataKey);
+    const jsonReturned = await client.dbV2.getJSON(publicKey, dataKey);
     expect(jsonReturned.data).toEqual(jsonData);
     expect(mock.history.get.length).toBe(2);
   });
@@ -165,7 +165,7 @@ describe("getJSON", () => {
   it("should return null if no entry is found", async () => {
     mock.onGet(registryGetUrl).replyOnce(404);
 
-    const { data, dataLink } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data, dataLink } = await client.dbV2.getJSON(publicKey, dataKey);
     expect(data).toBeNull();
     expect(dataLink).toBeNull();
   });
@@ -175,7 +175,7 @@ describe("getJSON", () => {
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, "thisistext", { ...headers, "content-type": "text/plain" });
 
-    await expect(client.db.getJSONV2(publicKey, dataKey)).rejects.toThrowError(
+    await expect(client.dbV2.getJSON(publicKey, dataKey)).rejects.toThrowError(
       `File data for the entry at data key '${dataKey}' is not JSON.`
     );
   });
@@ -185,7 +185,7 @@ describe("getJSON", () => {
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryData));
     mock.onGet(skylinkUrl).replyOnce(200, { _data: "thisistext", _v: 1 }, headers);
 
-    await expect(client.db.getJSONV2(publicKey, dataKey)).rejects.toThrowError(
+    await expect(client.dbV2.getJSON(publicKey, dataKey)).rejects.toThrowError(
       "File data '_data' for the entry at data key 'app' is not JSON."
     );
   });
@@ -195,7 +195,7 @@ describe("getJSON", () => {
     const mockedFn = jest.fn();
     mockedFn.mockReturnValueOnce({ entry: { data: new Uint8Array() } });
     client.registry.getEntry = mockedFn;
-    await expect(client.db.getJSONV2(publicKey, dataKey)).rejects.toThrowError(
+    await expect(client.dbV2.getJSON(publicKey, dataKey)).rejects.toThrowError(
       "Expected returned entry data 'entry.data' to be length 34 bytes, was type 'object', value ''"
     );
   });
@@ -217,7 +217,7 @@ describe("setJSON", () => {
     mock.onPost(registryPostUrl).replyOnce(204);
 
     // set data
-    const { data: returnedData, dataLink: returnedSkylink } = await client.db.setJSONV2(privateKey, dataKey, jsonData);
+    const { data: returnedData, dataLink: returnedSkylink } = await client.dbV2.setJSON(privateKey, dataKey, jsonData);
     expect(returnedData).toEqual(jsonData);
     expect(returnedSkylink).toEqual(sialink);
 
@@ -235,7 +235,7 @@ describe("setJSON", () => {
     mock.onPost(registryPostUrl).replyOnce(204);
 
     // call `setJSON` on the client
-    await client.db.setJSONV2(privateKey, "inexistent entry", jsonData);
+    await client.dbV2.setJSON(privateKey, "inexistent entry", jsonData);
 
     // assert our request history contains the expected amount of requests
     expect(mock.history.get.length).toBe(0);
@@ -248,34 +248,34 @@ describe("setJSON", () => {
 
   it("should fail if the entry has the maximum allowed revision", async () => {
     const dataKey = "maximum revision";
-    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     cachedRevisionEntry.revision = MAX_REVISION;
 
     // mock a successful registry update
     mock.onPost(registryPostUrl).replyOnce(204);
 
     // Try to set data, should fail.
-    await expect(client.db.setJSONV2(privateKey, dataKey, entryData)).rejects.toThrowError(
+    await expect(client.dbV2.setJSON(privateKey, dataKey, entryData)).rejects.toThrowError(
       "Current entry already has maximum allowed revision, could not update the entry"
     );
   });
 
   it("Should throw an error if the private key is not hex-encoded", async () => {
-    await expect(client.db.setJSONV2("foo", dataKey, {})).rejects.toThrowError(
+    await expect(client.dbV2.setJSON("foo", dataKey, {})).rejects.toThrowError(
       "Expected parameter 'privateKey' to be a hex-encoded string, was type 'string', value 'foo'"
     );
   });
 
   it("Should throw an error if the data key is not provided", async () => {
     // @ts-expect-error We do not pass the data key on purpose.
-    await expect(client.db.setJSONV2(privateKey)).rejects.toThrowError(
+    await expect(client.dbV2.setJSON(privateKey)).rejects.toThrowError(
       "Expected parameter 'dataKey' to be type 'string', was type 'undefined'"
     );
   });
 
   it("Should throw an error if the json is not provided", async () => {
     // @ts-expect-error We do not pass the json on purpose.
-    await expect(client.db.setJSONV2(privateKey, dataKey)).rejects.toThrowError(
+    await expect(client.dbV2.setJSON(privateKey, dataKey)).rejects.toThrowError(
       "Expected parameter 'json' to be type 'object', was type 'undefined'"
     );
   });
@@ -287,15 +287,15 @@ describe("setJSON", () => {
     // mock a successful registry update
     mock.onPost(registryPostUrl).replyOnce(204);
 
-    await client.db.setJSONV2(privateKey, dataKey, json);
+    await client.dbV2.setJSON(privateKey, dataKey, json);
 
-    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     const revision1 = cachedRevisionEntry.revision;
 
     // mock a failed registry update
     mock.onPost(registryPostUrl).replyOnce(400, JSON.stringify({ message: "foo" }));
 
-    await expect(client.db.setJSONV2(privateKey, dataKey, json)).rejects.toEqual(
+    await expect(client.dbV2.setJSON(privateKey, dataKey, json)).rejects.toEqual(
       new Error("Request failed with status code 400: foo")
     );
 
@@ -308,14 +308,14 @@ describe("setJSON", () => {
 describe("setEntryData", () => {
   it("should throw if trying to set entry data > 70 bytes", async () => {
     await expect(
-      client.db.setEntryDataV2(privateKey, dataKey, new Uint8Array(MAX_ENTRY_LENGTH + 1))
+      client.dbV2.setEntryData(privateKey, dataKey, new Uint8Array(MAX_ENTRY_LENGTH + 1))
     ).rejects.toThrowError(
       "Expected parameter 'data' to be 'Uint8Array' of length <= 70, was length 71, was type 'object', value '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'"
     );
   });
 
   it("should throw if trying to set the deletion entry data", async () => {
-    await expect(client.db.setEntryDataV2(privateKey, dataKey, DELETION_ENTRY_DATA)).rejects.toThrowError(
+    await expect(client.dbV2.setEntryData(privateKey, dataKey, DELETION_ENTRY_DATA)).rejects.toThrowError(
       "Tried to set 'Uint8Array' entry data that is the deletion sentinel ('Uint8Array(RAW_SKYLINK_SIZE)'), please use the 'deleteEntryData' method instead`"
     );
   });
@@ -400,7 +400,7 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     mock.onPost(registryPostUrl).replyOnce(204);
 
     // Set the data.
-    await client.db.setJSONV2(privateKey, dataKey, jsonOld);
+    await client.dbV2.setJSON(privateKey, dataKey, jsonOld);
 
     // Mock getJSON with the new entry data and the new skylink.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
@@ -416,8 +416,8 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     // Use Promise.allSettled to wait for all promises to finish, or some mocked
     // requests will hang around and interfere with the later tests.
     const settledResults = await Promise.allSettled([
-      client.db.getJSONV2(publicKey, dataKey),
-      client.db.setJSONV2(privateKey, dataKey, jsonNew),
+      client.dbV2.getJSON(publicKey, dataKey),
+      client.dbV2.setJSON(privateKey, dataKey, jsonNew),
     ]);
 
     let data: JsonData | null;
@@ -453,7 +453,7 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     mock.onPost(registryPostUrl).replyOnce(204);
 
     // Set the data.
-    await client1.db.setJSONV2(privateKey, dataKey, jsonOld);
+    await client1.dbV2.setJSON(privateKey, dataKey, jsonOld);
 
     // Mock getJSON with the new entry data and the new skylink.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
@@ -468,8 +468,8 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     //
     // Use Promise.allSettled to wait for all promises to finish, or some mocked requests will hang around and interfere with the later tests.
     const settledResults = await Promise.allSettled([
-      client1.db.getJSONV2(publicKey, dataKey),
-      client2.db.setJSONV2(privateKey, dataKey, jsonNew),
+      client1.dbV2.getJSON(publicKey, dataKey),
+      client2.dbV2.setJSON(privateKey, dataKey, jsonNew),
     ]);
 
     let data: JsonData | null;
@@ -506,8 +506,8 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     // Use Promise.allSettled to wait for all promises to finish, or some mocked
     // requests will hang around and interfere with the later tests.
     const values = await Promise.allSettled([
-      client.db.setJSONV2(privateKey, dataKey, jsonOld),
-      client.db.setJSONV2(privateKey, dataKey, jsonOld),
+      client.dbV2.setJSON(privateKey, dataKey, jsonOld),
+      client.dbV2.setJSON(privateKey, dataKey, jsonOld),
     ]);
 
     try {
@@ -522,27 +522,27 @@ describe("getJSON/setJSON data race regression unit tests", () => {
       throw e;
     }
 
-    const cachedRevisionEntry = await client.db.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
+    const cachedRevisionEntry = await client.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(publicKey, dataKey);
     expect(cachedRevisionEntry.revision.toString()).toEqual("0");
 
     // Make a getJSON call.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataOld));
     mock.onGet(skylinkOldUrl).replyOnce(200, skynetJsonOld, headersOld);
-    const { data: receivedJson1 } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: receivedJson1 } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(receivedJson1).toEqual(jsonOld);
 
     // Make another setJSON call - it should still work.
     mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkNew, merkleroot, bitfield });
     mock.onPost(registryPostUrl).replyOnce(204);
-    await client.db.setJSONV2(privateKey, dataKey, jsonNew);
+    await client.dbV2.setJSON(privateKey, dataKey, jsonNew);
 
     expect(cachedRevisionEntry.revision.toString()).toEqual("1");
 
     // Make a getJSON call.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
     mock.onGet(skylinkNewUrl).replyOnce(200, skynetJsonNew, headersNew);
-    const { data: receivedJson2 } = await client.db.getJSONV2(publicKey, dataKey);
+    const { data: receivedJson2 } = await client.dbV2.getJSON(publicKey, dataKey);
 
     expect(receivedJson2).toEqual(jsonNew);
 
@@ -568,8 +568,8 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     // Use Promise.allSettled to wait for all promises to finish, or some mocked
     // requests will hang around and interfere with the later tests.
     const values = await Promise.allSettled([
-      client1.db.setJSONV2(privateKey, dataKey, jsonOld),
-      client2.db.setJSONV2(privateKey, dataKey, jsonOld),
+      client1.dbV2.setJSON(privateKey, dataKey, jsonOld),
+      client2.dbV2.setJSON(privateKey, dataKey, jsonOld),
     ]);
 
     let successClient;
@@ -584,7 +584,7 @@ describe("getJSON/setJSON data race regression unit tests", () => {
 
     // Test that the client that succeeded has a consistent cache.
 
-    const cachedRevisionEntrySuccess = await successClient.db.revisionNumberCache.getRevisionAndMutexForEntry(
+    const cachedRevisionEntrySuccess = await successClient.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(
       publicKey,
       dataKey
     );
@@ -593,27 +593,27 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     // Make a getJSON call.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataOld));
     mock.onGet(skylinkOldUrl).replyOnce(200, skynetJsonOld, headersOld);
-    const { data: receivedJson1 } = await successClient.db.getJSONV2(publicKey, dataKey);
+    const { data: receivedJson1 } = await successClient.dbV2.getJSON(publicKey, dataKey);
 
     expect(receivedJson1).toEqual(jsonOld);
 
     // Make another setJSON call - it should still work.
     mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkNew, merkleroot, bitfield });
     mock.onPost(registryPostUrl).replyOnce(204);
-    await successClient.db.setJSONV2(privateKey, dataKey, jsonNew);
+    await successClient.dbV2.setJSON(privateKey, dataKey, jsonNew);
 
     expect(cachedRevisionEntrySuccess.revision.toString()).toEqual("1");
 
     // Make a getJSON call.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
     mock.onGet(skylinkNewUrl).replyOnce(200, skynetJsonNew, headersNew);
-    const { data: receivedJson2 } = await successClient.db.getJSONV2(publicKey, dataKey);
+    const { data: receivedJson2 } = await successClient.dbV2.getJSON(publicKey, dataKey);
 
     expect(receivedJson2).toEqual(jsonNew);
 
     // Test that the client that failed has a consistent cache.
 
-    const cachedRevisionEntryFail = await failClient.db.revisionNumberCache.getRevisionAndMutexForEntry(
+    const cachedRevisionEntryFail = await failClient.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(
       publicKey,
       dataKey
     );
@@ -622,21 +622,21 @@ describe("getJSON/setJSON data race regression unit tests", () => {
     // Make a getJSON call.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataOld));
     mock.onGet(skylinkOldUrl).replyOnce(200, skynetJsonOld, headersOld);
-    const { data: receivedJsonFail1 } = await failClient.db.getJSONV2(publicKey, dataKey);
+    const { data: receivedJsonFail1 } = await failClient.dbV2.getJSON(publicKey, dataKey);
 
     expect(receivedJsonFail1).toEqual(jsonOld);
 
     // Make another setJSON call - it should still work.
     mock.onPost(uploadUrl).replyOnce(200, { skylink: skylinkNew, merkleroot, bitfield });
     mock.onPost(registryPostUrl).replyOnce(204);
-    await failClient.db.setJSONV2(privateKey, dataKey, jsonNew);
+    await failClient.dbV2.setJSON(privateKey, dataKey, jsonNew);
 
     expect(cachedRevisionEntrySuccess.revision.toString()).toEqual("1");
 
     // Make a getJSON call.
     mock.onGet(registryGetUrl).replyOnce(200, JSON.stringify(entryDataNew));
     mock.onGet(skylinkNewUrl).replyOnce(200, skynetJsonNew, headersNew);
-    const { data: receivedJsonFail2 } = await failClient.db.getJSONV2(publicKey, dataKey);
+    const { data: receivedJsonFail2 } = await failClient.dbV2.getJSON(publicKey, dataKey);
 
     expect(receivedJsonFail2).toEqual(jsonNew);
 

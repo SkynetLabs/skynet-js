@@ -210,7 +210,7 @@ export function deriveEncryptedFileTweak(pathSeed: string): string {
  * @param isDirectory - Whether the path is a directory.
  * @returns - The path seed for the given path.
  * @throws - Will throw if the input sub path is not a valid path.
- * @deprecated - This function has been deprecated in favor of deriveEncryptedPathSeed.
+ * @deprecated - This function has been deprecated in favor of `mySky.deriveEncryptedPathSeed`.
  */
 export function deriveEncryptedFileSeed(pathSeed: string, subPath: string, isDirectory: boolean): string {
   return deriveEncryptedPathSeed(pathSeed, subPath, isDirectory);
