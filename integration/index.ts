@@ -13,7 +13,7 @@ export const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || DEFAULT_S
 //
 // Example:
 //
-// SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY_PORTAL=foo yarn run jest integration
+// SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY=foo yarn run jest integration
 export const skynetApiKey = process.env.SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY;
 // Allow setting custom cookies.
 //
