@@ -394,7 +394,7 @@ export type Headers = { [key: string]: string };
  * @param [baseHeaders] - Any base headers.
  * @param [customUserAgent] - A custom user agent to set.
  * @param [customCookie] - A custom cookie.
- * @param [skynetApiKey] - Authentication password to use for a Skynet portal.
+ * @param [skynetApiKey] - Authentication key to use for a Skynet portal.
  * @returns - The built headers.
  */
 export function buildRequestHeaders(
