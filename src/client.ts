@@ -49,7 +49,8 @@ import { extractDomain, getFullDomainUrl } from "./mysky/utils";
 /**
  * Custom client options.
  *
- * @property [APIKey] - Authentication password to use.
+ * @property [APIKey] - Authentication password to use for a single Skynet node.
+ * @property [skynetApiKey] - Authentication API key to use for a Skynet portal (sets the "Skynet-Api-Key" header).
  * @property [customUserAgent] - Custom user agent header to set.
  * @property [customCookie] - Custom cookie header to set. WARNING: the Cookie header cannot be set in browsers. This is meant for usage in server contexts.
  * @property [onDownloadProgress] - Optional callback to track download progress.
@@ -57,6 +58,7 @@ import { extractDomain, getFullDomainUrl } from "./mysky/utils";
  */
 export type CustomClientOptions = {
   APIKey?: string;
+  skynetApiKey?: string;
   customUserAgent?: string;
   customCookie?: string;
   onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
@@ -255,7 +257,12 @@ export class SkynetClient {
     });
 
     // Build headers.
-    const headers = buildRequestHeaders(config.headers, config.customUserAgent, config.customCookie);
+    const headers = buildRequestHeaders(
+      config.headers,
+      config.customUserAgent,
+      config.customCookie,
+      config.skynetApiKey
+    );
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
 
@@ -387,9 +394,15 @@ export type Headers = { [key: string]: string };
  * @param [baseHeaders] - Any base headers.
  * @param [customUserAgent] - A custom user agent to set.
  * @param [customCookie] - A custom cookie.
+ * @param [skynetApiKey] - Authentication key to use for a Skynet portal.
  * @returns - The built headers.
  */
-export function buildRequestHeaders(baseHeaders?: Headers, customUserAgent?: string, customCookie?: string): Headers {
+export function buildRequestHeaders(
+  baseHeaders?: Headers,
+  customUserAgent?: string,
+  customCookie?: string,
+  skynetApiKey?: string
+): Headers {
   const returnHeaders = { ...baseHeaders };
   // Set some headers from common options.
   if (customUserAgent) {
@@ -397,6 +410,9 @@ export function buildRequestHeaders(baseHeaders?: Headers, customUserAgent?: str
   }
   if (customCookie) {
     returnHeaders["Cookie"] = customCookie;
+  }
+  if (skynetApiKey) {
+    returnHeaders["Skynet-Api-Key"] = skynetApiKey;
   }
   return returnHeaders;
 }
