@@ -75,13 +75,13 @@ describe("uploadFile", () => {
   });
 
   it("should send base-64 authentication password if provided", async () => {
-    const data = await client.uploadFile(file, { APIKey: "foo", skynetAPIKey: "bar" });
+    const data = await client.uploadFile(file, { APIKey: "foo", skynetApiKey: "bar" });
 
     expect(mock.history.post.length).toBe(1);
     const request = mock.history.post[0];
 
     expect(request.auth).toEqual({ username: "", password: "foo" });
-    expect(request.headers).toEqual(expect.objectContaining({ "Skynet-API-Key": "bar" }));
+    expect(request.headers).toEqual(expect.objectContaining({ "Skynet-Api-Key": "bar" }));
     await compareFormData(request.data, [["file", "foo", filename]]);
 
     expect(data.skylink).toEqual(sialink);

@@ -10,7 +10,7 @@ export type BaseCustomOptions = CustomClientOptions;
  */
 export const DEFAULT_BASE_OPTIONS = {
   APIKey: "",
-  skynetAPIKey: "",
+  skynetApiKey: "",
   customUserAgent: "",
   customCookie: "",
   onDownloadProgress: undefined,

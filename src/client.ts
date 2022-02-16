@@ -50,7 +50,7 @@ import { extractDomain, getFullDomainUrl } from "./mysky/utils";
  * Custom client options.
  *
  * @property [APIKey] - Authentication password to use for a single Skynet node.
- * @property [skynetAPIKey] - Authentication API key to use for a Skynet portal (sets the "Skynet-API-Key" header).
+ * @property [skynetApiKey] - Authentication API key to use for a Skynet portal (sets the "Skynet-Api-Key" header).
  * @property [customUserAgent] - Custom user agent header to set.
  * @property [customCookie] - Custom cookie header to set. WARNING: the Cookie header cannot be set in browsers. This is meant for usage in server contexts.
  * @property [onDownloadProgress] - Optional callback to track download progress.
@@ -58,7 +58,7 @@ import { extractDomain, getFullDomainUrl } from "./mysky/utils";
  */
 export type CustomClientOptions = {
   APIKey?: string;
-  skynetAPIKey?: string;
+  skynetApiKey?: string;
   customUserAgent?: string;
   customCookie?: string;
   onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
@@ -261,7 +261,7 @@ export class SkynetClient {
       config.headers,
       config.customUserAgent,
       config.customCookie,
-      config.skynetAPIKey
+      config.skynetApiKey
     );
 
     const auth = config.APIKey ? { username: "", password: config.APIKey } : undefined;
@@ -394,14 +394,14 @@ export type Headers = { [key: string]: string };
  * @param [baseHeaders] - Any base headers.
  * @param [customUserAgent] - A custom user agent to set.
  * @param [customCookie] - A custom cookie.
- * @param [skynetAPIKey] - Authentication password to use for a Skynet portal.
+ * @param [skynetApiKey] - Authentication password to use for a Skynet portal.
  * @returns - The built headers.
  */
 export function buildRequestHeaders(
   baseHeaders?: Headers,
   customUserAgent?: string,
   customCookie?: string,
-  skynetAPIKey?: string
+  skynetApiKey?: string
 ): Headers {
   const returnHeaders = { ...baseHeaders };
   // Set some headers from common options.
@@ -411,8 +411,8 @@ export function buildRequestHeaders(
   if (customCookie) {
     returnHeaders["Cookie"] = customCookie;
   }
-  if (skynetAPIKey) {
-    returnHeaders["Skynet-API-Key"] = skynetAPIKey;
+  if (skynetApiKey) {
+    returnHeaders["Skynet-Api-Key"] = skynetApiKey;
   }
   return returnHeaders;
 }
