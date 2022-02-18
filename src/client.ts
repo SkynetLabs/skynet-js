@@ -85,7 +85,7 @@ export type CustomClientOptions = {
   customCookie?: string;
   onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
-  loginFn?: () => Promise<void>;
+  loginFn?: (config: RequestConfig) => Promise<void>;
 };
 
 /**
@@ -374,8 +374,10 @@ export class SkynetClient {
     } catch (e) {
       if (config.loginFn && (e as ExecuteRequestError).responseStatus === 401) {
         // Try logging in again.
-        await config.loginFn();
-        return await this.executeRequest(config);
+        await config.loginFn(config);
+        // Unset the login function on the recursive call so that we don't try
+        // to login again, avoiding infinite loops.
+        return await this.executeRequest({ ...config, loginFn: undefined });
       } else {
         throw e;
       }
