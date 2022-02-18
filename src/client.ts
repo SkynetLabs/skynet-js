@@ -25,15 +25,25 @@ import {
   openFileHns,
   resolveHns,
 } from "./download";
+// These imports are deprecated but they are needed to export the v1 File
+// methods, which we are keeping so as not to break compatibility.
 import {
-  getJSONEncrypted,
+  getJSONEncrypted as fileGetJSONEncrypted,
   getEntryData as fileGetEntryData,
   getEntryLink as fileGetEntryLink,
   getJSON as fileGetJSON,
 } from "./file";
+import {
+  getJSONEncrypted as fileGetJSONEncryptedV2,
+  getEntryData as fileGetEntryDataV2,
+  getEntryLink as fileGetEntryLinkV2,
+  getJSON as fileGetJSONV2,
+} from "./file_v2";
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
 import { RevisionNumberCache } from "./revision_cache";
+// These imports are deprecated but they are needed to export the v1 SkyDB
+// methods, which we are keeping so as not to break compatibility.
 import {
   deleteJSON,
   getJSON,
@@ -44,6 +54,16 @@ import {
   setEntryData,
   deleteEntryData,
 } from "./skydb";
+import {
+  deleteJSON as deleteJSONV2,
+  getJSON as getJSONV2,
+  setJSON as setJSONV2,
+  setDataLink as setDataLinkV2,
+  getRawBytes as getRawBytesV2,
+  getEntryData as getEntryDataV2,
+  setEntryData as setEntryDataV2,
+  deleteEntryData as deleteEntryDataV2,
+} from "./skydb_v2";
 import { defaultPortalUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
@@ -168,24 +188,46 @@ export class SkynetClient {
 
   // File API
 
+  // v1 (deprecated)
   file = {
     getJSON: fileGetJSON.bind(this),
     getEntryData: fileGetEntryData.bind(this),
     getEntryLink: fileGetEntryLink.bind(this),
-    getJSONEncrypted: getJSONEncrypted.bind(this),
+    getJSONEncrypted: fileGetJSONEncrypted.bind(this),
+  };
+
+  // v2
+  fileV2 = {
+    getJSON: fileGetJSONV2.bind(this),
+    getEntryData: fileGetEntryDataV2.bind(this),
+    getEntryLink: fileGetEntryLinkV2.bind(this),
+    getJSONEncrypted: fileGetJSONEncryptedV2.bind(this),
   };
 
   // SkyDB
 
+  // v1 (deprecated)
   db = {
-    deleteJSON: deleteJSON.bind(this),
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
+    deleteJSON: deleteJSON.bind(this),
     getRawBytes: getRawBytes.bind(this),
     setDataLink: setDataLink.bind(this),
     getEntryData: getEntryData.bind(this),
     setEntryData: setEntryData.bind(this),
     deleteEntryData: deleteEntryData.bind(this),
+  };
+
+  // v2
+  dbV2 = {
+    getJSON: getJSONV2.bind(this),
+    setJSON: setJSONV2.bind(this),
+    deleteJSON: deleteJSONV2.bind(this),
+    getRawBytes: getRawBytesV2.bind(this),
+    setDataLink: setDataLinkV2.bind(this),
+    getEntryData: getEntryDataV2.bind(this),
+    setEntryData: setEntryDataV2.bind(this),
+    deleteEntryData: deleteEntryDataV2.bind(this),
 
     // Holds the cached revision numbers, protected by mutexes to prevent
     // concurrent access.
