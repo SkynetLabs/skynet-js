@@ -206,7 +206,20 @@ export class MySky {
 
     // Redirect if we're not on the preferred portal. See
     // `redirectIfNotOnPreferredPortal` for full load flow.
-    await MySky.instance.redirectIfNotOnPreferredPortal();
+    //
+    // TODO: Uncomment the below line once autologin is released. Otherwise the
+    // dev console will be spammed with unactionable warnings.
+    // try {
+    //   await MySky.instance.redirectIfNotOnPreferredPortal();
+    // } catch (e) {
+    //   // Don't throw an error if we couldn't redirect. The user will never be
+    //   // able to log in to MySky and change his preferred portal if MySky can't
+    //   // load.
+    //   //
+    //   // TODO: Add some infrastructure to return warnings to the skapp instead
+    //   // of errors?
+    //   console.warn(e);
+    // }
 
     return MySky.instance;
   }
@@ -611,12 +624,24 @@ export class MySky {
 
     // Redirect if we're not on the preferred portal. See
     // `redirectIfNotOnPreferredPortal` for full login flow.
-    await this.redirectIfNotOnPreferredPortal();
-
-    // If we can log in to the portal account, set up auto-relogin.
-    if (await this.checkPortalLogin()) {
-      this.connector.client.customOptions.loginFn = this.portalLogin;
-    }
+    //
+    // TODO: Uncomment the below line once autologin is released. Otherwise the
+    // dev console will be spammed with unactionable warnings.
+    // try {
+    //   await this.redirectIfNotOnPreferredPortal();
+    //   // If we can log in to the portal account, set up auto-relogin.
+    //   if (await this.checkPortalLogin()) {
+    //     this.connector.client.customOptions.loginFn = this.portalLogin;
+    //   }
+    // } catch (e) {
+    //   // Don't throw an error if we couldn't redirect. The user will never be
+    //   // able to log in to MySky and change his preferred portal if MySky can't
+    //   // load.
+    //   //
+    //   // TODO: Add some infrastructure to return warnings to the skapp instead
+    //   // of errors?
+    //   console.warn(e);
+    // }
   }
 
   /**
@@ -690,15 +715,10 @@ export class MySky {
 
       // Check if the portal is valid and working before redirecting.
       const newUrlClient = new SkynetClient(newUrl);
-      try {
-        const portalUrl = await newUrlClient.portalUrl();
-        if (portalUrl) {
-          // Redirect.
-          redirectPage(newUrl);
-        }
-      } catch (e) {
-        // Don't throw an error here for now as this is likely user error.
-        console.warn(e);
+      const portalUrl = await newUrlClient.portalUrl();
+      if (portalUrl) {
+        // Redirect.
+        redirectPage(newUrl);
       }
     } else {
       // If we are on the preferred portal already, we still need to set the
