@@ -13,7 +13,6 @@ export {
   SIGNATURE_LENGTH,
 } from "./crypto";
 export { getSkylinkUrlForPortal } from "./download";
-export { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
 export {
   DacLibrary,
   MAX_ENTRY_LENGTH,
@@ -25,16 +24,21 @@ export {
   mySkyDomain,
 } from "./mysky";
 export {
+  decryptJSONFile,
   deriveEncryptedFileKeyEntropy,
   deriveEncryptedFileTweak,
   deriveEncryptedPathSeed,
+  encryptJSONFile,
+  ENCRYPTED_JSON_RESPONSE_VERSION,
   ENCRYPTION_PATH_SEED_DIRECTORY_LENGTH,
   ENCRYPTION_PATH_SEED_FILE_LENGTH,
   // Deprecated.
   deriveEncryptedFileSeed,
 } from "./mysky/encrypted_files";
 export { deriveDiscoverableFileTweak } from "./mysky/tweak";
-export { DELETION_ENTRY_DATA } from "./skydb";
+export { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
+export { ExecuteRequestError } from "./request";
+export { DELETION_ENTRY_DATA, getOrCreateSkyDBRegistryEntry } from "./skydb_v2";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
@@ -73,6 +77,7 @@ export type { CustomClientOptions, RequestConfig } from "./client";
 export type { KeyPair, KeyPairAndSeed, Signature } from "./crypto";
 export type { CustomDownloadOptions, ResolveHnsResponse } from "./download";
 export type { CustomConnectorOptions, EntryData } from "./mysky";
+export type { EncryptedJSONResponse } from "./mysky/encrypted_files";
 export type { CustomPinOptions, PinResponse } from "./pin";
 export type {
   CustomGetEntryOptions,
@@ -88,7 +93,7 @@ export type {
   CustomSetEntryDataOptions,
   JSONResponse,
   RawBytesResponse,
-} from "./skydb";
+} from "./skydb_v2";
 export type { ParseSkylinkOptions } from "./skylink/parse";
 export type { CustomUploadOptions, UploadRequestResponse } from "./upload";
 export type { JsonData } from "./utils/types";

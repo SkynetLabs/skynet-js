@@ -65,4 +65,20 @@ describe(`Registry end to end integration tests for portal '${portal}'`, () => {
 
     expect(returnedEntry).toEqual(entry);
   });
+
+  it("Should fail to set an entry with a revision number that's too low", async () => {
+    const { privateKey } = genKeyPairAndSeed();
+
+    const entry = {
+      dataKey,
+      data: new Uint8Array(),
+      revision: BigInt(1),
+    };
+
+    await client.registry.setEntry(privateKey, entry);
+    entry.revision--;
+    await expect(client.registry.setEntry(privateKey, entry)).rejects.toThrowError(
+      "Unable to update the registry: provided revision number is invalid"
+    );
+  });
 });

@@ -1,32 +1,46 @@
+import { ResponseType } from "axios";
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
-import { DEFAULT_DOWNLOAD_OPTIONS, CustomDownloadOptions } from "./download";
+import { DEFAULT_DOWNLOAD_OPTIONS } from "./download";
+import { EntryData } from "./mysky";
 import {
+  CustomGetEntryOptions,
   DEFAULT_GET_ENTRY_OPTIONS,
   DEFAULT_SET_ENTRY_OPTIONS,
-  CustomGetEntryOptions,
   RegistryEntry,
   SignedRegistryEntry,
-  CustomSetEntryOptions,
   validatePublicKey,
 } from "./registry";
-import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
-import { MAX_REVISION } from "./utils/number";
-import { URI_SKYNET_PREFIX } from "./utils/url";
 import {
-  hexToUint8Array,
-  trimUriPrefix,
-  toHexString,
-  stringToUint8ArrayUtf8,
-  uint8ArrayToStringUtf8,
-} from "./utils/string";
+  checkCachedDataLink,
+  CustomGetJSONOptions,
+  CustomSetEntryDataOptions,
+  CustomSetJSONOptions,
+  DEFAULT_GET_JSON_OPTIONS,
+  DEFAULT_SET_ENTRY_DATA_OPTIONS,
+  DEFAULT_SET_JSON_OPTIONS,
+  DELETION_ENTRY_DATA,
+  JSONResponse,
+  RawBytesResponse,
+  validateEntryData,
+} from "./skydb_v2";
 import { formatSkylink } from "./skylink/format";
-import { DEFAULT_UPLOAD_OPTIONS, CustomUploadOptions, UploadRequestResponse } from "./upload";
+import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
+import { DEFAULT_UPLOAD_OPTIONS, UploadRequestResponse } from "./upload";
 import { areEqualUint8Arrays } from "./utils/array";
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
-import { DEFAULT_BASE_OPTIONS, extractOptions } from "./utils/options";
+import { MAX_REVISION } from "./utils/number";
+import { extractOptions } from "./utils/options";
+import {
+  hexToUint8Array,
+  stringToUint8ArrayUtf8,
+  toHexString,
+  trimUriPrefix,
+  uint8ArrayToStringUtf8,
+} from "./utils/string";
 import { JsonData } from "./utils/types";
+import { URI_SKYNET_PREFIX } from "./utils/url";
 import {
   throwValidationError,
   validateHexString,
@@ -37,84 +51,13 @@ import {
   validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
-import { ResponseType } from "axios";
-import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
-export type JsonFullData = {
+type JsonFullData = {
   _data: JsonData;
   _v: number;
 };
 
-export const DELETION_ENTRY_DATA = new Uint8Array(RAW_SKYLINK_SIZE);
-
 const JSON_RESPONSE_VERSION = 2;
-
-/**
- * Custom get JSON options. Includes the options for get entry, to get the
- * skylink; and download, to download the file from the skylink.
- *
- * @property [cachedDataLink] - The last known data link. If it hasn't changed, do not download the file contents again.
- */
-export type CustomGetJSONOptions = CustomGetEntryOptions &
-  CustomDownloadOptions & {
-    cachedDataLink?: string;
-  };
-
-/**
- * The default options for get JSON. Includes the default get entry and download
- * options.
- */
-export const DEFAULT_GET_JSON_OPTIONS = {
-  ...DEFAULT_BASE_OPTIONS,
-  ...DEFAULT_GET_ENTRY_OPTIONS,
-  ...DEFAULT_DOWNLOAD_OPTIONS,
-  cachedDataLink: undefined,
-};
-
-/**
- * Custom set JSON options. Includes the options for upload, to get the file for
- * the skylink; get JSON, to retrieve the revision; and set entry, to set the
- * entry with the skylink and revision.
- */
-export type CustomSetJSONOptions = CustomUploadOptions & CustomGetJSONOptions & CustomSetEntryOptions;
-
-/**
- * The default options for set JSON. Includes the default upload, get JSON, and
- * set entry options.
- */
-export const DEFAULT_SET_JSON_OPTIONS = {
-  ...DEFAULT_BASE_OPTIONS,
-  ...DEFAULT_UPLOAD_OPTIONS,
-  ...DEFAULT_GET_JSON_OPTIONS,
-  ...DEFAULT_SET_ENTRY_OPTIONS,
-};
-
-/**
- * Custom set entry data options. Includes the options for get and set entry.
- */
-export type CustomSetEntryDataOptions = CustomGetEntryOptions &
-  CustomSetEntryOptions & { allowDeletionEntryData: boolean };
-
-/**
- * The default options for set entry data. Includes the default get entry and
- * set entry options.
- */
-export const DEFAULT_SET_ENTRY_DATA_OPTIONS = {
-  ...DEFAULT_BASE_OPTIONS,
-  ...DEFAULT_GET_ENTRY_OPTIONS,
-  ...DEFAULT_SET_ENTRY_OPTIONS,
-  allowDeletionEntryData: false,
-};
-
-export type JSONResponse = {
-  data: JsonData | null;
-  dataLink: string | null;
-};
-
-export type RawBytesResponse = {
-  data: Uint8Array | null;
-  dataLink: string | null;
-};
 
 // ====
 // JSON
@@ -129,6 +72,7 @@ export type RawBytesResponse = {
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.getJSON` is recommended.
  */
 export async function getJSON(
   this: SkynetClient,
@@ -192,6 +136,7 @@ export async function getJSON(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned JSON and corresponding data link.
  * @throws - Will throw if the input keys are not valid strings.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.setJSON` is recommended.
  */
 export async function setJSON(
   this: SkynetClient,
@@ -230,6 +175,7 @@ export async function setJSON(
  * @param dataKey - The key of the data to fetch for the given user.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.deleteJSON` is recommended.
  */
 export async function deleteJSON(
   this: SkynetClient,
@@ -261,6 +207,7 @@ export async function deleteJSON(
  * @param dataLink - The data link to set at the entry.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @throws - Will throw if the input keys are not valid strings.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.setDataLink` is recommended.
  */
 export async function setDataLink(
   this: SkynetClient,
@@ -285,6 +232,7 @@ export async function setDataLink(
  * @param dataKey - The data key.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.getEntryData` is recommended.
  */
 export async function getEntryData(
   this: SkynetClient,
@@ -319,6 +267,7 @@ export async function getEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The entry data.
  * @throws - Will throw if the length of the data is > 70 bytes.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.setEntryData` is recommended.
  */
 export async function setEntryData(
   this: SkynetClient,
@@ -360,6 +309,7 @@ export async function setEntryData(
  * @param dataKey - The data key.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - An empty promise.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.deleteEntryData` is recommended.
  */
 export async function deleteEntryData(
   this: SkynetClient,
@@ -388,6 +338,7 @@ export async function deleteEntryData(
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned bytes.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.
+ * @deprecated - Use of this method may result in data race bugs. Reworking your application to use `client.dbV2.getRawBytes` is recommended.
  */
 export async function getRawBytes(
   this: SkynetClient,
@@ -444,7 +395,6 @@ export async function getRawBytes(
  * @returns - The registry entry and corresponding data link.
  * @throws - Will throw if the revision is already the maximum value.
  */
-// TODO: Rename & refactor after the SkyDB caching refactor.
 export async function getOrCreateRawBytesRegistryEntry(
   client: SkynetClient,
   publicKey: string,
@@ -623,48 +573,6 @@ export function getNextRevisionFromEntry(entry: RegistryEntry | null): bigint {
   }
 
   return revision;
-}
-
-/**
- * Checks whether the raw data link matches the cached data link, if provided.
- *
- * @param rawDataLink - The raw, unformatted data link.
- * @param cachedDataLink - The cached data link, if provided.
- * @returns - Whether the cached data link is a match.
- * @throws - Will throw if the given cached data link is not a valid skylink.
- */
-export function checkCachedDataLink(rawDataLink: string, cachedDataLink?: string): boolean {
-  if (cachedDataLink) {
-    cachedDataLink = validateSkylinkString("cachedDataLink", cachedDataLink, "optional parameter");
-    return rawDataLink === cachedDataLink;
-  }
-  return false;
-}
-
-/**
- * Validates the given entry data.
- *
- * @param data - The entry data to validate.
- * @param allowDeletionEntryData - If set to false, disallows setting the entry data that marks a deletion. This is a likely developer error if it was not done through the deleteEntryData method.
- * @throws - Will throw if the data is invalid.
- */
-export function validateEntryData(data: Uint8Array, allowDeletionEntryData: boolean): void {
-  // Check that the length is not greater than the maximum allowed.
-  if (data.length > MAX_ENTRY_LENGTH) {
-    throwValidationError(
-      "data",
-      data,
-      "parameter",
-      `'Uint8Array' of length <= ${MAX_ENTRY_LENGTH}, was length ${data.length}`
-    );
-  }
-
-  // Check that we are not setting the deletion sentinel as that is probably a developer mistake.
-  if (!allowDeletionEntryData && areEqualUint8Arrays(data, DELETION_ENTRY_DATA)) {
-    throw new Error(
-      "Tried to set 'Uint8Array' entry data that is the deletion sentinel ('Uint8Array(RAW_SKYLINK_SIZE)'), please use the 'deleteEntryData' method instead`"
-    );
-  }
 }
 
 /**

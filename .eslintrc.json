@@ -13,8 +13,21 @@
   "extends": ["eslint:recommended", "plugin:jsdoc/recommended", "plugin:@typescript-eslint/recommended"],
   "rules": {
     "@typescript-eslint/no-floating-promises": 1,
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
 
     "jsdoc/require-description": 1,
+    "jsdoc/require-jsdoc": [
+      "error",
+      {
+        "require": {
+          "FunctionDeclaration": true,
+          "MethodDefinition": true,
+          "ClassDeclaration": true,
+          "ArrowFunctionExpression": false,
+          "FunctionExpression": false
+        }
+      }
+    ],
     "jsdoc/require-throws": 1,
 
     "jsdoc/require-param-type": 0,

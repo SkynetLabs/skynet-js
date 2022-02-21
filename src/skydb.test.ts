@@ -6,7 +6,7 @@ import { MAX_REVISION } from "./utils/number";
 import { DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./utils/url";
 import { SkynetClient } from "./index";
 import { getEntryUrlForPortal, REGEX_REVISION_NO_QUOTES } from "./registry";
-import { checkCachedDataLink, DELETION_ENTRY_DATA } from "./skydb";
+import { checkCachedDataLink, DELETION_ENTRY_DATA } from "./skydb_v2";
 import { MAX_ENTRY_LENGTH } from "./mysky";
 
 // Generated with genKeyPairFromSeed("insecure test seed")

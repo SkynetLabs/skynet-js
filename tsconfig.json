@@ -7,6 +7,10 @@
     "noImplicitAny": true,
     "declaration": true,
     "isolatedModules": true,
+
+    "lib": ["dom", "es2020"],
+    "target": "es2019",
+    "moduleResolution": "node",
     "types": ["node", "jest"],
     "typeRoots": ["./types", "./node_modules/@types"],
     "strictNullChecks": true

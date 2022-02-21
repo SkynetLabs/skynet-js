@@ -1,5 +1,6 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import type { AxiosResponse, ResponseType, Method } from "axios";
+import { ensureUrl } from "skynet-mysky-utils";
 
 import {
   uploadFile,
@@ -24,14 +25,25 @@ import {
   openFileHns,
   resolveHns,
 } from "./download";
+// These imports are deprecated but they are needed to export the v1 File
+// methods, which we are keeping so as not to break compatibility.
 import {
-  getJSONEncrypted,
+  getJSONEncrypted as fileGetJSONEncrypted,
   getEntryData as fileGetEntryData,
   getEntryLink as fileGetEntryLink,
   getJSON as fileGetJSON,
 } from "./file";
+import {
+  getJSONEncrypted as fileGetJSONEncryptedV2,
+  getEntryData as fileGetEntryDataV2,
+  getEntryLink as fileGetEntryLinkV2,
+  getJSON as fileGetJSONV2,
+} from "./file_v2";
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
+import { RevisionNumberCache } from "./revision_cache";
+// These imports are deprecated but they are needed to export the v1 SkyDB
+// methods, which we are keeping so as not to break compatibility.
 import {
   deleteJSON,
   getJSON,
@@ -42,9 +54,20 @@ import {
   setEntryData,
   deleteEntryData,
 } from "./skydb";
-import { addSubdomain, addUrlQuery, defaultPortalUrl, ensureUrlPrefix, makeUrl } from "./utils/url";
+import {
+  deleteJSON as deleteJSONV2,
+  getJSON as getJSONV2,
+  setJSON as setJSONV2,
+  setDataLink as setDataLinkV2,
+  getRawBytes as getRawBytesV2,
+  getEntryData as getEntryDataV2,
+  setEntryData as setEntryDataV2,
+  deleteEntryData as deleteEntryDataV2,
+} from "./skydb_v2";
+import { defaultPortalUrl } from "./utils/url";
 import { loadMySky } from "./mysky";
 import { extractDomain, getFullDomainUrl } from "./mysky/utils";
+import { buildRequestHeaders, buildRequestUrl, ExecuteRequestError, Headers } from "./request";
 
 /**
  * Custom client options.
@@ -55,6 +78,7 @@ import { extractDomain, getFullDomainUrl } from "./mysky/utils";
  * @property [customCookie] - Custom cookie header to set. WARNING: the Cookie header cannot be set in browsers. This is meant for usage in server contexts.
  * @property [onDownloadProgress] - Optional callback to track download progress.
  * @property [onUploadProgress] - Optional callback to track upload progress.
+ * @property [loginFn] - A function that, if set, is called when a 401 is returned from the request before re-trying the request.
  */
 export type CustomClientOptions = {
   APIKey?: string;
@@ -63,6 +87,7 @@ export type CustomClientOptions = {
   customCookie?: string;
   onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
+  loginFn?: () => Promise<void>;
 };
 
 /**
@@ -94,15 +119,34 @@ export type RequestConfig = CustomClientOptions & {
   transformResponse?: (data: string) => Record<string, unknown>;
 };
 
+// Add a response interceptor so that we always return an error of type
+// `ExecuteResponseError`.
+axios.interceptors.response.use(
+  function (response) {
+    // Any status code that lie within the range of 2xx cause this function to trigger.
+    // Do something with response data.
+    return response;
+  },
+  function (error) {
+    // Any status codes that falls outside the range of 2xx cause this function to trigger
+    // Do something with response error.
+    return Promise.reject(ExecuteRequestError.From(error as AxiosError));
+  }
+);
+
 /**
  * The Skynet Client which can be used to access Skynet.
  */
 export class SkynetClient {
   customOptions: CustomClientOptions;
 
-  // The initial portal URL, either given to `new SkynetClient()` or if not, the value of `defaultPortalUrl()`.
+  // The initial portal URL, the value of `defaultPortalUrl()` if `new
+  // SkynetClient` is called without a given portal. This initial URL is used to
+  // resolve the final portal URL.
   protected initialPortalUrl: string;
-  // The resolved API portal URL. The request won't be made until needed, or `initPortalUrl()` is called. The request is only made once, for all Skynet Clients.
+  // The resolved API portal URL. The request won't be made until needed, or
+  // `initPortalUrl()` is called. The request is only made once, for all Skynet
+  // Clients.
   protected static resolvedPortalUrl?: Promise<string>;
   // The custom portal URL, if one was passed in to `new SkynetClient()`.
   protected customPortalUrl?: string;
@@ -146,24 +190,50 @@ export class SkynetClient {
 
   // File API
 
+  // v1 (deprecated)
   file = {
     getJSON: fileGetJSON.bind(this),
     getEntryData: fileGetEntryData.bind(this),
     getEntryLink: fileGetEntryLink.bind(this),
-    getJSONEncrypted: getJSONEncrypted.bind(this),
+    getJSONEncrypted: fileGetJSONEncrypted.bind(this),
+  };
+
+  // v2
+  fileV2 = {
+    getJSON: fileGetJSONV2.bind(this),
+    getEntryData: fileGetEntryDataV2.bind(this),
+    getEntryLink: fileGetEntryLinkV2.bind(this),
+    getJSONEncrypted: fileGetJSONEncryptedV2.bind(this),
   };
 
   // SkyDB
 
+  // v1 (deprecated)
   db = {
-    deleteJSON: deleteJSON.bind(this),
     getJSON: getJSON.bind(this),
     setJSON: setJSON.bind(this),
+    deleteJSON: deleteJSON.bind(this),
     getRawBytes: getRawBytes.bind(this),
     setDataLink: setDataLink.bind(this),
     getEntryData: getEntryData.bind(this),
     setEntryData: setEntryData.bind(this),
     deleteEntryData: deleteEntryData.bind(this),
+  };
+
+  // v2
+  dbV2 = {
+    getJSON: getJSONV2.bind(this),
+    setJSON: setJSONV2.bind(this),
+    deleteJSON: deleteJSONV2.bind(this),
+    getRawBytes: getRawBytesV2.bind(this),
+    setDataLink: setDataLinkV2.bind(this),
+    getEntryData: getEntryDataV2.bind(this),
+    setEntryData: setEntryDataV2.bind(this),
+    deleteEntryData: deleteEntryDataV2.bind(this),
+
+    // Holds the cached revision numbers, protected by mutexes to prevent
+    // concurrent access.
+    revisionNumberCache: new RevisionNumberCache(),
   };
 
   // Registry
@@ -189,7 +259,7 @@ export class SkynetClient {
       initialPortalUrl = defaultPortalUrl();
     } else {
       // Portal was given, don't make the request for the resolved portal URL.
-      this.customPortalUrl = initialPortalUrl;
+      this.customPortalUrl = ensureUrl(initialPortalUrl);
     }
     this.initialPortalUrl = initialPortalUrl;
     this.customOptions = customOptions;
@@ -246,6 +316,7 @@ export class SkynetClient {
    *
    * @param config - Configuration for the request.
    * @returns - The response from axios.
+   * @throws - Will throw `ExecuteRequestError` if the request fails. This error contains the original Axios error.
    */
   async executeRequest(config: RequestConfig): Promise<AxiosResponse> {
     const url = await buildRequestUrl(this, {
@@ -287,35 +358,77 @@ export class SkynetClient {
       };
     }
 
-    return axios({
-      url,
-      method: config.method,
-      data: config.data,
-      headers,
-      auth,
-      onDownloadProgress,
-      onUploadProgress,
-      responseType: config.responseType,
-      transformRequest: config.transformRequest,
-      transformResponse: config.transformResponse,
+    // NOTE: The error type will be `ExecuteRequestError` as we set up a
+    // response interceptor above.
+    try {
+      return await axios({
+        url,
+        method: config.method,
+        data: config.data,
+        headers,
+        auth,
+        onDownloadProgress,
+        onUploadProgress,
+        responseType: config.responseType,
+        transformRequest: config.transformRequest,
+        transformResponse: config.transformResponse,
 
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      // Allow cross-site cookies.
-      withCredentials: true,
-    });
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        // Allow cross-site cookies.
+        withCredentials: true,
+      });
+    } catch (e) {
+      if (config.loginFn && (e as ExecuteRequestError).responseStatus === 401) {
+        // Try logging in again.
+        await config.loginFn();
+        return await this.executeRequest(config);
+      } else {
+        throw e;
+      }
+    }
   }
 
   // ===============
   // Private Methods
   // ===============
 
+  /**
+   * Gets the current server URL for the portal. You should generally use
+   * `portalUrl` instead - this method can be used for detecting whether the
+   * current URL is a server URL.
+   *
+   * @returns - The portal server URL.
+   */
+  protected async resolvePortalServerUrl(): Promise<string> {
+    const response = await this.executeRequest({
+      ...this.customOptions,
+      method: "head",
+      url: this.initialPortalUrl,
+    });
+
+    if (!response.headers) {
+      throw new Error(
+        "Did not get 'headers' in response despite a successful request. Please try again and report this issue to the devs if it persists."
+      );
+    }
+    const portalUrl = response.headers["skynet-server-api"];
+    if (!portalUrl) {
+      throw new Error("Could not get server portal URL for the given portal");
+    }
+    return portalUrl;
+  }
+
+  /**
+   * Make a request to resolve the provided `initialPortalUrl`.
+   *
+   * @returns - The portal URL.
+   */
   protected async resolvePortalUrl(): Promise<string> {
     const response = await this.executeRequest({
       ...this.customOptions,
       method: "head",
       url: this.initialPortalUrl,
-      endpointPath: "/",
     });
 
     if (!response.headers) {
@@ -329,90 +442,4 @@ export class SkynetClient {
     }
     return portalUrl;
   }
-}
-
-// =======
-// Helpers
-// =======
-
-/**
- * Helper function that builds the request URL. Ensures that the final URL
- * always has a protocol prefix for consistency.
- *
- * @param client - The Skynet client.
- * @param parts - The URL parts to use when constructing the URL.
- * @param [parts.baseUrl] - The base URL to use, instead of the portal URL.
- * @param [parts.endpointPath] - The endpoint to contact.
- * @param [parts.subdomain] - An optional subdomain to add to the URL.
- * @param [parts.extraPath] - An optional path to append to the URL.
- * @param [parts.query] - Optional query parameters to append to the URL.
- * @returns - The built URL.
- */
-export async function buildRequestUrl(
-  client: SkynetClient,
-  parts: {
-    baseUrl?: string;
-    endpointPath?: string;
-    subdomain?: string;
-    extraPath?: string;
-    query?: { [key: string]: string | undefined };
-  }
-): Promise<string> {
-  let url;
-
-  // Get the base URL, if not passed in.
-  if (!parts.baseUrl) {
-    url = await client.portalUrl();
-  } else {
-    url = parts.baseUrl;
-  }
-
-  // Make sure the URL has a protocol.
-  url = ensureUrlPrefix(url);
-
-  if (parts.endpointPath) {
-    url = makeUrl(url, parts.endpointPath);
-  }
-  if (parts.extraPath) {
-    url = makeUrl(url, parts.extraPath);
-  }
-  if (parts.subdomain) {
-    url = addSubdomain(url, parts.subdomain);
-  }
-  if (parts.query) {
-    url = addUrlQuery(url, parts.query);
-  }
-
-  return url;
-}
-
-export type Headers = { [key: string]: string };
-
-/**
- * Helper function that builds the request headers.
- *
- * @param [baseHeaders] - Any base headers.
- * @param [customUserAgent] - A custom user agent to set.
- * @param [customCookie] - A custom cookie.
- * @param [skynetApiKey] - Authentication key to use for a Skynet portal.
- * @returns - The built headers.
- */
-export function buildRequestHeaders(
-  baseHeaders?: Headers,
-  customUserAgent?: string,
-  customCookie?: string,
-  skynetApiKey?: string
-): Headers {
-  const returnHeaders = { ...baseHeaders };
-  // Set some headers from common options.
-  if (customUserAgent) {
-    returnHeaders["User-Agent"] = customUserAgent;
-  }
-  if (customCookie) {
-    returnHeaders["Cookie"] = customCookie;
-  }
-  if (skynetApiKey) {
-    returnHeaders["Skynet-Api-Key"] = skynetApiKey;
-  }
-  return returnHeaders;
 }
