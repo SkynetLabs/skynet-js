@@ -82,9 +82,7 @@ export async function buildRequestUrl(
  * compatible with, `AxiosError`.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class ExecuteRequestError<T = any, D = any> implements AxiosError {
-  message: string;
-  name: string;
+export class ExecuteRequestError<T = any, D = any> extends Error implements AxiosError {
   responseStatus: number | null;
   responseMessage: string | null;
 
@@ -117,7 +115,7 @@ export class ExecuteRequestError<T = any, D = any> implements AxiosError {
     }
 
     // Set `Error` fields.
-    this.message = message;
+    super(message);
     this.name = "ExecuteRequestError";
 
     // Set `ExecuteRequestError` fields.
