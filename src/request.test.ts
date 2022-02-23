@@ -18,7 +18,7 @@ describe("ExecuteRequestError", () => {
     mock.resetHistory();
   });
 
-  it("should have a working instanceof and also be an axios error", async () => {
+  it("should have correct properties, a working instanceof, and also be an axios error", async () => {
     mock.onGet(skylinkUrl).replyOnce(404);
 
     try {
@@ -26,13 +26,21 @@ describe("ExecuteRequestError", () => {
       await client.getFileContent(skylink);
       expect(true).toBeFalsy();
     } catch (err) {
+      // Check some expected properties.
+      expect((err as ExecuteRequestError).name).toEqual("ExecuteRequestError");
+      expect((err as ExecuteRequestError).message).toEqual("Request failed with status code 404");
+      expect((err as ExecuteRequestError).responseStatus).toEqual(404);
+
       // Assert the type and that instanceof behaves as expected.
       expect(err).toBeInstanceOf(ExecuteRequestError);
+
       // NOTE: Backwards-compatibility check. Include this check as third-party
       // devs may be assuming the network request error is still an
       // `AxiosError`, and we don't want to break compatibility.
       expect(axios.isAxiosError(err)).toBeTruthy();
-      expect((err as ExecuteRequestError).responseStatus).toEqual(404);
+      expect((err as ExecuteRequestError).config).toEqual((err as ExecuteRequestError).originalError.config);
+      expect(typeof (err as ExecuteRequestError).config).toBe("object");
+      expect((err as ExecuteRequestError).config).toEqual(expect.objectContaining({ url: skylinkUrl }));
     }
   });
 
