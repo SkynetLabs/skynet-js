@@ -83,6 +83,7 @@ export async function buildRequestUrl(
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class ExecuteRequestError<T = any, D = any> extends Error implements AxiosError {
+  originalError: AxiosError;
   responseStatus: number | null;
   responseMessage: string | null;
 
@@ -106,8 +107,9 @@ export class ExecuteRequestError<T = any, D = any> extends Error implements Axio
    * @param responseMessage - The response message, if found in the original error.
    */
   constructor(message: string, axiosError: AxiosError, responseStatus: number | null, responseMessage: string | null) {
-    // Include this check since ExecuteRequestError implements AxiosError, but
-    // we only expect original errors from Axios here.
+    // Include this check since `ExecuteRequestError` implements `AxiosError`,
+    // but we only expect original errors from Axios here. Anything else
+    // indicates a likely developer/logic bug.
     if (axiosError instanceof ExecuteRequestError) {
       throw new Error(
         "Could not instantiate an `ExecuteRequestError` from an `ExecuteRequestError`, an original error from axios was expected"
@@ -119,10 +121,14 @@ export class ExecuteRequestError<T = any, D = any> extends Error implements Axio
     this.name = "ExecuteRequestError";
 
     // Set `ExecuteRequestError` fields.
+    this.originalError = axiosError;
     this.responseStatus = responseStatus;
     this.responseMessage = responseMessage;
 
     // Set properties required by `AxiosError`.
+    //
+    // NOTE: `Object.assign` doesn't work because Typescript can't detect that
+    // required fields are set in this constructor.
     this.config = axiosError.config;
     this.code = axiosError.code;
     this.request = axiosError.request;
