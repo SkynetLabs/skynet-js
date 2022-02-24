@@ -4,6 +4,28 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.26-beta]
+
+### Added
+
+- Added SkyDB V2.
+  - SkyDB V2 can be accessed with `client.dbV2`, `client.fileV2`, and
+    `mySky.dbV2`.
+  - SkyDB V2 methods use a revision number cache internally,
+    improving performance and correctness.
+  - `setJSON` does not make a network request to get the latest revision number,
+    so you must always call `getJSON` first.
+- Errors caused by network requests to `skyd` are now type
+  `ExecuteRequestError`.
+  - This error type is fully compatible with `AxiosError`.
+  - Errors from failed requests now contain a message with the original message
+    from axios as well as the full context from `skyd`.
+  - `ExecuteRequestError` also contains `.responseMessage` and
+    `.responseStatus`.
+  - `ExecuteRequestError` can be used with `instanceof` (unlike AxiosError).
+- Parallel uploads for large files have been fixed and re-enabled. This should
+  improve performance.
+
 ## [4.0.25-beta]
 
 ### Added
