@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
 import { SkynetClient } from "./client";
 import { addUrlQuery, addUrlSubdomain, ensureUrlPrefix, makeUrl } from "./utils/url";
@@ -86,26 +86,64 @@ export async function buildRequestUrl(
 }
 
 /**
- * The error type returned by `executeRequestError`.
+ * The error type returned by the SDK whenever it makes a network request
+ * (internally, this happens in `executeRequest`). It implements, so is
+ * compatible with, `AxiosError`.
  */
-export class ExecuteRequestError extends Error {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class ExecuteRequestError<T = any, D = any> extends Error implements AxiosError {
   originalError: AxiosError;
   responseStatus: number | null;
   responseMessage: string | null;
+
+  // Properties required by `AxiosError`.
+
+  config: AxiosRequestConfig<D>;
+  code?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  request?: any;
+  response?: AxiosResponse<T, D>;
+  isAxiosError: boolean;
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  toJSON: () => object;
 
   /**
    * Creates an `ExecuteRequestError`.
    *
    * @param message - The error message.
-   * @param axiosError - The original axios error.
+   * @param axiosError - The original Axios error.
    * @param responseStatus - The response status, if found in the original error.
    * @param responseMessage - The response message, if found in the original error.
    */
   constructor(message: string, axiosError: AxiosError, responseStatus: number | null, responseMessage: string | null) {
+    // Include this check since `ExecuteRequestError` implements `AxiosError`,
+    // but we only expect original errors from Axios here. Anything else
+    // indicates a likely developer/logic bug.
+    if (axiosError instanceof ExecuteRequestError) {
+      throw new Error(
+        "Could not instantiate an `ExecuteRequestError` from an `ExecuteRequestError`, an original error from axios was expected"
+      );
+    }
+
+    // Set `Error` fields.
     super(message);
+    this.name = "ExecuteRequestError";
+
+    // Set `ExecuteRequestError` fields.
     this.originalError = axiosError;
     this.responseStatus = responseStatus;
     this.responseMessage = responseMessage;
+
+    // Set properties required by `AxiosError`.
+    //
+    // NOTE: `Object.assign` doesn't work because Typescript can't detect that
+    // required fields are set in this constructor.
+    this.config = axiosError.config;
+    this.code = axiosError.code;
+    this.request = axiosError.request;
+    this.response = axiosError.response;
+    this.isAxiosError = axiosError.isAxiosError;
+    this.toJSON = axiosError.toJSON;
 
     // Required for `instanceof` to work.
     Object.setPrototypeOf(this, ExecuteRequestError.prototype);
