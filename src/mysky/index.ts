@@ -616,6 +616,9 @@ export class MySky {
     // If we can log in to the portal account, set up auto-relogin.
     if (await this.checkPortalLogin()) {
       this.connector.client.customOptions.loginFn = this.portalLogin;
+    } else {
+      // Clear the old login function.
+      this.connector.client.customOptions.loginFn = undefined;
     }
   }
 
