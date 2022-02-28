@@ -35,19 +35,11 @@ describe("SkynetClient", () => {
 
     // File
 
-    // v1
     expect(client).toHaveProperty("file");
     expect(client.file).toHaveProperty("getJSON");
     expect(client.file).toHaveProperty("getEntryData");
     expect(client.file).toHaveProperty("getEntryLink");
     expect(client.file).toHaveProperty("getJSONEncrypted");
-
-    // v2
-    expect(client).toHaveProperty("fileV2");
-    expect(client.fileV2).toHaveProperty("getJSON");
-    expect(client.fileV2).toHaveProperty("getEntryData");
-    expect(client.fileV2).toHaveProperty("getEntryLink");
-    expect(client.fileV2).toHaveProperty("getJSONEncrypted");
 
     // SkyDB
 
