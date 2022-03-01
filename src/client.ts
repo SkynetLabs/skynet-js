@@ -33,12 +33,6 @@ import {
   getEntryLink as fileGetEntryLink,
   getJSON as fileGetJSON,
 } from "./file";
-import {
-  getJSONEncrypted as fileGetJSONEncryptedV2,
-  getEntryData as fileGetEntryDataV2,
-  getEntryLink as fileGetEntryLinkV2,
-  getJSON as fileGetJSONV2,
-} from "./file_v2";
 import { pinSkylink } from "./pin";
 import { getEntry, getEntryLinkAsync, getEntryUrl, setEntry, postSignedEntry } from "./registry";
 import { RevisionNumberCache } from "./revision_cache";
@@ -188,20 +182,11 @@ export class SkynetClient {
 
   // File API
 
-  // v1 (deprecated)
   file = {
     getJSON: fileGetJSON.bind(this),
     getEntryData: fileGetEntryData.bind(this),
     getEntryLink: fileGetEntryLink.bind(this),
     getJSONEncrypted: fileGetJSONEncrypted.bind(this),
-  };
-
-  // v2
-  fileV2 = {
-    getJSON: fileGetJSONV2.bind(this),
-    getEntryData: fileGetEntryDataV2.bind(this),
-    getEntryLink: fileGetEntryLinkV2.bind(this),
-    getJSONEncrypted: fileGetJSONEncryptedV2.bind(this),
   };
 
   // SkyDB
