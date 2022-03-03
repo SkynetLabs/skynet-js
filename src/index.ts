@@ -37,6 +37,8 @@ export {
 } from "./mysky/encrypted_files";
 export { deriveDiscoverableFileTweak } from "./mysky/tweak";
 export { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
+// Have to export `ExecuteRequestError` as a value instead of as a type or the
+// consumer cannot use `instanceof`.
 export { ExecuteRequestError } from "./request";
 export { DELETION_ENTRY_DATA, getOrCreateSkyDBRegistryEntry } from "./skydb_v2";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
