@@ -79,7 +79,7 @@ export type CustomClientOptions = {
   customCookie?: string;
   onDownloadProgress?: (progress: number, event: ProgressEvent) => void;
   onUploadProgress?: (progress: number, event: ProgressEvent) => void;
-  loginFn?: (config: RequestConfig) => Promise<void>;
+  loginFn?: (config?: RequestConfig) => Promise<void>;
 };
 
 /**
