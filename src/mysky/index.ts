@@ -636,6 +636,9 @@ export class MySky {
     //   // If we can log in to the portal account, set up auto-relogin.
     //   if (await this.checkPortalLogin()) {
     //     this.connector.client.customOptions.loginFn = this.portalLogin;
+    //   } else {
+    //     // Clear the old login function.
+    //     this.connector.client.customOptions.loginFn = undefined;
     //   }
     // } catch (e) {
     //   // Don't throw an error if we couldn't redirect. The user will never be
@@ -664,9 +667,9 @@ export class MySky {
    *  Load MySky redirect flow:
    *
    *  1. SDK opens MySky on the same portal as the skapp.
-   *  2. If the preferred portal is found in localstorage, MySky connects to it
-   *     and we go to step 5.
-   *  3. Else, MySky connects to siasky.net.
+   *  2. If a seed was not found, no preferred portal can be found, so exit the
+   *     flow.
+   *  3. MySky connects to siasky.net first.
    *  4. MySky tries to get the saved portal preference.
    *     1. If the portal is set, MySky switches to using the preferred portal.
    *     2. If it is not set or we don't have the seed, MySky switches to using
@@ -680,7 +683,7 @@ export class MySky {
    * Login redirect flow:
    *
    * 1. SDK logs in through the UI.
-   * 2. MySky UI switches to siasky.net and tries to get the saved portal
+   * 2. MySky switches to siasky.net and tries to get the saved portal
    *    preference.
    *    1. If the portal is set, MySky switches to using the preferred portal.
    *    2. If it is not set or we don't have the seed, MySky switches to using
