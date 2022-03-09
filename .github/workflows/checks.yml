@@ -28,3 +28,6 @@ jobs:
       - run: yarn lint:eslint
       - run: yarn lint:tsc
       - run: yarn test
+        env:
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetpro.net"
+          SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: "${{ secrets.SKYNET_API_KEY }}"
