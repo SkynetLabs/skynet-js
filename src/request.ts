@@ -11,9 +11,15 @@ export type Headers = { [key: string]: string };
  * @param [baseHeaders] - Any base headers.
  * @param [customUserAgent] - A custom user agent to set.
  * @param [customCookie] - A custom cookie.
+ * @param [skynetApiKey] - Authentication key to use for a Skynet portal.
  * @returns - The built headers.
  */
-export function buildRequestHeaders(baseHeaders?: Headers, customUserAgent?: string, customCookie?: string): Headers {
+export function buildRequestHeaders(
+  baseHeaders?: Headers,
+  customUserAgent?: string,
+  customCookie?: string,
+  skynetApiKey?: string
+): Headers {
   const returnHeaders = { ...baseHeaders };
   // Set some headers from common options.
   if (customUserAgent) {
@@ -21,6 +27,9 @@ export function buildRequestHeaders(baseHeaders?: Headers, customUserAgent?: str
   }
   if (customCookie) {
     returnHeaders["Cookie"] = customCookie;
+  }
+  if (skynetApiKey) {
+    returnHeaders["Skynet-Api-Key"] = skynetApiKey;
   }
   return returnHeaders;
 }

@@ -4,6 +4,49 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.26-beta]
+
+### Added
+
+- Added SkyDB V2.
+  - SkyDB V2 can be accessed with `client.dbV2` and `mySky.dbV2`.
+  - SkyDB V2 methods use a revision number cache internally,
+    improving performance and correctness.
+  - `dbV2.setJSON` does not make a network request to get the latest revision
+    number, so you must always call `dbV2.getJSON` first.
+- Errors caused by network requests to `skyd` are now type
+  `ExecuteRequestError`.
+  - This error type is fully compatible with `AxiosError`.
+  - Errors from failed requests now contain a message with the original message
+    from axios as well as the full context from `skyd`.
+  - `ExecuteRequestError` also contains `.responseMessage` and
+    `.responseStatus`.
+  - `ExecuteRequestError` can be used with `instanceof` (unlike AxiosError).
+- Parallel uploads for large files have been fixed and re-enabled. This should
+  improve performance.
+
+## [4.0.25-beta]
+
+### Added
+
+- Add option for portal API keys and env var for integration tests
+
+## [4.0.24-beta]
+
+### Added
+
+- Added ability to set custom cookie in integration tests with the `SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE` env var.
+
+## [4.0.23-beta]
+
+### Changed
+
+- Fix critical tus upload bug.
+
+## [4.0.22-beta]
+
+Revert `4.0.21-beta`.
+
 ## [4.0.21-beta]
 
 ### Changed
