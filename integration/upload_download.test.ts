@@ -298,7 +298,19 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     // Use a resolver skylink as it will time out faster.
     const skylink = "AQDwh1jnoZas9LaLHC_D4-2yO9XYDdZzNtz62H4Dww1jDB";
 
-    await expect(client.getFileContent(skylink)).rejects.toThrowError("Failed to resolve skylink");
+    // We use 2 different endpoints depending on the caching mechanism that the
+    // portal has been deployed with. With nginx cache (what we used to have
+    // before) we had to run every resolver skylink through /skynet/resolve
+    // endpoint locally before passing it to the /skynet/skylink endpoint. This
+    // endpoint produced "Failed to resolve skylink". These days, portals
+    // switched by default from nginx caching to caching in skyd and we made the
+    // call to /skynet/resolve conditional - with the skyd caching we're not
+    // calling it but we're passing skylink directly to skyd and skyd responds
+    // with "Request failed with status code 404: failed to fetch skylink:
+    // registry entry not found within given time".
+    await expect(client.getFileContent(skylink)).rejects.toThrowError(
+      /Failed to resolve skylink|Request failed with status code 404: failed to fetch skylink: registry entry not found within given time/
+    );
   });
 });
 
