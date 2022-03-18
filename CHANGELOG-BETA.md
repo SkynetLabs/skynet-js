@@ -4,6 +4,26 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.27-beta]
+
+### Added
+
+- Throws error when passing both dev and alpha options for MySky (#257). by @amberm31 in https://github.com/SkynetLabs/skynet-js/pull/352
+- Add Dependabot Auto-Merge action by @m-cat in https://github.com/SkynetLabs/skynet-js/pull/413
+
+### Changed
+
+- Mysky login flow fixes by @m-cat in https://github.com/SkynetLabs/skynet-js/pull/403
+- Change integration test to accommodate caching changes by @m-cat in https://github.com/SkynetLabs/skynet-js/pull/410
+
+### Dependencies updates
+
+- Bump eslint-plugin-jsdoc from 37.9.5 to 37.9.7 by @dependabot in https://github.com/SkynetLabs/skynet-js/pull/407
+- Bump typescript from 4.5.5 to 4.6.2 by @dependabot in https://github.com/SkynetLabs/skynet-js/pull/404
+- Bump ts-node from 10.5.0 to 10.7.0 by @dependabot in https://github.com/SkynetLabs/skynet-js/pull/405
+- Bump lint-staged from 12.3.4 to 12.3.5 by @dependabot in https://github.com/SkynetLabs/skynet-js/pull/406
+- Bump eslint-plugin-jsdoc from 37.9.7 to 38.0.3 by @dependabot in https://github.com/SkynetLabs/skynet-js/pull/411
+
 ## [4.0.26-beta]
 
 ### Added
