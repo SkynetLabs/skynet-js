@@ -28,3 +28,5 @@ jobs:
       - run: yarn lint:eslint
       - run: yarn lint:tsc
       - run: yarn test
+        env:
+          SKYNET_JS_INTEGRATION_TEST_SERVER: ${{ secrets.SKYNET_JS_INTEGRATION_TEST_SERVER }}
