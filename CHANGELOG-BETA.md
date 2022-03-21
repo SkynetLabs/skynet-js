@@ -4,6 +4,16 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+## [4.0.27-beta]
+
+### Added
+
+- Throws error when passing both dev and alpha options for MySky (#257). by @amberm31 in https://github.com/SkynetLabs/skynet-js/pull/352
+
+### Changed
+
+- Mysky login flow fixes by @m-cat in https://github.com/SkynetLabs/skynet-js/pull/403
+
 ## [4.0.26-beta]
 
 ### Added
