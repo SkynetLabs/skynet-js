@@ -75,7 +75,7 @@
     "@types/jest": "^27.0.1",
     "@types/mime": "^2.0.3",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^15.0.1",
+    "@types/node": "^17.0.21",
     "@types/randombytes": "^2.0.0",
     "@types/sjcl": "^1.0.29",
     "@types/url-join": "^4.0.0",
