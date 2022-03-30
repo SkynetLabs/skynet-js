@@ -67,7 +67,7 @@
     "skynet-mysky-utils": "^0.3.0",
     "@skynetlabs/tus-js-client": "^2.3.0",
     "tweetnacl": "^1.0.3",
-    "url-join": "^4.0.1",
+    "url-join": "^5.0.0",
     "url-parse": "^1.5.1"
   },
   "devDependencies": {
