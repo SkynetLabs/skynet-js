@@ -1,3 +1,6 @@
+# Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.
+# See https://hackmd.io/@SkynetLabs/ryFfInNXc.
+
 name: Dependabot auto-merge
 
 on: pull_request
@@ -10,7 +13,9 @@ jobs:
   dependabot:
     runs-on: ubuntu-latest
 
-    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    # The latest actor must be Dependabot. This prevents other users from
+    # sneaking in changes into the PR.
+    if: ${{ github.actor == 'dependabot[bot]' }}
 
     steps:
       - name: Dependabot metadata
