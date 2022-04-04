@@ -47,6 +47,7 @@ import {
   setJSON,
   setJSONEncrypted,
 } from "./skydb";
+import { trimForwardSlash } from "../utils/string";
 
 /**
  * The domain for MySky.
@@ -202,7 +203,7 @@ export class MySky {
       if (skappIsOnPortal) {
         hostDomain = await currentUrlClient.extractDomain(window.location.hostname);
       } else {
-        hostDomain = window.location.hostname;
+        hostDomain = trimForwardSlash(window.location.hostname);
       }
     }
 
