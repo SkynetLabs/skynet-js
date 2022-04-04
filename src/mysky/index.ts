@@ -181,7 +181,7 @@ export class MySky {
       // MySky expects to be on the same portal as the skapp, so create a new
       // client on the current skapp URL, in case the client the developer
       // instantiated does not correspond to the portal of the current URL.
-      const currentUrlClient = new SkynetClient(window.location.hostname);
+      const currentUrlClient = new SkynetClient(window.location.hostname, client.customOptions);
       try {
         // Trigger a resolve of the portal URL manually. `new SkynetClient`
         // assumes a portal URL is given to it, so it doesn't make the request
@@ -731,7 +731,7 @@ export class MySky {
       // portal, if it is set.
 
       // Set the skapp client to use the user's preferred portal.
-      this.connector.client = new SkynetClient(preferredPortalUrl);
+      this.connector.client = new SkynetClient(preferredPortalUrl, this.connector.client.customOptions);
     }
   }
 
@@ -741,7 +741,7 @@ export class MySky {
    * @param preferredPortalUrl - The user's preferred portal URL.
    */
   protected async redirectToPreferredPortalUrl(preferredPortalUrl: string): Promise<void> {
-    const currentDomainClient = new SkynetClient(this.hostDomain);
+    const currentDomainClient = new SkynetClient(this.hostDomain, this.connector.client.customOptions);
     const newUrl = await getRedirectUrlOnPreferredPortal(
       currentDomainClient,
       window.location.hostname,
@@ -749,7 +749,7 @@ export class MySky {
     );
 
     // Check if the portal is valid and working before redirecting.
-    const newUrlClient = new SkynetClient(newUrl);
+    const newUrlClient = new SkynetClient(newUrl, this.connector.client.customOptions);
     const portalUrl = await newUrlClient.portalUrl();
     if (portalUrl) {
       // Redirect.
