@@ -709,6 +709,7 @@ export class MySky {
       // Don't redirect on localhost as there is no subdomain to redirect to.
       return;
     }
+    const currentFullDomain = window.location.hostname;
 
     // Get the preferred portal.
     const preferredPortalUrl = await this.getPreferredPortal();
@@ -717,7 +718,7 @@ export class MySky {
     if (preferredPortalUrl === null) {
       // Preferred portal is not set.
       return;
-    } else if (this.skappIsOnPortal && shouldRedirectToPreferredPortalUrl(this.hostDomain, preferredPortalUrl)) {
+    } else if (this.skappIsOnPortal && shouldRedirectToPreferredPortalUrl(currentFullDomain, preferredPortalUrl)) {
       // Redirect to the appropriate URL on a different portal. If we're not on
       // a portal, don't redirect.
       //
@@ -742,12 +743,8 @@ export class MySky {
    * @param preferredPortalUrl - The user's preferred portal URL.
    */
   protected async redirectToPreferredPortalUrl(preferredPortalUrl: string): Promise<void> {
-    const currentDomainClient = new SkynetClient(this.hostDomain, this.connector.client.customOptions);
-    const newUrl = await getRedirectUrlOnPreferredPortal(
-      currentDomainClient,
-      window.location.hostname,
-      preferredPortalUrl
-    );
+    // Get the current skapp on the preferred portal.
+    const newUrl = await getRedirectUrlOnPreferredPortal(this.hostDomain, preferredPortalUrl);
 
     // Check if the portal is valid and working before redirecting.
     const newUrlClient = new SkynetClient(newUrl, this.connector.client.customOptions);
