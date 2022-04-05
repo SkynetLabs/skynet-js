@@ -1,5 +1,5 @@
 import { SkynetClient } from "../client";
-import { trimForwardSlash, trimSuffix } from "../utils/string";
+import { trimForwardSlash } from "../utils/string";
 import { getFullDomainUrlForPortal, extractDomainForPortal, ensureUrlPrefix } from "../utils/url";
 
 /**
@@ -23,18 +23,15 @@ export async function getFullDomainUrl(this: SkynetClient, domain: string): Prom
  * Gets the URL for the current skapp on the preferred portal, if we're not on
  * the preferred portal already.
  *
- * @param client - The Skynet client.
- * @param currentUrl - The current page URL.
+ * @param skappDomain - The current page URL.
  * @param preferredPortalUrl - The preferred portal URL.
  * @returns - The URL for the current skapp on the preferred portal.
  */
 export async function getRedirectUrlOnPreferredPortal(
-  client: SkynetClient,
-  currentUrl: string,
+  skappDomain: string,
   preferredPortalUrl: string
 ): Promise<string> {
   // Get the current skapp on the preferred portal.
-  const skappDomain = await client.extractDomain(currentUrl);
   return getFullDomainUrlForPortal(preferredPortalUrl, skappDomain);
 }
 
@@ -119,13 +116,13 @@ export function popupCenter(url: string, winName: string, w: number, h: number):
  * portal. The protocol prefixes are allowed to be different and there can be
  * other differences like a trailing slash.
  *
- * @param currentDomain - The current domain.
+ * @param currentFullDomain - The current domain.
  * @param preferredPortalUrl - The preferred portal URL.
  * @returns - Whether the two URLs are equal for the purposes of redirecting.
  */
-export function shouldRedirectToPreferredPortalUrl(currentDomain: string, preferredPortalUrl: string): boolean {
+export function shouldRedirectToPreferredPortalUrl(currentFullDomain: string, preferredPortalUrl: string): boolean {
   // Strip protocol and trailing slash (case-insensitive).
-  currentDomain = trimSuffix(currentDomain.replace(/https:\/\/|http:\/\//i, ""), "/");
-  preferredPortalUrl = trimSuffix(preferredPortalUrl.replace(/https:\/\/|http:\/\//i, ""), "/");
-  return !currentDomain.endsWith(preferredPortalUrl);
+  currentFullDomain = trimForwardSlash(currentFullDomain.replace(/https:\/\/|http:\/\//i, ""));
+  preferredPortalUrl = trimForwardSlash(preferredPortalUrl.replace(/https:\/\/|http:\/\//i, ""));
+  return !currentFullDomain.endsWith(preferredPortalUrl);
 }

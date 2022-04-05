@@ -125,41 +125,20 @@ const portal2Urls = combineStrings(["", "http://", "https://", "HTTPS://"], ["si
 
 // TODO: Test cases with portal servers.
 describe("getRedirectUrlOnPreferredPortal", () => {
-  let mock: MockAdapter;
-
-  beforeEach(() => {
-    mock = new MockAdapter(axios);
-  });
-
-  const portal1SkappUrls = combineStrings(["", "https://"], ["skapp.hns.siasky.net"], ["", "/"]);
-  const portal2SkappUrls = combineStrings(["", "https://"], ["skapp.hns.siasky.xyz"], ["", "/"]);
-
-  const cases: Array<[string, string, string, string]> = [
+  const cases: Array<[string, string, string]> = [
     // Test redirecting from one portal to another.
-    ...(composeTestCases(combineArrays(portal1SkappUrls, portal2Urls), "https://skapp.hns.siasky.xyz").map(
-      ([[a, b], c]) => ["siasky.net", a, b, c]
-    ) as [string, string, string, string][]),
-    ...(composeTestCases(combineArrays(portal2SkappUrls, portal1Urls), "https://skapp.hns.siasky.net").map(
-      ([[a, b], c]) => ["siasky.xyz", a, b, c]
-    ) as [string, string, string, string][]),
+    ...(composeTestCases(combineArrays(["skapp.hns"], portal2Urls), "https://skapp.hns.siasky.xyz").map(
+      ([[a, b], c]) => [a, b, c]
+    ) as [string, string, string][]),
+    ...(composeTestCases(combineArrays(["skapp.hns"], portal1Urls), "https://skapp.hns.siasky.net").map(
+      ([[a, b], c]) => [a, b, c]
+    ) as [string, string, string][]),
   ];
 
-  it.each(cases)(
-    "('%s', '%s', '%s') should return '%s'",
-    async (portalDomain, currentUrl, preferredPortalUrl, expectedResult) => {
-      const portalUrl = `https://${portalDomain}`;
-      // Responses for regular portal.
-      mock
-        .onHead(portalUrl)
-        .replyOnce(200, {}, { "skynet-server-api": `us-va-1.${portalDomain}` })
-        .onHead(portalUrl)
-        .replyOnce(200, {}, { "skynet-portal-api": portalDomain });
-
-      const client = new SkynetClient(portalUrl);
-      const result = await getRedirectUrlOnPreferredPortal(client, currentUrl, preferredPortalUrl);
-      expect(result).toEqual(expectedResult);
-    }
-  );
+  it.each(cases)("('%s', '%s') should return '%s'", async (hostDomain, preferredPortalUrl, expectedResult) => {
+    const result = await getRedirectUrlOnPreferredPortal(hostDomain, preferredPortalUrl);
+    expect(result).toEqual(expectedResult);
+  });
 });
 
 // TODO: Add cases with portal servers.
