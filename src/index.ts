@@ -44,6 +44,7 @@ export { DELETION_ENTRY_DATA, getOrCreateSkyDBRegistryEntry } from "./skydb_v2";
 export { convertSkylinkToBase32, convertSkylinkToBase64 } from "./skylink/format";
 export { parseSkylink } from "./skylink/parse";
 export { isSkylinkV1, isSkylinkV2 } from "./skylink/sia";
+export { TUS_CHUNK_SIZE } from "./upload";
 export { getRelativeFilePath, getRootDirectory } from "./utils/file";
 export { MAX_REVISION } from "./utils/number";
 export { stringToUint8ArrayUtf8, uint8ArrayToStringUtf8 } from "./utils/string";
