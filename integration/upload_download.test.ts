@@ -37,7 +37,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
       "file1.jpeg": new File(["foo1"], "file1.jpeg"),
       // Test a space in the subfile name.
       "file 2.jpeg": new File(["foo2"], "file 2.jpeg"),
-      "subdir/file3.jpeg": new File(["foo3"], "subdir/file3.jpeg"),
+      // NOTE: Fiels with paths with subdirs don't work in Node.
     };
     const dirname = "dirname";
     const dirType = "application/zip";
@@ -66,11 +66,6 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     {
       const { data } = await client.getFileContent(`${skylink}/file 2.jpeg`);
       expect(data).toEqual("foo2");
-    }
-
-    {
-      const { data } = await client.getFileContent(`${skylink}/subdir:file3.jpeg`);
-      expect(data).toEqual("foo3");
     }
   });
 
