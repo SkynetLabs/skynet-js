@@ -424,15 +424,20 @@ export function splitSizeIntoChunkAlignedParts(
 
   // Assign chunks to parts in order, looping back to the beginning if we get to
   // the end of the parts array.
-  let lastPart = 0;
+  let lastPart = -1;
   for (let i = 0; i < Math.floor(totalSize / chunkSize); i++) {
     partSizes[i % partCount] += chunkSize;
     if (i > lastPart) lastPart = i;
   }
 
-  // Assign the leftover to the part after the last part that was visited, or
-  // the last part in the array if all parts were used.
-  partSizes[Math.min(lastPart + 1, partCount - 1)] += leftover;
+  if (lastPart === -1) {
+    // No parts were visited, so assign to the last part.
+    partSizes[partCount - 1] += leftover;
+  } else {
+    // Assign the leftover to the part after the last part that was visited, or
+    // the last part in the array if all parts were used.
+    partSizes[Math.min(lastPart + 1, partCount - 1)] += leftover;
+  }
 
   // Convert sizes into parts.
   const parts = [];

@@ -358,8 +358,8 @@ describe("splitSizeIntoChunkAlignedParts", () => {
       2,
       chunk * 2,
       [
+        { start: 0, end: 0 },
         { start: 0, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
       ],
     ],
     [
@@ -367,9 +367,9 @@ describe("splitSizeIntoChunkAlignedParts", () => {
       3,
       chunk * 3,
       [
+        { start: 0, end: 0 },
+        { start: 0, end: 0 },
         { start: 0, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
       ],
     ],
     [
@@ -377,8 +377,8 @@ describe("splitSizeIntoChunkAlignedParts", () => {
       2,
       chunk * 2,
       [
-        { start: 0, end: 40 * mib },
-        { start: 40 * mib, end: 41 * mib },
+        { start: 0, end: 0 },
+        { start: 0, end: 41 * mib },
       ],
     ],
     [
