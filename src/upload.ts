@@ -230,6 +230,18 @@ export async function uploadLargeFileRequest(
 
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
+  // Validation.
+  if (opts.chunkSizeMultiplier < 1) {
+    throw new Error(
+      `Expected 'chunkSizeMultiplier' option to be greater than or equal to 1, was '${opts.chunkSizeMultiplier}`
+    );
+  }
+  if (opts.numParallelUploads < 1) {
+    throw new Error(
+      `Expected 'numParallelUploads' option to be greater than or equal to 1, was '${opts.numParallelUploads}`
+    );
+  }
+
   // TODO: Add back upload options once they are implemented in skyd.
   const url = await buildRequestUrl(this, { endpointPath: opts.endpointLargeUpload });
   const headers = buildRequestHeaders(undefined, opts.customUserAgent, opts.customCookie, opts.skynetApiKey);
