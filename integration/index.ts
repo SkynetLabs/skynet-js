@@ -22,7 +22,8 @@ export const skynetApiKey = process.env.SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KE
 // SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE=skynet-jwt=foo yarn run jest integration
 export const customCookie = process.env.SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE;
 
-export const client = new SkynetClient(portal, { skynetApiKey, customCookie });
+export const customOptions = { skynetApiKey, customCookie };
+export const client = new SkynetClient(portal, customOptions);
 
 export const dataKey = "HelloWorld";
 
