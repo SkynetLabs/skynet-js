@@ -286,8 +286,10 @@ export async function uploadLargeFileRequest(
     if (parallelUploads > Math.ceil(file.size / chunkSize)) {
       parallelUploads = Math.ceil(file.size / chunkSize);
     }
-    // Set the part-split function.
-    splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+    if (parallelUploads > 1) {
+      // Set the part-split function.
+      splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+    }
   }
 
   return new Promise((resolve, reject) => {
