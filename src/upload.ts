@@ -21,6 +21,13 @@ const TUS_CHUNK_SIZE = (1 << 22) * 10;
 const TUS_PARALLEL_UPLOADS = 2;
 
 /**
+ * A percentage from 0-100. When set, parallel uploads are staggered one after
+ * another instead of all running simultaneously. The stagger percentage is how
+ * much of each upload should be finished before the next upload is initiated.
+ */
+const DEFAULT_TUS_PARALLEL_UPLOADS_STAGGER_PERCENTAGE = 90;
+
+/**
  * The retry delays, in ms. Data is stored in skyd for up to 20 minutes, so the
  * total delays should not exceed that length of time.
  */
@@ -44,6 +51,7 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
  * @property [errorPages] - Defines a mapping of error codes and subfiles which are to be served in case we are serving the respective error code. All subfiles referred like this must be defined with absolute paths and must exist.
  * @property [numParallelUploads=2] - Used to override the default number of parallel uploads. Disable parallel uploads by setting to 1. Note that each parallel upload must be chunk-aligned so the number of parallel uploads may be limited if some parts would end up empty.
+ * @property [parallelUploadsStaggerPercentage=90] - A percentage from 0-100. When set, parallel uploads are staggered one after another instead of all running simultaneously. The stagger percentage is how much of each upload should be finished before the next upload is initiated.
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
  * @property [tryFiles] - Allows us to set a list of potential subfiles to return in case the requested one does not exist or is a directory. Those subfiles might be listed with relative or absolute paths. If the path is absolute the file must exist.
  */
@@ -55,6 +63,7 @@ export type CustomUploadOptions = BaseCustomOptions & {
   errorPages?: JsonData;
   largeFileSize?: number;
   numParallelUploads?: number;
+  parallelUploadsStaggerPercentage?: number;
   retryDelays?: number[];
   tryFiles?: string[];
 };
@@ -78,6 +87,7 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   errorPages: undefined,
   largeFileSize: TUS_CHUNK_SIZE,
   numParallelUploads: TUS_PARALLEL_UPLOADS,
+  parallelUploadsStaggerPercentage: DEFAULT_TUS_PARALLEL_UPLOADS_STAGGER_PERCENTAGE,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
   tryFiles: undefined,
 };
@@ -280,6 +290,7 @@ export async function uploadLargeFileRequest(
         filetype: file.type,
       },
       parallelUploads,
+      parallelUploadsStaggerPercentage: opts.parallelUploadsStaggerPercentage || null,
       splitSizeIntoParts,
       headers,
       onProgress,
