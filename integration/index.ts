@@ -67,5 +67,5 @@ expect.extend({
 
 // Sleep a bit before each test to avoid being rate-limited.
 beforeEach(() => {
-  return new Promise((r) => setTimeout(r, 100));
+  return new Promise((r) => setTimeout(r, 200));
 });
