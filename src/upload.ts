@@ -12,13 +12,17 @@ import { buildRequestHeaders, buildRequestUrl } from "./request";
 /**
  * The tus chunk size is (4MiB - encryptionOverhead) * dataPieces, set in skyd.
  */
-const TUS_CHUNK_SIZE = (1 << 22) * 10;
+export const TUS_CHUNK_SIZE = (1 << 22) * 10;
 
 /**
- * A number indicating how many parts should be uploaded in parallel, by
- * default.
+ * Indicates what the default chunk size multiplier is.
  */
-const TUS_PARALLEL_UPLOADS = 2;
+const DEFAULT_TUS_CHUNK_SIZE_MULTIPLIER = 1;
+
+/**
+ * Indicates how many parts should be uploaded in parallel, by default.
+ */
+const DEFAULT_TUS_PARALLEL_UPLOADS = 2;
 
 /**
  * The retry delays, in ms. Data is stored in skyd for up to 20 minutes, so the
@@ -40,8 +44,9 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  *
  * @property [endpointUpload] - The relative URL path of the portal endpoint to contact.
  * @property [endpointLargeUpload] - The relative URL path of the portal endpoint to contact for large uploads.
+ * @property [chunkSizeMultiplier=1] - The multiplier for the chunk size. Increase this to upload larger chunks. Note that all valid chunks must be multiplies of the minimum chunk size, so this is a multiplier and not the actual chunk size.
  * @property [customFilename] - The custom filename to use when uploading files.
- * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
+ * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib). Note that this does not affect the actual size of chunks used by the protocol.
  * @property [errorPages] - Defines a mapping of error codes and subfiles which are to be served in case we are serving the respective error code. All subfiles referred like this must be defined with absolute paths and must exist.
  * @property [numParallelUploads=2] - Used to override the default number of parallel uploads. Disable parallel uploads by setting to 1. Note that each parallel upload must be chunk-aligned so the number of parallel uploads may be limited if some parts would end up empty.
  * @property [parallelUploadsStaggerPercent] - A percentage from 0-100. When set, parallel uploads are enabled and each chunk is staggered, one after another, instead of all running simultaneously. The stagger percentage is how much of each chunk upload should be finished before the next upload is initiated.
@@ -52,6 +57,7 @@ export type CustomUploadOptions = BaseCustomOptions & {
   endpointUpload?: string;
   endpointLargeUpload?: string;
 
+  chunkSizeMultiplier?: number;
   customFilename?: string;
   errorPages?: JsonData;
   largeFileSize?: number;
@@ -76,10 +82,11 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   endpointUpload: "/skynet/skyfile",
   endpointLargeUpload: "/skynet/tus",
 
+  chunkSizeMultiplier: DEFAULT_TUS_CHUNK_SIZE_MULTIPLIER,
   customFilename: "",
   errorPages: undefined,
   largeFileSize: TUS_CHUNK_SIZE,
-  numParallelUploads: TUS_PARALLEL_UPLOADS,
+  numParallelUploads: DEFAULT_TUS_PARALLEL_UPLOADS,
   parallelUploadsStaggerPercent: undefined,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
   tryFiles: undefined,
@@ -228,7 +235,7 @@ export async function uploadLargeFileRequest(
 
   // Validation.
   if (opts.parallelUploadsStaggerPercent) {
-    if (opts.numParallelUploads != TUS_PARALLEL_UPLOADS) {
+    if (opts.numParallelUploads != DEFAULT_TUS_PARALLEL_UPLOADS) {
       console.warn(
         "'numParallelUploads' option was overriden by 'parallelUploadsStaggerPercent' option and will have no effect"
       );
@@ -238,6 +245,16 @@ export async function uploadLargeFileRequest(
         `Expected 'parallelUploadsStaggerPercent' option to be between 0 and 100, was '${opts.parallelUploadsStaggerPercent}`
       );
     }
+  }
+  if (opts.chunkSizeMultiplier < 1) {
+    throw new Error(
+      `Expected 'chunkSizeMultiplier' option to be greater than or equal to 1, was '${opts.chunkSizeMultiplier}`
+    );
+  }
+  if (opts.numParallelUploads < 1) {
+    throw new Error(
+      `Expected 'numParallelUploads' option to be greater than or equal to 1, was '${opts.numParallelUploads}`
+    );
   }
 
   // TODO: Add back upload options once they are implemented in skyd.
@@ -275,9 +292,9 @@ export async function uploadLargeFileRequest(
   let splitSizeIntoParts:
     | ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>)
     | undefined = undefined;
+  const chunkSize = TUS_CHUNK_SIZE * opts.chunkSizeMultiplier;
   if (resp.headers["tus-extension"]?.includes("concatenation")) {
     // Set the part-split function.
-    splitSizeIntoParts = splitSizeIntoChunkAlignedParts;
     const numChunks = Math.ceil(file.size / TUS_CHUNK_SIZE);
 
     if (opts.parallelUploadsStaggerPercent) {
@@ -295,12 +312,16 @@ export async function uploadLargeFileRequest(
         parallelUploads = numChunks;
       }
     }
+    if (parallelUploads > 1) {
+      // Set the part-split function.
+      splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+    }
   }
 
   return new Promise((resolve, reject) => {
     const tusOpts = {
       endpoint: url,
-      chunkSize: TUS_CHUNK_SIZE,
+      chunkSize,
       retryDelays: opts.retryDelays,
       metadata: {
         filename,
@@ -430,27 +451,34 @@ export async function uploadDirectoryRequest(
  *
  * @param totalSize - The total size of the upload.
  * @param partCount - The number of parts (equal to the value of `parallelUploads` used).
+ * @param chunkSize - The size of the chunk to use.
  * @returns - An array of parts with start and end boundaries.
  */
 export function splitSizeIntoChunkAlignedParts(
   totalSize: number,
-  partCount: number
+  partCount: number,
+  chunkSize: number
 ): Array<{ start: number; end: number }> {
   const partSizes = new Array(partCount).fill(0);
   // The leftover size that must go into the last part.
-  const leftover = totalSize % TUS_CHUNK_SIZE;
+  const leftover = totalSize % chunkSize;
 
   // Assign chunks to parts in order, looping back to the beginning if we get to
   // the end of the parts array.
-  let lastPart = 0;
-  for (let i = 0; i < Math.floor(totalSize / TUS_CHUNK_SIZE); i++) {
-    partSizes[i % partCount] += TUS_CHUNK_SIZE;
+  let lastPart = -1;
+  for (let i = 0; i < Math.floor(totalSize / chunkSize); i++) {
+    partSizes[i % partCount] += chunkSize;
     if (i > lastPart) lastPart = i;
   }
 
-  // Assign the leftover to the part after the last part that was visited, or
-  // the last part in the array if all parts were used.
-  partSizes[Math.min(lastPart + 1, partCount - 1)] += leftover;
+  if (lastPart === -1) {
+    // No parts were visited, so assign to the last part.
+    partSizes[partCount - 1] += leftover;
+  } else {
+    // Assign the leftover to the part after the last part that was visited, or
+    // the last part in the array if all parts were used.
+    partSizes[Math.min(lastPart + 1, partCount - 1)] += leftover;
+  }
 
   // Convert sizes into parts.
   const parts = [];
