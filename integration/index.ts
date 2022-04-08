@@ -64,3 +64,8 @@ expect.extend({
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
 });
+
+// Sleep a bit before each test to avoid being rate-limited.
+beforeEach(() => {
+  return new Promise((r) => setTimeout(r, 100));
+});
