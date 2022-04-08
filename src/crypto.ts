@@ -72,7 +72,7 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
 export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
   validateNumber("length", length, "parameter");
 
-  const seed = makeSeed(length);
+  const seed = genRandomSeed(length);
   return { ...genKeyPairFromSeed(seed), seed };
 }
 
@@ -157,7 +157,7 @@ export function sha512(message: Uint8Array | string): Uint8Array {
  * @param length - Length of the seed in bytes.
  * @returns - The generated seed.
  */
-function makeSeed(length: number): string {
+function genRandomSeed(length: number): string {
   // Cryptographically-secure random number generator. It should use the
   // built-in crypto.getRandomValues in the browser.
   const array = randomBytes(length);

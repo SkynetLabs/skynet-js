@@ -3,7 +3,7 @@ import MockAdapter from "axios-mock-adapter";
 
 import { genKeyPairAndSeed, SIGNATURE_LENGTH } from "./crypto";
 import { SkynetClient, defaultSkynetPortalUrl, genKeyPairFromSeed } from "./index";
-import { getEntryLink, getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
+import { getEntryUrlForPortal, signEntry, validateRegistryProof } from "./registry";
 import { uriSkynetPrefix } from "./utils/url";
 import { hexToUint8Array, stringToUint8ArrayUtf8 } from "./utils/string";
 
@@ -78,24 +78,35 @@ describe("getEntry", () => {
 });
 
 describe("getEntryLink", () => {
-  const publicKey = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
-  const dataKey = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
+  const cases: Array<[string, string, boolean, string]> = [
+    [
+      "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2",
+      "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1",
+      false,
+      `${uriSkynetPrefix}AQBT237lo425ivk3Si6sOKretXxsDwO6DT1M0_Ui3oT0OA`,
+    ],
+    [
+      "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2",
+      "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1",
+      true,
+      `${uriSkynetPrefix}AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ`,
+    ],
+    [
+      "658b900df55e983ce85f3f9fb2a088d568ab514e7bbda51cfbfb16ea945378d9",
+      "weights",
+      false,
+      `${uriSkynetPrefix}AQBLxu38T6ceg0ey_UUbexZzo_Y8AwFvIdYePG96FSVU1A`,
+    ],
+  ];
 
-  it("should get the correct entry link for hashedDataKeyHex: false", async () => {
-    const expectedEntryLink = `${uriSkynetPrefix}AQBT237lo425ivk3Si6sOKretXxsDwO6DT1M0_Ui3oT0OA`;
+  it.each(cases)(
+    "('%s', '%s', { hashedDataKeyHex: %s }) should get the correct entry link '%s'",
+    async (publicKey, dataKey, hashedDataKeyHex, expectedEntryLink) => {
+      const entryLink = await client.registry.getEntryLink(publicKey, dataKey, { hashedDataKeyHex });
 
-    const entryLink = getEntryLink(publicKey, dataKey, { hashedDataKeyHex: false });
-
-    expect(entryLink).toEqual(expectedEntryLink);
-  });
-
-  it("should get the correct entry link for hashedDataKeyHex: true", async () => {
-    const expectedEntryLink = `${uriSkynetPrefix}AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ`;
-
-    const entryLink = getEntryLink(publicKey, dataKey, { hashedDataKeyHex: true });
-
-    expect(entryLink).toEqual(expectedEntryLink);
-  });
+      expect(entryLink).toEqual(expectedEntryLink);
+    }
+  );
 });
 
 describe("getEntryUrl", () => {
