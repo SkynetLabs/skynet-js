@@ -21,13 +21,6 @@ const TUS_CHUNK_SIZE = (1 << 22) * 10;
 const TUS_PARALLEL_UPLOADS = 2;
 
 /**
- * A percentage from 0-100. When set, parallel uploads are staggered one after
- * another instead of all running simultaneously. The stagger percentage is how
- * much of each upload should be finished before the next upload is initiated.
- */
-const DEFAULT_TUS_PARALLEL_UPLOADS_STAGGER_PERCENTAGE = 90;
-
-/**
  * The retry delays, in ms. Data is stored in skyd for up to 20 minutes, so the
  * total delays should not exceed that length of time.
  */
@@ -51,7 +44,7 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib).
  * @property [errorPages] - Defines a mapping of error codes and subfiles which are to be served in case we are serving the respective error code. All subfiles referred like this must be defined with absolute paths and must exist.
  * @property [numParallelUploads=2] - Used to override the default number of parallel uploads. Disable parallel uploads by setting to 1. Note that each parallel upload must be chunk-aligned so the number of parallel uploads may be limited if some parts would end up empty.
- * @property [parallelUploadsStaggerPercentage=90] - A percentage from 0-100. When set, parallel uploads are staggered one after another instead of all running simultaneously. The stagger percentage is how much of each upload should be finished before the next upload is initiated.
+ * @property [parallelUploadsStaggerPercent] - A percentage from 0-100. When set, parallel uploads are enabled and each chunk is staggered, one after another, instead of all running simultaneously. The stagger percentage is how much of each chunk upload should be finished before the next upload is initiated.
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
  * @property [tryFiles] - Allows us to set a list of potential subfiles to return in case the requested one does not exist or is a directory. Those subfiles might be listed with relative or absolute paths. If the path is absolute the file must exist.
  */
@@ -63,7 +56,7 @@ export type CustomUploadOptions = BaseCustomOptions & {
   errorPages?: JsonData;
   largeFileSize?: number;
   numParallelUploads?: number;
-  parallelUploadsStaggerPercentage?: number;
+  parallelUploadsStaggerPercent?: number;
   retryDelays?: number[];
   tryFiles?: string[];
 };
@@ -87,7 +80,7 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   errorPages: undefined,
   largeFileSize: TUS_CHUNK_SIZE,
   numParallelUploads: TUS_PARALLEL_UPLOADS,
-  parallelUploadsStaggerPercentage: DEFAULT_TUS_PARALLEL_UPLOADS_STAGGER_PERCENTAGE,
+  parallelUploadsStaggerPercent: undefined,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
   tryFiles: undefined,
 };
@@ -233,6 +226,20 @@ export async function uploadLargeFileRequest(
 
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
+  // Validation.
+  if (opts.parallelUploadsStaggerPercent) {
+    if (opts.numParallelUploads != TUS_PARALLEL_UPLOADS) {
+      console.warn(
+        "'numParallelUploads' option was overriden by 'parallelUploadsStaggerPercent' option and will have no effect"
+      );
+    }
+    if (opts.parallelUploadsStaggerPercent < 0 || opts.parallelUploadsStaggerPercent > 100) {
+      throw new Error(
+        `Expected 'parallelUploadsStaggerPercent' option to be between 0 and 100, was '${opts.parallelUploadsStaggerPercent}`
+      );
+    }
+  }
+
   // TODO: Add back upload options once they are implemented in skyd.
   const url = await buildRequestUrl(this, { endpointPath: opts.endpointLargeUpload });
   const headers = buildRequestHeaders(undefined, opts.customUserAgent, opts.customCookie, opts.skynetApiKey);
@@ -264,20 +271,30 @@ export async function uploadLargeFileRequest(
   // the part-split function. Note that each part has to be chunk-aligned, so we
   // may limit the number of parallel uploads.
   let parallelUploads = 1;
+  let parallelUploadsStaggerPercent: number | null = null;
   let splitSizeIntoParts:
     | ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>)
     | undefined = undefined;
   if (resp.headers["tus-extension"]?.includes("concatenation")) {
-    // Use a user-provided value, if given.
-    parallelUploads = opts.numParallelUploads;
-    // Limit the number of parallel uploads if some parts would end up empty,
-    // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
-    // and one empty part.
-    if (parallelUploads > Math.ceil(file.size / TUS_CHUNK_SIZE)) {
-      parallelUploads = Math.ceil(file.size / TUS_CHUNK_SIZE);
-    }
     // Set the part-split function.
     splitSizeIntoParts = splitSizeIntoChunkAlignedParts;
+    const numChunks = Math.ceil(file.size / TUS_CHUNK_SIZE);
+
+    if (opts.parallelUploadsStaggerPercent) {
+      parallelUploadsStaggerPercent = opts.parallelUploadsStaggerPercent;
+      // Set parallelUploads value to the number of chunks. We'll upload each
+      // one as a separate upload in tus.
+      parallelUploads = numChunks;
+    } else {
+      // Use a user-provided value, if given.
+      parallelUploads = opts.numParallelUploads;
+      // Limit the number of parallel uploads if some parts would end up empty,
+      // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
+      // and one empty part.
+      if (parallelUploads > numChunks) {
+        parallelUploads = numChunks;
+      }
+    }
   }
 
   return new Promise((resolve, reject) => {
@@ -290,7 +307,7 @@ export async function uploadLargeFileRequest(
         filetype: file.type,
       },
       parallelUploads,
-      parallelUploadsStaggerPercentage: opts.parallelUploadsStaggerPercentage || null,
+      parallelUploadsStaggerPercent,
       splitSizeIntoParts,
       headers,
       onProgress,
