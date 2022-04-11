@@ -56,6 +56,7 @@ export async function extractDomain(this: SkynetClient, fullDomain: string): Pro
   // TODO: Could consolidate this and `resolvePortalUrl` into one network request.
   const portalServerUrl = trimForwardSlash(await this.resolvePortalServerUrl());
   // Get the portal server domain.
+  // TODO: Use `extractNormalizedDomain` from MySky.
   let portalServerDomain;
   try {
     // Try to get the domain from a full URL.
