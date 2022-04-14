@@ -2,6 +2,148 @@
 
 For the latest beta changes, see [CHANGELOG-BETA.md](./CHANGELOG-BETA.md).
 
+## [4.1.0]
+
+### Breaking Changes
+
+#### Changed
+
+##### SkyDB
+
+- `client.db.getJSON` no longer returns `{ data, revision }` but instead `{ data, skylink }`.
+- `client.db.setJSON` no longer accepts a revision number.
+- Renamed SkyDB `skylink` response field to `dataLink`.
+- Added missing `sia://` prefixes to the skylinks returned from SkyDB.
+
+##### Registry
+
+- Renamed `RegistryEntry.datakey` to `dataKey` for consistency.
+- Registry entries now contain `data` that is type `Uint8Array` instead of `string`.
+
+##### Download
+
+- `getSkylinkUrl`, `downloadFile`, `openFile`, and the HNS equivalents are all now `async`.
+- `getFileContent` and `getFileContentHns` no longer return metadata objects.
+- Remove `noResponseMetadata` custom option from download and HNS download methods.
+- `getMetadata` now takes a `CustomGetMetadataOptions` object for custom options.
+- Rename `resolveHns` option `endpointDownloadHnsres` to `endpointResolveHns`.
+- `getHnsUrl` now defaults to `subdomain: true`.
+
+##### Client
+
+- `client.portalUrl` is now an async method instead of a variable.
+
+##### Misc
+
+- The `sia:` skylink prefix has been changed to `sia://`.
+
+#### Removed
+
+- The `getEntry` `timeout` option has been removed as it no longer has an effect.
+- Removed `uriHandshakeResolverPrefix`.
+- Removed `merkleRoot` and `bitfield` from upload response.
+
+### Other Changes
+
+#### Added
+
+##### SkyDB V2
+
+- Added SkyDB V2.
+  - SkyDB V2 can be accessed with `client.dbV2` and `mySky.dbV2`.
+  - SkyDB V2 methods use a revision number cache internally,
+    improving performance and correctness.
+  - `dbV2.setJSON` does not make a network request to get the latest revision
+    number, so you must always call `dbV2.getJSON` first.
+
+##### Large File Uploads
+
+- Added support for large file uploads.
+- The tus protocol will be used automatically for files greater than 40MiB in size.
+- Large files are uploaded in parallel chunks.
+
+##### MySky
+
+- Added `client.loadMySky`.
+- Added `MySky` and `DacLibrary` types. See [the docs](https://sdk.skynetlabs.com/#mysky) for everything you can do with this new functionality.
+- Added `client.extractDomain`, `client.getFullDomainUrl`, `extractDomainForPortal`, `getFullDomainUrlForPortal`.
+
+##### File
+
+- Added `client.file.getJSON`.
+- Added `client.file.getJSONEncrypted`.
+- Added `client.file.getEntryLink`.
+
+##### Exports
+
+- Added `Permission` export.
+- Exported `Keypair` and `KeyPairAndSeed` crypto types.
+- Added `validateRegistryProof` function.
+- Exported some crypto length constants.
+- Added exports for encryption utilities `decryptJSONFile`, `encryptJSONFile`,
+  `ENCRYPTED_JSON_RESPONSE_VERSION`, and `EncryptedJSONResponse`.
+
+##### SkyDB
+
+- Added `db.deleteJSON` and `mySky.deleteJSON`.
+- Added `db.setDataLink`.
+- Added `db.getEntryData`, `db.setEntryData`, `db.deleteEntryData`.
+- Added `cachedDataLink` option to `db.getJSON`. This lets us avoid getting the data again if the latest data link matches the cached data link.
+
+##### Registry
+
+- Added `getEntryLink` and `mysky.getEntryLink`.
+- Added `getEntryUrlForPortal`, `getSkylinkUrlForPortal`.
+- Added `signEntry` helper function.
+- Added `client.registry.postSignedEntry` helper method.
+
+##### Client
+
+- Errors caused by network requests to `skyd` are now type
+  `ExecuteRequestError`.
+  - This error type is fully compatible with `AxiosError`.
+  - Errors from failed requests now contain a message with the original message
+    from axios as well as the full context from `skyd`.
+  - `ExecuteRequestError` also contains `.responseMessage` and
+    `.responseStatus`.
+  - `ExecuteRequestError` can be used with `instanceof` (unlike AxiosError).
+- Expose `executeRequest`.
+- Added `customCookie` client option.
+- Added `onDownloadProgress` client option.
+- Added `client.initPortalUrl` method to manually initialize the portal URL before it is needed.
+
+##### Uploads
+
+- Added the `errorPages` and `tryFiles` options for directory uploads.
+
+##### Testing
+
+- Add option for portal API keys and env var for integration tests
+- Added ability to set custom cookie in integration tests with the `SKYNET_JS_INTEGRATION_TEST_CUSTOM_COOKIE` env var.
+
+##### Misc
+
+- Added `client.pinSkylink`.
+- Added `isSkylinkV1` and `isSkylinkV2`.
+- Added `range` option to download options.
+- Added `convertSkylinkToBase64`.
+
+#### Changed
+
+##### Client
+
+- Try resolving the portal URL again if the previous attempt failed.
+- Error messages from `skyd` requests now contain the full, descriptive error
+  response returned from `skyd`.
+- The SDK now supports cookies with requests that are "same-site" but "cross-origin." This allows accounts to be associated with requests made to API endpoints at the base portal URL.
+
+##### Misc
+
+- Downloads now verify the registry proofs returned from the portal.
+- Fixed build for CommonJS and React projects.
+- Fixed Range Error on unicode data keys.
+- The `resolveHNS` method now works for Handshake domains with `skyns://` HNS entries.
+
 ## [3.0.2]
 
 ### Added
