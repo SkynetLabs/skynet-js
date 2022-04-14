@@ -158,13 +158,26 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     expect(contentType).toEqual("application/octet-stream");
   });
 
-  it('should get binary data with responseType: "arraybuffer"', async () => {
+  it('getFileContent should get binary data with responseType: "arraybuffer"', async () => {
     const file = new File(["foo"], "bar");
     const { skylink } = await client.uploadFile(file);
 
     // Get file content and check returned values.
 
     const { data, contentType } = await client.getFileContent(skylink, { responseType: "arraybuffer" });
+
+    expect(typeof data).toEqual("object");
+    expect(data instanceof ArrayBuffer).toBeTruthy();
+    expect(contentType).toEqual("application/octet-stream");
+  });
+
+  it("getFileContentBinary should get binary data", async () => {
+    const file = new File(["foo"], "bar");
+    const { skylink } = await client.uploadFile(file);
+
+    // Get file content and check returned values.
+
+    const { data, contentType } = await client.getFileContentBinary(skylink);
 
     expect(typeof data).toEqual("object");
     expect(data instanceof ArrayBuffer).toBeTruthy();

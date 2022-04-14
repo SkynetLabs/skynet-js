@@ -1,6 +1,14 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
 For the latest beta changes, see [CHANGELOG-BETA.md](./CHANGELOG-BETA.md).
+
+## [Unreleased]
+
+### Added
+
+- Added `client.getFileContentBinary` and `client.getFileContentBinaryHns` methods for downloading binary data.
 
 ## [3.0.2]
 
