@@ -85,11 +85,11 @@ Revert `4.0.21-beta`.
 - Add MySky ID verification
   - `mySky.signMessage`
   - `mySky.verifyMessageSignature`
-- Expose `executeRequest`
+- Expose `executeRequest`.
 
 ### Changed
 
-- Try resolving the portal URL again if the previous attempt failed
+- Try resolving the portal URL again if the previous attempt failed.
 
 ## [4.0.19-beta]
 
@@ -103,8 +103,8 @@ Revert `4.0.21-beta`.
 ### Added
 
 - Add missing entry data methods
-  - mySky.deleteEntryData
-  - db.getEntryData, db.setEntryData, db.deleteEntryData
+  - `mySky.deleteEntryData`
+  - `db.getEntryData`, `db.setEntryData`, `db.deleteEntryData`
 
 ## [4.0.17-beta]
 
@@ -136,13 +136,13 @@ Revert `4.0.21-beta`.
 
 ### Changed
 
-- Include tryfiles metadata
+- Add `tryfiles` option for uploads.
 
 ## [4.0.13-beta]
 
 ### Added
 
-- Added onDownloadProgress client option.
+- Added `onDownloadProgress` client option.
 
 ### Changed
 
@@ -242,7 +242,7 @@ Revert `4.0.21-beta`.
 
 ### Added
 
-- Added `cachedDataLink` option to `registry.getJSON`. This lets us avoid getting the data again if the latest data link matches the cached data link.
+- Added `cachedDataLink` option to `db.getJSON`. This lets us avoid getting the data again if the latest data link matches the cached data link.
 - Added `customCookie` client option.
 
 ### Changed
