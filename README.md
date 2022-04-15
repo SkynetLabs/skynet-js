@@ -13,21 +13,15 @@ A Javascript module that:
 
 ## Updating to v4 from v3
 
-The latest beta major version is `v4`. There are many breaking changes from `v3`.
+The latest stable major version is `v4`. There are many breaking changes from `v3`.
 
-Please consult [the update guide](https://siasky.net/docs/v4/?javascript--browser#updating-from-v3) for help migrating your code.
-
-## Updating to v3 from v2
-
-The latest stable major version is `v3`. There are many breaking changes from `v2`.
-
-Please consult [the update guide](https://siasky.net/docs/v3/?javascript--browser#updating-from-v2) for help migrating your code.
+Please consult [the update guide](https://sdk.skynetlabs.com/v4/#updating-from-v3) for help migrating your code.
 
 ## Documentation
 
-For documentation complete with examples, please see [the Skynet SDK docs](https://siasky.net/docs/?javascript--browser#introduction).
+For documentation complete with examples, please see [the Skynet SDK docs](https://sdk.skynetlabs.com/?javascript--browser#introduction).
 
-We also have an [example tutorial about creating your first web app on Skynet](https://blog.sia.tech/creating-your-first-web-app-on-skynet-ec6f4fff405f)
+We also have an [introduction workshop for building a web app on Skynet](https://docs.skynetlabs.com/skynet-workshops/introduction-workshop), and an [example tutorial about creating your app without a Javascript framework](https://blog.sia.tech/creating-your-first-web-app-on-skynet-ec6f4fff405f).
 
 ## How To Use skynet-js In Your Web Project
 
