@@ -1,4 +1,4 @@
-import { Buffer } from "buffer";
+import bufferFrom from "buffer-from";
 
 import { validateHexString, validateString, validationError } from "./validation";
 
@@ -103,7 +103,7 @@ export function trimUriPrefix(str: string, prefix: string): string {
 export function stringToUint8ArrayUtf8(str: string): Uint8Array {
   validateString("str", str, "parameter");
 
-  return Uint8Array.from(Buffer.from(str, "utf-8"));
+  return Uint8Array.from(bufferFrom(str, "utf-8"));
 }
 
 /**
@@ -113,7 +113,7 @@ export function stringToUint8ArrayUtf8(str: string): Uint8Array {
  * @returns - The string.
  */
 export function uint8ArrayToStringUtf8(array: Uint8Array): string {
-  return Buffer.from(array).toString("utf-8");
+  return bufferFrom(array).toString("utf-8");
 }
 
 /**
