@@ -1,6 +1,7 @@
 import { client, dataKey, portal } from ".";
 import { convertSkylinkToBase64, genKeyPairAndSeed, uriSkynetPrefix } from "../src";
 import { randomUnicodeString } from "../utils/testing";
+import { AxiosResponse } from "axios";
 
 describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
   const fileData = "testing";
@@ -324,11 +325,10 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
 
   // Download the files.
   let [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
+
   const [response1, response2] = await Promise.all([
-    // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url1),
-    // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url2),
+    getFileContentWithRetry(url1, 10),
+    getFileContentWithRetry(url2, 10),
   ]);
 
   // Get the etags.
@@ -352,4 +352,32 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
   const [etag3, etag4] = [response3.headers["etag"], response4.headers["etag"]];
   expect(etag3).toEqual(etag1);
   expect(etag4).toEqual(etag2);
+}
+
+/**
+ * Makes the request to get the contents of the file at the given skylink.
+ *
+ * @param url - The url of the file to get.
+ * @param tries - The number of tries.
+ */
+async function getFileContentWithRetry(url: string, tries: number): Promise<AxiosResponse> {
+  try {
+    // @ts-expect-error Calling a private method.
+    return client.getFileContentRequest(url);
+  } catch (e) {
+    if (tries < 1) {
+      throw e;
+    } else {
+      return sleep(100).then(() => getFileContentWithRetry(url, tries - 1));
+    }
+  }
+}
+
+/**
+ * Sleeps for a number of milliseconds before resolving.
+ *
+ * @param ms - The number of milliseconds to sleep.
+ */
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
