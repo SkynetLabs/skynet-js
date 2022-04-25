@@ -16,6 +16,8 @@ export async function retry(fn: () => Promise<any>, attemptsLeft: number = DEFAU
       throw e;
     }
     attemptsLeft -= 1;
+    console.log("retrying, attempts left", attemptsLeft);
+    console.log("sleeping", (DEFAULT_RETRY_COUNT - attemptsLeft) * 100);
     await sleep((DEFAULT_RETRY_COUNT - attemptsLeft) * 100);
     return retry(fn, attemptsLeft);
   }
