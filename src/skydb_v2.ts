@@ -1,34 +1,33 @@
 import { ResponseType } from "axios";
 import { sign } from "tweetnacl";
+
 import { SkynetClient } from "./client";
-import { CustomDownloadOptions, DEFAULT_DOWNLOAD_OPTIONS } from "./download";
-import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
+import { DEFAULT_DOWNLOAD_OPTIONS, CustomDownloadOptions } from "./download";
 import {
-  CustomGetEntryOptions,
-  CustomSetEntryOptions,
   DEFAULT_GET_ENTRY_OPTIONS,
   DEFAULT_SET_ENTRY_OPTIONS,
+  CustomGetEntryOptions,
   RegistryEntry,
+  CustomSetEntryOptions,
   validatePublicKey,
 } from "./registry";
 import { CachedRevisionNumber } from "./revision_cache";
-import { formatSkylink } from "./skylink/format";
 import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
-import { CustomUploadOptions, DEFAULT_UPLOAD_OPTIONS } from "./upload";
-import { areEqualUint8Arrays } from "./utils/array";
-import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
 import { MAX_REVISION } from "./utils/number";
-import { DEFAULT_BASE_OPTIONS, extractOptions } from "./utils/options";
+import { URI_SKYNET_PREFIX } from "./utils/url";
 import {
   hexToUint8Array,
-  stringToUint8ArrayUtf8,
-  toHexString,
   trimUriPrefix,
+  toHexString,
+  stringToUint8ArrayUtf8,
   uint8ArrayToStringUtf8,
 } from "./utils/string";
+import { formatSkylink } from "./skylink/format";
+import { DEFAULT_UPLOAD_OPTIONS, CustomUploadOptions } from "./upload";
+import { areEqualUint8Arrays } from "./utils/array";
+import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
+import { DEFAULT_BASE_OPTIONS, extractOptions } from "./utils/options";
 import { JsonData } from "./utils/types";
-import { uploadBlocking } from "./utils/upload";
-import { URI_SKYNET_PREFIX } from "./utils/url";
 import {
   throwValidationError,
   validateHexString,
@@ -39,6 +38,7 @@ import {
   validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
+import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
 type SkynetJson = {
   _data: JsonData;
@@ -561,10 +561,10 @@ export async function getOrCreateSkyDBRegistryEntry(
 
   // Do file upload.
   const uploadOpts = extractOptions(opts, DEFAULT_UPLOAD_OPTIONS);
-  const skylink = await uploadBlocking(() => client.uploadFile(file, uploadOpts), client);
+  const skyfile = await client.uploadFile(file, uploadOpts);
 
   // Build the registry entry.
-  const dataLink = trimUriPrefix(skylink, URI_SKYNET_PREFIX);
+  const dataLink = trimUriPrefix(skyfile.skylink, URI_SKYNET_PREFIX);
   const rawDataLink = decodeSkylinkBase64(dataLink);
   validateUint8ArrayLen("rawDataLink", rawDataLink, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
