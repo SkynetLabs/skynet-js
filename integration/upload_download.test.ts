@@ -342,10 +342,8 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
   // Download the files using nocache.
   [url1, url2] = [`${url1}?nocache=true`, `${url2}?nocache=true`];
   const [response3, response4] = await Promise.all([
-    // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url1),
-    // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url2),
+    getFileContentWithRetry(url1, 10),
+    getFileContentWithRetry(url2, 10),
   ]);
 
   // The etags should not have changed.
