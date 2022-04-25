@@ -227,8 +227,8 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
     // Upload the files.
     const [skylink1, skylink2] = await Promise.all([
-      await uploadBlocking(() => client.uploadFile(new File([data], filename1)), client),
-      await uploadBlocking(() => client.uploadFile(new File([data], filename2)), client),
+      uploadBlocking(() => client.uploadFile(new File([data], filename1)), client),
+      uploadBlocking(() => client.uploadFile(new File([data], filename2)), client),
     ]);
 
     await expectDifferentEtags(skylink1, skylink2);
@@ -241,8 +241,8 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
     // Upload the files.
     const [skylink1, skylink2] = await Promise.all([
-      await uploadBlocking(() => client.uploadFile(new File([data1], filename)), client),
-      await uploadBlocking(() => client.uploadFile(new File([data2], filename)), client),
+      uploadBlocking(() => client.uploadFile(new File([data1], filename)), client),
+      uploadBlocking(() => client.uploadFile(new File([data2], filename)), client),
     ]);
 
     await expectDifferentEtags(skylink1, skylink2);
@@ -261,8 +261,8 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
     // Upload two random files.
     const [skylink1, skylink2] = await Promise.all([
-      await uploadBlocking(() => client.uploadFile(new File([data1], filename)), client),
-      await uploadBlocking(() => client.uploadFile(new File([data2], filename)), client),
+      uploadBlocking(() => client.uploadFile(new File([data1], filename)), client),
+      uploadBlocking(() => client.uploadFile(new File([data2], filename)), client),
     ]);
 
     // Set the data link for the first file at a random data key.
