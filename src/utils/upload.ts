@@ -23,12 +23,14 @@ export async function uploadBlocking(uploadFn: uploadFN, client: SkynetClient): 
     throw e;
   }
 
-  try {
-    await retry(() => client.getFileContent(skylink));
+  const url = await client.getSkylinkUrl(skylink);
+  const context = `blocking upload ${skylink}, downloading from ${url}`;
 
-    const url = await client.getSkylinkUrl(skylink);
+  try {
+    await retry(() => client.getFileContent(skylink), context + "(getFileContent)");
+
     // @ts-expect-error Calling a private method.
-    await retry(() => client.getFileContentRequest(url));
+    await retry(() => client.getFileContentRequest(url), context + "(getFileContentRequest)");
 
     return skylink;
   } catch (e) {

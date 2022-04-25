@@ -4,11 +4,18 @@ const DEFAULT_RETRY_COUNT = 10;
  * Retries the given function for the given retryCnt amount of times
  *
  * @param fn - The function to retry
+ * @param context - Context to the retry for logging purposes
  * @param attemptsLeft - The amount of retries left
  * @returns the result from the given function
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function retry(fn: () => Promise<any>, attemptsLeft: number = DEFAULT_RETRY_COUNT): Promise<any> {
+export async function retry(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fn: () => Promise<any>,
+  context = "",
+  attemptsLeft: number = DEFAULT_RETRY_COUNT
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
   try {
     return await fn();
   } catch (e) {
@@ -16,8 +23,11 @@ export async function retry(fn: () => Promise<any>, attemptsLeft: number = DEFAU
       throw e;
     }
     attemptsLeft -= 1;
+    if (attemptsLeft === 0) {
+      console.log(`last retry, context ${context}`);
+    }
     await sleep((DEFAULT_RETRY_COUNT - attemptsLeft) * 1000);
-    return retry(fn, attemptsLeft);
+    return retry(fn, context, attemptsLeft);
   }
 }
 
