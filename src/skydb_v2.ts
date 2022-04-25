@@ -10,6 +10,7 @@ import {
   RegistryEntry,
   CustomSetEntryOptions,
   validatePublicKey,
+  SignedRegistryEntry,
 } from "./registry";
 import { CachedRevisionNumber } from "./revision_cache";
 import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
@@ -659,7 +660,7 @@ async function getSkyDBRegistryEntryAndUpdateCache(
 ): Promise<RegistryEntry | null> {
   // If this throws due to a parse error or network error, exit early and do not
   // update the cached revision number.
-  const { entry } = await client.registry.getEntry(publicKey, dataKey, opts);
+  const { entry } = await getRegistryEntryWithRetry(client, publicKey, dataKey, opts, 10);
 
   // Don't update the cached revision number if the data was not found (404). Return null.
   if (entry === null) {
@@ -730,4 +731,40 @@ function parseDataLink(data: Uint8Array, legacy: boolean): { rawDataLink: string
  */
 function wasRegistryEntryDeleted(entry: RegistryEntry): boolean {
   return areEqualUint8Arrays(entry.data, EMPTY_SKYLINK);
+}
+
+/**
+ * Gets a registry entry and retries if the result is null.
+ *
+ * @param client - Skynet client
+ * @param publicKey - the public key@param publicKey - the public key
+ * @param dataKey - the data key
+ * @param opts - options
+ * @param tries - how many times we should retry
+ */
+async function getRegistryEntryWithRetry(
+  client: SkynetClient,
+  publicKey: string,
+  dataKey: string,
+  opts: CustomGetEntryOptions,
+  tries: number
+): Promise<SignedRegistryEntry> {
+  try {
+    return client.registry.getEntry(publicKey, dataKey, opts);
+  } catch (e) {
+    if (tries < 1) {
+      throw e;
+    } else {
+      return sleep(100).then(() => getRegistryEntryWithRetry(client, publicKey, dataKey, opts, tries - 1));
+    }
+  }
+}
+
+/**
+ * Sleeps for a number of milliseconds before resolving.
+ *
+ * @param ms - The number of milliseconds to sleep.
+ */
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
