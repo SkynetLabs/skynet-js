@@ -1,3 +1,4 @@
+import { AxiosResponse } from "axios";
 import { client, dataKey, portal } from ".";
 import { convertSkylinkToBase64, genKeyPairAndSeed, uriSkynetPrefix } from "../src";
 import { uploadBlocking } from "../src/utils/upload";
@@ -322,12 +323,21 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
   // Download the files.
   let [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
 
-  const [response1, response2] = await Promise.all([
-    // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url1),
-    // @ts-expect-error Calling a private method.
-    client.getFileContentRequest(url2),
-  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let response1: AxiosResponse<any, any> = {} as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let response2: AxiosResponse<any, any> = {} as any;
+
+  try {
+    [response1, response2] = await Promise.all([
+      // @ts-expect-error Calling a private method.
+      client.getFileContentRequest(url1),
+      // @ts-expect-error Calling a private method.
+      client.getFileContentRequest(url2),
+    ]);
+  } catch (e) {
+    console.log("Failed getting content", url1, url2);
+  }
 
   // Get the etags.
   const [etag1, etag2] = [response1.headers["etag"], response2.headers["etag"]];
