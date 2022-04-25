@@ -14,7 +14,6 @@ export type uploadFN = () => Promise<{ skylink: string }>;
  */
 export async function uploadBlocking(uploadFn: uploadFN, client: SkynetClient): Promise<string> {
   const { skylink } = await uploadFn();
-  const url = await client.getSkylinkUrl(skylink);
-  await retry(() => client.downloadFile(url));
+  await retry(() => client.getFileContent(skylink));
   return skylink;
 }
