@@ -197,11 +197,7 @@ export async function getSkylinkUrl(
 
   const portalUrl = await this.portalUrl();
 
-  const slUrl = getSkylinkUrlForPortal(portalUrl, skylink, opts);
-
-  console.log(`DEBUG: Portal URL: ${portalUrl} | Skylink URL: ${slUrl}`);
-
-  return slUrl;
+  return getSkylinkUrlForPortal(portalUrl, skylink, opts);
 }
 
 /**
