@@ -1,34 +1,34 @@
 import { ResponseType } from "axios";
 import { sign } from "tweetnacl";
-
 import { SkynetClient } from "./client";
-import { DEFAULT_DOWNLOAD_OPTIONS, CustomDownloadOptions } from "./download";
+import { CustomDownloadOptions, DEFAULT_DOWNLOAD_OPTIONS } from "./download";
+import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 import {
+  CustomGetEntryOptions,
+  CustomSetEntryOptions,
   DEFAULT_GET_ENTRY_OPTIONS,
   DEFAULT_SET_ENTRY_OPTIONS,
-  CustomGetEntryOptions,
   RegistryEntry,
-  CustomSetEntryOptions,
   validatePublicKey,
-  SignedRegistryEntry,
 } from "./registry";
 import { CachedRevisionNumber } from "./revision_cache";
-import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
-import { MAX_REVISION } from "./utils/number";
-import { URI_SKYNET_PREFIX } from "./utils/url";
-import {
-  hexToUint8Array,
-  trimUriPrefix,
-  toHexString,
-  stringToUint8ArrayUtf8,
-  uint8ArrayToStringUtf8,
-} from "./utils/string";
 import { formatSkylink } from "./skylink/format";
-import { DEFAULT_UPLOAD_OPTIONS, CustomUploadOptions } from "./upload";
+import { BASE64_ENCODED_SKYLINK_SIZE, decodeSkylink, EMPTY_SKYLINK, RAW_SKYLINK_SIZE } from "./skylink/sia";
+import { CustomUploadOptions, DEFAULT_UPLOAD_OPTIONS } from "./upload";
 import { areEqualUint8Arrays } from "./utils/array";
 import { decodeSkylinkBase64, encodeSkylinkBase64 } from "./utils/encoding";
+import { MAX_REVISION } from "./utils/number";
 import { DEFAULT_BASE_OPTIONS, extractOptions } from "./utils/options";
+import {
+  hexToUint8Array,
+  stringToUint8ArrayUtf8,
+  toHexString,
+  trimUriPrefix,
+  uint8ArrayToStringUtf8,
+} from "./utils/string";
 import { JsonData } from "./utils/types";
+import { uploadBlocking } from "./utils/upload";
+import { URI_SKYNET_PREFIX } from "./utils/url";
 import {
   throwValidationError,
   validateHexString,
@@ -39,7 +39,6 @@ import {
   validateUint8Array,
   validateUint8ArrayLen,
 } from "./utils/validation";
-import { EntryData, MAX_ENTRY_LENGTH } from "./mysky";
 
 type SkynetJson = {
   _data: JsonData;
@@ -562,10 +561,10 @@ export async function getOrCreateSkyDBRegistryEntry(
 
   // Do file upload.
   const uploadOpts = extractOptions(opts, DEFAULT_UPLOAD_OPTIONS);
-  const skyfile = await client.uploadFile(file, uploadOpts);
+  const skylink = await uploadBlocking(() => client.uploadFile(file, uploadOpts), client);
 
   // Build the registry entry.
-  const dataLink = trimUriPrefix(skyfile.skylink, URI_SKYNET_PREFIX);
+  const dataLink = trimUriPrefix(skylink, URI_SKYNET_PREFIX);
   const rawDataLink = decodeSkylinkBase64(dataLink);
   validateUint8ArrayLen("rawDataLink", rawDataLink, "skylink byte array", RAW_SKYLINK_SIZE);
   const entry: RegistryEntry = {
@@ -660,7 +659,7 @@ async function getSkyDBRegistryEntryAndUpdateCache(
 ): Promise<RegistryEntry | null> {
   // If this throws due to a parse error or network error, exit early and do not
   // update the cached revision number.
-  const { entry } = await getRegistryEntryWithRetry(client, publicKey, dataKey, opts, 10);
+  const { entry } = await client.registry.getEntry(publicKey, dataKey, opts);
 
   // Don't update the cached revision number if the data was not found (404). Return null.
   if (entry === null) {
@@ -731,40 +730,4 @@ function parseDataLink(data: Uint8Array, legacy: boolean): { rawDataLink: string
  */
 function wasRegistryEntryDeleted(entry: RegistryEntry): boolean {
   return areEqualUint8Arrays(entry.data, EMPTY_SKYLINK);
-}
-
-/**
- * Gets a registry entry and retries if the result is null.
- *
- * @param client - Skynet client
- * @param publicKey - the public key@param publicKey - the public key
- * @param dataKey - the data key
- * @param opts - options
- * @param tries - how many times we should retry
- */
-async function getRegistryEntryWithRetry(
-  client: SkynetClient,
-  publicKey: string,
-  dataKey: string,
-  opts: CustomGetEntryOptions,
-  tries: number
-): Promise<SignedRegistryEntry> {
-  try {
-    return client.registry.getEntry(publicKey, dataKey, opts);
-  } catch (e) {
-    if (tries < 1) {
-      throw e;
-    } else {
-      return sleep(100).then(() => getRegistryEntryWithRetry(client, publicKey, dataKey, opts, tries - 1));
-    }
-  }
-}
-
-/**
- * Sleeps for a number of milliseconds before resolving.
- *
- * @param ms - The number of milliseconds to sleep.
- */
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

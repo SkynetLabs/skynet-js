@@ -1,7 +1,7 @@
 import { client, dataKey, portal } from ".";
 import { convertSkylinkToBase64, genKeyPairAndSeed, uriSkynetPrefix } from "../src";
+import { uploadBlocking } from "../src/utils/upload";
 import { randomUnicodeString } from "../utils/testing";
-import { AxiosResponse } from "axios";
 
 describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
   const fileData = "testing";
@@ -42,7 +42,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     const dirname = "dirname";
     const dirType = "application/zip";
 
-    const { skylink } = await client.uploadDirectory(directory, dirname);
+    const skylink = await uploadBlocking(() => client.uploadDirectory(directory, dirname), client);
     expect(skylink).not.toEqual("");
 
     // Get content for the skylink and check returned values.
@@ -75,7 +75,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     // Upload the data with a custom filename.
 
     const file = new File([fileData], dataKey);
-    const { skylink } = await client.uploadFile(file, { customFilename });
+    const skylink = await uploadBlocking(() => client.uploadFile(file, { customFilename }), client);
     expect(skylink).not.toEqual("");
 
     // Get file metadata and check filename.
@@ -88,7 +88,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     // Upload the data to acquire its skylink.
 
     const file = new File([fileData], dataKey, { type: plaintextType });
-    const { skylink } = await client.uploadFile(file);
+    const skylink = await uploadBlocking(() => client.uploadFile(file), client);
     expect(skylink).not.toEqual("");
 
     // Get file content and check returned values.
@@ -104,7 +104,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     // Upload the data to acquire its skylink.
 
     const file = new File([fileData], dataKey, { type: plaintextType });
-    const { skylink } = await client.uploadFile(file);
+    const skylink = await uploadBlocking(() => client.uploadFile(file), client);
     expect(skylink).not.toEqual("");
 
     // Get file metadata and check returned values.
@@ -119,7 +119,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
   it("Should get JSON file contents", async () => {
     // Upload the data to acquire its skylink.
     const file = new File([JSON.stringify(json)], dataKey, { type: "application/json" });
-    const { skylink } = await client.uploadFile(file);
+    const skylink = await uploadBlocking(() => client.uploadFile(file), client);
 
     const { data, contentType } = await client.getFileContent(skylink);
     expect(data).toEqual(expect.any(Object));
@@ -131,7 +131,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     // Upload the data to acquire its skylink. Content type is inferred from filename.
 
     const file = new File([JSON.stringify(json)], `${dataKey}.json`);
-    const { skylink } = await client.uploadFile(file);
+    const skylink = await uploadBlocking(() => client.uploadFile(file), client);
     expect(skylink).not.toEqual("");
 
     // Get file content and check returned values.
@@ -147,7 +147,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     // Upload the data to acquire its skylink. Don't specify a content type.
 
     const file = new File([JSON.stringify(json)], dataKey);
-    const { skylink } = await client.uploadFile(file);
+    const skylink = await uploadBlocking(() => client.uploadFile(file), client);
     expect(skylink).not.toEqual("");
 
     // Get file content and check returned values.
@@ -161,7 +161,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
   it('should get binary data with responseType: "arraybuffer"', async () => {
     const file = new File(["foo"], "bar");
-    const { skylink } = await client.uploadFile(file);
+    const skylink = await uploadBlocking(() => client.uploadFile(file), client);
 
     // Get file content and check returned values.
 
@@ -177,7 +177,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
     const file = new File(["asdf"], filename);
     expect(file.size).toEqual(4);
-    const { skylink } = await client.uploadFile(file);
+    const skylink = await uploadBlocking(() => client.uploadFile(file), client);
     expect(skylink).not.toEqual("");
 
     // Get file content and check returned values.
@@ -193,7 +193,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
     const file = new File([""], dataKey);
     expect(file.size).toEqual(0);
-    const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+    const skylink = await uploadBlocking(() => client.uploadFile(file, { onUploadProgress: onProgress }), client);
     expect(skylink).not.toEqual("");
 
     // Get file content and check returned values.
@@ -210,7 +210,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
     const file = new File([filedata], dataKey);
     expect(file.size).toEqual(filedata.length);
-    const { skylink } = await client.uploadFile(file, { onUploadProgress: onProgress });
+    const skylink = await uploadBlocking(() => client.uploadFile(file, { onUploadProgress: onProgress }), client);
     expect(skylink).not.toEqual("");
 
     // Get file content and check returned values.
@@ -225,9 +225,9 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     const data = "file";
 
     // Upload the files.
-    const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
-      client.uploadFile(new File([data], filename1)),
-      client.uploadFile(new File([data], filename2)),
+    const [skylink1, skylink2] = await Promise.all([
+      await uploadBlocking(() => client.uploadFile(new File([data], filename1)), client),
+      await uploadBlocking(() => client.uploadFile(new File([data], filename2)), client),
     ]);
 
     await expectDifferentEtags(skylink1, skylink2);
@@ -239,9 +239,9 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     const filename = "file";
 
     // Upload the files.
-    const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
-      client.uploadFile(new File([data1], filename)),
-      client.uploadFile(new File([data2], filename)),
+    const [skylink1, skylink2] = await Promise.all([
+      await uploadBlocking(() => client.uploadFile(new File([data1], filename)), client),
+      await uploadBlocking(() => client.uploadFile(new File([data2], filename)), client),
     ]);
 
     await expectDifferentEtags(skylink1, skylink2);
@@ -259,17 +259,13 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     const entryLink = await client.registry.getEntryLink(publicKey, dataKey);
 
     // Upload two random files.
-    const [{ skylink: skylink1 }, { skylink: skylink2 }] = await Promise.all([
-      client.uploadFile(new File([data1], filename)),
-      client.uploadFile(new File([data2], filename)),
+    const [skylink1, skylink2] = await Promise.all([
+      await uploadBlocking(() => client.uploadFile(new File([data1], filename)), client),
+      await uploadBlocking(() => client.uploadFile(new File([data2], filename)), client),
     ]);
 
     // Set the data link for the first file at a random data key.
     await client.db.setDataLink(privateKey, dataKey, skylink1);
-
-    // Sleep for a bit to account for the portal's load balancer switching
-    // servers. This helps ensure that the uploaded files are available.
-    await new Promise((r) => setTimeout(r, 3000));
 
     // Get the entry link's etag.
     const url = await client.getSkylinkUrl(entryLink);
@@ -327,8 +323,10 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
   let [url1, url2] = await Promise.all([client.getSkylinkUrl(skylink1), client.getSkylinkUrl(skylink2)]);
 
   const [response1, response2] = await Promise.all([
-    getFileContentWithRetry(url1, 10),
-    getFileContentWithRetry(url2, 10),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url1),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url2),
   ]);
 
   // Get the etags.
@@ -342,40 +340,14 @@ export async function expectDifferentEtags(skylink1: string, skylink2: string): 
   // Download the files using nocache.
   [url1, url2] = [`${url1}?nocache=true`, `${url2}?nocache=true`];
   const [response3, response4] = await Promise.all([
-    getFileContentWithRetry(url1, 10),
-    getFileContentWithRetry(url2, 10),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url1),
+    // @ts-expect-error Calling a private method.
+    client.getFileContentRequest(url2),
   ]);
 
   // The etags should not have changed.
   const [etag3, etag4] = [response3.headers["etag"], response4.headers["etag"]];
   expect(etag3).toEqual(etag1);
   expect(etag4).toEqual(etag2);
-}
-
-/**
- * Makes the request to get the contents of the file at the given skylink.
- *
- * @param url - The url of the file to get.
- * @param tries - The number of tries.
- */
-async function getFileContentWithRetry(url: string, tries: number): Promise<AxiosResponse> {
-  try {
-    // @ts-expect-error Calling a private method.
-    return client.getFileContentRequest(url);
-  } catch (e) {
-    if (tries < 1) {
-      throw e;
-    } else {
-      return sleep(100).then(() => getFileContentWithRetry(url, tries - 1));
-    }
-  }
-}
-
-/**
- * Sleeps for a number of milliseconds before resolving.
- *
- * @param ms - The number of milliseconds to sleep.
- */
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
