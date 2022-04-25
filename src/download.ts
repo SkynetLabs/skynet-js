@@ -8,7 +8,7 @@ import { parseSkylink } from "./skylink/parse";
 import { isSkylinkV1 } from "./skylink/sia";
 import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { trimUriPrefix } from "./utils/string";
-import { addUrlSubdomain, addUrlQuery, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
+import { addUrlQuery, addUrlSubdomain, makeUrl, URI_HANDSHAKE_PREFIX } from "./utils/url";
 import {
   throwValidationError,
   validateObject,
@@ -180,7 +180,7 @@ export async function downloadFileHns(
  * Constructs the full URL for the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylink - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the skylink.
@@ -188,7 +188,7 @@ export async function downloadFileHns(
  */
 export async function getSkylinkUrl(
   this: SkynetClient,
-  skylinkUrl: string,
+  skylink: string,
   customOptions?: CustomDownloadOptions
 ): Promise<string> {
   // Validation is done in `getSkylinkUrlForPortal`.
@@ -197,7 +197,11 @@ export async function getSkylinkUrl(
 
   const portalUrl = await this.portalUrl();
 
-  return getSkylinkUrlForPortal(portalUrl, skylinkUrl, opts);
+  const slUrl = getSkylinkUrlForPortal(portalUrl, skylink, opts);
+
+  console.log(`DEBUG: Portal URL: ${portalUrl} | Skylink URL: ${slUrl}`);
+
+  return slUrl;
 }
 
 /**
@@ -406,7 +410,7 @@ export async function getFileContent<T = unknown>(
  * Makes the request to get the contents of the file at the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylink - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The get file content response.
@@ -414,14 +418,14 @@ export async function getFileContent<T = unknown>(
  */
 export async function getFileContentRequest(
   this: SkynetClient,
-  skylinkUrl: string,
+  skylink: string,
   customOptions?: CustomDownloadOptions
 ): Promise<AxiosResponse> {
   // Validation is done in `getSkylinkUrl`.
 
   const opts = { ...DEFAULT_DOWNLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
-  const url = await this.getSkylinkUrl(skylinkUrl, opts);
+  const url = await this.getSkylinkUrl(skylink, opts);
 
   const headers = buildGetFileContentHeaders(opts.range);
 
