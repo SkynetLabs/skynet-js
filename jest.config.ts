@@ -11,7 +11,7 @@ const config: Config.InitialOptions = {
   preset: "ts-jest",
 
   // From old package.json.
-  testTimeout: 300000,
+  testTimeout: 120000,
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
   // An array of glob patterns indicating a set of files for which coverage information should be collected
