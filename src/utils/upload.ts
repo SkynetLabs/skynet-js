@@ -15,5 +15,10 @@ export type uploadFN = () => Promise<{ skylink: string }>;
 export async function uploadBlocking(uploadFn: uploadFN, client: SkynetClient): Promise<string> {
   const { skylink } = await uploadFn();
   await retry(() => client.getFileContent(skylink));
+
+  const url = await client.getSkylinkUrl(skylink);
+  // @ts-expect-error Calling a private method.
+  await retry(() => client.getFileContentRequest(url));
+
   return skylink;
 }
