@@ -63,7 +63,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should get existing SkyDB data with unicode data key", async () => {
-    const publicKey = "4a964fa1cb329d066aedcf7fc03a249eeea3cf2461811090b287daaaec37ab36";
+    const publicKey = "8346316de485703a0c7f58fdcfcb686354dedf58222b4b883b92fc786a3207bc";
     const dataKey = "dataKeyż";
     const expected = { message: "Hello" };
 
