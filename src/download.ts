@@ -382,7 +382,7 @@ export async function getMetadata(
  * @param skylinkUrl - Skylink string. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink. The type of the data returned depends on the content-type of the file. For JSON files the return type should be a JSON object, for other files it should be a string. In order to return a Uint8Array for binary files, the `responseType` option should be set to "arraybuffer".
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink. The type of the data returned depends on the content-type of the file. For JSON files the return type should be a JSON object, for other files it should be a string. In order to return an ArrayBuffer for binary files, the `responseType` option should be set to "arraybuffer".
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getFileContent<T = unknown>(
@@ -423,7 +423,8 @@ export async function getFileContentBinary(
   // Set the expected response type so that we receive uncorrupted binary data.
   customOptions = { ...customOptions, responseType: "arraybuffer" };
 
-  return await this.getFileContent<Uint8Array>(skylinkUrl, customOptions);
+  const response = await this.getFileContent<ArrayBuffer>(skylinkUrl, customOptions);
+  return { ...response, data: new Uint8Array(response.data) };
 }
 
 /**
@@ -467,7 +468,7 @@ export async function getFileContentRequest(
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink. The type of the data returned depends on the content-type of the file. For JSON files the return type should be a JSON object, for other files it should be a string. In order to return a Uint8Array for binary files, the `responseType` option should be set to "arraybuffer".
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink. The type of the data returned depends on the content-type of the file. For JSON files the return type should be a JSON object, for other files it should be a string. In order to return an ArrayBuffer for binary files, the `responseType` option should be set to "arraybuffer".
  * @throws - Will throw if the domain does not contain a skylink.
  */
 export async function getFileContentHns<T = unknown>(
@@ -522,7 +523,8 @@ export async function getFileContentBinaryHns(
   // Set the expected response type so that we receive uncorrupted binary data.
   customOptions = { ...customOptions, responseType: "arraybuffer" };
 
-  return await this.getFileContentHns<Uint8Array>(domain, customOptions);
+  const response = await this.getFileContent<ArrayBuffer>(domain, customOptions);
+  return { ...response, data: new Uint8Array(response.data) };
 }
 
 /**

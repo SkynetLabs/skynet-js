@@ -461,7 +461,6 @@ describe("getFileContentBinary", () => {
     mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
   });
 
-  const skynetFileContents = { arbitrary: "json string" };
   const headers = {
     "skynet-portal-api": portalUrl,
     "skynet-skylink": skylink,
@@ -476,7 +475,9 @@ describe("getFileContentBinary", () => {
   });
 
   it('should not throw if responseType option is "arraybuffer"', async () => {
-    mock.onGet(expectedUrl).replyOnce(200, skynetFileContents, headers);
+    const binaryData = [0, 1, 2, 3];
+
+    mock.onGet(expectedUrl).replyOnce(200, binaryData, headers);
 
     // Should not throw if "arraybuffer" is passed.
     const {
@@ -485,7 +486,7 @@ describe("getFileContentBinary", () => {
       skylink: skylink2,
     } = await client.getFileContentBinary(skylink, { responseType: "arraybuffer" });
 
-    expect(data).toEqual(skynetFileContents);
+    expect(data).toEqual(new Uint8Array(binaryData));
     expect(contentType).toEqual("application/json");
     expect(skylink2).toEqual(sialink);
   });
