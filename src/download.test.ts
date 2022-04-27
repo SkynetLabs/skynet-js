@@ -527,7 +527,6 @@ describe("getFileContentBinaryHns", () => {
     mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
   });
 
-  const skynetFileContents = { arbitrary: "json string" };
   const headers = {
     "skynet-portal-api": portalUrl,
     "skynet-skylink": skylink,
@@ -542,13 +541,15 @@ describe("getFileContentBinaryHns", () => {
   });
 
   it("should succeed with given domain", async () => {
-    mock.onGet(expectedHnsUrl).reply(200, skynetFileContents, headers);
+    const binaryData = [0, 1, 2, 3];
+
+    mock.onGet(expectedHnsUrl).reply(200, binaryData, headers);
     mock.onGet(expectedHnsresUrl).reply(200, { skylink });
 
     // Should not throw if "arraybuffer" is passed.
     const { data } = await client.getFileContentBinaryHns(hnsLink);
 
-    expect(data).toEqual(skynetFileContents);
+    expect(data).toEqual(new Uint8Array(binaryData));
   });
 });
 

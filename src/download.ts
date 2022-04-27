@@ -523,7 +523,7 @@ export async function getFileContentBinaryHns(
   // Set the expected response type so that we receive uncorrupted binary data.
   customOptions = { ...customOptions, responseType: "arraybuffer" };
 
-  const response = await this.getFileContent<ArrayBuffer>(domain, customOptions);
+  const response = await this.getFileContentHns<ArrayBuffer>(domain, customOptions);
   return { ...response, data: new Uint8Array(response.data) };
 }
 
