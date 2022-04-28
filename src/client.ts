@@ -24,6 +24,8 @@ import {
   openFile,
   openFileHns,
   resolveHns,
+  getFileContentBinary,
+  getFileContentBinaryHns,
 } from "./download";
 // These imports are deprecated but they are needed to export the v1 File
 // methods, which we are keeping so as not to break compatibility.
@@ -166,8 +168,10 @@ export class SkynetClient {
   getHnsresUrl = getHnsresUrl;
   getMetadata = getMetadata;
   getFileContent = getFileContent;
+  getFileContentBinary = getFileContentBinary;
   protected getFileContentRequest = getFileContentRequest;
   getFileContentHns = getFileContentHns;
+  getFileContentBinaryHns = getFileContentBinaryHns;
   openFile = openFile;
   openFileHns = openFileHns;
   resolveHns = resolveHns;

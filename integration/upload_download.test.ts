@@ -1,9 +1,10 @@
 import { client, dataKey, portal } from ".";
-import { convertSkylinkToBase64, genKeyPairAndSeed, uriSkynetPrefix } from "../src";
+import { convertSkylinkToBase64, genKeyPairAndSeed, uint8ArrayToStringUtf8, URI_SKYNET_PREFIX } from "../src";
 import { randomUnicodeString } from "../utils/testing";
 
 describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
   const fileData = "testing";
+  const binaryData = [0, 1, 2, 3];
   const json = { key: "testdownload" };
   const plaintextType = "text/plain";
   const plaintextMetadata = {
@@ -17,7 +18,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
 
   it("Should get file content for an existing entry link of depth 1", async () => {
     const entryLink = "AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA";
-    const expectedDataLink = `${uriSkynetPrefix}XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg`;
+    const expectedDataLink = `${URI_SKYNET_PREFIX}XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg`;
 
     const { skylink } = await client.getFileContent(entryLink);
     expect(skylink).toEqual(expectedDataLink);
@@ -26,7 +27,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
   it("Should get file content for an existing entry link of depth 2", async () => {
     const entryLinkBase32 = "0400mgds8arrfnu8e6b0sde9fbkmh4nl2etvun55m0fvidudsb7bk78";
     const entryLink = convertSkylinkToBase64(entryLinkBase32);
-    const expectedDataLink = `${uriSkynetPrefix}EAAFgq17B-MKsi0ARYKUMmf9vxbZlDpZkA6EaVBCG4YBAQ`;
+    const expectedDataLink = `${URI_SKYNET_PREFIX}EAAFgq17B-MKsi0ARYKUMmf9vxbZlDpZkA6EaVBCG4YBAQ`;
 
     const { skylink } = await client.getFileContent(entryLink);
     expect(skylink).toEqual(expectedDataLink);
@@ -158,16 +159,46 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
     expect(contentType).toEqual("application/octet-stream");
   });
 
-  it('should get binary data with responseType: "arraybuffer"', async () => {
-    const file = new File(["foo"], "bar");
+  // Regression test.
+  it('getFileContent should corrupt binary data if the responseType is not "arraybuffer"', async () => {
+    const file = new File([new Uint8Array(binaryData).buffer], "bar");
     const { skylink } = await client.uploadFile(file);
 
     // Get file content and check returned values.
 
-    const { data, contentType } = await client.getFileContent(skylink, { responseType: "arraybuffer" });
+    const { data, contentType } = await client.getFileContent(skylink);
 
-    expect(typeof data).toEqual("object");
+    expect(typeof data === "string").toBeTruthy();
+    const corruptedString = uint8ArrayToStringUtf8(new Uint8Array(binaryData));
+    expect(data).toEqual(corruptedString);
+    // The data should not equal the original raw data.
+    expect(data).not.toEqual(binaryData);
+    expect(contentType).toEqual("application/octet-stream");
+  });
+
+  it('getFileContent should get binary data with responseType: "arraybuffer"', async () => {
+    const file = new File([new Uint8Array(binaryData).buffer], "bar");
+    const { skylink } = await client.uploadFile(file);
+
+    // Get file content and check returned values.
+
+    const { data, contentType } = await client.getFileContent<ArrayBuffer>(skylink, { responseType: "arraybuffer" });
+
     expect(data instanceof ArrayBuffer).toBeTruthy();
+    expect(new Uint8Array(data)).toEqualUint8Array(new Uint8Array(binaryData));
+    expect(contentType).toEqual("application/octet-stream");
+  });
+
+  it("getFileContentBinary should get binary data", async () => {
+    const file = new File([new Uint8Array(binaryData).buffer], "bar");
+    const { skylink } = await client.uploadFile(file);
+
+    // Get file content and check returned values.
+
+    const { data, contentType } = await client.getFileContentBinary(skylink);
+
+    expect(data instanceof Uint8Array).toBeTruthy();
+    expect(data).toEqualUint8Array(new Uint8Array(binaryData));
     expect(contentType).toEqual("application/octet-stream");
   });
 
