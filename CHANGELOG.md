@@ -13,6 +13,12 @@ Types of changes:
 - `Changed` for changes in existing functionality.
 - `Removed` for now removed features.
 
+## [Unreleased]
+
+### Added
+
+- Added `client.getFileContentBinary` and `client.getFileContentBinaryHns` methods for downloading binary data.
+
 ## [4.1.0]
 
 ### Breaking Changes

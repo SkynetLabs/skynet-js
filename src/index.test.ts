@@ -9,7 +9,9 @@ describe("SkynetClient", () => {
     expect(client).toHaveProperty("downloadFile");
     expect(client).toHaveProperty("downloadFileHns");
     expect(client).toHaveProperty("getFileContent");
+    expect(client).toHaveProperty("getFileContentBinary");
     expect(client).toHaveProperty("getFileContentHns");
+    expect(client).toHaveProperty("getFileContentBinaryHns");
     expect(client).toHaveProperty("getHnsUrl");
     expect(client).toHaveProperty("getHnsresUrl");
     expect(client).toHaveProperty("getSkylinkUrl");
