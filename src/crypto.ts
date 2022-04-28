@@ -86,7 +86,7 @@ export function genKeyPairFromSeed(seed: string): KeyPair {
   validateString("seed", seed, "parameter");
 
   // Get a 32-byte key.
-  const derivedKey = pbkdf2Sync(seed, "", 1000, 32 * 8);
+  const derivedKey = pbkdf2Sync(seed, "", 1000, 32, "sha256");
   const { publicKey, secretKey } = sign.keyPair.fromSeed(Uint8Array.from(derivedKey));
 
   return { publicKey: toHexString(publicKey), privateKey: toHexString(secretKey) };
