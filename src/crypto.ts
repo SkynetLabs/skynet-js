@@ -1,7 +1,7 @@
-import { misc, codec } from "sjcl";
 import { blake2bFinal, blake2bInit, blake2bUpdate } from "blakejs";
 import { hash, sign, randomBytes } from "tweetnacl";
 import bufferFrom from "buffer-from";
+import { pbkdf2Sync } from "pbkdf2";
 
 import { RegistryEntry } from "./registry";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString } from "./utils/string";
@@ -86,9 +86,8 @@ export function genKeyPairFromSeed(seed: string): KeyPair {
   validateString("seed", seed, "parameter");
 
   // Get a 32-byte key.
-  const derivedKey = misc.pbkdf2(seed, "", 1000, 32 * 8);
-  const derivedKeyHex = codec.hex.fromBits(derivedKey);
-  const { publicKey, secretKey } = sign.keyPair.fromSeed(hexToUint8Array(derivedKeyHex));
+  const derivedKey = pbkdf2Sync(seed, "", 1000, 32 * 8);
+  const { publicKey, secretKey } = sign.keyPair.fromSeed(Uint8Array.from(derivedKey));
 
   return { publicKey: toHexString(publicKey), privateKey: toHexString(secretKey) };
 }
