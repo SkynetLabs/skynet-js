@@ -1,7 +1,7 @@
 import { misc, codec } from "sjcl";
 import { blake2bFinal, blake2bInit, blake2bUpdate } from "blakejs";
-import randomBytes from "randombytes";
-import { hash, sign } from "tweetnacl";
+import { hash, sign, randomBytes } from "tweetnacl";
+import bufferFrom from "buffer-from";
 
 import { RegistryEntry } from "./registry";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString } from "./utils/string";
@@ -159,6 +159,6 @@ export function sha512(message: Uint8Array | string): Uint8Array {
 function genRandomSeed(length: number): string {
   // Cryptographically-secure random number generator. It should use the
   // built-in crypto.getRandomValues in the browser.
-  const array = randomBytes(length);
+  const array = bufferFrom(randomBytes(length));
   return toHexString(array);
 }

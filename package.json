@@ -63,7 +63,6 @@
     "mime": "^3.0.0",
     "path-browserify": "^1.0.1",
     "post-me": "^0.4.5",
-    "randombytes": "^2.1.0",
     "sjcl": "^1.0.8",
     "skynet-mysky-utils": "^0.3.0",
     "tweetnacl": "^1.0.3",
