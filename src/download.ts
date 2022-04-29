@@ -180,7 +180,7 @@ export async function downloadFileHns(
  * Constructs the full URL for the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the skylink.
@@ -204,7 +204,7 @@ export async function getSkylinkUrl(
  * Gets the skylink URL without an initialized client.
  *
  * @param portalUrl - The portal URL.
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint.
  * @returns - The full URL for the skylink.
@@ -333,7 +333,7 @@ export async function getHnsresUrl(
  * Gets only the metadata for the given skylink without the contents.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointGetMetadata="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The metadata in JSON format. Empty if no metadata was found.
@@ -379,7 +379,7 @@ export async function getMetadata(
  * Gets the contents of the file at the given skylink. Note that this method will corrupt returned binary data, unless you set `customOptions.responseType` to `"arraybuffer"` or use the `getFileContentBinary` method.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink. The type of the data returned depends on the content-type of the file. For JSON files the return type should be a JSON object, for other files it should be a string. In order to return an ArrayBuffer for binary files, the `responseType` option should be set to "arraybuffer".
@@ -406,7 +406,7 @@ export async function getFileContent<T = unknown>(
  * Gets the contents of the file at the given skylink as binary data.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - An object containing the binary data of the file, the content-type, portal URL, and the file's skylink.
@@ -431,7 +431,7 @@ export async function getFileContentBinary(
  * Makes the request to get the contents of the file at the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The get file content response.
@@ -531,7 +531,7 @@ export async function getFileContentBinaryHns(
  * Opens the content of the skylink within the browser.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
