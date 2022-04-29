@@ -1,0 +1,46 @@
+name: "CI"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# For auto-approving/merging PRs.
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  check:
+    name: "Checks and Tests"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+
+    steps:
+      - name: "Run Yarn Basic Checks"
+        uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
+        with:
+          node-version: ${{ matrix.node-version }}
+        env:
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetpro.net"
+          SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
+
+  # Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.
+  # See https://hackmd.io/@SkynetLabs/ryFfInNXc.
+  dependabot:
+    name: "Approve and Merge Dependabot PRs"
+    # - Must be a PR.
+    # - The latest actor must be Dependabot. This prevents other users from
+    #   sneaking in changes into the PR.
+    if: ${{ github.event_name == 'pull_request' && github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Run Auto-Approval and Auto-Merge"
+        uses: SkynetLabs/.github/.github/actions/dependabot-approve-and-merge@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
