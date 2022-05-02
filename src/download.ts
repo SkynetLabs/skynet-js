@@ -180,7 +180,7 @@ export async function downloadFileHns(
  * Constructs the full URL for the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL for the skylink.
@@ -204,7 +204,7 @@ export async function getSkylinkUrl(
  * Gets the skylink URL without an initialized client.
  *
  * @param portalUrl - The portal URL.
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint.
  * @returns - The full URL for the skylink.
@@ -333,7 +333,7 @@ export async function getHnsresUrl(
  * Gets only the metadata for the given skylink without the contents.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointGetMetadata="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The metadata in JSON format. Empty if no metadata was found.
@@ -376,13 +376,13 @@ export async function getMetadata(
 }
 
 /**
- * Gets the contents of the file at the given skylink.
+ * Gets the contents of the file at the given skylink. Note that this method will corrupt returned binary data, unless you set `customOptions.responseType` to `"arraybuffer"` or use the `getFileContentBinary` method.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink. The type of the data returned depends on the content-type of the file. For JSON files the return type should be a JSON object, for other files it should be a string. In order to return an ArrayBuffer for binary files, the `responseType` option should be set to "arraybuffer".
  * @throws - Will throw if the skylinkUrl does not contain a skylink or if the path option is not a string.
  */
 export async function getFileContent<T = unknown>(
@@ -403,10 +403,35 @@ export async function getFileContent<T = unknown>(
 }
 
 /**
+ * Gets the contents of the file at the given skylink as binary data.
+ *
+ * @param this - SkynetClient
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
+ * @returns - An object containing the binary data of the file, the content-type, portal URL, and the file's skylink.
+ * @throws - Will throw if a responseType other than "arraybuffer" is requested, if the skylinkUrl does not contain a skylink or if the path option is not a string.
+ */
+export async function getFileContentBinary(
+  this: SkynetClient,
+  skylinkUrl: string,
+  customOptions?: CustomDownloadOptions
+): Promise<GetFileContentResponse<Uint8Array>> {
+  // Validation is done in `getFileContent`.
+
+  validateGetFileContentBinaryOptions(customOptions);
+  // Set the expected response type so that we receive uncorrupted binary data.
+  customOptions = { ...customOptions, responseType: "arraybuffer" };
+
+  const response = await this.getFileContent<ArrayBuffer>(skylinkUrl, customOptions);
+  return { ...response, data: new Uint8Array(response.data) };
+}
+
+/**
  * Makes the request to get the contents of the file at the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The get file content response.
@@ -437,13 +462,13 @@ export async function getFileContentRequest(
 }
 
 /**
- * Gets the contents of the file at the given Handshake domain.
+ * Gets the contents of the file at the given Handshake domain. Note that this method will corrupt returned binary data, unless you set `customOptions.responseType` to `"arraybuffer"` or use the `getFileContentBinaryHns` method.
  *
  * @param this - SkynetClient
  * @param domain - Handshake domain.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
- * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink.
+ * @returns - An object containing the data of the file, the content-type, portal URL, and the file's skylink. The type of the data returned depends on the content-type of the file. For JSON files the return type should be a JSON object, for other files it should be a string. In order to return an ArrayBuffer for binary files, the `responseType` option should be set to "arraybuffer".
  * @throws - Will throw if the domain does not contain a skylink.
  */
 export async function getFileContentHns<T = unknown>(
@@ -478,10 +503,35 @@ export async function getFileContentHns<T = unknown>(
 }
 
 /**
+ * Gets the contents of the file at the given Handshake domain as binary data.
+ *
+ * @param this - SkynetClient
+ * @param domain - Handshake domain.
+ * @param [customOptions] - Additional settings that can optionally be set.
+ * @param [customOptions.endpointDownloadHns="/hns"] - The relative URL path of the portal endpoint to contact.
+ * @returns - An object containing the binary data of the file, the content-type, portal URL, and the file's skylink.
+ * @throws - Will throw if a responseType other than "arraybuffer" is requested, or if the domain does not contain a skylink.
+ */
+export async function getFileContentBinaryHns(
+  this: SkynetClient,
+  domain: string,
+  customOptions?: CustomHnsDownloadOptions
+): Promise<GetFileContentResponse<Uint8Array>> {
+  // Validation is done in `getFileContentHns`.
+
+  validateGetFileContentBinaryOptions(customOptions);
+  // Set the expected response type so that we receive uncorrupted binary data.
+  customOptions = { ...customOptions, responseType: "arraybuffer" };
+
+  const response = await this.getFileContentHns<ArrayBuffer>(domain, customOptions);
+  return { ...response, data: new Uint8Array(response.data) };
+}
+
+/**
  * Opens the content of the skylink within the browser.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - Skylink string. See `downloadFile`.
+ * @param skylinkUrl - Base64 skylink, or a valid URL that contains a skylink. See `downloadFile`.
  * @param [customOptions] - Additional settings that can optionally be set. See `downloadFile` for the full list.
  * @param [customOptions.endpointDownload="/"] - The relative URL path of the portal endpoint to contact.
  * @returns - The full URL that was used.
@@ -605,7 +655,7 @@ function buildQuery(download: boolean): { [key: string]: string | undefined } {
 }
 
 /**
- * Extracts the response from getFileContent.
+ * Extracts the response from `getFileContent`.
  *
  * @param response - The Axios response.
  * @returns - The extracted get file content response fields.
@@ -619,7 +669,20 @@ async function extractGetFileContentResponse<T = unknown>(response: AxiosRespons
 }
 
 /**
- * Validates the response from getFileContent.
+ * Validates the options for `getFileContentBinary` and `getFileContentBinaryHns`.
+ *
+ * @param [customOptions={}] - Additional settings that can optionally be set.
+ * @throws - Will throw if a responseType other than "arraybuffer" is requested.
+ */
+function validateGetFileContentBinaryOptions(customOptions?: CustomDownloadOptions): void {
+  const responseType = customOptions?.responseType;
+  if (responseType !== undefined && responseType !== "arraybuffer") {
+    throw new Error(`Unexpected 'responseType' option found for 'getFileContentBinary': '${responseType}'`);
+  }
+}
+
+/**
+ * Validates the response from `getFileContent`.
  *
  * @param response - The Axios response.
  * @param inputSkylink - The input skylink, required to validate the proof.
