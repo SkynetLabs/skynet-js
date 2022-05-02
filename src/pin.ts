@@ -33,7 +33,7 @@ export const DEFAULT_PIN_OPTIONS = {
  * Re-pins the given skylink.
  *
  * @param this - SkynetClient
- * @param skylinkUrl - 46-character skylink, or a valid skylink URL.
+ * @param skylinkUrl - 46-character base64 skylink, or a valid URL that contains a skylink.
  * @param [customOptions] - Additional settings that can optionally be set.
  * @returns - The returned JSON and revision number.
  * @throws - Will throw if the returned signature does not match the returned entry, or if the skylink in the entry is invalid.

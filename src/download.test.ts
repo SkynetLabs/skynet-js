@@ -453,6 +453,45 @@ describe("getFileContent", () => {
   });
 });
 
+describe("getFileContentBinary", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
+  });
+
+  const headers = {
+    "skynet-portal-api": portalUrl,
+    "skynet-skylink": skylink,
+    "content-type": "application/json",
+  };
+
+  it('should throw if responseType option is not "arraybuffer"', async () => {
+    // This should throw.
+    await expect(client.getFileContentBinary(skylink, { responseType: "json" })).rejects.toThrowError(
+      "Unexpected 'responseType' option found for 'getFileContentBinary': 'json'"
+    );
+  });
+
+  it('should not throw if responseType option is "arraybuffer"', async () => {
+    const binaryData = [0, 1, 2, 3];
+
+    mock.onGet(expectedUrl).replyOnce(200, binaryData, headers);
+
+    // Should not throw if "arraybuffer" is passed.
+    const {
+      data,
+      contentType,
+      skylink: skylink2,
+    } = await client.getFileContentBinary(skylink, { responseType: "arraybuffer" });
+
+    expect(data).toEqual(new Uint8Array(binaryData));
+    expect(contentType).toEqual("application/json");
+    expect(skylink2).toEqual(sialink);
+  });
+});
+
 describe("getFileContentHns", () => {
   let mock: MockAdapter;
 
@@ -477,6 +516,40 @@ describe("getFileContentHns", () => {
     const { data } = await client.getFileContentHns(domain);
 
     expect(data).toEqual(skynetFileContents);
+  });
+});
+
+describe("getFileContentBinaryHns", () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+    mock.onHead(portalUrl).replyOnce(200, {}, { "skynet-portal-api": portalUrl });
+  });
+
+  const headers = {
+    "skynet-portal-api": portalUrl,
+    "skynet-skylink": skylink,
+    "content-type": "application/json",
+  };
+
+  it('should throw if responseType option is not "arraybuffer"', async () => {
+    // This should throw.
+    await expect(client.getFileContentBinaryHns(skylink, { responseType: "json" })).rejects.toThrowError(
+      "Unexpected 'responseType' option found for 'getFileContentBinary': 'json'"
+    );
+  });
+
+  it("should succeed with given domain", async () => {
+    const binaryData = [0, 1, 2, 3];
+
+    mock.onGet(expectedHnsUrl).reply(200, binaryData, headers);
+    mock.onGet(expectedHnsresUrl).reply(200, { skylink });
+
+    // Should not throw if "arraybuffer" is passed.
+    const { data } = await client.getFileContentBinaryHns(hnsLink);
+
+    expect(data).toEqual(new Uint8Array(binaryData));
   });
 });
 

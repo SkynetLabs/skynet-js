@@ -115,7 +115,12 @@ export class ExecuteRequestError<T = any, D = any> extends Error implements Axio
    * @param responseStatus - The response status, if found in the original error.
    * @param responseMessage - The response message, if found in the original error.
    */
-  constructor(message: string, axiosError: AxiosError, responseStatus: number | null, responseMessage: string | null) {
+  constructor(
+    message: string,
+    axiosError: AxiosError<T, D>,
+    responseStatus: number | null,
+    responseMessage: string | null
+  ) {
     // Include this check since `ExecuteRequestError` implements `AxiosError`,
     // but we only expect original errors from Axios here. Anything else
     // indicates a likely developer/logic bug.
@@ -155,7 +160,10 @@ export class ExecuteRequestError<T = any, D = any> extends Error implements Axio
    * @param err - The Axios error.
    * @returns - A new error if the error response is malformed, or the skyd error message otherwise.
    */
-  static From(err: AxiosError): ExecuteRequestError {
+  static From(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    err: AxiosError<any, any>
+  ): ExecuteRequestError {
     /* istanbul ignore next */
     if (!err.response) {
       return new ExecuteRequestError(`Error response did not contain expected field 'response'.`, err, null, null);

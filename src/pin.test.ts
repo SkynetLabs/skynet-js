@@ -1,15 +1,15 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 
-import { SkynetClient, defaultSkynetPortalUrl, uriSkynetPrefix } from "./index";
+import { SkynetClient, DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./index";
 
-const portalUrl = defaultSkynetPortalUrl;
+const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
-const sialink = `${uriSkynetPrefix}${skylink}`;
+const sialink = `${URI_SKYNET_PREFIX}${skylink}`;
 const expectedUrl = `${portalUrl}/skynet/pin/${skylink}`;
 
-describe("getFileContent", () => {
+describe("pinSkylink", () => {
   let mock: MockAdapter;
 
   beforeEach(() => {
