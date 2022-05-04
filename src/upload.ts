@@ -234,7 +234,7 @@ export async function uploadLargeFileRequest(
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   // Validation.
-  if (opts.staggerPercent && (opts.staggerPercent < 0 || opts.staggerPercent > 100)) {
+  if (opts.staggerPercent !== undefined && (opts.staggerPercent < 0 || opts.staggerPercent > 100)) {
     throw new Error(`Expected 'staggerPercent' option to be between 0 and 100, was '${opts.staggerPercent}`);
   }
   if (opts.chunkSizeMultiplier < 1) {
@@ -284,28 +284,27 @@ export async function uploadLargeFileRequest(
     | ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>)
     | undefined = undefined;
   const chunkSize = TUS_CHUNK_SIZE * opts.chunkSizeMultiplier;
-  if (resp.headers["tus-extension"]?.includes("concatenation")) {
-    // Set the part-split function.
-    const numChunks = Math.ceil(file.size / TUS_CHUNK_SIZE);
 
-    if (opts.staggerPercent) {
-      staggerPercent = opts.staggerPercent;
-      // Set parallelUploads value to the number of chunks. We'll upload each
-      // one as a separate upload in tus.
+  // Only do the following if parallel uploads are enabled on the server.
+  if (resp.headers["tus-extension"]?.includes("concatenation")) {
+    // Use a user-provided value, if given.
+    parallelUploads = opts.numParallelUploads;
+
+    // Limit the number of parallel uploads if some parts would end up empty,
+    // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
+    // and one empty part.
+    const numChunks = Math.ceil(file.size / TUS_CHUNK_SIZE);
+    if (parallelUploads > numChunks) {
       parallelUploads = numChunks;
-    } else {
-      // Use a user-provided value, if given.
-      parallelUploads = opts.numParallelUploads;
-      // Limit the number of parallel uploads if some parts would end up empty,
-      // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
-      // and one empty part.
-      if (parallelUploads > numChunks) {
-        parallelUploads = numChunks;
-      }
     }
+
     if (parallelUploads > 1) {
       // Set the part-split function.
       splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+
+      if (opts.staggerPercent !== undefined) {
+        staggerPercent = opts.staggerPercent;
+      }
     }
   }
 
@@ -439,6 +438,12 @@ export async function uploadDirectoryRequest(
 /**
  * Splits the size into the number of parts, aligning all but the last part on
  * chunk boundaries. Called if parallel uploads are used.
+ *
+ * Constraints:
+ *
+ * - Each part must be chunk-aligned, except for the last part. So we put any
+ *   non-aligned leftover in the last part.
+ * - The parts should be as close in size to each other as possible.
  *
  * @param totalSize - The total size of the upload.
  * @param partCount - The number of parts (equal to the value of `parallelUploads` used).
