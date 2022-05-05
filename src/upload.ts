@@ -31,6 +31,11 @@ const DEFAULT_TUS_PARALLEL_UPLOADS = 2;
 const DEFAULT_TUS_RETRY_DELAYS = [0, 5_000, 15_000, 60_000, 300_000, 600_000];
 
 /**
+ * Indicates the default stagger percent between chunk uploads.
+ */
+const DEFAULT_TUS_STAGGER_PERCENT = 50;
+
+/**
  * The portal file field name.
  */
 const PORTAL_FILE_FIELD_NAME = "file";
@@ -49,7 +54,7 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib). Note that this does not affect the actual size of chunks used by the protocol.
  * @property [errorPages] - Defines a mapping of error codes and subfiles which are to be served in case we are serving the respective error code. All subfiles referred like this must be defined with absolute paths and must exist.
  * @property [numParallelUploads=2] - Used to override the default number of parallel uploads. Disable parallel uploads by setting to 1. Note that each parallel upload must be chunk-aligned so the number of parallel uploads may be limited if some parts would end up empty.
- * @property [staggerPercent] - A percentage from 0-100. `numParallelUploads` must be more than 1. When set, each chunk is staggered, one after another, instead of all uploads running simultaneously. The stagger percentage is how much of each chunk upload should be finished before the next chunk upload is initiated.
+ * @property [staggerPercent] - A percentage from 0-100. `numParallelUploads` must be more than 1. When set, each chunk is staggered, one after another, instead of all uploads running simultaneously. The stagger percentage is how much of each chunk upload should be finished before the next chunk upload is initiated. Pass `null` to disable staggering.
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
  * @property [tryFiles] - Allows us to set a list of potential subfiles to return in case the requested one does not exist or is a directory. Those subfiles might be listed with relative or absolute paths. If the path is absolute the file must exist.
  */
@@ -62,7 +67,7 @@ export type CustomUploadOptions = BaseCustomOptions & {
   errorPages?: JsonData;
   largeFileSize?: number;
   numParallelUploads?: number;
-  staggerPercent?: number;
+  staggerPercent?: number | null;
   retryDelays?: number[];
   tryFiles?: string[];
 };
@@ -87,7 +92,7 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   errorPages: undefined,
   largeFileSize: TUS_CHUNK_SIZE,
   numParallelUploads: DEFAULT_TUS_PARALLEL_UPLOADS,
-  staggerPercent: undefined,
+  staggerPercent: DEFAULT_TUS_STAGGER_PERCENT,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
   tryFiles: undefined,
 };
@@ -234,7 +239,11 @@ export async function uploadLargeFileRequest(
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   // Validation.
-  if (opts.staggerPercent !== undefined && (opts.staggerPercent < 0 || opts.staggerPercent > 100)) {
+  if (
+    opts.staggerPercent !== undefined &&
+    opts.staggerPercent !== null &&
+    (opts.staggerPercent < 0 || opts.staggerPercent > 100)
+  ) {
     throw new Error(`Expected 'staggerPercent' option to be between 0 and 100, was '${opts.staggerPercent}`);
   }
   if (opts.chunkSizeMultiplier < 1) {
@@ -279,10 +288,10 @@ export async function uploadLargeFileRequest(
   // the part-split function. Note that each part has to be chunk-aligned, so we
   // may limit the number of parallel uploads.
   let parallelUploads = 1;
-  let staggerPercent: number | null = null;
   let splitSizeIntoParts:
     | ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>)
     | undefined = undefined;
+  const staggerPercent = opts.staggerPercent;
   const chunkSize = TUS_CHUNK_SIZE * opts.chunkSizeMultiplier;
 
   // Only do the following if parallel uploads are enabled on the server.
@@ -301,10 +310,6 @@ export async function uploadLargeFileRequest(
     if (parallelUploads > 1) {
       // Set the part-split function.
       splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
-
-      if (opts.staggerPercent !== undefined) {
-        staggerPercent = opts.staggerPercent;
-      }
     }
   }
 
