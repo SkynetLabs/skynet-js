@@ -401,8 +401,11 @@ describe("splitSizeIntoChunkAlignedParts", () => {
     ],
   ];
 
-  it.each(sizesAndChunks)("('%s', '%s', '%s')", (totalSize, partCount, chunkSize, expectedParts) => {
-    const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
-    expect(parts).toEqual(expectedParts);
-  });
+  it.each(sizesAndChunks)(
+    "(totalSize: '%s', partCount: '%s', chunkSize: '%s') should result in '%s'",
+    (totalSize, partCount, chunkSize, expectedParts) => {
+      const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+      expect(parts).toEqual(expectedParts);
+    }
+  );
 });
