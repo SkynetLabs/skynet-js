@@ -7,6 +7,8 @@ import { SkynetClient, DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./in
 import { compareFormData } from "../utils/testing";
 import { splitSizeIntoChunkAlignedParts, TUS_CHUNK_SIZE } from "./upload";
 
+let mock: MockAdapter;
+
 const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
 const skylink = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
@@ -14,14 +16,14 @@ const sialink = `${URI_SKYNET_PREFIX}${skylink}`;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 const data = { skylink, merkleroot, bitfield };
-let mock: MockAdapter;
+
+const filename = "bar.txt";
+const file = new File(["foo"], filename, {
+  type: "text/plain",
+});
 
 describe("uploadFile", () => {
   const url = `${portalUrl}/skynet/skyfile`;
-  const filename = "bar.txt";
-  const file = new File(["foo"], filename, {
-    type: "text/plain",
-  });
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -157,6 +159,36 @@ describe("uploadFile", () => {
 
     await expect(client.uploadFile(file)).rejects.toThrowError(
       "Did not get a complete upload response despite a successful request. Please try again and report this issue to the devs if it persists. Error: response.data field missing"
+    );
+  });
+});
+
+describe("uploadLargeFile", () => {
+  it("should throw if the chunk size multiplier is less than 1", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { chunkSizeMultiplier: 0 })).rejects.toThrowError(
+      "Expected option 'opts.chunkSizeMultiplier' to be greater than or equal to 1, was type 'number', value '0'"
+    );
+  });
+
+  it("should throw if the chunk size multiplier is not an integer", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { chunkSizeMultiplier: 1.5 })).rejects.toThrowError(
+      "Expected option 'opts.chunkSizeMultiplier' to be an integer value, was type 'number', value '1.5'"
+    );
+  });
+
+  it("should throw if the number of parallel uploads is less than 1", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { numParallelUploads: 0.5 })).rejects.toThrowError(
+      "Expected option 'opts.numParallelUploads' to be greater than or equal to 1, was type 'number', value '0.5'"
+    );
+  });
+
+  it("should throw if the number of parallel uploads is not an integer", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { numParallelUploads: 1.5 })).rejects.toThrowError(
+      "Expected option 'opts.numParallelUploads' to be an integer value, was type 'number', value '1.5'"
     );
   });
 });
