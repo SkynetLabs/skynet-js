@@ -460,25 +460,36 @@ export function splitSizeIntoChunkAlignedParts(
   partCount: number,
   chunkSize: number
 ): Array<{ start: number; end: number }> {
+  if (partCount < 1) {
+    throwValidationError("partCount", partCount, "option", "greater than or equal to 1");
+  }
+  if (chunkSize < 1) {
+    throwValidationError("chunkSize", chunkSize, "option", "greater than or equal to 1");
+  }
+
   const partSizes = new Array(partCount).fill(0);
-  // The leftover size that must go into the last part.
-  const leftover = totalSize % chunkSize;
 
   // Assign chunks to parts in order, looping back to the beginning if we get to
   // the end of the parts array.
-  let lastPart = -1;
-  for (let i = 0; i < Math.floor(totalSize / chunkSize); i++) {
+  const numFullChunks = Math.floor(totalSize / chunkSize);
+  for (let i = 0; i < numFullChunks; i++) {
     partSizes[i % partCount] += chunkSize;
-    if (i > lastPart) lastPart = i;
   }
 
-  if (lastPart === -1) {
-    // No parts were visited, so assign to the last part.
-    partSizes[partCount - 1] += leftover;
-  } else {
-    // Assign the leftover to the part after the last part that was visited, or
-    // the last part in the array if all parts were used.
-    partSizes[Math.min(lastPart + 1, partCount - 1)] += leftover;
+  // The leftover size that must go into the last part.
+  const leftover = totalSize % chunkSize;
+  // If there is non-chunk-aligned leftover, add it.
+  if (leftover > 0) {
+    let lastIndex;
+    if (numFullChunks === 0) {
+      // No parts were visited, so just assign to the last part.
+      lastIndex = partCount - 1;
+    } else {
+      // Assign the leftover to the part after the last part that was visited, or
+      // the last part in the array if all parts were used.
+      lastIndex = Math.min(numFullChunks, partCount - 1);
+    }
+    partSizes[lastIndex] += leftover;
   }
 
   // Convert sizes into parts.

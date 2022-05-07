@@ -262,7 +262,7 @@ describe("uploadDirectory", () => {
 describe("splitSizeIntoChunkAlignedParts", () => {
   const mib = 1 << 20;
   const chunk = TUS_CHUNK_SIZE;
-  const sizesAndChunks: Array<[number, number, number, { start: number; end: number }[]]> = [
+  const cases: Array<[number, number, number, { start: number; end: number }[]]> = [
     [
       40 * mib,
       2,
@@ -399,10 +399,36 @@ describe("splitSizeIntoChunkAlignedParts", () => {
         { start: 80 * mib, end: 81 * mib },
       ],
     ],
+
+    // Case where the total size is 0.
+    [
+      0,
+      2,
+      chunk,
+      [
+        { start: 0, end: 0 },
+        { start: 0, end: 0 },
+      ],
+    ],
   ];
 
-  it.each(sizesAndChunks)("('%s', '%s', '%s')", (totalSize, partCount, chunkSize, expectedParts) => {
-    const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
-    expect(parts).toEqual(expectedParts);
+  it.each(cases)(
+    "(totalSize: '%s', partCount: '%s', chunkSize: '%s') should result in '%s'",
+    (totalSize, partCount, chunkSize, expectedParts) => {
+      const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+      expect(parts).toEqual(expectedParts);
+    }
+  );
+
+  it("should throw if the partCount is 0", () => {
+    expect(() => splitSizeIntoChunkAlignedParts(1, 0, 1)).toThrowError(
+      "Expected option 'partCount' to be greater than or equal to 1, was type 'number', value '0'"
+    );
+  });
+
+  it("should throw if the chunkSize is 0", () => {
+    expect(() => splitSizeIntoChunkAlignedParts(1, 1, 0)).toThrowError(
+      "Expected option 'chunkSize' to be greater than or equal to 1, was type 'number', value '0'"
+    );
   });
 });
