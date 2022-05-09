@@ -6,7 +6,13 @@ import { BaseCustomOptions, DEFAULT_BASE_OPTIONS } from "./utils/options";
 import { formatSkylink } from "./skylink/format";
 import { SkynetClient } from "./client";
 import { JsonData } from "./utils/types";
-import { throwValidationError, validateObject, validateOptionalObject, validateString } from "./utils/validation";
+import {
+  throwValidationError,
+  validateInteger,
+  validateObject,
+  validateOptionalObject,
+  validateString,
+} from "./utils/validation";
 import { buildRequestHeaders, buildRequestUrl } from "./request";
 
 /**
@@ -247,15 +253,14 @@ export async function uploadLargeFileRequest(
     throw new Error(`Expected 'staggerPercent' option to be between 0 and 100, was '${opts.staggerPercent}`);
   }
   if (opts.chunkSizeMultiplier < 1) {
-    throw new Error(
-      `Expected 'chunkSizeMultiplier' option to be greater than or equal to 1, was '${opts.chunkSizeMultiplier}`
-    );
+    throwValidationError("opts.chunkSizeMultiplier", opts.chunkSizeMultiplier, "option", "greater than or equal to 1");
   }
+  // It's crucial that we only use strict multiples of the base chunk size.
+  validateInteger("opts.chunkSizeMultiplier", opts.chunkSizeMultiplier, "option");
   if (opts.numParallelUploads < 1) {
-    throw new Error(
-      `Expected 'numParallelUploads' option to be greater than or equal to 1, was '${opts.numParallelUploads}`
-    );
+    throwValidationError("opts.numParallelUploads", opts.numParallelUploads, "option", "greater than or equal to 1");
   }
+  validateInteger("opts.numParallelUploads", opts.numParallelUploads, "option");
 
   // TODO: Add back upload options once they are implemented in skyd.
   const url = await buildRequestUrl(this, { endpointPath: opts.endpointLargeUpload });
