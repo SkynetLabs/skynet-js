@@ -19,6 +19,7 @@ Types of changes:
 
 - Added `client.getFileContentBinary` and `client.getFileContentBinaryHns` methods for downloading binary data.
 - Added `chunkSizeMultiplier` option for large file uploads.
+- Added `staggerPercent` option for more efficient uploading of large file uploads.
 
 ## [4.1.0]
 
