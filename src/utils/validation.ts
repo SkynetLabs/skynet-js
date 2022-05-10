@@ -30,6 +30,21 @@ export function validateBoolean(name: string, value: unknown, valueKind: string)
 }
 
 /**
+ * Validates the given value as a integer.
+ *
+ * @param name - The name of the value.
+ * @param value - The actual value.
+ * @param valueKind - The kind of value that is being checked (e.g. "parameter", "response field", etc.)
+ * @throws - Will throw if not a valid integer.
+ */
+export function validateInteger(name: string, value: unknown, valueKind: string): void {
+  validateNumber(name, value, valueKind);
+  if (!Number.isInteger(value)) {
+    throwValidationError(name, value, valueKind, "an integer value");
+  }
+}
+
+/**
  * Validates the given value as an object.
  *
  * @param name - The name of the value.
