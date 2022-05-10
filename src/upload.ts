@@ -293,11 +293,11 @@ export async function uploadLargeFileRequest(
   // the part-split function. Note that each part has to be chunk-aligned, so we
   // may limit the number of parallel uploads.
   let parallelUploads = 1;
-  let splitSizeIntoParts:
-    | ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>)
-    | undefined = undefined;
-  const staggerPercent = opts.staggerPercent;
   const chunkSize = TUS_CHUNK_SIZE * opts.chunkSizeMultiplier;
+  // If we use `parallelUploads: 1` then these have to be set to null.
+  let splitSizeIntoParts: ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>) | null =
+    null;
+  let staggerPercent: number | null = null;
 
   // Only do the following if parallel uploads are enabled on the server.
   if (resp.headers["tus-extension"]?.includes("concatenation")) {
@@ -313,8 +313,9 @@ export async function uploadLargeFileRequest(
     }
 
     if (parallelUploads > 1) {
-      // Set the part-split function.
+      // Officially doing a parallel upload, set the parallel upload options.
       splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+      staggerPercent = opts.staggerPercent;
     }
   }
 
@@ -466,10 +467,15 @@ export function splitSizeIntoChunkAlignedParts(
   chunkSize: number
 ): Array<{ start: number; end: number }> {
   if (partCount < 1) {
-    throwValidationError("partCount", partCount, "option", "greater than or equal to 1");
+    throwValidationError("partCount", partCount, "parameter", "greater than or equal to 1");
   }
   if (chunkSize < 1) {
-    throwValidationError("chunkSize", chunkSize, "option", "greater than or equal to 1");
+    throwValidationError("chunkSize", chunkSize, "parameter", "greater than or equal to 1");
+  }
+  // NOTE: Unexpected code flow. `uploadLargeFileRequest` should not enable
+  // parallel uploads for this case.
+  if (totalSize <= chunkSize) {
+    throwValidationError("totalSize", totalSize, "parameter", `greater than the size of a chunk ('${chunkSize}')`);
   }
 
   const partSizes = new Array(partCount).fill(0);
@@ -485,15 +491,11 @@ export function splitSizeIntoChunkAlignedParts(
   const leftover = totalSize % chunkSize;
   // If there is non-chunk-aligned leftover, add it.
   if (leftover > 0) {
-    let lastIndex;
-    if (numFullChunks === 0) {
-      // No parts were visited, so just assign to the last part.
-      lastIndex = partCount - 1;
-    } else {
-      // Assign the leftover to the part after the last part that was visited, or
-      // the last part in the array if all parts were used.
-      lastIndex = Math.min(numFullChunks, partCount - 1);
-    }
+    // Assign the leftover to the part after the last part that was visited, or
+    // the last part in the array if all parts were used.
+    //
+    // NOTE: We don't need to worry about empty parts, tus ignores those.
+    const lastIndex = Math.min(numFullChunks, partCount - 1);
     partSizes[lastIndex] += leftover;
   }
 
