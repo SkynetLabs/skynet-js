@@ -294,26 +294,7 @@ describe("uploadDirectory", () => {
 describe("splitSizeIntoChunkAlignedParts", () => {
   const mib = 1 << 20;
   const chunk = TUS_CHUNK_SIZE;
-  const sizesAndChunks: Array<[number, number, number, { start: number; end: number }[]]> = [
-    [
-      40 * mib,
-      2,
-      chunk,
-      [
-        { start: 0, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
-      ],
-    ],
-    [
-      40 * mib,
-      3,
-      chunk,
-      [
-        { start: 0, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
-      ],
-    ],
+  const cases: Array<[number, number, number, { start: number; end: number }[]]> = [
     [
       41 * mib,
       2,
@@ -386,43 +367,6 @@ describe("splitSizeIntoChunkAlignedParts", () => {
 
     // Use larger chunk size.
     [
-      40 * mib,
-      2,
-      chunk * 2,
-      [
-        { start: 0, end: 0 },
-        { start: 0, end: 40 * mib },
-      ],
-    ],
-    [
-      40 * mib,
-      3,
-      chunk * 3,
-      [
-        { start: 0, end: 0 },
-        { start: 0, end: 0 },
-        { start: 0, end: 40 * mib },
-      ],
-    ],
-    [
-      41 * mib,
-      2,
-      chunk * 2,
-      [
-        { start: 0, end: 0 },
-        { start: 0, end: 41 * mib },
-      ],
-    ],
-    [
-      80 * mib,
-      2,
-      chunk * 2,
-      [
-        { start: 0, end: 80 * mib },
-        { start: 80 * mib, end: 80 * mib },
-      ],
-    ],
-    [
       81 * mib,
       2,
       chunk * 2,
@@ -431,13 +375,63 @@ describe("splitSizeIntoChunkAlignedParts", () => {
         { start: 80 * mib, end: 81 * mib },
       ],
     ],
+    [
+      121 * mib,
+      2,
+      chunk * 3,
+      [
+        { start: 0, end: 120 * mib },
+        { start: 120 * mib, end: 121 * mib },
+      ],
+    ],
+    [
+      121 * mib,
+      3,
+      chunk * 3,
+      [
+        { start: 0, end: 120 * mib },
+        { start: 120 * mib, end: 121 * mib },
+        { start: 121 * mib, end: 121 * mib },
+      ],
+    ],
   ];
 
-  it.each(sizesAndChunks)(
+  it.each(cases)(
     "(totalSize: '%s', partCount: '%s', chunkSize: '%s') should result in '%s'",
     (totalSize, partCount, chunkSize, expectedParts) => {
       const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
       expect(parts).toEqual(expectedParts);
     }
   );
+
+  const sizeTooSmallCases = [
+    [40 * mib, 2, chunk * 2],
+    [41 * mib, 2, chunk * 2],
+    [40 * mib, 3, chunk * 3],
+    [80 * mib, 2, chunk * 2],
+    [40 * mib, 2, chunk],
+    [40 * mib, 3, chunk],
+    [0, 2, chunk],
+  ];
+
+  it.each(sizeTooSmallCases)(
+    "(totalSize: '%s', partCount: '%s', chunkSize: '%s') should throw",
+    (totalSize, partCount, chunkSize) => {
+      expect(() => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize)).toThrowError(
+        `Expected parameter 'totalSize' to be greater than the size of a chunk ('${chunkSize}'), was type 'number', value '${totalSize}'`
+      );
+    }
+  );
+
+  it("should throw if the partCount is 0", () => {
+    expect(() => splitSizeIntoChunkAlignedParts(1, 0, 1)).toThrowError(
+      "Expected parameter 'partCount' to be greater than or equal to 1, was type 'number', value '0'"
+    );
+  });
+
+  it("should throw if the chunkSize is 0", () => {
+    expect(() => splitSizeIntoChunkAlignedParts(1, 1, 0)).toThrowError(
+      "Expected parameter 'chunkSize' to be greater than or equal to 1, was type 'number', value '0'"
+    );
+  });
 });

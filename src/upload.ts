@@ -37,6 +37,11 @@ const DEFAULT_TUS_PARALLEL_UPLOADS = 2;
 const DEFAULT_TUS_RETRY_DELAYS = [0, 5_000, 15_000, 60_000, 300_000, 600_000];
 
 /**
+ * Indicates the default stagger percent between chunk uploads.
+ */
+const DEFAULT_TUS_STAGGER_PERCENT = 50;
+
+/**
  * The portal file field name.
  */
 const PORTAL_FILE_FIELD_NAME = "file";
@@ -55,6 +60,7 @@ const PORTAL_DIRECTORY_FILE_FIELD_NAME = "files[]";
  * @property [largeFileSize=41943040] - The size at which files are considered "large" and will be uploaded using the tus resumable upload protocol. This is the size of one chunk by default (40 mib). Note that this does not affect the actual size of chunks used by the protocol.
  * @property [errorPages] - Defines a mapping of error codes and subfiles which are to be served in case we are serving the respective error code. All subfiles referred like this must be defined with absolute paths and must exist.
  * @property [numParallelUploads=2] - Used to override the default number of parallel uploads. Disable parallel uploads by setting to 1. Note that each parallel upload must be chunk-aligned so the number of parallel uploads may be limited if some parts would end up empty.
+ * @property [staggerPercent] - A percentage from 0-100. `numParallelUploads` must be more than 1. When set, each chunk is staggered, one after another, instead of all uploads running simultaneously. The stagger percentage is how much of each chunk upload should be finished before the next chunk upload is initiated. Pass `null` to disable staggering.
  * @property [retryDelays=[0, 5_000, 15_000, 60_000, 300_000, 600_000]] - An array or undefined, indicating how many milliseconds should pass before the next attempt to uploading will be started after the transfer has been interrupted. The array's length indicates the maximum number of attempts.
  * @property [tryFiles] - Allows us to set a list of potential subfiles to return in case the requested one does not exist or is a directory. Those subfiles might be listed with relative or absolute paths. If the path is absolute the file must exist.
  */
@@ -67,6 +73,7 @@ export type CustomUploadOptions = BaseCustomOptions & {
   errorPages?: JsonData;
   largeFileSize?: number;
   numParallelUploads?: number;
+  staggerPercent?: number | null;
   retryDelays?: number[];
   tryFiles?: string[];
 };
@@ -91,6 +98,7 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   errorPages: undefined,
   largeFileSize: TUS_CHUNK_SIZE,
   numParallelUploads: DEFAULT_TUS_PARALLEL_UPLOADS,
+  staggerPercent: DEFAULT_TUS_STAGGER_PERCENT,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
   tryFiles: undefined,
 };
@@ -237,6 +245,13 @@ export async function uploadLargeFileRequest(
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
   // Validation.
+  if (
+    opts.staggerPercent !== undefined &&
+    opts.staggerPercent !== null &&
+    (opts.staggerPercent < 0 || opts.staggerPercent > 100)
+  ) {
+    throw new Error(`Expected 'staggerPercent' option to be between 0 and 100, was '${opts.staggerPercent}`);
+  }
   if (opts.chunkSizeMultiplier < 1) {
     throwValidationError("opts.chunkSizeMultiplier", opts.chunkSizeMultiplier, "option", "greater than or equal to 1");
   }
@@ -278,22 +293,29 @@ export async function uploadLargeFileRequest(
   // the part-split function. Note that each part has to be chunk-aligned, so we
   // may limit the number of parallel uploads.
   let parallelUploads = 1;
-  let splitSizeIntoParts:
-    | ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>)
-    | undefined = undefined;
   const chunkSize = TUS_CHUNK_SIZE * opts.chunkSizeMultiplier;
+  // If we use `parallelUploads: 1` then these have to be set to null.
+  let splitSizeIntoParts: ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>) | null =
+    null;
+  let staggerPercent: number | null = null;
+
+  // Only do the following if parallel uploads are enabled on the server.
   if (resp.headers["tus-extension"]?.includes("concatenation")) {
     // Use a user-provided value, if given.
     parallelUploads = opts.numParallelUploads;
+
     // Limit the number of parallel uploads if some parts would end up empty,
     // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
     // and one empty part.
-    if (parallelUploads > Math.ceil(file.size / chunkSize)) {
-      parallelUploads = Math.ceil(file.size / chunkSize);
+    const numChunks = Math.ceil(file.size / TUS_CHUNK_SIZE);
+    if (parallelUploads > numChunks) {
+      parallelUploads = numChunks;
     }
+
     if (parallelUploads > 1) {
-      // Set the part-split function.
+      // Officially doing a parallel upload, set the parallel upload options.
       splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+      staggerPercent = opts.staggerPercent;
     }
   }
 
@@ -307,6 +329,7 @@ export async function uploadLargeFileRequest(
         filetype: file.type,
       },
       parallelUploads,
+      staggerPercent,
       splitSizeIntoParts,
       headers,
       onProgress,
@@ -427,6 +450,12 @@ export async function uploadDirectoryRequest(
  * Splits the size into the number of parts, aligning all but the last part on
  * chunk boundaries. Called if parallel uploads are used.
  *
+ * Constraints:
+ *
+ * - Each part must be chunk-aligned, except for the last part. So we put any
+ *   non-aligned leftover in the last part.
+ * - The parts should be as close in size to each other as possible.
+ *
  * @param totalSize - The total size of the upload.
  * @param partCount - The number of parts (equal to the value of `parallelUploads` used).
  * @param chunkSize - The size of the chunk to use.
@@ -437,25 +466,37 @@ export function splitSizeIntoChunkAlignedParts(
   partCount: number,
   chunkSize: number
 ): Array<{ start: number; end: number }> {
+  if (partCount < 1) {
+    throwValidationError("partCount", partCount, "parameter", "greater than or equal to 1");
+  }
+  if (chunkSize < 1) {
+    throwValidationError("chunkSize", chunkSize, "parameter", "greater than or equal to 1");
+  }
+  // NOTE: Unexpected code flow. `uploadLargeFileRequest` should not enable
+  // parallel uploads for this case.
+  if (totalSize <= chunkSize) {
+    throwValidationError("totalSize", totalSize, "parameter", `greater than the size of a chunk ('${chunkSize}')`);
+  }
+
   const partSizes = new Array(partCount).fill(0);
-  // The leftover size that must go into the last part.
-  const leftover = totalSize % chunkSize;
 
   // Assign chunks to parts in order, looping back to the beginning if we get to
   // the end of the parts array.
-  let lastPart = -1;
-  for (let i = 0; i < Math.floor(totalSize / chunkSize); i++) {
+  const numFullChunks = Math.floor(totalSize / chunkSize);
+  for (let i = 0; i < numFullChunks; i++) {
     partSizes[i % partCount] += chunkSize;
-    if (i > lastPart) lastPart = i;
   }
 
-  if (lastPart === -1) {
-    // No parts were visited, so assign to the last part.
-    partSizes[partCount - 1] += leftover;
-  } else {
+  // The leftover size that must go into the last part.
+  const leftover = totalSize % chunkSize;
+  // If there is non-chunk-aligned leftover, add it.
+  if (leftover > 0) {
     // Assign the leftover to the part after the last part that was visited, or
     // the last part in the array if all parts were used.
-    partSizes[Math.min(lastPart + 1, partCount - 1)] += leftover;
+    //
+    // NOTE: We don't need to worry about empty parts, tus ignores those.
+    const lastIndex = Math.min(numFullChunks, partCount - 1);
+    partSizes[lastIndex] += leftover;
   }
 
   // Convert sizes into parts.
