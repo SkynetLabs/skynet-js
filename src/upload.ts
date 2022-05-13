@@ -281,42 +281,28 @@ export async function uploadLargeFileRequest(
       opts.onUploadProgress(progress, { loaded: bytesSent, total: bytesTotal });
     };
 
-  // Make an OPTIONS request to find out whether parallel uploads are supported.
-  // TODO: Remove this once parallel uploads are fully supported and rolled-out.
-  const resp = await this.executeRequest({
-    ...opts,
-    endpointPath: opts.endpointLargeUpload,
-    method: "options",
-  });
-
-  // If concatenation is enabled, set the number of parallel uploads as well as
-  // the part-split function. Note that each part has to be chunk-aligned, so we
-  // may limit the number of parallel uploads.
-  let parallelUploads = 1;
+  // Set the number of parallel uploads as well as the part-split function. Note
+  // that each part has to be chunk-aligned, so we may limit the number of
+  // parallel uploads.
+  let parallelUploads = opts.numParallelUploads;
   const chunkSize = TUS_CHUNK_SIZE * opts.chunkSizeMultiplier;
   // If we use `parallelUploads: 1` then these have to be set to null.
   let splitSizeIntoParts: ((totalSize: number, partCount: number) => Array<{ start: number; end: number }>) | null =
     null;
   let staggerPercent: number | null = null;
 
-  // Only do the following if parallel uploads are enabled on the server.
-  if (resp.headers["tus-extension"]?.includes("concatenation")) {
-    // Use a user-provided value, if given.
-    parallelUploads = opts.numParallelUploads;
+  // Limit the number of parallel uploads if some parts would end up empty,
+  // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
+  // and one empty part.
+  const numChunks = Math.ceil(file.size / TUS_CHUNK_SIZE);
+  if (parallelUploads > numChunks) {
+    parallelUploads = numChunks;
+  }
 
-    // Limit the number of parallel uploads if some parts would end up empty,
-    // e.g. 50mib would be split into 1 chunk-aligned part, one unaligned part,
-    // and one empty part.
-    const numChunks = Math.ceil(file.size / TUS_CHUNK_SIZE);
-    if (parallelUploads > numChunks) {
-      parallelUploads = numChunks;
-    }
-
-    if (parallelUploads > 1) {
-      // Officially doing a parallel upload, set the parallel upload options.
-      splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
-      staggerPercent = opts.staggerPercent;
-    }
+  if (parallelUploads > 1) {
+    // Officially doing a parallel upload, set the parallel upload options.
+    splitSizeIntoParts = (totalSize, partCount) => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+    staggerPercent = opts.staggerPercent;
   }
 
   return new Promise((resolve, reject) => {

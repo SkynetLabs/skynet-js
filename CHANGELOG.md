@@ -21,6 +21,10 @@ Types of changes:
 - Added `chunkSizeMultiplier` option for large file uploads.
 - Added `staggerPercent` option for more efficient uploading of large file uploads.
 
+### Changed
+
+- Large file uploads now make one less request before starting an upload.
+
 ## [4.1.0]
 
 ### Breaking Changes
