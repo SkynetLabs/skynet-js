@@ -4,6 +4,27 @@ _Beta versions are released on the `beta` stream. The latest beta can be install
 
 For the latest stable changes, see [CHANGELOG.md](./CHANGELOG.md).
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Types of changes:
+
+- `Added` for new features.
+- `Changed` for changes in existing functionality.
+- `Removed` for now removed features.
+
+## [4.2.0-beta]
+
+### Added
+
+- Added `client.getFileContentBinary` and `client.getFileContentBinaryHns` methods for downloading binary data.
+- Added `chunkSizeMultiplier` option for large file uploads.
+- Added `staggerPercent` option for more efficient uploading of large file uploads.
+
+### Changed
+
+- Large file uploads now make one less request before starting an upload.
+
 ## [4.0.27-beta]
 
 ### Added
