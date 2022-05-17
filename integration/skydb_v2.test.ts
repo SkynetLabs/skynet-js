@@ -13,11 +13,6 @@ import { decodeSkylinkBase64 } from "../src/utils/encoding";
 import { toHexString } from "../src/utils/string";
 
 describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
-  // Sleep for a second before each test to try to avoid rate limiter.
-  beforeEach(async () => {
-    await new Promise((r) => setTimeout(r, 1000));
-  });
-
   it("Should get existing SkyDB data", async () => {
     const publicKey = "89e5147864297b80f5ddf29711ba8c093e724213b0dcbefbc3860cc6d598cc35";
     const dataKey = "dataKey1";
