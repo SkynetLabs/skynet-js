@@ -52,6 +52,7 @@
   },
   "homepage": "https://github.com/SkynetLabs/skynet-js",
   "dependencies": {
+    "@skynetlabs/tus-js-client": "^2.4.0",
     "async-mutex": "^0.3.2",
     "axios": "^0.27.2",
     "base32-decode": "^1.0.0",
@@ -65,7 +66,6 @@
     "randombytes": "^2.1.0",
     "sjcl": "^1.0.8",
     "skynet-mysky-utils": "^0.3.0",
-    "@skynetlabs/tus-js-client": "^2.4.0",
     "tweetnacl": "^1.0.3",
     "url-join": "^4.0.1",
     "url-parse": "^1.5.1"
@@ -83,6 +83,7 @@
     "@typescript-eslint/eslint-plugin": "^4.3.0",
     "@typescript-eslint/parser": "^4.3.0",
     "axios-mock-adapter": "^1.18.2",
+    "axios-retry": "^3.2.5",
     "eslint": "^7.11.0",
     "eslint-plugin-jsdoc": "^39.2.8",
     "husky": "^8.0.1",
