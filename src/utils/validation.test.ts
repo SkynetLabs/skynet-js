@@ -140,7 +140,7 @@ describe("validateUint8Array", () => {
     );
   });
 
-  const cases = [new Uint8Array([17, -45.3])];
+  const cases = [new Uint8Array([17, 45])];
 
   it.each(cases)("Should accept byte array input '%s'", (input) => {
     expect(() => validateUint8Array("test", input, "parameter")).not.toThrowError();
@@ -154,7 +154,7 @@ describe("validateUint8ArrayLen", () => {
     );
   });
 
-  const cases = [new Uint8Array([17, -45.3])];
+  const cases = [new Uint8Array([17, 45])];
 
   it.each(cases)("Should accept byte array input '%s' of length 2", (input) => {
     expect(() => validateUint8ArrayLen("test", input, "parameter", 2)).not.toThrowError();
