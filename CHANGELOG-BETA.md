@@ -13,6 +13,12 @@ Types of changes:
 - `Changed` for changes in existing functionality.
 - `Removed` for now removed features.
 
+## [4.2.1-beta]
+
+### Changed
+
+- Improved performance and stability of integration tests.
+
 ## [4.2.0-beta]
 
 ### Added

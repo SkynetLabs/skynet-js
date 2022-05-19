@@ -24,6 +24,7 @@ Types of changes:
 ### Changed
 
 - Large file uploads now make one less request before starting an upload.
+- Improved performance and stability of integration tests.
 
 ## [4.1.0]
 
