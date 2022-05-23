@@ -66,6 +66,7 @@ import { extractDomain, getFullDomainUrl } from "./mysky/utils";
 import { buildRequestHeaders, buildRequestUrl, ExecuteRequestError, Headers } from "./request";
 
 // I need an edit, so I can make a PR.
+// Second edit, just to refresh stuff.
 
 /**
  * Custom client options.
