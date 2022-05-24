@@ -123,7 +123,7 @@ export async function uploadFile(
 
   const opts = { ...DEFAULT_UPLOAD_OPTIONS, ...this.customOptions, ...customOptions };
 
-  if (file.size < opts.largeFileSize) {
+  if (file.size < opts.largeFileSize * opts.chunkSizeMultiplier) {
     return this.uploadSmallFile(file, opts);
   } else {
     return this.uploadLargeFile(file, opts);
