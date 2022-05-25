@@ -13,6 +13,12 @@ Types of changes:
 - `Changed` for changes in existing functionality.
 - `Removed` for now removed features.
 
+## [4.2.2-beta]
+
+### Changed
+
+- Fixed broken single-chunk uploads when chunkSizeMultiplier > 1.
+
 ## [4.2.1-beta]
 
 ### Changed
