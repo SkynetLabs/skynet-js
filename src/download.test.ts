@@ -353,7 +353,7 @@ describe("getFileContent", () => {
       mock.onGet(expectedUrl).reply(200, {}, headersWithProof);
 
       await expect(client.getFileContent(skylink)).rejects.toThrowError(
-        "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected returned skylink to be the same as input data link"
+        "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected returned skylink ('AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA') to be the same as input data link ('XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg')"
       );
     });
 
@@ -376,7 +376,7 @@ describe("getFileContent", () => {
       mock.onGet(expectedEntryLinkUrl).reply(200, {}, headersWithProof);
 
       await expect(client.getFileContent(entryLink)).rejects.toThrowError(
-        "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected returned skylink to be different from input entry link"
+        "File content response invalid despite a successful request. Please try again and report this issue to the devs if it persists. Error: Expected returned skylink ('AQDwh1jnoZas9LaLHC_D4-2yP9XYDdZzNtz62H4Dww1jDA') to be different from input entry link"
       );
     });
 
