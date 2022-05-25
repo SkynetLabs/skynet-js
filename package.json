@@ -62,7 +62,7 @@
     "buffer-from": "^1.1.2",
     "mime": "^3.0.0",
     "path-browserify": "^1.0.1",
-    "pbkdf2": "^3.1.2",
+    "pbkdf2-hmac": "^1.0.4",
     "post-me": "^0.4.5",
     "skynet-mysky-utils": "^0.3.0",
     "tweetnacl": "^1.0.3",

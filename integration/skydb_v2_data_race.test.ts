@@ -42,7 +42,7 @@ describe.skip(`SkyDBV2 end to end integration getJSON/setJSON data race regressi
   it.each(delays)(
     "should not get old data when getJSON is called after setJSON on a single client with a '%s' ms delay and getJSON doesn't fail",
     async (delay) => {
-      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const { publicKey, privateKey } = await genKeyPairAndSeed();
 
       // Set the data.
       await client.dbV2.setJSON(privateKey, dataKey, jsonOld);
@@ -86,7 +86,7 @@ describe.skip(`SkyDBV2 end to end integration getJSON/setJSON data race regressi
       // Create two new clients with a fresh revision cache.
       const client1 = new SkynetClient(portal, customOptions);
       const client2 = new SkynetClient(portal, customOptions);
-      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const { publicKey, privateKey } = await genKeyPairAndSeed();
 
       // Get revision entry cache handles.
       const cachedRevisionEntry1 = await client1.dbV2.revisionNumberCache.getRevisionAndMutexForEntry(
@@ -171,7 +171,7 @@ describe.skip(`SkyDBV2 end to end integration getJSON/setJSON data race regressi
   it.each(delays)(
     "should make sure that two concurrent setJSON calls on a single client with a '%s' ms delay either fail with the right error or succeed ",
     async (delay) => {
-      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const { publicKey, privateKey } = await genKeyPairAndSeed();
 
       // Try to invoke two concurrent setJSON calls.
       try {
@@ -205,7 +205,7 @@ describe.skip(`SkyDBV2 end to end integration getJSON/setJSON data race regressi
       // Create two new clients with a fresh revision cache.
       const client1 = new SkynetClient(portal, customOptions);
       const client2 = new SkynetClient(portal, customOptions);
-      const { publicKey, privateKey } = genKeyPairAndSeed();
+      const { publicKey, privateKey } = await genKeyPairAndSeed();
 
       // Try to invoke two concurrent setJSON calls.
       try {

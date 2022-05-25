@@ -278,7 +278,7 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
   });
 
   it("Should update an etag for a resolver skylink after changing its data", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
 
     // Generate random file data.
     const [data1, data2] = [randomUnicodeString(4096), randomUnicodeString(4096)];
