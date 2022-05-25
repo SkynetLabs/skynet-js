@@ -35,11 +35,11 @@ Types of changes:
 
 ### Added
 
-- Throws error when passing both dev and alpha options for MySky (#257). by @amberm31 in https://github.com/SkynetLabs/skynet-js/pull/352
+- Throws error when passing both dev and alpha options for MySky (#257). By @amberm31 in https://github.com/SkynetLabs/skynet-js/pull/352
 
 ### Changed
 
-- Mysky login flow fixes by @m-cat in https://github.com/SkynetLabs/skynet-js/pull/403
+- Mysky login flow fixes. By @m-cat in https://github.com/SkynetLabs/skynet-js/pull/403
 
 ## [4.0.26-beta]
 
