@@ -5,7 +5,9 @@ import MockAdapter from "axios-mock-adapter";
 
 import { SkynetClient, DEFAULT_SKYNET_PORTAL_URL, URI_SKYNET_PREFIX } from "./index";
 import { compareFormData } from "../utils/testing";
-import { splitSizeIntoChunkAlignedParts } from "./upload";
+import { splitSizeIntoChunkAlignedParts, TUS_CHUNK_SIZE } from "./upload";
+
+let mock: MockAdapter;
 
 const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
@@ -14,14 +16,14 @@ const sialink = `${URI_SKYNET_PREFIX}${skylink}`;
 const merkleroot = "QAf9Q7dBSbMarLvyeE6HTQmwhr7RX9VMrP9xIMzpU3I";
 const bitfield = 2048;
 const data = { skylink, merkleroot, bitfield };
-let mock: MockAdapter;
+
+const filename = "bar.txt";
+const file = new File(["foo"], filename, {
+  type: "text/plain",
+});
 
 describe("uploadFile", () => {
   const url = `${portalUrl}/skynet/skyfile`;
-  const filename = "bar.txt";
-  const file = new File(["foo"], filename, {
-    type: "text/plain",
-  });
 
   beforeEach(() => {
     mock = new MockAdapter(axios);
@@ -161,6 +163,36 @@ describe("uploadFile", () => {
   });
 });
 
+describe("uploadLargeFile", () => {
+  it("should throw if the chunk size multiplier is less than 1", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { chunkSizeMultiplier: 0 })).rejects.toThrowError(
+      "Expected option 'opts.chunkSizeMultiplier' to be greater than or equal to 1, was type 'number', value '0'"
+    );
+  });
+
+  it("should throw if the chunk size multiplier is not an integer", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { chunkSizeMultiplier: 1.5 })).rejects.toThrowError(
+      "Expected option 'opts.chunkSizeMultiplier' to be an integer value, was type 'number', value '1.5'"
+    );
+  });
+
+  it("should throw if the number of parallel uploads is less than 1", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { numParallelUploads: 0.5 })).rejects.toThrowError(
+      "Expected option 'opts.numParallelUploads' to be greater than or equal to 1, was type 'number', value '0.5'"
+    );
+  });
+
+  it("should throw if the number of parallel uploads is not an integer", async () => {
+    // @ts-expect-error Using protected method.
+    await expect(client.uploadLargeFile(file, { numParallelUploads: 1.5 })).rejects.toThrowError(
+      "Expected option 'opts.numParallelUploads' to be an integer value, was type 'number', value '1.5'"
+    );
+  });
+});
+
 describe("uploadDirectory", () => {
   const filename = "i-am-root";
   const directory = {
@@ -261,27 +293,12 @@ describe("uploadDirectory", () => {
 
 describe("splitSizeIntoChunkAlignedParts", () => {
   const mib = 1 << 20;
-  const sizesAndChunks: Array<[number, number, { start: number; end: number }[]]> = [
-    [
-      40 * mib,
-      2,
-      [
-        { start: 0, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
-      ],
-    ],
-    [
-      40 * mib,
-      3,
-      [
-        { start: 0, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
-        { start: 40 * mib, end: 40 * mib },
-      ],
-    ],
+  const chunk = TUS_CHUNK_SIZE;
+  const cases: Array<[number, number, number, { start: number; end: number }[]]> = [
     [
       41 * mib,
       2,
+      chunk,
       [
         { start: 0, end: 40 * mib },
         { start: 40 * mib, end: 41 * mib },
@@ -290,6 +307,7 @@ describe("splitSizeIntoChunkAlignedParts", () => {
     [
       80 * mib,
       2,
+      chunk,
       [
         { start: 0, end: 40 * mib },
         { start: 40 * mib, end: 80 * mib },
@@ -298,6 +316,7 @@ describe("splitSizeIntoChunkAlignedParts", () => {
     [
       50 * mib,
       2,
+      chunk,
       [
         { start: 0, end: 40 * mib },
         { start: 40 * mib, end: 50 * mib },
@@ -306,6 +325,7 @@ describe("splitSizeIntoChunkAlignedParts", () => {
     [
       100 * mib,
       2,
+      chunk,
       [
         { start: 0, end: 40 * mib },
         { start: 40 * mib, end: 100 * mib },
@@ -314,6 +334,7 @@ describe("splitSizeIntoChunkAlignedParts", () => {
     [
       50 * mib,
       3,
+      chunk,
       [
         { start: 0, end: 40 * mib },
         { start: 40 * mib, end: 50 * mib },
@@ -323,6 +344,7 @@ describe("splitSizeIntoChunkAlignedParts", () => {
     [
       100 * mib,
       3,
+      chunk,
       [
         { start: 0, end: 40 * mib },
         { start: 40 * mib, end: 80 * mib },
@@ -332,6 +354,7 @@ describe("splitSizeIntoChunkAlignedParts", () => {
     [
       500 * mib,
       6,
+      chunk,
       [
         { start: 0 * mib, end: 80 * mib },
         { start: 80 * mib, end: 160 * mib },
@@ -341,10 +364,74 @@ describe("splitSizeIntoChunkAlignedParts", () => {
         { start: 400 * mib, end: 500 * mib },
       ],
     ],
+
+    // Use larger chunk size.
+    [
+      81 * mib,
+      2,
+      chunk * 2,
+      [
+        { start: 0, end: 80 * mib },
+        { start: 80 * mib, end: 81 * mib },
+      ],
+    ],
+    [
+      121 * mib,
+      2,
+      chunk * 3,
+      [
+        { start: 0, end: 120 * mib },
+        { start: 120 * mib, end: 121 * mib },
+      ],
+    ],
+    [
+      121 * mib,
+      3,
+      chunk * 3,
+      [
+        { start: 0, end: 120 * mib },
+        { start: 120 * mib, end: 121 * mib },
+        { start: 121 * mib, end: 121 * mib },
+      ],
+    ],
   ];
 
-  it.each(sizesAndChunks)("Should align size '%s' with '%s' parts", (totalSize, partCount, expectedParts) => {
-    const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount);
-    expect(parts).toEqual(expectedParts);
+  it.each(cases)(
+    "(totalSize: '%s', partCount: '%s', chunkSize: '%s') should result in '%s'",
+    (totalSize, partCount, chunkSize, expectedParts) => {
+      const parts = splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize);
+      expect(parts).toEqual(expectedParts);
+    }
+  );
+
+  const sizeTooSmallCases = [
+    [40 * mib, 2, chunk * 2],
+    [41 * mib, 2, chunk * 2],
+    [40 * mib, 3, chunk * 3],
+    [80 * mib, 2, chunk * 2],
+    [40 * mib, 2, chunk],
+    [40 * mib, 3, chunk],
+    [0, 2, chunk],
+  ];
+
+  it.each(sizeTooSmallCases)(
+    "(totalSize: '%s', partCount: '%s', chunkSize: '%s') should throw",
+    (totalSize, partCount, chunkSize) => {
+      expect(() => splitSizeIntoChunkAlignedParts(totalSize, partCount, chunkSize)).toThrowError(
+        `Expected parameter 'totalSize' to be greater than the size of a chunk ('${chunkSize}'), was type 'number', value '${totalSize}'`
+      );
+    }
+  );
+
+  it("should throw if the partCount is 0", () => {
+    expect(() => splitSizeIntoChunkAlignedParts(1, 0, 1)).toThrowError(
+      "Expected parameter 'partCount' to be greater than or equal to 1, was type 'number', value '0'"
+    );
+  });
+
+  it("should throw if the chunkSize is 0", () => {
+    expect(() => splitSizeIntoChunkAlignedParts(1, 1, 0)).toThrowError(
+      "Expected parameter 'chunkSize' to be greater than or equal to 1, was type 'number', value '0'"
+    );
   });
 });

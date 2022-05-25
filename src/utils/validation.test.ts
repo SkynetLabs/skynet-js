@@ -1,6 +1,7 @@
 import {
   validateBigint,
   validateBoolean,
+  validateInteger,
   validateNumber,
   validateObject,
   validateSkylinkString,
@@ -22,6 +23,24 @@ describe("validateBoolean", () => {
   it("Should reject non-boolean input", () => {
     expect(() => validateBoolean("test", 123, "parameter")).toThrowError(
       "Expected parameter 'test' to be type 'boolean', was type 'number', value '123'"
+    );
+  });
+});
+
+describe("validateInteger", () => {
+  const numberCases = [123.01, 0.5, NaN, -0.5];
+
+  it.each(numberCases)("Should reject non-integer input '%s'", (input) => {
+    expect(() => validateInteger("test", input, "parameter")).toThrowError(
+      `Expected parameter 'test' to be an integer value, was type '${typeof input}', value '${input}'`
+    );
+  });
+
+  const nonNumberCases = ["1", "asdf", false];
+
+  it.each(nonNumberCases)("Should reject non-number input '%s'", (input) => {
+    expect(() => validateInteger("test", input, "parameter")).toThrowError(
+      `Expected parameter 'test' to be type 'number', was type '${typeof input}', value '${input}'`
     );
   });
 });

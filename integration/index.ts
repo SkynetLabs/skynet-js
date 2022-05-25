@@ -1,7 +1,15 @@
 /* istanbul ignore file: Incomplete coverage reported erroneously, no line numbers given */
-
+import axios, { AxiosError } from "axios";
+import axiosRetry from "axios-retry";
 import { DEFAULT_SKYNET_PORTAL_URL, SkynetClient } from "../src";
 import { trimPrefix } from "../src/utils/string";
+
+// retry if we're getting rate limited
+axiosRetry(axios, {
+  retries: 10,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (e: AxiosError) => axiosRetry.isNetworkOrIdempotentRequestError(e) || e.response?.status === 429,
+});
 
 // To test a specific server.
 //
@@ -63,9 +71,4 @@ expect.extend({
     }
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
-});
-
-// Sleep a bit before each test to avoid being rate-limited.
-beforeEach(() => {
-  return new Promise((r) => setTimeout(r, 200));
 });
