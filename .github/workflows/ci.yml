@@ -25,6 +25,7 @@ jobs:
         uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
         with:
           node-version: ${{ matrix.node-version }}
+          build: true
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetpro.net"
           SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
