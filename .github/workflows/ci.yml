@@ -26,7 +26,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
         env:
-          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetpro.net"
+          # Use the pro server if an API key is found, otherwise use siasky.net.
+          # This is for PRs run from forks, which do not have access to secrets.
+          #
+          # Ternary syntax. See https://github.com/actions/runner/issues/409#issuecomment-752775072.
+          SKYNET_JS_INTEGRATION_TEST_SERVER: ${{ secrets.SKYNET_API_KEY && 'https://skynetpro.net' || 'https://siasky.net' }}
           SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
 
   # Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.
