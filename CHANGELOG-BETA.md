@@ -13,6 +13,12 @@ Types of changes:
 - `Changed` for changes in existing functionality.
 - `Removed` for now removed features.
 
+## [4.2.3-beta]
+
+### Changed
+
+- Removed console output when uploading large files.
+
 ## [4.2.2-beta]
 
 ### Changed
