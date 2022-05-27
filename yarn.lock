@@ -595,10 +595,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@skynetlabs/tus-js-client@^2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@skynetlabs/tus-js-client/-/tus-js-client-2.4.0.tgz#1950ff74d531ee049d2e03a78cda393d644712b2"
-  integrity sha512-UnlUYoG4FHPafuFPaqgqZbPOi3TX8wymvZG03QbFo9y5ifKi8xckZZuv8ehcDOmmLoS4PBO4XgRkgPxtk602zw==
+"@skynetlabs/tus-js-client@^2.4.1":
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/@skynetlabs/tus-js-client/-/tus-js-client-2.4.1.tgz#01e70e8c92fb3ec043b0c7da5206d7b96149c162"
+  integrity sha512-cc//2XeIqfZQ7rC182MbMwx/xTh1Cw1mQb2BmeHh6rO+coioyUSX71znPCsvijdKM+3NYXbhg5r/ZV5028OXfg==
   dependencies:
     buffer-from "^1.1.2"
     combine-errors "^3.0.3"
