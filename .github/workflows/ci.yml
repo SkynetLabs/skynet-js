@@ -25,6 +25,7 @@ jobs:
         uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
         with:
           node-version: ${{ matrix.node-version }}
+          build: true
         env:
           # Use the pro server if an API key is found, otherwise use siasky.net.
           # This is for PRs run from forks, which do not have access to secrets.
