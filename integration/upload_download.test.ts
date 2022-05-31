@@ -337,6 +337,17 @@ describe(`Upload and download end-to-end tests for portal '${portal}'`, () => {
       /Failed to resolve skylink|Request failed with status code 404: failed to fetch skylink: registry entry not found within given time/
     );
   });
+
+  describe("getFileContentHns", () => {
+    it("should query an existing domain", async () => {
+      const domain = "skynet-mysky"; // We're in control of this and it shouldn't change.
+
+      const { contentType, portalUrl, skylink: returnedSkylink } = await client.getFileContentHns(domain);
+      expect(contentType).toEqual("text/html");
+      expect(portalUrl).toEqualPortalUrl(portal);
+      expect(returnedSkylink).toContain("sia://");
+    });
+  });
 });
 
 /**

@@ -25,6 +25,7 @@ Types of changes:
 
 - Large file uploads now make one less request before starting an upload.
 - Improved performance and stability of integration tests.
+- Fixed `getFileContentHns` error due to bad skylink comparison. By @parajbs in https://github.com/SkynetLabs/skynet-js/issues/479
 
 ## [4.1.0]
 
