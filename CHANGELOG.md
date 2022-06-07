@@ -13,7 +13,7 @@ Types of changes:
 - `Changed` for changes in existing functionality.
 - `Removed` for now removed features.
 
-## [Unreleased]
+## [4.3.0]
 
 ### Added
 
