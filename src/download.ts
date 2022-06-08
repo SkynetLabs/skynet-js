@@ -395,8 +395,8 @@ export async function getFileContent<T = unknown>(
   const response = await this.getFileContentRequest(skylinkUrl, customOptions);
   const inputSkylink = parseSkylink(skylinkUrl);
 
-  // `inputSkylink` cannot be null. `getSkylinkUrl` would have thrown on an
-  // invalid skylink.
+  // `inputSkylink` cannot be null.
+  validateSkylinkString("inputSkylink", inputSkylink, "parsed skylink");
   validateGetFileContentResponse(response, inputSkylink as string);
 
   return await extractGetFileContentResponse<T>(response);
@@ -485,7 +485,7 @@ export async function getFileContentHns<T = unknown>(
   const headers = buildGetFileContentHeaders(opts.range);
 
   // GET request the data at the HNS domain and resolve the skylink in parallel.
-  const [response, { skylink: inputSkylink }] = await Promise.all([
+  const [response, { skylink }] = await Promise.all([
     this.executeRequest({
       ...opts,
       method: "get",
@@ -496,8 +496,11 @@ export async function getFileContentHns<T = unknown>(
     }),
     this.resolveHns(domain),
   ]);
+  const inputSkylink = parseSkylink(skylink);
 
-  validateGetFileContentResponse(response, inputSkylink);
+  // `inputSkylink` cannot be null.
+  validateSkylinkString("inputSkylink", inputSkylink, "parsed skylink");
+  validateGetFileContentResponse(response, inputSkylink as string);
 
   return await extractGetFileContentResponse<T>(response);
 }
@@ -821,7 +824,9 @@ function validateRegistryProofResponse(inputSkylink: string, dataLink: string, p
 
   if (isSkylinkV1(inputSkylink)) {
     if (inputSkylink !== dataLink) {
-      throw new Error("Expected returned skylink to be the same as input data link");
+      throw new Error(
+        `Expected returned skylink ('${dataLink}') to be the same as input data link ('${inputSkylink}')`
+      );
     }
     // If input skylink is not an entry link, no proof should be present.
     if (proof) {
@@ -834,7 +839,7 @@ function validateRegistryProofResponse(inputSkylink: string, dataLink: string, p
   // Validation for input entry link.
   if (inputSkylink === dataLink) {
     // Input skylink is entry link and returned skylink is the same.
-    throw new Error("Expected returned skylink to be different from input entry link");
+    throw new Error(`Expected returned skylink ('${dataLink}') to be different from input entry link`);
   }
 
   validateRegistryProof(proofArray, { resolverSkylink: inputSkylink, skylink: dataLink });

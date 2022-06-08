@@ -13,6 +13,18 @@ Types of changes:
 - `Changed` for changes in existing functionality.
 - `Removed` for now removed features.
 
+## [4.2.3-beta]
+
+### Changed
+
+- Removed console output when uploading large files.
+
+## [4.2.2-beta]
+
+### Changed
+
+- Fixed broken single-chunk uploads when chunkSizeMultiplier > 1.
+
 ## [4.2.1-beta]
 
 ### Changed
@@ -35,11 +47,11 @@ Types of changes:
 
 ### Added
 
-- Throws error when passing both dev and alpha options for MySky (#257). by @amberm31 in https://github.com/SkynetLabs/skynet-js/pull/352
+- Throws error when passing both dev and alpha options for MySky (#257). By @amberm31 in https://github.com/SkynetLabs/skynet-js/pull/352
 
 ### Changed
 
-- Mysky login flow fixes by @m-cat in https://github.com/SkynetLabs/skynet-js/pull/403
+- Mysky login flow fixes. By @m-cat in https://github.com/SkynetLabs/skynet-js/pull/403
 
 ## [4.0.26-beta]
 
