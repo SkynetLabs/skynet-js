@@ -21,9 +21,9 @@ describe("deriveChildSeed", () => {
 });
 
 describe("genKeyPairAndSeed", () => {
-  it("should create a seed of the given length, hex-encoded", () => {
+  it("should create a seed of the given length, hex-encoded", async () => {
     const length = 8;
-    const { seed } = genKeyPairAndSeed(length);
+    const { seed } = await genKeyPairAndSeed(length);
     // The length is specified in bytes and seed.length gives us the length of
     // the string representation of the seed bytes, which is hex encoded.
     expect(seed.length).toEqual(length * 2);
@@ -31,14 +31,14 @@ describe("genKeyPairAndSeed", () => {
 });
 
 describe("genKeyPairFromSeed", () => {
-  it("should create an expected keypair from a given seed", () => {
+  it("should create an expected keypair from a given seed", async () => {
     // Hard-code expected values to catch any breaking changes.
     const seed = "c1197e1275fbf570d21dde01a00af83ed4a743d1884e4a09cebce0dd21ae254c";
     const expectedPublicKey = "f8a7da8324fabb9d57bb32c59c48d4ba304d08ee5f1297a46836cf841da71c80";
     const expectedPrivateKey =
       "c404ff07fba961000dfb25ece7477f45b109b50a5169a45f3fb239343002c1cff8a7da8324fabb9d57bb32c59c48d4ba304d08ee5f1297a46836cf841da71c80";
 
-    const { publicKey, privateKey } = genKeyPairFromSeed(seed);
+    const { publicKey, privateKey } = await genKeyPairFromSeed(seed);
     expect(publicKey).toEqual(expectedPublicKey);
     expect(privateKey).toEqual(expectedPrivateKey);
   });

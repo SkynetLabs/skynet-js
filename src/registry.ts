@@ -1,5 +1,5 @@
 import type { AxiosResponse } from "axios";
-import { Buffer } from "buffer";
+import bufferFrom from "buffer-from";
 import { sign } from "tweetnacl";
 
 import { SkynetClient } from "./client";
@@ -203,7 +203,7 @@ export async function getEntry(
 
   // Convert the revision from a string to bigint.
   const revision = BigInt(response.data.revision);
-  const signature = Buffer.from(hexToUint8Array(response.data.signature));
+  const signature = bufferFrom(hexToUint8Array(response.data.signature));
   // Use empty array if the data is empty.
   let data = new Uint8Array([]);
   if (response.data.data) {

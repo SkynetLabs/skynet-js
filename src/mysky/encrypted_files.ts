@@ -1,6 +1,5 @@
-import randomBytes from "randombytes";
 import { sanitizePath } from "skynet-mysky-utils";
-import { secretbox } from "tweetnacl";
+import { secretbox, randomBytes } from "tweetnacl";
 
 import { HASH_LENGTH, sha512 } from "../crypto";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString, uint8ArrayToStringUtf8 } from "../utils/string";
@@ -154,7 +153,7 @@ export function encryptJSONFile(json: JsonData, metadata: EncryptedFileMetadata,
   data = new Uint8Array([...data, ...new Uint8Array(finalSize - data.length)]);
 
   // Generate a random nonce.
-  const nonce = new Uint8Array(randomBytes(ENCRYPTION_NONCE_LENGTH));
+  const nonce = randomBytes(ENCRYPTION_NONCE_LENGTH);
 
   // Encrypt the data.
   const encryptedBytes = secretbox(data, nonce, key);

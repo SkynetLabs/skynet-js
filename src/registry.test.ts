@@ -7,13 +7,9 @@ import { getEntryUrlForPortal, signEntry, validateRegistryProof } from "./regist
 import { URI_SKYNET_PREFIX } from "./utils/url";
 import { hexToUint8Array, stringToUint8ArrayUtf8 } from "./utils/string";
 
-const { publicKey, privateKey } = genKeyPairFromSeed("insecure test seed");
 const portalUrl = DEFAULT_SKYNET_PORTAL_URL;
 const client = new SkynetClient(portalUrl);
 const dataKey = "app";
-
-const registryPostUrl = `${portalUrl}/skynet/registry`;
-const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
 
 describe("getEntry", () => {
   let mock: MockAdapter;
@@ -24,6 +20,9 @@ describe("getEntry", () => {
   });
 
   it("should throw if the response status is not in the 200s and not 404 and JSON is returned", async () => {
+    const { publicKey } = await genKeyPairFromSeed("insecure test seed");
+    const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
+
     mock.onGet(registryGetUrl).replyOnce(400, JSON.stringify({ message: "foo error" }));
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toEqual(
@@ -33,6 +32,9 @@ describe("getEntry", () => {
 
   // In the case of a 429 error due to rate limiting, all we get is HTML.
   it("should throw if the response status is not in the 200s and not 404 and HTML is returned", async () => {
+    const { publicKey } = await genKeyPairFromSeed("insecure test seed");
+    const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
+
     const responseHTML = `
 <head><title>429 Too Many Requests</title></head>
 <body>
@@ -49,6 +51,9 @@ describe("getEntry", () => {
   });
 
   it("should throw if the signature could not be verified", async () => {
+    const { publicKey } = await genKeyPairFromSeed("insecure test seed");
+    const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
+
     // Use a signature that shouldn't work.
     const entryData = {
       data: "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367",
@@ -69,6 +74,9 @@ describe("getEntry", () => {
   });
 
   it("Should throw on incomplete response from registry GET", async () => {
+    const { publicKey } = await genKeyPairFromSeed("insecure test seed");
+    const registryGetUrl = getEntryUrlForPortal(portalUrl, publicKey, dataKey);
+
     mock.onGet(registryGetUrl).replyOnce(200, "{}");
 
     await expect(client.registry.getEntry(publicKey, dataKey)).rejects.toThrowError(
@@ -122,7 +130,7 @@ describe("getEntryUrl", () => {
   });
 
   it("Should throw if a timeout is provided", async () => {
-    const { publicKey } = genKeyPairAndSeed();
+    const { publicKey } = await genKeyPairAndSeed();
 
     // @ts-expect-error - Pass an invalid timeout parameter on purpose.
     await expect(client.registry.getEntryUrl(publicKey, dataKey, { timeout: 1.5 })).rejects.toThrowError(
@@ -146,6 +154,9 @@ describe("setEntry", () => {
   });
 
   it("Should sign and set a valid registry entry", async () => {
+    const { privateKey } = await genKeyPairFromSeed("insecure test seed");
+    const registryPostUrl = `${portalUrl}/skynet/registry`;
+
     // mock a successful registry update
     mock.onPost(registryPostUrl).replyOnce(204);
 
@@ -171,6 +182,8 @@ describe("setEntry", () => {
   });
 
   it("Should throw an error if the entry is not an object", async () => {
+    const { privateKey } = await genKeyPairFromSeed("insecure test seed");
+
     // @ts-expect-error We do not pass an entry on purpose.
     await expect(client.registry.setEntry(privateKey)).rejects.toThrowError(
       "Expected parameter 'entry' to be type 'object', was type 'undefined'"
@@ -180,6 +193,8 @@ describe("setEntry", () => {
 
 describe("signEntry", () => {
   it("should derive the correct signature", async () => {
+    const { privateKey } = await genKeyPairFromSeed("insecure test seed");
+
     // Hard-code expected value to catch breaking changes.
     const expectedSignature = [
       133, 154, 188, 25, 22, 198, 83, 227, 64, 89, 92, 137, 232, 240, 27, 215, 31, 207, 179, 160, 142, 4, 136, 12, 137,
@@ -199,6 +214,8 @@ describe("signEntry", () => {
   });
 
   it("should throw if we try to sign an entry with a prehashed data key that is not in hex format", async () => {
+    const { privateKey } = await genKeyPairFromSeed("insecure test seed");
+
     const entry = { data: stringToUint8ArrayUtf8("test"), dataKey: "test", revision: BigInt(0) };
     await expect(signEntry(privateKey, entry, true)).rejects.toThrowError(
       "Expected parameter 'str' to be a hex-encoded string, was type 'string', value 'test'"

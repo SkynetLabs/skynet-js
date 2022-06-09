@@ -23,7 +23,7 @@ describe(`File API integration tests for portal '${portal}'`, () => {
   });
 
   it("getEntryData should return null for non-existent File API entry data", async () => {
-    const { publicKey: userID } = genKeyPairAndSeed();
+    const { publicKey: userID } = await genKeyPairAndSeed();
     const { data: received } = await client.file.getEntryData(userID, path);
     expect(received).toBeNull();
   });

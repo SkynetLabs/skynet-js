@@ -6,7 +6,7 @@ describe(`Registry end to end integration tests for portal '${portal}'`, () => {
   const data = stringToUint8ArrayUtf8(skylink);
 
   it("Should return null for an inexistent entry", async () => {
-    const { publicKey } = genKeyPairAndSeed();
+    const { publicKey } = await genKeyPairAndSeed();
 
     // Try getting an inexistent entry.
     const { entry, signature } = await client.registry.getEntry(publicKey, "foo");
@@ -16,7 +16,7 @@ describe(`Registry end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should set and get string entries correctly", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
 
     const entry = {
       dataKey,
@@ -33,7 +33,7 @@ describe(`Registry end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should set and get unicode entries correctly", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
 
     const entry = {
       dataKey,
@@ -50,7 +50,7 @@ describe(`Registry end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should set and get an entry with empty data correctly", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
 
     const entry = {
       dataKey,
@@ -67,7 +67,7 @@ describe(`Registry end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should fail to set an entry with a revision number that's too low", async () => {
-    const { privateKey } = genKeyPairAndSeed();
+    const { privateKey } = await genKeyPairAndSeed();
 
     const entry = {
       dataKey,

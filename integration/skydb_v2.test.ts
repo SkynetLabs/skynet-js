@@ -60,7 +60,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should return null for an inexistent entry", async () => {
-    const { publicKey } = genKeyPairAndSeed();
+    const { publicKey } = await genKeyPairAndSeed();
 
     // Try getting an inexistent entry.
     const { data, dataLink } = await client.dbV2.getJSON(publicKey, "foo");
@@ -69,7 +69,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should set and get new entries", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const json = { data: "thisistext" };
     const json2 = { data: "foo2" };
 
@@ -94,7 +94,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   const dataKeys = [".", "..", "http://localhost:8000/", ""];
 
   it.each(dataKeys)("Should set and get new entry with dataKey '%s'", async (dataKey) => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const json = { data: "thisistext" };
 
     await client.dbV2.setJSON(privateKey, dataKey, json);
@@ -106,7 +106,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should be able to delete an existing entry", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const json = { data: "thisistext" };
 
     await client.dbV2.setJSON(privateKey, dataKey, json);
@@ -125,7 +125,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should be able to set a new entry as deleted and then write over it", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
 
     await client.dbV2.deleteJSON(privateKey, dataKey);
 
@@ -162,7 +162,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should correctly set a data link", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const dataLink = "AAAVyJktMuK-7WRCNUvYcYq7izvhCbgDLXlT4YgechblJw";
     const dataLinkBytes = decodeSkylinkBase64(dataLink);
 
@@ -177,7 +177,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("should set and get entry data", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const data = new Uint8Array([1, 2, 3]);
 
     // Set the entry data.
@@ -191,7 +191,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("should set and delete entry data", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const data = new Uint8Array([1, 2, 3]);
 
     // Set the entry data.
@@ -208,7 +208,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   it("should be able to delete a new entry and then write over it", async () => {
     const data = new Uint8Array([1, 2, 3]);
 
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
 
     // Delete the entry data.
     await client.dbV2.deleteEntryData(privateKey, dataKey);
@@ -228,7 +228,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should correctly handle the hashedDataKeyHex option", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const dataKey = "test";
     const hashedDataKeyHex = toHexString(hashDataKey(dataKey));
     const json = { message: "foo" };
@@ -243,7 +243,7 @@ describe(`SkyDBV2 end to end integration tests for portal '${portal}'`, () => {
   });
 
   it("Should update the revision number cache", async () => {
-    const { publicKey, privateKey } = genKeyPairAndSeed();
+    const { publicKey, privateKey } = await genKeyPairAndSeed();
     const json = { message: 1 };
 
     await client.dbV2.setJSON(privateKey, dataKey, json);

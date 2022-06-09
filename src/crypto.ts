@@ -1,8 +1,7 @@
-import { misc, codec } from "sjcl";
-import { Buffer } from "buffer";
 import { blake2bFinal, blake2bInit, blake2bUpdate } from "blakejs";
-import randomBytes from "randombytes";
-import { hash, sign } from "tweetnacl";
+import { hash, sign, randomBytes } from "tweetnacl";
+import bufferFrom from "buffer-from";
+import pbkdf2Hmac from "pbkdf2-hmac";
 
 import { RegistryEntry } from "./registry";
 import { hexToUint8Array, stringToUint8ArrayUtf8, toHexString } from "./utils/string";
@@ -69,11 +68,11 @@ export function deriveChildSeed(masterSeed: string, seed: string): string {
  * @param [length=64] - The number of random bytes for the seed. Note that the string seed will be converted to hex representation, making it twice this length.
  * @returns - The generated key pair and seed.
  */
-export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
+export async function genKeyPairAndSeed(length = 64): Promise<KeyPairAndSeed> {
   validateNumber("length", length, "parameter");
 
   const seed = genRandomSeed(length);
-  return { ...genKeyPairFromSeed(seed), seed };
+  return { ...(await genKeyPairFromSeed(seed)), seed };
 }
 
 /**
@@ -83,13 +82,12 @@ export function genKeyPairAndSeed(length = 64): KeyPairAndSeed {
  * @returns - The generated key pair.
  * @throws - Will throw if the input is not a string.
  */
-export function genKeyPairFromSeed(seed: string): KeyPair {
+export async function genKeyPairFromSeed(seed: string): Promise<KeyPair> {
   validateString("seed", seed, "parameter");
 
   // Get a 32-byte key.
-  const derivedKey = misc.pbkdf2(seed, "", 1000, 32 * 8);
-  const derivedKeyHex = codec.hex.fromBits(derivedKey);
-  const { publicKey, secretKey } = sign.keyPair.fromSeed(hexToUint8Array(derivedKeyHex));
+  const derivedKey = await pbkdf2Hmac(seed, "", 1000, 32, "SHA-256");
+  const { publicKey, secretKey } = sign.keyPair.fromSeed(new Uint8Array(derivedKey));
 
   return { publicKey: toHexString(publicKey), privateKey: toHexString(secretKey) };
 }
@@ -160,6 +158,6 @@ export function sha512(message: Uint8Array | string): Uint8Array {
 function genRandomSeed(length: number): string {
   // Cryptographically-secure random number generator. It should use the
   // built-in crypto.getRandomValues in the browser.
-  const array = randomBytes(length);
+  const array = bufferFrom(randomBytes(length));
   return toHexString(array);
 }

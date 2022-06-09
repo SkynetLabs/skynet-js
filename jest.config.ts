@@ -123,7 +123,7 @@ const config: Config.InitialOptions = {
   // resetModules: false,
 
   // A path to a custom resolver
-  // resolver: undefined,
+  resolver: `${__dirname}/jest-resolver.js`,
 
   // Automatically restore mock state between every test
   // restoreMocks: false,
@@ -149,7 +149,7 @@ const config: Config.InitialOptions = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: "jsdom",
+  testEnvironment: "./jest-environment-jsdom.js",
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
