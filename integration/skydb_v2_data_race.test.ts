@@ -1,16 +1,17 @@
 import { client, customOptions, dataKey, portal } from ".";
 import { genKeyPairAndSeed, JsonData, JSONResponse, SkynetClient } from "../src";
 
+// REGRESSION TESTS: By creating a gap between setJSON and getJSON, a user
+// could call getJSON, get outdated data, then call setJSON, and overwrite
+// more up to date data with outdated data, but still use a high enough
+// revision number.
+//
+// The fix is that you cannot retrieve the revision number while calling
+// setJSON. You have to use the same revision number that you had when you
+// called getJSON.
+//
 // test suite skipped - read more in comments at https://github.com/SkynetLabs/skynet-js/pull/467
 describe.skip(`SkyDBV2 end to end integration getJSON/setJSON data race regression integration tests '${portal}'`, () => {
-  // REGRESSION TESTS: By creating a gap between setJSON and getJSON, a user
-  // could call getJSON, get outdated data, then call setJSON, and overwrite
-  // more up to date data with outdated data, but still use a high enough
-  // revision number.
-  //
-  // The fix is that you cannot retrieve the revision number while calling
-  // setJSON. You have to use the same revision number that you had when you
-  // called getJSON.
   const jsonOld = { message: 1 };
   const jsonNew = { message: 2 };
 
