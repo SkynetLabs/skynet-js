@@ -84,7 +84,7 @@
     "@typescript-eslint/parser": "^5.27.1",
     "axios-mock-adapter": "^1.18.2",
     "axios-retry": "^3.2.5",
-    "eslint": "^7.11.0",
+    "eslint": "^8.17.0",
     "eslint-plugin-jsdoc": "^39.2.8",
     "husky": "^8.0.1",
     "jest": "^28.1.1",
