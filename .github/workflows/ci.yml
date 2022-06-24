@@ -11,70 +11,32 @@ permissions:
   contents: write
 
 jobs:
-  check-skynetpro:
-    name: "[skynetpro.net] Checks and Tests"
+  check:
+    name: "Checks and Tests"
     runs-on: ubuntu-latest
-    # This is needed because PRs from forks do not have access to secrets.
-    if: "!github.event.pull_request.head.repo.fork"
 
     strategy:
       fail-fast: false
       matrix:
+        portal: ["siasky.net", "skynetfree.net", "skynetpro.net"]
         node-version: [14.x, 16.x, 18.x]
 
     steps:
       - name: "Run Yarn Basic Checks"
+        # This is needed because PRs from forks do not have access to secrets.
+        #
+        # TODO: We can change this to always run siasky later, but right now this portal
+        #       is too unstable.
+        if: |
+          (!github.event.pull_request.head.repo.fork && matrix.portal != 'siasky.net') ||
+          (github.event.pull_request.head.repo.fork && matrix.portal == 'siasky.net')
         uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
         with:
           node-version: ${{ matrix.node-version }}
           build: true
         env:
-          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetpro.net"
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.portal }}"
           SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
-
-  check-skynetfree:
-    name: "[skynetfree.net] Checks and Tests"
-    runs-on: ubuntu-latest
-    # This is needed because PRs from forks do not have access to secrets.
-    if: "!github.event.pull_request.head.repo.fork"
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [14.x, 16.x, 18.x]
-
-    steps:
-      - name: "Run Yarn Basic Checks"
-        uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
-        with:
-          node-version: ${{ matrix.node-version }}
-          build: true
-        env:
-          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetfree.net"
-          SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
-
-  check-siasky:
-    name: "[siasky.net] Checks and Tests"
-    runs-on: ubuntu-latest
-    # Provide an alternative server for PRs from forks.
-    #
-    # TODO: We can change this to always run later, but right now this portal
-    #       is too unstable.
-    if: "github.event.pull_request.head.repo.fork"
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [14.x, 16.x, 18.x]
-
-    steps:
-      - name: "Run Yarn Basic Checks"
-        uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
-        with:
-          node-version: ${{ matrix.node-version }}
-          build: true
-        env:
-          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://siasky.net"
 
   # Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.
   # See https://hackmd.io/@SkynetLabs/ryFfInNXc.
