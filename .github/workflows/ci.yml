@@ -11,10 +11,24 @@ permissions:
   contents: write
 
 jobs:
-  check:
+  # Need this because jobs can't condition on secrets directly.
+  # https://stackoverflow.com/a/70249520/6085242
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      skynet-api-key: ${{ steps.skynet-api-key.outputs.defined }}
+    steps:
+      - id: skynet-api-key
+        if: "${{ env.SKYNET_API_KEY != '' }}"
+        run: echo "::set-output name=defined::true"
+        env:
+          SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
+
+  check-skynetpro:
     name: "[skynetpro.net] Checks and Tests"
     runs-on: ubuntu-latest
-    if: "${{ secrets.SKYNET_API_KEY != '' }}"
+    needs: [check-secret]
+    if: needs.check-secret.outputs.skynet-api-key == 'true'
 
     strategy:
       fail-fast: false
@@ -29,6 +43,27 @@ jobs:
           build: true
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetpro.net"
+          SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
+
+  check-skynetfree:
+    name: "[skynetfree.net] Checks and Tests"
+    runs-on: ubuntu-latest
+    needs: [check-secret]
+    if: needs.check-secret.outputs.skynet-api-key == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+
+    steps:
+      - name: "Run Yarn Basic Checks"
+        uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
+        with:
+          node-version: ${{ matrix.node-version }}
+          build: true
+        env:
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetfree.net"
           SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
 
   # Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.
