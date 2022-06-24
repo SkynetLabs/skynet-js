@@ -28,6 +28,8 @@ jobs:
     name: "[skynetpro.net] Checks and Tests"
     runs-on: ubuntu-latest
     needs: [check-secret]
+    # Use the pro server if an API key is found, otherwise use siasky.net.
+    # This is needed for PRs from forks, which do not have access to secrets.
     if: needs.check-secret.outputs.skynet-api-key == 'true'
 
     strategy:
@@ -49,6 +51,8 @@ jobs:
     name: "[skynetfree.net] Checks and Tests"
     runs-on: ubuntu-latest
     needs: [check-secret]
+    # Use the pro server if an API key is found, otherwise use siasky.net.
+    # This is needed for PRs from forks, which do not have access to secrets.
     if: needs.check-secret.outputs.skynet-api-key == 'true'
 
     strategy:
@@ -64,6 +68,32 @@ jobs:
           build: true
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "https://skynetfree.net"
+          SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
+
+  check-siasky:
+    name: "[siasky.net] Checks and Tests"
+    runs-on: ubuntu-latest
+    needs: [check-secret]
+    # Use the pro server if an API key is found, otherwise use siasky.net.
+    # This is needed for PRs from forks, which do not have access to secrets.
+    #
+    # TODO: We can change this to always run later, but right now this portal
+    #       is too unstable.
+    if: needs.check-secret.outputs.skynet-api-key != 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+
+    steps:
+      - name: "Run Yarn Basic Checks"
+        uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
+        with:
+          node-version: ${{ matrix.node-version }}
+          build: true
+        env:
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://siasky.net"
           SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
 
   # Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.
