@@ -24,12 +24,7 @@ jobs:
     steps:
       - name: "Run Yarn Basic Checks"
         # This is needed because PRs from forks do not have access to secrets.
-        #
-        # TODO: We can change this to always run siasky later, but right now this portal
-        #       is too unstable.
-        if: |
-          (!github.event.pull_request.head.repo.fork && matrix.portal != 'siasky.net') ||
-          (github.event.pull_request.head.repo.fork && matrix.portal == 'siasky.net')
+        if: "!github.event.pull_request.head.repo.fork || matrix.portal == 'siasky.net'"
         uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
         with:
           node-version: ${{ matrix.node-version }}
