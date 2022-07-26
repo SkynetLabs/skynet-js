@@ -1,3 +1,16 @@
+/**
+ * Script to deploy skynet-js to an hns domain.
+ *
+ * Example usage: SKYNET_JS_DEPLOY_SEED="..." node ./scripts/deploy.js
+ *
+ * You can generate the required seed with `genKeyPairAndSeed`.
+ *
+ * The first time you run this for a given hns domain, there won't be any data
+ * on the domain. Setting `skipDownload` will skip the download. After the
+ * upload, set the TXT record for the hns domain to the resulting resolver
+ * skylink.
+ */
+
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const {
@@ -12,8 +25,10 @@ const fse = require("fs-extra");
 const process = require("process");
 const tar = require("tar-fs");
 
-// The secret seed phrase to deploy with.
-const deploySeed = "SKYNET_JS_DEPLOY_SEED";
+// The env var with the secret seed phrase to deploy with.
+const deploySeedEnvVar = "SKYNET_JS_DEPLOY_SEED";
+// The hns domain to deploy to.
+const hnsDomain = "skynet-js";
 // The location of the bundle to deploy. Must be a folder.
 const bundlePath = "bundle";
 // Location of package.json, used to get the latest version.
@@ -23,7 +38,6 @@ const skipDownload = false;
 // Set to true to skip the upload.
 const skipUpload = false;
 
-const hnsDomain = "skynet-js";
 const dataKey = "skynet-js";
 const versionsDir = "versions";
 const versionsTarFile = `${versionsDir}.tar`;
@@ -47,10 +61,10 @@ const versionsTarFile = `${versionsDir}.tar`;
 
   if (!skipDownload) {
     try {
-      console.log(`Downloading HNS domain '${hnsDomain}' to ${versionsTarFile}`);
+      console.log(`Downloading HNS domain '${hnsDomain}' -> '${versionsTarFile}'`);
       await client.downloadFileHns(versionsTarFile, hnsDomain, { format: "tar" });
       // Untar to versions dir.
-      console.log(`Untarring ${versionsTarFile} -> ${versionsDir}`);
+      console.log(`Untarring '${versionsTarFile}' -> '${versionsDir}'`);
       const writer = tar.extract(versionsDir, {
         // Make sure all existing subfiles are readable.
         readable: true,
@@ -82,7 +96,7 @@ const versionsTarFile = `${versionsDir}.tar`;
   const destinationDir = `${versionsDir}/${versionSubdir}`;
 
   // Copy the bundle. destination will be created or overwritten.
-  console.log(`Copying ${bundlePath} -> ${destinationDir}`);
+  console.log(`Copying '${bundlePath}' -> '${destinationDir}'`);
   if (fs.existsSync(destinationDir)) {
     fs.rmSync(destinationDir, { recursive: true });
   }
@@ -102,8 +116,8 @@ const versionsTarFile = `${versionsDir}.tar`;
 
     // Update the registry entry.
 
-    console.log(`Updating '${dataKey}' registry entry with skylink ${skylink}`);
-    const seed = process.env[deploySeed];
+    console.log(`Updating '${dataKey}' registry entry with skylink`);
+    const seed = process.env[deploySeedEnvVar];
     if (!seed) {
       throw new Error(`Seed not found, make sure SKYNET_JS_DEPLOY_SEED is set`);
     }
@@ -115,10 +129,10 @@ const versionsTarFile = `${versionsDir}.tar`;
       revision: entry.revision + BigInt(1),
     });
 
-    // Print the registry URL.
+    // Print the resolver skylink.
 
-    const registryUrl = await client.registry.getEntryUrl(publicKey, dataKey);
-    console.log(`Registry URL: ${registryUrl}`);
+    const resolverSkylink = await client.registry.getEntryLink(publicKey, dataKey);
+    console.log(`Resolver skylink: ${resolverSkylink}`);
   }
 })().catch((e) => {
   console.log(e);
