@@ -1,7 +1,20 @@
 /**
  * Script to deploy skynet-js to an hns domain.
  *
- * Example usage: SKYNET_JS_DEPLOY_SEED="..." node ./scripts/deploy.js
+ * # Example usage
+ *
+ * $ SKYNET_JS_DEPLOY_SEED="..." node ./scripts/deploy.js
+ *
+ * $ SKYNET_JS_DEPLOY_SEED="..." SKYNET_JS_DEPLOY_DOMAIN="my-domain" node ./scripts/deploy.js --portal-url https://skynetpro.net --skynet-api-key <api-key>
+ *
+ * # Options
+ *
+ * --portal-url        Your preferred Skynet portal.
+ * --skynet-api-key    API key for the portal.
+ * --hns-domain        The HNS domain to deploy to. Can also use
+ *                     the 'SKYNET_JS_DEPLOY_DOMAIN' env var.
+ *
+ * # First time use
  *
  * You can generate the required seed with `genKeyPairAndSeed`.
  *
@@ -22,28 +35,45 @@ const {
 
 const fs = require("fs");
 const fse = require("fs-extra");
+const parseArgs = require("minimist");
 const process = require("process");
 const tar = require("tar-fs");
 
-// The env var with the secret seed phrase to deploy with.
+// The env var with the secret seed phrase to deploy with. (Required)
 const deploySeedEnvVar = "SKYNET_JS_DEPLOY_SEED";
-// The hns domain to deploy to.
-const hnsDomain = "skynet-js";
+// The env var with the HNS domain to deploy to. (Optional)
+const deployDomainEnvVar = "SKYNET_JS_DEPLOY_DOMAIN";
+
+// Get arguments.
+const argv = parseArgs(process.argv.slice(2));
+// Portal URL.
+const portalUrl = argv["portal-url"] || "https://siasky.net";
+// API key for portal.
+const skynetApiKey = argv["skynet-api-key"] || undefined;
+// The HNS domain to deploy to.
+const hnsDomain = argv["hns-domain"] || process.env[deployDomainEnvVar] || "skynet-js";
+
 // The location of the bundle to deploy. Must be a folder.
 const bundlePath = "bundle";
 // Location of package.json, used to get the latest version.
 const packageJson = "../package.json";
-// Set to true to skip the download.
+// Set to true to skip the download. Useful for debugging.
 const skipDownload = false;
-// Set to true to skip the upload.
+// Set to true to skip the upload. Useful for debugging.
 const skipUpload = false;
-
 const dataKey = "skynet-js";
 const versionsDir = "versions";
 const versionsTarFile = `${versionsDir}.tar`;
 
-(async () => {
-  const client = new SkynetClient("https://siasky.net");
+void (async () => {
+  const client = new SkynetClient(portalUrl, { skynetApiKey });
+
+  // Validation.
+
+  const seed = process.env[deploySeedEnvVar];
+  if (!skipUpload && !seed) {
+    throw new Error(`Seed not found (required for upload), make sure 'SKYNET_JS_DEPLOY_SEED' is set`);
+  }
 
   // Get the latest version from package.json.
 
@@ -117,10 +147,6 @@ const versionsTarFile = `${versionsDir}.tar`;
     // Update the registry entry.
 
     console.log(`Updating '${dataKey}' registry entry with skylink`);
-    const seed = process.env[deploySeedEnvVar];
-    if (!seed) {
-      throw new Error(`Seed not found, make sure SKYNET_JS_DEPLOY_SEED is set`);
-    }
     const { publicKey, privateKey } = genKeyPairFromSeed(seed);
     const { entry } = await client.registry.getEntry(publicKey, dataKey);
     await client.registry.setEntry(privateKey, {
@@ -134,6 +160,4 @@ const versionsTarFile = `${versionsDir}.tar`;
     const resolverSkylink = await client.registry.getEntryLink(publicKey, dataKey);
     console.log(`Resolver skylink: ${resolverSkylink}`);
   }
-})().catch((e) => {
-  console.log(e);
-});
+})();
