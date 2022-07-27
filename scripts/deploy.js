@@ -13,21 +13,23 @@
  * --skynet-api-key    API key for the portal.
  * --hns-domain        The HNS domain to deploy to. Can also use
  *                     the 'SKYNET_JS_DEPLOY_DOMAIN' env var.
+ * --first-time        Set this if you are deploying to a domain
+ *                     for the first time.
  *
  * # First time use
  *
- * You can generate the required seed with `genKeyPairAndSeed`.
+ * If you are doing a first-time deploy, run with '--first-time'. This will
+ * generate the required seed and skip the initial download.
  *
- * The first time you run this for a given hns domain, there won't be any data
- * on the domain. Setting `skipDownload` will skip the download. After the
- * upload, set the TXT record for the hns domain to the resulting resolver
- * skylink.
+ * After the upload, please set the TXT record for the HNS domain to the
+ * resulting resolver skylink.
  */
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const {
   genKeyPairFromSeed,
+  genKeyPairAndSeed,
   SkynetClient,
   stringToUint8ArrayUtf8,
   uriSkynetPrefix,
@@ -39,9 +41,9 @@ const parseArgs = require("minimist");
 const process = require("process");
 const tar = require("tar-fs");
 
-// The env var with the secret seed phrase to deploy with. (Required)
+// The env var with the secret seed phrase to deploy with. (Required if not --first-time)
 const deploySeedEnvVar = "SKYNET_JS_DEPLOY_SEED";
-// The env var with the HNS domain to deploy to. (Optional)
+// The env var with the HNS domain to deploy to. (Optional, can also pass --hns-domain)
 const deployDomainEnvVar = "SKYNET_JS_DEPLOY_DOMAIN";
 
 // Get arguments.
@@ -52,6 +54,8 @@ const portalUrl = argv["portal-url"] || "https://siasky.net";
 const skynetApiKey = argv["skynet-api-key"] || undefined;
 // The HNS domain to deploy to.
 const hnsDomain = argv["hns-domain"] || process.env[deployDomainEnvVar] || "skynet-js";
+// Whether we should treaet this as a first-time deploy.
+const firstTime = argv["first-time"] || false;
 
 // The location of the bundle to deploy. Must be a folder.
 const bundlePath = "bundle";
@@ -68,19 +72,31 @@ const versionsTarFile = `${versionsDir}.tar`;
 void (async () => {
   const client = new SkynetClient(portalUrl, { skynetApiKey });
 
+  // Get the seed.
+
+  let seed = process.env[deploySeedEnvVar];
+  if (!seed && firstTime) {
+    seed = genKeyPairAndSeed().seed;
+    console.log(`Generated seed **KEEP THIS SECRET**: ${seed}`);
+  }
+
   // Validation.
 
-  const seed = process.env[deploySeedEnvVar];
+  if (!fs.existsSync(bundlePath)) {
+    throw new Error(`No bundle found at path '${bundlePath}'. Run 'yarn build-deploy' first.`);
+  }
   if (!skipUpload && !seed) {
-    throw new Error(`Seed not found (required for upload), make sure 'SKYNET_JS_DEPLOY_SEED' is set`);
+    throw new Error(
+      `Seed not found (required for upload), make sure 'SKYNET_JS_DEPLOY_SEED' is set. Run with '--first-time' if you do not have a seed.`
+    );
   }
 
   // Get the latest version from package.json.
 
-  const version = require(packageJson).version;
+  const { version } = require(packageJson);
   console.log(`Version: ${version}`);
 
-  // Download the existing version directory.
+  // Download the existing version directory. Skip if this is a first-time deploy.
 
   if (fs.existsSync(versionsDir)) {
     fs.rmSync(versionsDir, { recursive: true });
@@ -89,7 +105,7 @@ void (async () => {
     fs.rmSync(versionsTarFile);
   }
 
-  if (!skipDownload) {
+  if (!skipDownload && !firstTime) {
     try {
       console.log(`Downloading HNS domain '${hnsDomain}' -> '${versionsTarFile}'`);
       await client.downloadFileHns(versionsTarFile, hnsDomain, { format: "tar" });
@@ -108,9 +124,10 @@ void (async () => {
       // Delete tar file.
       fs.unlinkSync(versionsTarFile);
     } catch (error) {
-      // If there was any error, stop. The initial directory should be uploaded manually.
-      console.log(error);
-      return;
+      console.error(
+        `Error downloading from HNS domain 'hnsDomain'. If this is a first-time deploy, please run with '--first-time'`
+      );
+      throw error;
     }
   }
 
@@ -152,7 +169,9 @@ void (async () => {
     await client.registry.setEntry(privateKey, {
       dataKey,
       data: stringToUint8ArrayUtf8(skylink),
-      revision: entry.revision + BigInt(1),
+      // Don't assert that the entry is null for first-time deploys, since we
+      // may be re-using a previously-used HNS domain.
+      revision: (entry?.revision || BigInt(-1)) + BigInt(1),
     });
 
     // Print the resolver skylink.
