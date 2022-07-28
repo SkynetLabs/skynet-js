@@ -125,7 +125,7 @@ void (async () => {
       fs.unlinkSync(versionsTarFile);
     } catch (error) {
       console.error(
-        `Error downloading from HNS domain 'hnsDomain'. If this is a first-time deploy, please run with '--first-time'`
+        `Error downloading from HNS domain '${hnsDomain}'. If this is a first-time deploy, please run with '--first-time'`
       );
       throw error;
     }
