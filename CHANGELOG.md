@@ -13,6 +13,12 @@ Types of changes:
 - `Changed` for changes in existing functionality.
 - `Removed` for now removed features.
 
+## Unreleased
+
+### Added
+
+- Added deploy script in `scripts/` folder.
+
 ## [4.3.0]
 
 ### Added
