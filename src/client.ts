@@ -347,8 +347,8 @@ export class SkynetClient {
       };
     }
 
-    // NOTE: The error type will be `ExecuteRequestError` as we set up a
-    // response interceptor above.
+    // NOTE: The error type is `ExecuteRequestError`. We set up a response
+    // interceptor above that does the conversion from `AxiosError`.
     try {
       return await axios({
         url,
@@ -368,15 +368,16 @@ export class SkynetClient {
         withCredentials: true,
       });
     } catch (e) {
+      // If `loginFn` is set and we get an Unauthorized response...
       if (config.loginFn && (e as ExecuteRequestError).responseStatus === 401) {
         // Try logging in again.
         await config.loginFn(config);
         // Unset the login function on the recursive call so that we don't try
         // to login again, avoiding infinite loops.
         return await this.executeRequest({ ...config, loginFn: undefined });
-      } else {
-        throw e;
       }
+
+      throw e;
     }
   }
 

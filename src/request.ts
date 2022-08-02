@@ -183,16 +183,16 @@ export class ExecuteRequestError<T = any, D = any> extends Error implements Axio
     // If we don't get an error message from skyd, just return the status code.
     /* istanbul ignore next */
     if (!err.response.data) {
-      return new ExecuteRequestError(`Request failed with status code ${status}`, err, status, null);
+      return new ExecuteRequestError(`Request failed with status code ${status}.`, err, status, null);
     }
     /* istanbul ignore next */
     if (!err.response.data.message) {
-      return new ExecuteRequestError(`Request failed with status code ${status}`, err, status, null);
+      return new ExecuteRequestError(`Request failed with status code ${status}.`, err, status, null);
     }
 
     // Return the error message from skyd. Pass along the original Axios error.
     return new ExecuteRequestError(
-      `Request failed with status code ${err.response.status}: ${err.response.data.message}`,
+      `Request failed with status code ${err.response.status}: ${err.response.data.message}.`,
       err,
       status,
       err.response.data.message

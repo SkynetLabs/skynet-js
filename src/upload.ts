@@ -68,14 +68,16 @@ export type CustomUploadOptions = BaseCustomOptions & {
   endpointUpload?: string;
   endpointLargeUpload?: string;
 
-  chunkSizeMultiplier?: number;
   customFilename?: string;
   errorPages?: JsonData;
+  tryFiles?: string[];
+
+  // Large files.
+  chunkSizeMultiplier?: number;
   largeFileSize?: number;
   numParallelUploads?: number;
   staggerPercent?: number | null;
   retryDelays?: number[];
-  tryFiles?: string[];
 };
 
 /**
@@ -93,14 +95,16 @@ export const DEFAULT_UPLOAD_OPTIONS = {
   endpointUpload: "/skynet/skyfile",
   endpointLargeUpload: "/skynet/tus",
 
-  chunkSizeMultiplier: DEFAULT_TUS_CHUNK_SIZE_MULTIPLIER,
   customFilename: "",
   errorPages: undefined,
+  tryFiles: undefined,
+
+  // Large files.
+  chunkSizeMultiplier: DEFAULT_TUS_CHUNK_SIZE_MULTIPLIER,
   largeFileSize: TUS_CHUNK_SIZE,
   numParallelUploads: DEFAULT_TUS_PARALLEL_UPLOADS,
   staggerPercent: DEFAULT_TUS_STAGGER_PERCENT,
   retryDelays: DEFAULT_TUS_RETRY_DELAYS,
-  tryFiles: undefined,
 };
 
 /**
