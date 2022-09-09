@@ -31,7 +31,7 @@ jobs:
           build: true
         env:
           SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.portal }}"
-          SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
+          SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: "foooooooooo"
 
   # Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.
   # See https://hackmd.io/@SkynetLabs/ryFfInNXc.
