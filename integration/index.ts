@@ -75,4 +75,3 @@ expect.extend({
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
 });
-jest.retryTimes(10);
