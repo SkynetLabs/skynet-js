@@ -54,8 +54,8 @@
   },
   "homepage": "https://github.com/SkynetLabs/skynet-js",
   "dependencies": {
-    "@skynetlabs/tus-js-client": "^2.4.1",
-    "async-mutex": "^0.3.2",
+    "@skynetlabs/tus-js-client": "^3.0.0",
+    "async-mutex": "^0.4.0",
     "axios": "^0.27.2",
     "base32-decode": "^1.0.0",
     "base32-encode": "^1.1.1",
