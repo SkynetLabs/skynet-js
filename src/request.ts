@@ -187,6 +187,7 @@ export class ExecuteRequestError<T = any, D = any> extends Error implements Axio
     }
     /* istanbul ignore next */
     if (!err.response.data.message) {
+      console.log(err.response);
       return new ExecuteRequestError(`Request failed with status code ${status}`, err, status, null);
     }
 
