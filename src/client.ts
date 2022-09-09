@@ -347,6 +347,8 @@ export class SkynetClient {
       };
     }
 
+    console.log(url, Object.keys(headers), headers["Skynet-Api-Key"] && headers["Skynet-Api-Key"].slice(0, 4));
+
     // NOTE: The error type will be `ExecuteRequestError` as we set up a
     // response interceptor above.
     try {
