@@ -23,6 +23,9 @@ export const portal = process.env.SKYNET_JS_INTEGRATION_TEST_SERVER || DEFAULT_S
 //
 // SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY=foo yarn run jest integration
 export const skynetApiKey = process.env.SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY;
+
+console.log("========================================");
+console.log("API KEY", skynetApiKey && skynetApiKey.slice(0, 4) + "...");
 // Allow setting custom cookies.
 //
 // Example:
@@ -72,3 +75,4 @@ expect.extend({
     return { pass: true, message: () => `expected ${received} not to equal ${argument}` };
   },
 });
+jest.retryTimes(10);
