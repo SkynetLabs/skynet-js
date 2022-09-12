@@ -192,7 +192,7 @@ export class ExecuteRequestError<T = any, D = any> extends Error implements Axio
 
     // Return the error message from skyd. Pass along the original Axios error.
     return new ExecuteRequestError(
-      `Request failed with status code ${err.response.status}: ${err.response.data.message}.`,
+      `Request failed with status code ${err.response.status}: ${err.response.data.message}`,
       err,
       status,
       err.response.data.message
