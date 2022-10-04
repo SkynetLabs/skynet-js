@@ -18,20 +18,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        portal: ["siasky.net", "skynetfree.net", "skynetpro.net"]
         node-version: [14.x, 16.x, 18.x]
 
     steps:
       - name: "Run Yarn Basic Checks"
+        # This is needed because PRs from forks do not have access to secrets.
+        if: "!github.event.pull_request.head.repo.fork || matrix.portal == 'siasky.net'"
         uses: SkynetLabs/.github/.github/actions/yarn-basic-checks@master
         with:
           node-version: ${{ matrix.node-version }}
           build: true
         env:
-          # Use the pro server if an API key is found, otherwise use siasky.net.
-          # This is for PRs run from forks, which do not have access to secrets.
-          #
-          # Ternary syntax. See https://github.com/actions/runner/issues/409#issuecomment-752775072.
-          SKYNET_JS_INTEGRATION_TEST_SERVER: ${{ secrets.SKYNET_API_KEY && 'https://skynetpro.net' || 'https://siasky.net' }}
+          SKYNET_JS_INTEGRATION_TEST_SERVER: "https://${{ matrix.portal }}"
           SKYNET_JS_INTEGRATION_TEST_SKYNET_API_KEY: ${{ secrets.SKYNET_API_KEY }}
 
   # Auto-merge Dependabot PRs. Requires also `.github/.kodiak.toml`.

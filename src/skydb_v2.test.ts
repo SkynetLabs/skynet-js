@@ -302,6 +302,8 @@ describe("setJSON", () => {
     const revision2 = cachedRevisionEntry.revision;
 
     expect(revision1.toString()).toEqual(revision2.toString());
+    // The mutex should not remain locked.
+    expect(cachedRevisionEntry.mutex.isLocked()).toBeFalsy();
   });
 });
 
